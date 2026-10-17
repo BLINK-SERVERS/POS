@@ -7,7 +7,7 @@ manda `18`.
 
 > Regla del proyecto: replicamos **comportamiento funcional** de Wink, nunca código, estilos,
 > marca ni marcado. Todo en BLINK es diseño y código originales, con la paleta estricta
-> (`#FFFEFB`, `#007AFF`, `#424242`), tipografía SF y iconos en SVG.
+> (`#FFFEFB`, `#007AFF`, `#424242`), tipografía del sistema e iconos en SVG.
 
 ---
 
@@ -20,6 +20,7 @@ manda `18`.
 | Tests | 🔴 no existen | — |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
+| Deploy | 🟢 en vivo | https://go-plans.github.io/blink-pos/ — ver doc `19` |
 
 **Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).
