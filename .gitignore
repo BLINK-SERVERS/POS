@@ -1,0 +1,41 @@
+# ---- Dependencias ----
+node_modules/
+app/node_modules/
+
+# ---- Compilación ----
+app/dist/
+
+# ---- Variables de entorno con secretos (nunca versionar) ----
+.env
+.env.local
+.env.*.local
+*.local
+
+# ---- Fuente San Francisco (propietaria de Apple): solo local, no se publica ----
+app/.fonts-sf-local/
+
+# ---- Reconocimiento de Wink: material de referencia, NO se publica ----
+captures/
+chrome-profile/
+clone/
+recon/
+screenshots/
+app/screenshots/
+scripts/
+
+# El package.json de la raíz es del arnés de reconocimiento; la app tiene el suyo.
+package.json
+package-lock.json
+
+# ---- Volcados crudos extraídos de Wink: no se redistribuyen ----
+docs/tokens.css
+docs/tokens.json
+docs/computed-styles.json
+docs/styleguide.html
+docs/estructura-dom.md
+docs/estructura-layout.md
+docs/05-inventario-assets.md
+
+# ---- Sistema ----
+.DS_Store
+Thumbs.db
