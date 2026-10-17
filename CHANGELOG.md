@@ -11,6 +11,44 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.1.0] · 2026-10-17
+
+Base de escalabilidad. La app no cambia para el usuario; se prepara el terreno para soportar
+miles de comercios y mucho volumen de operaciones, y se añade la red de seguridad de pruebas.
+
+### Arquitectura (base para escala)
+
+- **Esquema normalizado** (`supabase/migrations/0002_normalize.sql`): los datos dejan de vivir en
+  un único documento JSONB que se reescribía entero con cada cambio. Ahora son tablas reales:
+  catálogo (`products`, `contacts`, `accounts`) y **libros de solo-agregar** (`sales` + `sale_lines`,
+  `movements`, `inventory_moves`, `purchases` + `purchase_lines`, `expenses`, `pendings` +
+  `pending_payments`, `transfers`, `cash_closures`) y caja (`cash_sessions`). Es **aditivo**: no
+  toca `businesses.data`, así que la app actual sigue funcionando mientras se migra la capa cliente.
+- **Multi-usuario preparado** (`business_members` + RLS por membresía y rol). Hoy solo el
+  propietario; abre la puerta a cajeros/gerentes sin migrar el esquema después.
+- **IDs `text`, `business_id` uuid**: los IDs de entidad que genera el cliente son cadenas
+  (`prodx_a1b2c3`), no UUIDs; se usan como `text` para migrar datos existentes sin reescribirlos.
+- **Desempaquetado** (`0003_unpack.sql`): función `unpack_business(id)` / `unpack_all_businesses()`
+  que rellena las tablas normalizadas desde `businesses.data`, repitable y sin borrar el original.
+- **Offline / multi-terminales (preparado)**: los libros son de solo-agregar y los clientes generan
+  id y hora propios; `version` en las tablas mutables permite rechazar escrituras obsoletas el día
+  que se habilite.
+
+### Pruebas
+
+- **Arnés de pruebas con Vitest** (`npm test`). 26 pruebas sobre la lógica pura del dinero:
+  `fiscal.ts` (base, IVA proporcional, recargos, IGTF 3 %, total del ticket, descuentos) y
+  `metrics.ts` (neto, costo, total sin descuento doble, qué cuenta en KPIs, capital en USD,
+  saldo de pendientes y **arqueo de caja**). Es el seguro antes de tocar la lógica de dinero en la
+  migración a las tablas.
+
+### Sin cambios visibles
+
+- El bundle y la interfaz son idénticos a 1.0.0; la migración del cliente (leer/escribir las
+  tablas) es el siguiente paso (Fase B).
+
+---
+
 ## [1.0.0] · 2026-10-17
 
 Primer lanzamiento: el núcleo del punto de venta funciona de punta a punta, con cuentas
