@@ -22,6 +22,13 @@ manda `18`.
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
 
+> **Cambios recientes (2026-10-17) · Ajuste responsive (móvil).** El shell ahora es usable en
+> teléfono: en anchos ≤ 860 px la barra lateral pasa a ser un **panel deslizante (drawer)** con
+> botón hamburguesa en la barra superior, fondo oscurecido y cierre automático al navegar. Se
+> corrigió el desborde horizontal (antes la navegación se apilaba en fila y empujaba el
+> contenido). El chip de tasa se acorta en móvil y el nombre del negocio se recorta con
+> elipsis. Verificado sin overflow de **320 a 1280 px** en las 9 rutas y en el POS.
+
 **Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).
 

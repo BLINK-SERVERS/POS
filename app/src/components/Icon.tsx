@@ -22,6 +22,7 @@ export type IconName =
   | "trash"
   | "arrowRight"
   | "receipt"
+  | "menu"
   | "google";
 
 const P: Record<IconName, ReactElement> = {
@@ -136,6 +137,13 @@ const P: Record<IconName, ReactElement> = {
     <>
       <path d="M6 3v18l3-1.8 3 1.8 3-1.8 3 1.8V3z" />
       <path d="M9.5 8h5M9.5 12h5" />
+    </>
+  ),
+  menu: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
     </>
   ),
   google: (

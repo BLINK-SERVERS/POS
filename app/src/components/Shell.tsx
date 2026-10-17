@@ -37,6 +37,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { state, logout, openCash, closeCash } = useStore();
   const nav = useNavigate();
   const [cashOpen, setCashOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [usd, setUsd] = useState("0");
   const [bs, setBs] = useState("0");
   const [closeOpen, setCloseOpen] = useState(false);
@@ -53,7 +54,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const hasDiff = diffUsd !== 0 || diffBs !== 0;
 
   return (
-    <div className="shell">
+    <div className={"shell" + (navOpen ? " shell--nav-open" : "")}>
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
           <span className="brand brand--lg">
@@ -68,6 +69,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <NavLink
                 to={item.to}
                 end={!!item.sub}
+                onClick={() => setNavOpen(false)}
                 className={({ isActive }) =>
                   isActive && !item.sub ? "nav__link active" : "nav__link"
                 }
@@ -84,6 +86,7 @@ export function Shell({ children }: { children: ReactNode }) {
                       key={s.label}
                       to={s.to}
                       end={s.label === "Vender"}
+                      onClick={() => setNavOpen(false)}
                       className={({ isActive }) =>
                         isActive ? "nav__link active" : "nav__link"
                       }
@@ -97,16 +100,27 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <button className="btn btn--ghost btn--sm" onClick={() => { logout(); nav("/entrar"); }}>
+        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); logout(); nav("/entrar"); }}>
           <Icon name="logout" />
           Cerrar sesión
         </button>
       </aside>
 
+      {navOpen && <div className="shell__scrim" onClick={() => setNavOpen(false)} />}
+
       <header className="shell__topbar">
-        <strong>{state.business.name}</strong>
-        <span className="rate-chip rate-chip--live" title="Tasa de referencia">
-          <strong>{formatRate(state.rate)}</strong> / $ · BCV
+        <button
+          className="shell__menu"
+          onClick={() => setNavOpen((v) => !v)}
+          aria-label="Abrir menú"
+          aria-expanded={navOpen}
+        >
+          <Icon name={navOpen ? "close" : "menu"} />
+        </button>
+        <strong className="topbar__name">{state.business.name}</strong>
+        <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
+          <strong>{formatRate(state.rate)}</strong>
+          <span className="rate-chip__suffix"> / $ · BCV</span>
         </span>
         <span className="grow" />
         {session ? (
