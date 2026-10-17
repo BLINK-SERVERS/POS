@@ -82,6 +82,9 @@ export function Login() {
           <p className="muted" style={{ fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
             <Icon name="lock" /> Tu correo se verifica con un código.
           </p>
+          <p className="dim" style={{ fontSize: "0.72rem", marginTop: "0.75rem", textAlign: "center" }}>
+            versión {__APP_VERSION__}
+          </p>
         </form>
       </div>
     </main>

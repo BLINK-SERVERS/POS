@@ -271,6 +271,10 @@ export function Ajustes() {
           </button>
         </Card>
       )}
+
+      <p className="dim" style={{ textAlign: "center", fontSize: "0.8rem" }}>
+        BLINK POS · versión {__APP_VERSION__}
+      </p>
     </div>
   );
 }

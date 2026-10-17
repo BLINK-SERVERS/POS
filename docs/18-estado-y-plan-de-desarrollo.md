@@ -13,14 +13,27 @@ manda `18`.
 
 ## 1. Estado en un vistazo
 
-| Verificación | Estado (2026-10-15) | Cómo |
+**Versión actual: `1.0.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
+Historial en `CHANGELOG.md`.
+
+| Verificación | Estado (2026-10-17) | Cómo |
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
-| Build producción | 🟢 verde (~4,1 s) | `npm run build` |
+| Build producción | 🟢 verde (~3 s) | `npm run build` |
 | Tests | 🔴 no existen | — |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-17) · v1.0.0.** Se fija la versión `1.0.0` (primer lanzamiento;
+> antes `0.1.0`, sin etiquetas). Se corrigieron tres cosas: (1) el **capital** de Inicio e
+> Informes no se refrescaba al **abonar un pendiente** ni al cambiar la **tasa** (faltaban
+> `state.pendings` y `state.rate` en las dependencias del `useMemo`); (2) **Inventario › Registrar
+> compra** ahora usa `addPurchase` (proveedor, forma de pago, cuenta, N° de factura y **costo
+> promedio**) en lugar de solo sumar existencias y **descartar el costo**; (3) se eliminó el botón
+> **"Añadir producto de ejemplo"** (datos ficticios) y las pestañas **Movimientos** y **Compras**
+> del inventario ya muestran datos reales. Historial en `CHANGELOG.md`.
 
 > **Cambios recientes (2026-10-17) · Ajuste responsive (móvil).** El shell ahora es usable en
 > teléfono: en anchos ≤ 860 px la barra lateral pasa a ser un **panel deslizante (drawer)** con
@@ -44,8 +57,9 @@ manda `18`.
 **Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).
 
-Tamaño actual de los *chunks* del build (gzip): vendor 81,98 kB · index 12,74 kB ·
-Vender 4,22 kB · el resto de rutas 0,6–2,4 kB. Las 9 rutas internas están diferidas con
+Tamaño actual de los *chunks* del build (gzip): vendor 136,64 kB · index 20,11 kB ·
+Finanzas 6,06 kB · Vender 4,47 kB · Catálogo 4,63 kB · Inventario 2,63 kB · Ajustes 2,46 kB ·
+el resto de rutas 0,6–1,7 kB. Las 9 rutas internas están diferidas con
 `React.lazy`; el vendor está particionado con `manualChunks` (Rolldown/Vite 8).
 
 **Alcance funcional de hoy:** BLINK vende de punta a punta: abrir caja → multi-cuenta en el
@@ -261,9 +275,9 @@ voidSale(id, reason)                                 // anula y revierte stock/d
    `maxUses` y `from`/`to`).
 4. **~~Comisiones de cuenta sin UI:~~** resuelto en Fase 1, ítem 6 (el alta de cuenta expone
    `commissionIn`/`commissionOut`).
-5. **Compras no reales:** el modal "Registrar compra" de Inventario solo hace `setStock`;
-   no usa `addPurchase`, por lo que no guarda proveedor, forma de pago, ni genera
-   movimientos/CxP. Sustituir por el flujo completo.
+5. **~~Compras no reales.~~** resuelto en v1.0.0: el modal "Registrar compra" de Inventario ahora
+   usa `addPurchase` (proveedor, forma de pago efectivo/cuenta/crédito, cuenta de origen, N° de
+   factura y costo promedio). Las pestañas Movimientos y Compras muestran datos reales.
 6. **Canal y ubicación no se registran en la venta** aunque `Sale` tiene los campos; el POS
    usa siempre el precio del canal predeterminado.
 7. **~~Historial sin anulación~~** resuelto en Fase 1, ítem 2 (requiere motivo; `voidSale`
@@ -271,8 +285,10 @@ voidSale(id, reason)                                 // anula y revierte stock/d
 8. **`receiptFields` sin UI:** el modelo define qué datos lleva el recibo; Ajustes no lo expone.
 9. **Sin tests:** considerar tests unitarios de `fiscal.ts`, `metrics.ts` y `checkout` antes
    de tocar reglas fiscales (son funciones puras, baratas de testear).
-10. **Sin backend:** los datos viven en el navegador. Exportar/importar estado y sincronización
-    multi-dispositivo son decisiones de arquitectura pendientes (P3).
+10. **~~Sin backend~~** resuelto en Fase 3: los datos se guardan en **Supabase** (`businesses`,
+    una fila JSONB por comercio, con RLS). El caché local es respaldo sin conexión.
+    Pendiente (P3): exportar/importar estado y **sincronización multi-dispositivo** (hoy el
+    modelo es "última escritura gana").
 11. **Ediciones concurrentes:** el modelo creció en paralelo y rompió el build. Disciplina:
     typecheck por cambio (§3.3).
 12. **Licencia tipográfica:** SF (Apple) solo es válida en entorno local; para publicar hay
@@ -283,25 +299,29 @@ voidSale(id, reason)                                 // anula y revierte stock/d
 Auditoría estática completa (store/fiscal/metrics, 11 páginas, 4 componentes, configs, CSS).
 Resumen ejecutivo; el detalle con `archivo:línea` está en el informe de la sesión:
 
-**Críticos (→ Fase 0 §7):** "monto exacto" USD cierra mal y genera crédito fantasma (C1);
-arqueo ignora salidas de efectivo que no sean ventas (C2); `voidSale` revierte bruto y sin
-asientos (C3); fallos de `localStorage` silenciados, riesgo de pérdida de datos (C4);
-migración v1→v2 incompleta que puede crashear `closeCash` (I4, incluido en Fase 0).
+**Críticos (→ Fase 0 §7):** "monto exacto" USD cierra mal y genera crédito fantasma (C1,
+**corregido**); arqueo ignora salidas de efectivo que no sean ventas (C2, **corregido** con
+`expectedCash`); `voidSale` revierte bruto y sin asientos (C3, **corregido**: revierte neto y
+crea asientos inversos); fallos de `localStorage` silenciados (C4, **corregido** con aviso);
+migración v1→v2 incompleta que puede crashear `closeCash` (I4, **corregido** con `normalize`).
 
 **Importantes seleccionados:**
-- `saleTotal` resta el descuento dos veces (`metrics.ts:28`) — export muerto, latente.
+- `saleTotal` resta el descuento dos veces (`metrics.ts:28`) — **corregido** (usa `saleNet`
+  una sola vez).
 - `addPurchase`: total y costo promedio usan fuentes distintas; `paymentMethod:"efectivo"`
-  no mueve dinero (`store.tsx:1402-1474`).
+  no mueve dinero — **corregido** (costo unificado y movimiento de dinero/CxP).
 - Devoluciones/ajustes no cuadran libro vs stock ni dinero (`store.tsx:1488-1566`).
 - Colisión de códigos de cotización (secuencia derivada del conteo de ventas).
-- División por tasa sin proteger (`rate || 1`) en 4 puntos; tasa negativa aceptada.
+- División por tasa sin proteger (`rate || 1`) en 4 puntos; tasa negativa aceptada
+  (**la acción `setRate` ya rechaza tasas ≤ 0**).
 - `useMemo` de `capital(state)` sin `pendings`/`rate` en deps (`Inicio.tsx:29`,
-  `Informes.tsx:26`): capital desactualizado tras abonos.
+  `Informes.tsx:26`): capital desactualizado tras abonos. **[v1.0.0: corregido.]**
 - Inventario: "Registrar compra" ignora `addPurchase` y descarta el costo digitado;
   pestañas Movimientos/Compras son stubs pese a que el store registra todo.
+  **[v1.0.0: corregido — usa `addPurchase` y las pestañas muestran datos reales.]**
 - Historial etiqueta "Cobrada" para anuladas/cotizaciones y no hay UI de anulación. **[Fase 1 · ítem 2: resuelto.]**
 - Gasto "Pagado ahora" sin cuenta (no mueve dinero) y admite montos negativos. **[Fase 1 · ítem 6: la cuenta es obligatoria y los montos se acotan a ≥ 0.]**
-- Autenticación ficticia (cualquier contraseña ≥3 chars) — aceptable en demo, documentar.
+- ~~Autenticación ficticia (cualquier contraseña ≥3 chars)~~ **[Fase 3: sustituida por Supabase Auth real.]**
 - Sin `ErrorBoundary`: cualquier throw deja la app en blanco.
 - Descuentos: `from`/`to` nunca se leen; las pistas "Créalos en Catálogo → Descuentos" apuntan a un Catálogo que no los tiene todavía. **[Resuelto: vigencia validada en el POS y CRUD completo en Catálogo → Descuentos/Recargos (Fase 1 · ítems 1, 9).]**
 - *(Bug corregido)* `discounts.filter(isDiscountValid)` pasaba el índice como `now`, descartando todo descuento con `from`/`to`. Corregido a `filter((d) => isDiscountValid(d))`. **[Fase 1 · ítem 1.]**

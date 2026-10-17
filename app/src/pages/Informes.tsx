@@ -23,7 +23,7 @@ export function Informes() {
       months,
       maxNet: Math.max(1, ...months.map((m) => m.net)),
     };
-  }, [state.sales, state.expenses, state.products, state.accounts]);
+  }, [state.sales, state.expenses, state.products, state.accounts, state.pendings, state.rate]);
 
   const variation = (a: number, b: number) => {
     if (!b) return a ? "nuevo" : "—";

@@ -26,7 +26,7 @@ export function Inicio() {
         { done: state.sales.length > 0, label: "Haz tu primera venta" },
       ],
     };
-  }, [state.sales, state.expenses, state.products, state.contacts, state.accounts, state.business.name, state.cashSession]);
+  }, [state.sales, state.expenses, state.products, state.contacts, state.accounts, state.pendings, state.rate, state.business.name, state.cashSession]);
 
   const done = steps.filter((s) => s.done).length;
   const spendToday = today.net;

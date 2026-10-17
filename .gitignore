@@ -24,8 +24,9 @@ app/screenshots/
 scripts/
 
 # El package.json de la raíz es del arnés de reconocimiento; la app tiene el suyo.
-package.json
-package-lock.json
+# (Anclado a la raíz: sin la barra inicial también ignoraba app/package.json.)
+/package.json
+/package-lock.json
 
 # ---- Volcados crudos extraídos de Wink: no se redistribuyen ----
 docs/tokens.css

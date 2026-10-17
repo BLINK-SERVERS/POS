@@ -1,6 +1,6 @@
 -- ============================================================
 -- BLINK POS · Esquema inicial (Supabase / Postgres)
-// ------------------------------------------------------------
+-- ------------------------------------------------------------
 -- Cómo usarlo:
 --   1. Entra a tu proyecto en https://supabase.com/dashboard
 --   2. SQL Editor → New query → pega TODO este archivo → Run

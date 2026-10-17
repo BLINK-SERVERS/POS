@@ -1,5 +1,6 @@
 // Inventario · Existencias.
 import { memo, useCallback, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
 import { Card, EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
@@ -51,13 +52,28 @@ const StockRow = memo(function StockRow({
 export function Inventario() {
   const products = useStoreSelector((s) => s.products);
   const rate = useStoreSelector((s) => s.rate);
-  const { setStock, addProduct } = useStoreActions();
+  const contacts = useStoreSelector((s) => s.contacts);
+  const accounts = useStoreSelector((s) => s.accounts);
+  const locations = useStoreSelector((s) => s.locations);
+  const purchases = useStoreSelector((s) => s.purchases);
+  const inventoryMoves = useStoreSelector((s) => s.inventoryMoves);
+  const { setStock, addPurchase } = useStoreActions();
+  const providers = useMemo(() => contacts.filter((c) => c.isProvider), [contacts]);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Existencias");
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState("");
   const [qty, setQty] = useState("0");
   const [purchaseOpen, setPurchaseOpen] = useState(false);
-  const [purchase, setPurchase] = useState({ productId: "", qty: "1", costUnit: "0" });
+  const [purchaseError, setPurchaseError] = useState("");
+  const [purchase, setPurchase] = useState({
+    productId: "",
+    qty: "1",
+    costUnit: "0",
+    supplierId: "",
+    paymentMethod: "efectivo" as "efectivo" | "cuenta" | "credito",
+    accountId: "",
+    invoiceNo: "",
+  });
 
   const { valorCosto, valorVenta, low } = useMemo(
     () => ({
@@ -81,10 +97,49 @@ export function Inventario() {
   }
 
   function registrarCompra() {
-    if (!purchase.productId) return;
-    const p = products.find((x) => x.id === purchase.productId);
-    if (!p) return;
-    setStock(p.id, p.stock + (Number(purchase.qty) || 0));
+    setPurchaseError("");
+    if (!purchase.productId) {
+      setPurchaseError("Elige un producto.");
+      return;
+    }
+    const qtyNum = Number(purchase.qty) || 0;
+    if (qtyNum <= 0) {
+      setPurchaseError("La cantidad debe ser mayor que cero.");
+      return;
+    }
+    const supplier = providers.find((c) => c.id === purchase.supplierId);
+    if (!purchase.supplierId) {
+      setPurchaseError("Elige un proveedor (créalo en Contactos si no aparece).");
+      return;
+    }
+    if (purchase.paymentMethod !== "credito" && !purchase.accountId) {
+      setPurchaseError("Elige la cuenta de donde sale el dinero.");
+      return;
+    }
+    addPurchase({
+      supplierId: purchase.supplierId,
+      supplierName: supplier?.name ?? "Proveedor",
+      locationId: locations[0]?.id ?? "",
+      paymentMethod: purchase.paymentMethod,
+      accountId: purchase.paymentMethod === "credito" ? undefined : purchase.accountId,
+      invoiceNo: purchase.invoiceNo.trim() || undefined,
+      lines: [
+        {
+          productId: purchase.productId,
+          qty: qtyNum,
+          costUnit: Number(purchase.costUnit) || 0,
+        },
+      ],
+    });
+    setPurchase({
+      productId: "",
+      qty: "1",
+      costUnit: "0",
+      supplierId: "",
+      paymentMethod: "efectivo",
+      accountId: "",
+      invoiceNo: "",
+    });
     setPurchaseOpen(false);
   }
 
@@ -124,30 +179,9 @@ export function Inventario() {
               title="Sin existencias"
               hint="Registra productos para controlar entradas y mínimos."
               action={
-                <button
-                  className="btn btn--soft btn--sm"
-                  onClick={() =>
-                    addProduct({
-                      name: "Producto de ejemplo",
-                      sku: "SKU-001",
-                      barcode: "",
-                      unit: "und",
-                      cost: 1,
-                      price: 2,
-                      category: "General",
-                      type: "simple",
-                      taxRate: 0.16,
-                      active: true,
-                      archived: false,
-                      channelPrices: {},
-                      trackStock: true,
-                      stock: 10,
-                      minStock: 3,
-                    })
-                  }
-                >
-                  Añadir producto de ejemplo
-                </button>
+                <Link className="btn btn--soft btn--sm" to="/catalogo">
+                  Ir a Catálogo
+                </Link>
               }
             />
           ) : (
@@ -173,10 +207,101 @@ export function Inventario() {
       )}
 
       {tab === "Movimientos" && (
-        <EmptyState title="Sin movimientos" hint="Aquí verás entradas, salidas y ajustes de existencias." />
+        <div className="stack gap-16">
+          {inventoryMoves.length === 0 ? (
+            <EmptyState
+              title="Sin movimientos"
+              hint="Aquí verás entradas, salidas y ajustes de existencias."
+            />
+          ) : (
+            <DataTable
+              colCount={6}
+              items={inventoryMoves}
+              rowKey={(m) => m.id}
+              head={
+                <tr>
+                  <th>Fecha</th>
+                  <th>Producto</th>
+                  <th>Tipo</th>
+                  <th style={{ textAlign: "right" }}>Cantidad</th>
+                  <th style={{ textAlign: "right" }}>Costo unit.</th>
+                  <th>Origen</th>
+                </tr>
+              }
+              renderRow={(m) => (
+                <tr key={m.id}>
+                  <td className="dim" style={{ whiteSpace: "nowrap" }}>
+                    {new Date(m.at).toLocaleString()}
+                  </td>
+                  <td style={{ fontWeight: 600 }}>{m.productName}</td>
+                  <td>
+                    <Badge tone={m.kind === "entrada" ? "accent" : "neutral"}>
+                      {m.kind === "entrada" ? "Entrada" : "Salida"}
+                    </Badge>
+                  </td>
+                  <td className="tabular" style={{ textAlign: "right" }}>
+                    {m.qty}
+                  </td>
+                  <td className="tabular" style={{ textAlign: "right" }}>
+                    {formatUsd(round2(m.costUnit))}
+                  </td>
+                  <td>
+                    {m.origin}
+                    {m.ref ? <span className="dim"> · {m.ref}</span> : null}
+                  </td>
+                </tr>
+              )}
+            />
+          )}
+        </div>
       )}
       {tab === "Compras" && (
-        <EmptyState title="Sin compras" hint="Registra una compra para aumentar tus existencias." />
+        <div className="stack gap-16">
+          {purchases.length === 0 ? (
+            <EmptyState
+              title="Sin compras"
+              hint="Registra una compra para aumentar tus existencias."
+            />
+          ) : (
+            <DataTable
+              colCount={6}
+              items={purchases}
+              rowKey={(c) => c.id}
+              head={
+                <tr>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Pago</th>
+                  <th>Factura</th>
+                  <th style={{ textAlign: "right" }}>Líneas</th>
+                  <th style={{ textAlign: "right" }}>Total</th>
+                </tr>
+              }
+              renderRow={(c) => (
+                <tr key={c.id}>
+                  <td className="dim" style={{ whiteSpace: "nowrap" }}>
+                    {new Date(c.at).toLocaleString()}
+                  </td>
+                  <td style={{ fontWeight: 600 }}>{c.supplierName}</td>
+                  <td className="dim">
+                    {c.paymentMethod === "credito"
+                      ? "Crédito (por pagar)"
+                      : c.paymentMethod === "cuenta"
+                        ? "Cuenta"
+                        : "Efectivo"}
+                  </td>
+                  <td className="mono">{c.invoiceNo || "—"}</td>
+                  <td className="tabular" style={{ textAlign: "right" }}>
+                    {c.lines.length}
+                  </td>
+                  <td className="tabular" style={{ textAlign: "right" }}>
+                    {formatUsd(round2(c.totalUsd))}
+                  </td>
+                </tr>
+              )}
+            />
+          )}
+        </div>
       )}
 
       {open && (
@@ -202,11 +327,25 @@ export function Inventario() {
 
       {purchaseOpen && (
         <Modal title="Registrar compra" onClose={() => setPurchaseOpen(false)}>
-          <Field label="Producto">
+          {providers.length === 0 && (
+            <p className="muted" style={{ marginBottom: "0.75rem" }}>
+              Aún no tienes proveedores. <Link to="/contactos">Crea uno en Contactos</Link> para
+              registrar la compra con su nombre y su cuenta por pagar.
+            </p>
+          )}
+          <Field label="Producto" required>
             <select
               className="select"
               value={purchase.productId}
-              onChange={(e) => setPurchase({ ...purchase, productId: e.target.value })}
+              onChange={(e) => {
+                const id = e.target.value;
+                const p = products.find((x) => x.id === id);
+                setPurchase((prev) => ({
+                  ...prev,
+                  productId: id,
+                  costUnit: prev.costUnit === "0" && p ? String(p.cost) : prev.costUnit,
+                }));
+              }}
             >
               <option value="">Selecciona…</option>
               {products.map((p) => (
@@ -216,22 +355,82 @@ export function Inventario() {
               ))}
             </select>
           </Field>
-          <Field label="Cantidad">
+          <div className="row gap-12">
+            <Field label="Cantidad" required>
+              <input
+                className="input"
+                type="number"
+                value={purchase.qty}
+                onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
+              />
+            </Field>
+            <Field label="Costo unitario (USD)" required>
+              <input
+                className="input"
+                type="number"
+                value={purchase.costUnit}
+                onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Proveedor" required>
+            <select
+              className="select"
+              value={purchase.supplierId}
+              onChange={(e) => setPurchase({ ...purchase, supplierId: e.target.value })}
+            >
+              <option value="">Selecciona…</option>
+              {providers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="row gap-12">
+            <Field label="Forma de pago" required>
+              <select
+                className="select"
+                value={purchase.paymentMethod}
+                onChange={(e) =>
+                  setPurchase({
+                    ...purchase,
+                    paymentMethod: e.target.value as "efectivo" | "cuenta" | "credito",
+                  })
+                }
+              >
+                <option value="efectivo">Efectivo</option>
+                <option value="cuenta">Cuenta / banco</option>
+                <option value="credito">Crédito (por pagar)</option>
+              </select>
+            </Field>
+            {purchase.paymentMethod !== "credito" && (
+              <Field label="Cuenta" required>
+                <select
+                  className="select"
+                  value={purchase.accountId}
+                  onChange={(e) => setPurchase({ ...purchase, accountId: e.target.value })}
+                >
+                  <option value="">Selecciona…</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.currency})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </div>
+          <Field label="N° de factura">
             <input
               className="input"
-              type="number"
-              value={purchase.qty}
-              onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
+              value={purchase.invoiceNo}
+              onChange={(e) => setPurchase({ ...purchase, invoiceNo: e.target.value })}
             />
           </Field>
-          <Field label="Costo unitario (USD)">
-            <input
-              className="input"
-              type="number"
-              value={purchase.costUnit}
-              onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
-            />
-          </Field>
+
+          {purchaseError && <p className="field__error">{purchaseError}</p>}
+
           <button className="btn btn--primary btn--block" onClick={registrarCompra}>
             Registrar compra
           </button>
