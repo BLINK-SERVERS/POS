@@ -1,0 +1,1888 @@
+// Estado global de la aplicación + persistencia local + datos de ejemplo.
+//
+// Optimizaciones de rendimiento y escalabilidad:
+//  · STORE EXTERNO observable expuesto con `useSyncExternalStore`. Permite
+//    suscripciones POR SELECTOR (`useStoreSelector`): un componente que solo
+//    usa `state.products` no se re-renderiza cuando cambia `cashSession`, etc.
+//  · Contexto de ACCIONES separado → despachar no provoca re-render.
+//  · Persistencia en localStorage con *debounce* (evita escrituras síncronas
+//    en cada tecla/clic) y volcado garantizado al cerrar/ocultar la pestaña.
+//  · Sincronización entre pestañas (estado y sesión) vía el evento `storage`.
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import type {
+  Account,
+  AppState,
+  Business,
+  CashClosure,
+  CashSession,
+  Category,
+  Channel,
+  Contact,
+  Discount,
+  Expense,
+  ExpenseCategory,
+  InventoryMove,
+  Location,
+  Movement,
+  Pending,
+  Product,
+  Purchase,
+  RecurringExpense,
+  Sale,
+  SaleLine,
+  SalePayment,
+  StockAdjustment,
+  StockReturn,
+  StockTransfer,
+  Surcharge,
+  Tax,
+  Transfer,
+} from "./types";
+import { round2 } from "./money";
+import { expectedCash } from "./metrics";
+
+const STORAGE_KEY = "blink-pos-state-v2";
+const LEGACY_KEY = "blink-pos-state-v1";
+const AUTH_KEY = "blink-pos-auth-v1";
+const WRITE_DELAY = 250;
+
+/** Usuario de la sesión demo. */
+export const USER = "Diego Beleño";
+
+export function uid(prefix = "id"): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now()
+    .toString(36)
+    .slice(-4)}`;
+}
+
+// ------------------------------------------------------------------
+// Datos de ejemplo
+// ------------------------------------------------------------------
+function seed(): AppState {
+  const now = new Date().toISOString();
+  const catAlimentos: Category = { id: "cat_alim", name: "Alimentos", active: true, order: 0 };
+  const catServicios: Category = { id: "cat_serv", name: "Servicios", active: true, order: 1 };
+  const canalPrincipal: Channel = {
+    id: "ch_principal",
+    name: "Principal",
+    description: "Canal de venta predeterminado.",
+    active: true,
+    isDefault: true,
+  };
+  const canalDelivery: Channel = {
+    id: "ch_delivery",
+    name: "Delivery",
+    description: "Pedidos a domicilio.",
+    active: true,
+    isDefault: false,
+  };
+  const locPrincipal: Location = {
+    id: "loc_principal",
+    name: "Principal",
+    type: "tienda",
+    active: true,
+    defaultSales: true,
+    defaultPurchases: true,
+  };
+
+  const product: Product = {
+    id: "prod_harina",
+    name: "Harina de maíz 1kg",
+    sku: "HAR-1K",
+    barcode: "7591234567890",
+    unit: "und",
+    cost: 1.2,
+    price: 2,
+    channelPrices: { ch_principal: 2, ch_delivery: 2.5 },
+    category: "Alimentos",
+    type: "simple",
+    taxRate: 0.16,
+    active: true,
+    archived: false,
+    trackStock: true,
+    stock: 24,
+    minStock: 6,
+  };
+  const service: Product = {
+    id: "prod_delivery",
+    name: "Servicio de delivery",
+    sku: "DEL-01",
+    barcode: "",
+    unit: "servicio",
+    cost: 0,
+    price: 1.5,
+    channelPrices: { ch_principal: 1.5 },
+    category: "Servicios",
+    type: "servicio",
+    taxRate: 0.16,
+    active: true,
+    archived: false,
+    trackStock: false,
+    stock: 0,
+    minStock: 0,
+  };
+  const provider: Contact = {
+    id: "cont_andina",
+    name: "Distribuidora Andina",
+    document: "J-342015804",
+    docType: "J",
+    phone: "0414-555-3435",
+    email: "ventas@andina.com",
+    isClient: false,
+    isProvider: true,
+    creditDays: 30,
+    address: "",
+    notes: "",
+  };
+  const client: Contact = {
+    id: "cont_final",
+    name: "Consumidor final",
+    document: "",
+    docType: "",
+    phone: "",
+    email: "",
+    isClient: true,
+    isProvider: false,
+    creditDays: 0,
+    address: "",
+    notes: "",
+  };
+  const account: Account = {
+    id: "acc_caja",
+    name: "Caja principal",
+    type: "efectivo",
+    currency: "USD",
+    balance: 0,
+    commissionIn: 0,
+    commissionOut: 0,
+    active: true,
+  };
+  const iva: Tax = { id: "tax_iva", name: "IVA 16%", rate: 0.16, active: true, isDefault: true };
+  const exento: Tax = { id: "tax_0", name: "Exento", rate: 0, active: true };
+  const bienvenida: Discount = {
+    id: "disc_bienvenida",
+    name: "Bienvenida 5%",
+    code: "BIENVENIDA",
+    type: "porcentaje",
+    value: 5,
+    maxUses: null,
+    used: 0,
+    active: true,
+  };
+  const delivery: Surcharge = {
+    id: "sur_delivery",
+    name: "Delivery",
+    type: "monto",
+    value: 1,
+    active: true,
+  };
+  const cats: ExpenseCategory[] = [
+    "Alquiler",
+    "Compra de productos e insumos",
+    "Gastos administrativos",
+    "Mantenimiento y reparaciones",
+    "Mercadeo y publicidad",
+    "Muebles, equipos y maquinaria",
+    "Nómina",
+    "Otros",
+    "Servicios públicos",
+    "Transporte y logística",
+  ].map((name, i) => ({ id: `ecat_${i}`, name, active: true }));
+  cats.push({
+    id: "ecat_sys",
+    name: "Pago de impuestos (IVA/IGTF)",
+    active: true,
+    system: true,
+  });
+
+  return {
+    business: {
+      name: "Mi Comercio",
+      legalName: "",
+      rif: "V-00000000",
+      phone: "",
+      address: "",
+      currency: "USD",
+      receiptTitle: "Comprobante de venta",
+      receiptFooter: "¡Gracias por su compra!",
+      printFormat: "80mm",
+      receiptFields: {
+        legalName: false,
+        rif: true,
+        address: false,
+        phone: false,
+        customer: true,
+        sku: false,
+        totalBs: true,
+        rate: true,
+        notes: true,
+      },
+    },
+    rate: 877.9023,
+    rateUpdatedAt: now,
+    taxes: [iva, exento],
+    categories: [catAlimentos, catServicios],
+    channels: [canalPrincipal, canalDelivery],
+    locations: [locPrincipal],
+    products: [product, service],
+    contacts: [provider, client],
+    sales: [],
+    accounts: [account],
+    movements: [],
+    transfers: [],
+    pendings: [],
+    expenses: [],
+    recurringExpenses: [],
+    expenseCategories: cats,
+    discounts: [bienvenida],
+    surcharges: [delivery],
+    inventoryMoves: [
+      {
+        id: "mov_inv_apertura",
+        at: now,
+        productId: product.id,
+        productName: product.name,
+        kind: "entrada",
+        qty: 24,
+        costUnit: 1.2,
+        origin: "Apertura",
+        locationId: locPrincipal.id,
+        userId: USER,
+      },
+    ],
+    purchases: [],
+    stockReturns: [],
+    stockAdjustments: [],
+    stockTransfers: [],
+    cashSession: null,
+    cashClosures: [],
+    openTabs: [],
+  };
+}
+
+/** Rellena arrays y campos nuevos para datos guardados con una versión previa. */
+function normalize(base: AppState, raw: Partial<AppState>): AppState {
+  const merged: AppState = { ...base, ...raw, business: { ...base.business, ...raw.business } };
+  // Campos añadidos después de la v1.
+  merged.categories ??= base.categories;
+  merged.channels ??= base.channels;
+  merged.locations ??= base.locations;
+  merged.inventoryMoves ??= [];
+  merged.purchases ??= [];
+  merged.stockReturns ??= [];
+  merged.stockAdjustments ??= [];
+  merged.stockTransfers ??= [];
+  merged.sales ??= [];
+  merged.movements ??= [];
+  merged.transfers ??= [];
+  merged.pendings ??= [];
+  merged.expenses ??= [];
+  merged.recurringExpenses ??= [];
+  merged.expenseCategories ??= base.expenseCategories;
+  merged.discounts ??= base.discounts;
+  merged.surcharges ??= base.surcharges;
+  merged.cashClosures ??= [];
+  merged.business.receiptFields ??= base.business.receiptFields;
+  merged.products = (merged.products ?? []).map((p) => ({
+    ...p,
+    archived: p.archived ?? false,
+    channelPrices: p.channelPrices ?? { ch_principal: p.price },
+  }));
+  merged.contacts = (merged.contacts ?? []).map((c) => {
+    const legacy = c as Contact & { kind?: "cliente" | "proveedor" | "ambos" };
+    return {
+      ...c,
+      isClient: c.isClient ?? (legacy.kind ? legacy.kind !== "proveedor" : true),
+      isProvider: c.isProvider ?? (legacy.kind ? legacy.kind !== "cliente" : false),
+    };
+  });
+  merged.expenses = (merged.expenses ?? []).map((e) => ({
+    ...e,
+    name: e.name ?? e.category,
+    anulado: e.anulado ?? false,
+  }));
+  merged.sales = (merged.sales ?? []).map((s) => ({
+    ...s,
+    userId: s.userId ?? USER,
+    lines: Array.isArray(s.lines) ? s.lines : [],
+    payments: Array.isArray(s.payments) ? s.payments : [],
+    status: s.status ?? "cobrada",
+    discount: s.discount ?? 0,
+    surcharge: s.surcharge ?? 0,
+    tax: s.tax ?? 0,
+    igtf: s.igtf ?? 0,
+  }));
+  merged.pendings = (merged.pendings ?? []).map((p) => ({
+    ...p,
+    contactName: p.contactName ?? merged.contacts.find((c) => c.id === p.contactId)?.name,
+  }));
+  merged.taxes = (merged.taxes ?? []).map((t, i) => ({
+    ...t,
+    isDefault: t.isDefault ?? (i === 0),
+  }));
+  if (!merged.taxes.some((t) => t.isDefault) && merged.taxes.length) {
+    merged.taxes[0] = { ...merged.taxes[0], isDefault: true };
+  }
+  return merged;
+}
+
+function load(): AppState {
+  const base = seed();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    if (raw) return normalize(base, JSON.parse(raw) as Partial<AppState>);
+  } catch {
+    /* datos corruptos: se regenera */
+  }
+  return base;
+}
+
+/** Descarga una copia del estado actual como JSON (rescate si falla el guardado). */
+function downloadStateBackup(): void {
+  try {
+    const blob = new Blob([JSON.stringify(currentState, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `blink-pos-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    /* sin soporte de descarga */
+  }
+}
+
+// ------------------------------------------------------------------
+// Store externo (fuente única de verdad, independiente de React)
+// ------------------------------------------------------------------
+let currentState: AppState = load();
+let currentAuthed: boolean = localStorage.getItem(AUTH_KEY) === "1";
+
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function emit(): void {
+  for (const listener of listeners) listener();
+}
+
+function getState(): AppState {
+  return currentState;
+}
+
+function getAuthed(): boolean {
+  return currentAuthed;
+}
+
+function setAppState(next: AppState | ((s: AppState) => AppState)): void {
+  const value =
+    typeof next === "function" ? (next as (s: AppState) => AppState)(currentState) : next;
+  if (Object.is(value, currentState)) return;
+  currentState = value;
+  emit();
+}
+
+function setAuthed(value: boolean): void {
+  if (value === currentAuthed) return;
+  currentAuthed = value;
+  emit();
+}
+
+/**
+ * Suscripción a una porción del estado con comparación configurable.
+ * El componente solo se re-renderiza si el valor seleccionado cambia.
+ */
+export function useStoreSelector<T>(
+  selector: (state: AppState) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T {
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+  const isEqualRef = useRef(isEqual);
+  isEqualRef.current = isEqual;
+  const cache = useRef<{ state: AppState; value: T } | null>(null);
+
+  const getSnapshot = useCallback((): T => {
+    const state = currentState;
+    const cached = cache.current;
+    if (cached && cached.state === state) return cached.value;
+    const next = selectorRef.current(state);
+    if (cached && isEqualRef.current(cached.value, next)) {
+      cache.current = { state, value: cached.value };
+      return cached.value;
+    }
+    cache.current = { state, value: next };
+    return next;
+  }, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+// ------------------------------------------------------------------
+// Helpers internos de negocio
+// ------------------------------------------------------------------
+function inventoryMove(
+  p: { id: string; name: string },
+  kind: InventoryMove["kind"],
+  qty: number,
+  costUnit: number,
+  origin: string,
+  locationId: string,
+  at: string,
+  ref?: string
+): InventoryMove {
+  return {
+    id: uid("imv"),
+    at,
+    productId: p.id,
+    productName: p.name,
+    kind,
+    qty: round2(qty),
+    costUnit: round2(costUnit),
+    origin,
+    locationId,
+    ref,
+    userId: USER,
+  };
+}
+
+/** Aplica una comisión porcentual y devuelve el neto. */
+function commission(base: number, pct: number): number {
+  return round2((base * (pct || 0)) / 100);
+}
+
+/** Convierte un monto en USD a la moneda nativa de la cuenta. */
+function toNative(usd: number, currency: "USD" | "VES", rate: number): number {
+  return currency === "USD" ? round2(usd) : round2(usd * (rate || 1));
+}
+
+/** Convierte un monto en la moneda nativa de la cuenta a USD. */
+function toUsd(native: number, currency: "USD" | "VES", rate: number): number {
+  return currency === "USD" ? round2(native) : round2(native / (rate || 1));
+}
+
+// ------------------------------------------------------------------
+// Contextos y provider
+// ------------------------------------------------------------------
+type StoreState = { state: AppState; authed: boolean };
+
+export interface CheckoutInput {
+  lines: SaleLine[];
+  customerId?: string;
+  discount: number;
+  discountId?: string;
+  surcharge: number;
+  surchargeIds?: string[];
+  tax: number;
+  notes: string;
+  payments: SalePayment[];
+  quote?: boolean;
+  channelId?: string;
+  locationId?: string;
+}
+
+export interface PurchaseInput {
+  supplierId?: string;
+  supplierName: string;
+  locationId: string;
+  paymentMethod: "efectivo" | "cuenta" | "credito";
+  accountId?: string;
+  invoiceNo?: string;
+  at?: string;
+  lines: { productId: string; qty: number; costUnit: number }[];
+}
+
+type StoreActions = {
+  login: (email: string) => void;
+  logout: () => void;
+  // Catálogo
+  addProduct: (p: Omit<Product, "id">) => void;
+  updateProduct: (id: string, patch: Partial<Product>) => void;
+  removeProduct: (id: string) => void;
+  setStock: (id: string, stock: number) => void;
+  addCategory: (c: Omit<Category, "id">) => void;
+  updateCategory: (id: string, patch: Partial<Category>) => void;
+  removeCategory: (id: string) => void;
+  addChannel: (c: Omit<Channel, "id">) => void;
+  updateChannel: (id: string, patch: Partial<Channel>) => void;
+  removeChannel: (id: string) => void;
+  addLocation: (l: Omit<Location, "id">) => void;
+  updateLocation: (id: string, patch: Partial<Location>) => void;
+  removeLocation: (id: string) => void;
+  setChannelPrice: (productId: string, channelId: string, price: number) => void;
+  bulkPrice: (pct: number, channelId: string) => void;
+  // Contactos
+  addContact: (c: Omit<Contact, "id">) => void;
+  updateContact: (id: string, patch: Partial<Contact>) => void;
+  removeContact: (id: string) => void;
+  // Ventas
+  checkout: (input: CheckoutInput) => void;
+  voidSale: (id: string, reason: string) => void;
+  // Caja
+  openCash: (openingUsd: number, openingBs: number) => void;
+  closeCash: (countedUsd: number, countedBs: number, note: string) => void;
+  // Finanzas
+  addAccount: (a: Omit<Account, "id">) => void;
+  updateAccount: (id: string, patch: Partial<Account>) => void;
+  removeAccount: (id: string) => void;
+  moveAccount: (accountId: string, delta: number, note: string) => void;
+  adjustAccount: (accountId: string, newBalance: number, motive: string, note: string) => void;
+  transfer: (fromId: string, toId: string, amountUsd: number, commission: number, note: string) => void;
+  transferBetween: (fromId: string, toId: string, amountUsd: number, commission: number) => void;
+  // Gastos
+  addExpense: (e: Omit<Expense, "id" | "at"> & { at?: string }) => void;
+  updateExpense: (id: string, patch: Partial<Expense>) => void;
+  payExpense: (id: string, accountId: string, note: string) => void;
+  voidExpense: (id: string) => void;
+  addRecurringExpense: (r: Omit<RecurringExpense, "id">) => void;
+  removeRecurringExpense: (id: string) => void;
+  runRecurring: () => void;
+  addExpenseCategory: (name: string) => void;
+  updateExpenseCategory: (id: string, patch: Partial<ExpenseCategory>) => void;
+  // Pendientes
+  addPending: (p: Omit<Pending, "id" | "at" | "paidUsd" | "status">) => void;
+  abonoPending: (id: string, accountId: string, amountUsd: number, note: string) => void;
+  voidPending: (id: string) => void;
+  // Impuestos / descuentos / recargos
+  addTax: (t: Omit<Tax, "id">) => void;
+  updateTax: (id: string, patch: Partial<Tax>) => void;
+  setDefaultTax: (id: string) => void;
+  addDiscount: (d: Omit<Discount, "id" | "used">) => void;
+  updateDiscount: (id: string, patch: Partial<Discount>) => void;
+  removeDiscount: (id: string) => void;
+  addSurcharge: (s: Omit<Surcharge, "id">) => void;
+  updateSurcharge: (id: string, patch: Partial<Surcharge>) => void;
+  removeSurcharge: (id: string) => void;
+  // Inventario
+  addPurchase: (p: PurchaseInput) => void;
+  addStockReturn: (input: {
+    supplierId?: string;
+    supplierName: string;
+    locationId: string;
+    reason: string;
+    lines: { productId: string; qty: number; costUnit: number }[];
+  }) => void;
+  addStockAdjustment: (input: {
+    locationId: string;
+    reason: string;
+    note: string;
+    lines: { productId: string; qty: number }[];
+  }) => void;
+  addStockTransfer: (input: {
+    fromId: string;
+    toId: string;
+    note: string;
+    lines: { productId: string; qty: number }[];
+  }) => void;
+  // Ajustes
+  updateBusiness: (patch: Partial<Business>) => void;
+  setRate: (rate: number) => void;
+  resetDemo: () => void;
+};
+
+export type StoreValue = StoreState & StoreActions;
+
+const ActionsCtx = createContext<StoreActions | null>(null);
+const MountedCtx = createContext(false);
+
+export function StoreProvider({ children }: { children: ReactNode }) {
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  const [storageError, setStorageError] = useState(false);
+
+  const persist = useCallback(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+      setStorageError(false);
+    } catch {
+      // Cuota superada o almacenamiento no disponible: avisar en lugar de
+      // perder datos en silencio (el cajero cree que quedó guardado).
+      setStorageError(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = window.setTimeout(persist, WRITE_DELAY);
+    return () => window.clearTimeout(id);
+  }, [state, persist]);
+
+  useEffect(() => {
+    const flush = () => persist();
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHidden);
+    };
+  }, [persist]);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === AUTH_KEY) {
+        setAuthed(e.newValue === "1");
+        return;
+      }
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      if (e.newValue === JSON.stringify(currentState)) return;
+      try {
+        setAppState(normalize(seed(), JSON.parse(e.newValue) as Partial<AppState>));
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const login = useCallback((_email: string) => {
+    try {
+      localStorage.setItem(AUTH_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setAuthed(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    try {
+      localStorage.removeItem(AUTH_KEY);
+    } catch {
+      /* ignore */
+    }
+    setAuthed(false);
+  }, []);
+
+  const resetDemo = useCallback(() => {
+    setAppState(seed());
+  }, []);
+
+  // ---- Catálogo -------------------------------------------------
+  const addProduct = useCallback((p: Omit<Product, "id">) => {
+    setAppState((s) => ({ ...s, products: [...s.products, { ...p, id: uid("prod") }] }));
+  }, []);
+
+  const updateProduct = useCallback((id: string, patch: Partial<Product>) => {
+    setAppState((s) => ({
+      ...s,
+      products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    }));
+  }, []);
+
+  const removeProduct = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, products: s.products.filter((x) => x.id !== id) }));
+  }, []);
+
+  const setStock = useCallback((id: string, stock: number) => {
+    setAppState((s) => ({
+      ...s,
+      products: s.products.map((p) => (p.id === id ? { ...p, stock: round2(stock) } : p)),
+    }));
+  }, []);
+
+  const addCategory = useCallback((c: Omit<Category, "id">) => {
+    setAppState((s) => ({ ...s, categories: [...s.categories, { ...c, id: uid("cat") }] }));
+  }, []);
+
+  const updateCategory = useCallback((id: string, patch: Partial<Category>) => {
+    setAppState((s) => ({
+      ...s,
+      categories: s.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }, []);
+
+  const removeCategory = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) }));
+  }, []);
+
+  const addChannel = useCallback((c: Omit<Channel, "id">) => {
+    setAppState((s) => ({ ...s, channels: [...s.channels, { ...c, id: uid("ch") }] }));
+  }, []);
+
+  const updateChannel = useCallback((id: string, patch: Partial<Channel>) => {
+    setAppState((s) => ({
+      ...s,
+      channels: s.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }, []);
+
+  const removeChannel = useCallback((id: string) => {
+    setAppState((s) =>
+      s.channels.find((c) => c.id === id)?.isDefault
+        ? s
+        : { ...s, channels: s.channels.filter((c) => c.id !== id) }
+    );
+  }, []);
+
+  const addLocation = useCallback((l: Omit<Location, "id">) => {
+    setAppState((s) => ({ ...s, locations: [...s.locations, { ...l, id: uid("loc") }] }));
+  }, []);
+
+  const updateLocation = useCallback((id: string, patch: Partial<Location>) => {
+    setAppState((s) => {
+      let locations = s.locations.map((l) => (l.id === id ? { ...l, ...patch } : l));
+      if (patch.defaultSales) locations = locations.map((l) => ({ ...l, defaultSales: l.id === id }));
+      if (patch.defaultPurchases)
+        locations = locations.map((l) => ({ ...l, defaultPurchases: l.id === id }));
+      return { ...s, locations };
+    });
+  }, []);
+
+  const removeLocation = useCallback((id: string) => {
+    setAppState((s) =>
+      s.locations.length <= 1
+        ? s
+        : { ...s, locations: s.locations.filter((l) => l.id !== id) }
+    );
+  }, []);
+
+  const setChannelPrice = useCallback((productId: string, channelId: string, price: number) => {
+    setAppState((s) => ({
+      ...s,
+      products: s.products.map((p) =>
+        p.id === productId
+          ? {
+              ...p,
+              channelPrices: { ...p.channelPrices, [channelId]: round2(price) },
+              price:
+                s.channels.find((c) => c.id === channelId)?.isDefault ? round2(price) : p.price,
+            }
+          : p
+      ),
+    }));
+  }, []);
+
+  const bulkPrice = useCallback((pct: number, channelId: string) => {
+    setAppState((s) => ({
+      ...s,
+      products: s.products.map((p) => {
+        const current = p.channelPrices[channelId] ?? p.price;
+        const next = round2(current * (1 + pct / 100));
+        return {
+          ...p,
+          channelPrices: { ...p.channelPrices, [channelId]: next },
+          price: s.channels.find((c) => c.id === channelId)?.isDefault ? next : p.price,
+        };
+      }),
+    }));
+  }, []);
+
+  // ---- Contactos ------------------------------------------------
+  const addContact = useCallback((c: Omit<Contact, "id">) => {
+    setAppState((s) => ({ ...s, contacts: [...s.contacts, { ...c, id: uid("cont") }] }));
+  }, []);
+
+  const updateContact = useCallback((id: string, patch: Partial<Contact>) => {
+    setAppState((s) => ({
+      ...s,
+      contacts: s.contacts.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }, []);
+
+  const removeContact = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, contacts: s.contacts.filter((x) => x.id !== id) }));
+  }, []);
+
+  // ---- Vender (POS) ---------------------------------------------
+  const checkout = useCallback<StoreActions["checkout"]>((input) => {
+    setAppState((s) => {
+      const base = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
+      const net = Math.max(0, base - input.discount);
+      const igtf = input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0);
+      const total = round2(net + input.tax + input.surcharge + igtf);
+      const paid = round2(input.payments.reduce((a, p) => a + p.amountUsd, 0));
+      const remaining = round2(Math.max(0, total - paid));
+      const nextNumber = s.sales.filter((x) => x.status !== "cotizacion").length + 1;
+      const seq = String(nextNumber).padStart(6, "0");
+      const status: Sale["status"] = input.quote
+        ? "cotizacion"
+        : remaining > 0
+          ? "credito"
+          : "cobrada";
+      const code = input.quote ? `C-${seq}` : seq;
+      const at = new Date().toISOString();
+      const methodLabel =
+        input.payments.length === 0
+          ? "—"
+          : remaining > 0
+            ? `${input.payments.map((p) => p.method).join(" + ")} + crédito`
+            : input.payments.map((p) => p.method).join(" + ");
+      const customer = s.contacts.find((c) => c.id === input.customerId);
+      const locationId = input.locationId ?? s.locations.find((l) => l.defaultSales)?.id ?? s.locations[0]?.id ?? "";
+
+      // Acredita cada cobro a su cuenta (en su moneda nativa, neto de comisión)
+      // y registra su movimiento en el libro. Se calcula antes de construir la
+      // venta para guardar en el pago los montos realmente acreditados.
+      let accounts = s.accounts;
+      const movements: Movement[] = [];
+      const enrichedPayments: SalePayment[] = input.payments.map((p) => {
+        const acc = p.accountId ? s.accounts.find((a) => a.id === p.accountId) : undefined;
+        if (!acc) return p;
+        const comm = commission(p.amountUsd, acc.commissionIn);
+        const nativeInput = p.amountInput ?? toNative(p.amountUsd, acc.currency, s.rate);
+        const creditedNative = round2(
+          toNative(p.amountUsd, acc.currency, s.rate) - toNative(comm, acc.currency, s.rate)
+        );
+        accounts = accounts.map((a) =>
+          a.id === acc.id ? { ...a, balance: round2(a.balance + creditedNative) } : a
+        );
+        movements.push({
+          id: uid("mov"),
+          at,
+          accountId: acc.id,
+          direction: "entrada",
+          amountUsd: round2(p.amountUsd - comm),
+          currency: acc.currency,
+          amountInput: creditedNative,
+          origin: "Venta",
+          note: `Cobro de venta ${code}${comm ? ` · comisión ${acc.commissionIn}% (${comm.toFixed(2)})` : ""}`,
+          userId: USER,
+        });
+        return { ...p, amountInput: nativeInput, commission: comm, creditedNative };
+      });
+
+      const sale: Sale = {
+        id: uid("sale"),
+        code,
+        at,
+        lines: input.lines,
+        status,
+        discount: round2(input.discount),
+        discountId: input.discountId,
+        discountCode: s.discounts.find((d) => d.id === input.discountId)?.code,
+        surcharge: round2(input.surcharge),
+        surchargeIds: input.surchargeIds,
+        tax: round2(input.tax),
+        igtf: round2(igtf),
+        notes: input.notes,
+        payments: enrichedPayments,
+        customerId: input.customerId,
+        customerName: customer?.name,
+        paymentMethod: methodLabel,
+        channelId: input.channelId ?? s.channels.find((c) => c.isDefault)?.id,
+        locationId,
+        userId: USER,
+      };
+
+      if (input.quote) {
+        return { ...s, sales: [sale, ...s.sales] };
+      }
+
+      // Existencias + libro de inventario.
+      const moves: InventoryMove[] = [];
+      const products = s.products.map((p) => {
+        const line = input.lines.find((l) => l.productId === p.id);
+        if (!line || !p.trackStock) return p;
+        moves.push(
+          inventoryMove(p, "salida", line.qty, p.cost, `Venta #${code}`, locationId, at)
+        );
+        return { ...p, stock: Math.max(0, round2(p.stock - line.qty)) };
+      });
+
+      // Si queda saldo, genera una cuenta por cobrar del cliente.
+      const pendings: Pending[] =
+        remaining > 0
+          ? [
+              {
+                id: uid("pend"),
+                at,
+                direction: "cobrar" as const,
+                contactId: input.customerId,
+                contactName: customer?.name,
+                subject: `Venta ${code}`,
+                amountUsd: remaining,
+                paidUsd: 0,
+                note: "Generado por venta a crédito",
+                status: "abierto" as const,
+              },
+              ...s.pendings,
+            ]
+          : s.pendings;
+
+      const discounts = input.discountId
+        ? s.discounts.map((d) => (d.id === input.discountId ? { ...d, used: d.used + 1 } : d))
+        : s.discounts;
+
+      return {
+        ...s,
+        products,
+        accounts,
+        movements: [...movements, ...s.movements],
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        pendings,
+        discounts,
+        sales: [sale, ...s.sales],
+      };
+    });
+  }, []);
+
+  const voidSale = useCallback((id: string, reason: string) => {
+    setAppState((s) => {
+      const sale = s.sales.find((x) => x.id === id);
+      if (!sale || sale.status === "anulada" || sale.status === "cotizacion") return s;
+      const at = new Date().toISOString();
+      // Devuelve existencias.
+      const moves: InventoryMove[] = [];
+      const products = s.products.map((p) => {
+        const line = sale.lines.find((l) => l.productId === p.id);
+        if (!line || !p.trackStock) return p;
+        moves.push(
+          inventoryMove(p, "entrada", line.qty, p.cost, `Anulación venta #${sale.code}`, sale.locationId ?? "", at)
+        );
+        return { ...p, stock: round2(p.stock + line.qty) };
+      });
+      // Revierte a cada cuenta el monto NETO realmente acreditado (no el bruto)
+      // y registra el asiento inverso para que el libro cuadre con el saldo.
+      const reverseMovements: Movement[] = [];
+      const accounts = s.accounts.map((a) => {
+        const paymentsToAccount = sale.payments.filter((p) => p.accountId === a.id);
+        if (!paymentsToAccount.length) return a;
+        let reversed = 0;
+        for (const p of paymentsToAccount) {
+          const netUsd = round2(p.amountUsd - (p.commission ?? 0));
+          const native = p.creditedNative ?? toNative(netUsd, a.currency, s.rate);
+          reversed += native;
+          reverseMovements.push({
+            id: uid("mov"),
+            at,
+            accountId: a.id,
+            direction: "salida",
+            amountUsd: netUsd,
+            currency: a.currency,
+            amountInput: round2(native),
+            origin: "Anulación venta",
+            note: `Anulación venta ${sale.code}${reason ? ` · ${reason}` : ""}`,
+            userId: USER,
+          });
+        }
+        return { ...a, balance: round2(a.balance - reversed) };
+      });
+      // Anula la cuenta por cobrar asociada.
+      const pendings = s.pendings.map((p) =>
+        p.subject === `Venta ${sale.code}` && p.status !== "saldado"
+          ? { ...p, status: "anulado" as const }
+          : p
+      );
+      // Libera el uso del descuento aplicado.
+      const discounts = sale.discountId
+        ? s.discounts.map((d) =>
+            d.id === sale.discountId ? { ...d, used: Math.max(0, d.used - 1) } : d
+          )
+        : s.discounts;
+      return {
+        ...s,
+        products,
+        accounts,
+        pendings,
+        discounts,
+        movements: [...reverseMovements, ...s.movements],
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        sales: s.sales.map((x) =>
+          x.id === id ? { ...x, status: "anulada" as const, voidedAt: at, voidReason: reason } : x
+        ),
+      };
+    });
+  }, []);
+
+  // ---- Caja -----------------------------------------------------
+  const openCash = useCallback((openingUsd: number, openingBs: number) => {
+    const session: CashSession = {
+      openedAt: new Date().toISOString(),
+      openingUsd,
+      openingBs,
+      userId: USER,
+      locationId: currentState.locations.find((l) => l.defaultSales)?.id ?? "",
+    };
+    setAppState((s) => ({ ...s, cashSession: session }));
+  }, []);
+
+  const closeCash = useCallback((countedUsd: number, countedBs: number, note: string) => {
+    setAppState((s) => {
+      if (!s.cashSession) return s;
+      const session = s.cashSession;
+      const at = new Date().toISOString();
+      // Esperado = fondo + entradas − salidas de efectivo del turno (libro de
+      // movimientos): incluye cobros, gastos, retiros, transferencias, abonos y
+      // compras, no solo las ventas. Ver metrics.expectedCash.
+      const { usd: expectedUsd, bs: expectedBs } = expectedCash(s);
+      const closure: CashClosure = {
+        id: uid("cierre"),
+        openedAt: session.openedAt,
+        closedAt: at,
+        userId: session.userId,
+        locationId: session.locationId,
+        openingUsd: session.openingUsd,
+        openingBs: session.openingBs,
+        countedUsd: round2(countedUsd),
+        countedBs: round2(countedBs),
+        expectedUsd,
+        expectedBs,
+        differenceUsd: round2(countedUsd - expectedUsd),
+        differenceBs: round2(countedBs - expectedBs),
+        note,
+      };
+      return { ...s, cashSession: null, cashClosures: [closure, ...s.cashClosures] };
+    });
+  }, []);
+
+  // ---- Finanzas -------------------------------------------------
+  const addAccount = useCallback((a: Omit<Account, "id">) => {
+    setAppState((s) => {
+      const account = { ...a, id: uid("acc") };
+      const movements =
+        account.balance > 0
+          ? [
+              {
+                id: uid("mov"),
+                at: new Date().toISOString(),
+                accountId: account.id,
+                direction: "entrada" as const,
+                amountUsd: toUsd(account.balance, account.currency, s.rate),
+                currency: account.currency,
+                amountInput: round2(account.balance),
+                origin: "Apertura",
+                note: `Saldo inicial · ${account.name}`,
+                userId: USER,
+              },
+              ...s.movements,
+            ]
+          : s.movements;
+      return { ...s, accounts: [...s.accounts, account], movements };
+    });
+  }, []);
+
+  const updateAccount = useCallback((id: string, patch: Partial<Account>) => {
+    setAppState((s) => ({
+      ...s,
+      accounts: s.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    }));
+  }, []);
+
+  const removeAccount = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, accounts: s.accounts.filter((a) => a.id !== id) }));
+  }, []);
+
+  const moveAccount = useCallback((accountId: string, delta: number, note: string) => {
+    setAppState((s) => {
+      const acc = s.accounts.find((a) => a.id === accountId);
+      if (!acc || !delta) return s;
+      const usd = toUsd(delta, acc.currency, s.rate);
+      return {
+        ...s,
+        accounts: s.accounts.map((a) =>
+          a.id === accountId ? { ...a, balance: round2(a.balance + delta) } : a
+        ),
+        movements: [
+          {
+            id: uid("mov"),
+            at: new Date().toISOString(),
+            accountId,
+            direction: delta > 0 ? "entrada" : "salida",
+            amountUsd: round2(Math.abs(usd)),
+            currency: acc.currency,
+            amountInput: round2(Math.abs(delta)),
+            origin: delta > 0 ? "Ingreso" : "Retiro",
+            note: note || (delta > 0 ? "Ingreso de dinero" : "Retiro de dinero"),
+            userId: USER,
+          },
+          ...s.movements,
+        ],
+      };
+    });
+  }, []);
+
+  const adjustAccount = useCallback<StoreActions["adjustAccount"]>(
+    (accountId, newBalance, motive, note) => {
+      setAppState((s) => {
+        const acc = s.accounts.find((a) => a.id === accountId);
+        if (!acc) return s;
+        const delta = round2(newBalance - acc.balance);
+        const at = new Date().toISOString();
+        return {
+          ...s,
+          accounts: s.accounts.map((a) =>
+            a.id === accountId ? { ...a, balance: round2(newBalance) } : a
+          ),
+          movements: [
+            {
+              id: uid("mov"),
+              at,
+              accountId,
+              direction: delta >= 0 ? "entrada" : "salida",
+              amountUsd: Math.abs(toUsd(delta, acc.currency, s.rate)),
+              currency: acc.currency,
+              amountInput: Math.abs(delta),
+              origin: "Ajuste de saldo",
+              note: `${motive}${note ? ` · ${note}` : ""}`,
+              userId: USER,
+            },
+            ...s.movements,
+          ],
+        };
+      });
+    },
+    []
+  );
+
+  const transfer = useCallback<StoreActions["transfer"]>(
+    (fromId, toId, amountUsd, commissionValue, note) => {
+      setAppState((s) => {
+        if (fromId === toId) return s;
+        const from = s.accounts.find((a) => a.id === fromId);
+        const to = s.accounts.find((a) => a.id === toId);
+        if (!from || !to) return s;
+        const amount = round2(amountUsd);
+        const comm = round2(commissionValue);
+        const totalOut = round2(amount + comm);
+        const t: Transfer = {
+          id: uid("trf"),
+          at: new Date().toISOString(),
+          fromId,
+          toId,
+          amountUsd: amount,
+          commission: comm,
+          note,
+          userId: USER,
+        };
+        const at = t.at;
+        const fromOutNative = toNative(totalOut, from.currency, s.rate);
+        const toInNative = toNative(amount, to.currency, s.rate);
+        return {
+          ...s,
+          transfers: [t, ...s.transfers],
+          accounts: s.accounts.map((a) => {
+            if (a.id === fromId) return { ...a, balance: round2(a.balance - fromOutNative) };
+            if (a.id === toId) return { ...a, balance: round2(a.balance + toInNative) };
+            return a;
+          }),
+          movements: [
+            {
+              id: uid("mov"),
+              at,
+              accountId: toId,
+              direction: "entrada",
+              amountUsd: amount,
+              currency: to.currency,
+              amountInput: toInNative,
+              origin: "Transferencia",
+              note: note || `Desde ${from.name}`,
+              userId: USER,
+            },
+            {
+              id: uid("mov"),
+              at,
+              accountId: fromId,
+              direction: "salida",
+              amountUsd: totalOut,
+              currency: from.currency,
+              amountInput: fromOutNative,
+              origin: "Transferencia",
+              note: `${note || `Hacia ${to.name}`}${comm ? ` · comisión ${comm.toFixed(2)}` : ""}`,
+              userId: USER,
+            },
+            ...s.movements,
+          ],
+        };
+      });
+    },
+    []
+  );
+
+  const transferBetween = useCallback<StoreActions["transferBetween"]>(
+    (fromId, toId, amountUsd, commissionValue) =>
+      transfer(fromId, toId, amountUsd, commissionValue, ""),
+    [transfer]
+  );
+
+  // ---- Gastos ---------------------------------------------------
+  const addExpense = useCallback<StoreActions["addExpense"]>((e) => {
+    setAppState((s) => {
+      const at = e.at ?? new Date().toISOString();
+      const expense: Expense = { ...e, at, id: uid("exp") };
+      const accountId = e.accountId;
+      if (!expense.paid || !accountId) {
+        return { ...s, expenses: [expense, ...s.expenses] };
+      }
+      const acc = s.accounts.find((a) => a.id === accountId);
+      const cost = acc ? round2(expense.amountUsd * (1 + (acc.commissionOut || 0) / 100)) : expense.amountUsd;
+      return {
+        ...s,
+        expenses: [{ ...expense, paidAt: at }, ...s.expenses],
+        accounts: s.accounts.map((a) =>
+          a.id === accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
+        ),
+        movements: [
+          {
+            id: uid("mov"),
+            at,
+            accountId,
+            direction: "salida",
+            amountUsd: cost,
+            currency: acc?.currency,
+            amountInput: acc ? toNative(cost, acc.currency, s.rate) : cost,
+            origin: "Gasto",
+            note: `${expense.name} · ${expense.category}`,
+            userId: USER,
+          },
+          ...s.movements,
+        ],
+      };
+    });
+  }, []);
+
+  const updateExpense = useCallback((id: string, patch: Partial<Expense>) => {
+    setAppState((s) => ({
+      ...s,
+      expenses: s.expenses.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    }));
+  }, []);
+
+  const payExpense = useCallback<StoreActions["payExpense"]>((id, accountId, note) => {
+    setAppState((s) => {
+      const exp = s.expenses.find((e) => e.id === id);
+      const acc = s.accounts.find((a) => a.id === accountId);
+      if (!exp || exp.paid || exp.anulado || !acc) return s;
+      const at = new Date().toISOString();
+      const cost = round2(exp.amountUsd * (1 + (acc.commissionOut || 0) / 100));
+      return {
+        ...s,
+        expenses: s.expenses.map((e) => (e.id === id ? { ...e, paid: true, paidAt: at, accountId } : e)),
+        accounts: s.accounts.map((a) =>
+          a.id === accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
+        ),
+        movements: [
+          {
+            id: uid("mov"),
+            at,
+            accountId,
+            direction: "salida",
+            amountUsd: cost,
+            currency: acc.currency,
+            amountInput: toNative(cost, acc.currency, s.rate),
+            origin: "Gasto",
+            note: note || `${exp.name} · ${exp.category}`,
+            userId: USER,
+          },
+          ...s.movements,
+        ],
+      };
+    });
+  }, []);
+
+  const voidExpense = useCallback<StoreActions["voidExpense"]>((id) => {
+    setAppState((s) => {
+      const exp = s.expenses.find((e) => e.id === id);
+      if (!exp || exp.anulado) return s;
+      const acc = exp.paid && exp.accountId ? s.accounts.find((a) => a.id === exp.accountId) : undefined;
+      // Un gasto ya pagado devuelve el dinero a su cuenta con el asiento inverso.
+      if (acc) {
+        const cost = round2(exp.amountUsd * (1 + (acc.commissionOut || 0) / 100));
+        const native = toNative(cost, acc.currency, s.rate);
+        return {
+          ...s,
+          expenses: s.expenses.map((e) => (e.id === id ? { ...e, anulado: true } : e)),
+          accounts: s.accounts.map((a) =>
+            a.id === acc.id ? { ...a, balance: round2(a.balance + native) } : a
+          ),
+          movements: [
+            {
+              id: uid("mov"),
+              at: new Date().toISOString(),
+              accountId: acc.id,
+              direction: "entrada",
+              amountUsd: cost,
+              currency: acc.currency,
+              amountInput: native,
+              origin: "Gasto",
+              note: `Anulación de gasto · ${exp.name}`,
+              userId: USER,
+            },
+            ...s.movements,
+          ],
+        };
+      }
+      return {
+        ...s,
+        expenses: s.expenses.map((e) => (e.id === id ? { ...e, anulado: true } : e)),
+      };
+    });
+  }, []);
+
+  const addRecurringExpense = useCallback((r: Omit<RecurringExpense, "id">) => {
+    setAppState((s) => ({
+      ...s,
+      recurringExpenses: [...s.recurringExpenses, { ...r, id: uid("recur") }],
+    }));
+  }, []);
+
+  const removeRecurringExpense = useCallback((id: string) => {
+    setAppState((s) => ({
+      ...s,
+      recurringExpenses: s.recurringExpenses.filter((r) => r.id !== id),
+    }));
+  }, []);
+
+  /**
+   * Regla Wink: al vencer un gasto recurrente se crea UN gasto pendiente
+   * (solo el vencimiento más reciente); no mueve dinero.
+   */
+  const runRecurring = useCallback(() => {
+    setAppState((s) => {
+      const now = new Date();
+      let changed = false;
+      let expenses = s.expenses;
+      const recurringExpenses = s.recurringExpenses.map((r) => {
+        if (!r.active) return r;
+        const first = new Date(r.firstDue);
+        const dueDay = first.getDate();
+        // Último vencimiento <= hoy.
+        const candidate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+        if (candidate.getTime() > now.getTime()) candidate.setMonth(candidate.getMonth() - 1);
+        if (candidate.getTime() < first.getTime()) return r;
+        const dueIso = candidate.toISOString();
+        if (r.lastGenerated && r.lastGenerated >= dueIso.slice(0, 10)) return r;
+        changed = true;
+        const cat = s.expenseCategories.find((c) => c.id === r.categoryId);
+        const already = expenses.some(
+          (e) => e.category === (cat?.name ?? "") && e.name === r.name && e.at.slice(0, 10) === dueIso.slice(0, 10)
+        );
+        if (!already) {
+          expenses = [
+            {
+              id: uid("exp"),
+              at: dueIso,
+              name: r.name,
+              category: cat?.name ?? "Otros",
+              note: "Generado por gasto recurrente",
+              amountUsd: r.amountUsd,
+              recurring: true,
+              paid: false,
+              anulado: false,
+            },
+            ...expenses,
+          ];
+        }
+        return { ...r, lastGenerated: dueIso.slice(0, 10) };
+      });
+      return changed ? { ...s, expenses, recurringExpenses } : s;
+    });
+  }, []);
+
+  const addExpenseCategory = useCallback((name: string) => {
+    setAppState((s) => ({
+      ...s,
+      expenseCategories: [...s.expenseCategories, { id: uid("ecat"), name, active: true }],
+    }));
+  }, []);
+
+  const updateExpenseCategory = useCallback((id: string, patch: Partial<ExpenseCategory>) => {
+    setAppState((s) => ({
+      ...s,
+      expenseCategories: s.expenseCategories.map((c) =>
+        c.id === id ? { ...c, ...patch, system: c.system } : c
+      ),
+    }));
+  }, []);
+
+  // ---- Pendientes -----------------------------------------------
+  const addPending = useCallback<StoreActions["addPending"]>((p) => {
+    setAppState((s) => ({
+      ...s,
+      pendings: [
+        { ...p, id: uid("pend"), at: new Date().toISOString(), paidUsd: 0, status: "abierto" },
+        ...s.pendings,
+      ],
+    }));
+  }, []);
+
+  const abonoPending = useCallback<StoreActions["abonoPending"]>(
+    (id, accountId, amountUsd, note) => {
+      setAppState((s) => {
+        const p = s.pendings.find((x) => x.id === id);
+        const acc = s.accounts.find((a) => a.id === accountId);
+        if (!p || !acc || amountUsd <= 0) return s;
+        const paid = round2(p.paidUsd + amountUsd);
+        const status: Pending["status"] = paid >= p.amountUsd ? "saldado" : "parcial";
+        const at = new Date().toISOString();
+        const isCollect = p.direction === "cobrar";
+        // Al recibir se descuenta la comisión; al pagar se suma la comisión.
+        const net = isCollect
+          ? round2(amountUsd - commission(amountUsd, acc.commissionIn))
+          : round2(amountUsd + commission(amountUsd, acc.commissionOut));
+        const native = toNative(net, acc.currency, s.rate);
+        return {
+          ...s,
+          pendings: s.pendings.map((x) => (x.id === id ? { ...x, paidUsd: paid, status } : x)),
+          accounts: s.accounts.map((a) =>
+            a.id === accountId
+              ? { ...a, balance: round2(a.balance + (isCollect ? native : -native)) }
+              : a
+          ),
+          movements: [
+            {
+              id: uid("mov"),
+              at,
+              accountId,
+              direction: isCollect ? "entrada" : "salida",
+              amountUsd: net,
+              currency: acc.currency,
+              amountInput: native,
+              origin: "Abono",
+              note: note || p.subject,
+              userId: USER,
+            },
+            ...s.movements,
+          ],
+        };
+      });
+    },
+    []
+  );
+
+  const voidPending = useCallback((id: string) => {
+    setAppState((s) => ({
+      ...s,
+      pendings: s.pendings.map((p) => (p.id === id ? { ...p, status: "anulado" } : p)),
+    }));
+  }, []);
+
+  // ---- Impuestos / descuentos / recargos ------------------------
+  const addTax = useCallback((t: Omit<Tax, "id">) => {
+    setAppState((s) => ({ ...s, taxes: [...s.taxes, { ...t, id: uid("tax") }] }));
+  }, []);
+
+  const updateTax = useCallback((id: string, patch: Partial<Tax>) => {
+    setAppState((s) => ({
+      ...s,
+      taxes: s.taxes.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    }));
+  }, []);
+
+  const setDefaultTax = useCallback((id: string) => {
+    setAppState((s) => ({
+      ...s,
+      taxes: s.taxes.map((t) => ({ ...t, isDefault: t.id === id })),
+    }));
+  }, []);
+
+  const addDiscount = useCallback((d: Omit<Discount, "id" | "used">) => {
+    setAppState((s) => ({
+      ...s,
+      discounts: [...s.discounts, { ...d, id: uid("disc"), used: 0 }],
+    }));
+  }, []);
+
+  const updateDiscount = useCallback((id: string, patch: Partial<Discount>) => {
+    setAppState((s) => ({
+      ...s,
+      discounts: s.discounts.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+    }));
+  }, []);
+
+  const removeDiscount = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, discounts: s.discounts.filter((d) => d.id !== id) }));
+  }, []);
+
+  const addSurcharge = useCallback((x: Omit<Surcharge, "id">) => {
+    setAppState((s) => ({ ...s, surcharges: [...s.surcharges, { ...x, id: uid("sur") }] }));
+  }, []);
+
+  const updateSurcharge = useCallback((id: string, patch: Partial<Surcharge>) => {
+    setAppState((s) => ({
+      ...s,
+      surcharges: s.surcharges.map((x) => (x.id === id ? { ...x, ...patch } : x)),
+    }));
+  }, []);
+
+  const removeSurcharge = useCallback((id: string) => {
+    setAppState((s) => ({ ...s, surcharges: s.surcharges.filter((x) => x.id !== id) }));
+  }, []);
+
+  // ---- Inventario -----------------------------------------------
+  const addPurchase = useCallback<StoreActions["addPurchase"]>((input) => {
+    setAppState((s) => {
+      const at = input.at ? new Date(input.at).toISOString() : new Date().toISOString();
+      const raw = input.lines.filter((l) => l.qty > 0);
+      if (!raw.length) return s;
+      const supplier = s.contacts.find((c) => c.id === input.supplierId);
+      // Normaliza el costo una sola vez: total, líneas y costo promedio usan el
+      // mismo valor (antes el total usaba el costo del producto y las líneas 0).
+      const lines = raw.map((l) => {
+        const p = s.products.find((x) => x.id === l.productId);
+        return {
+          productId: l.productId,
+          name: p?.name ?? "",
+          qty: round2(l.qty),
+          costUnit: round2(l.costUnit || p?.cost || 0),
+        };
+      });
+      const total = round2(lines.reduce((a, l) => a + l.qty * l.costUnit, 0));
+      const purchase: Purchase = {
+        id: uid("compra"),
+        at,
+        supplierId: input.supplierId,
+        supplierName: supplier?.name ?? input.supplierName,
+        locationId: input.locationId,
+        paymentMethod: input.paymentMethod,
+        accountId: input.accountId,
+        invoiceNo: input.invoiceNo,
+        lines,
+        totalUsd: total,
+        userId: USER,
+      };
+      // Entra mercancía + costo promedio ponderado.
+      const moves: InventoryMove[] = [];
+      const products = s.products.map((p) => {
+        const line = purchase.lines.find((l) => l.productId === p.id);
+        if (!line) return p;
+        moves.push(
+          inventoryMove(p, "entrada", line.qty, line.costUnit, `Compra ${purchase.id.slice(-4).toUpperCase()}`, input.locationId, at, input.invoiceNo)
+        );
+        if (!p.trackStock) return p;
+        const newStock = round2(p.stock + line.qty);
+        const avgCost =
+          newStock > 0 ? round2((p.stock * p.cost + line.qty * line.costUnit) / newStock) : p.cost;
+        return { ...p, stock: newStock, cost: avgCost };
+      });
+
+      // Salida de dinero o cuenta por pagar.
+      let accounts = s.accounts;
+      const movements: Movement[] = [];
+      const pendings: Pending[] = [];
+      if ((input.paymentMethod === "cuenta" || input.paymentMethod === "efectivo") && input.accountId) {
+        const acc = s.accounts.find((a) => a.id === input.accountId);
+        const cost = acc ? round2(total * (1 + (acc.commissionOut || 0) / 100)) : total;
+        accounts = accounts.map((a) =>
+          a.id === input.accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
+        );
+        movements.push({
+          id: uid("mov"),
+          at,
+          accountId: input.accountId,
+          direction: "salida",
+          amountUsd: cost,
+          currency: acc?.currency,
+          amountInput: acc ? toNative(cost, acc.currency, s.rate) : cost,
+          origin: "Compra",
+          note: `Compra a ${purchase.supplierName}`,
+          userId: USER,
+        });
+      } else if (input.paymentMethod === "credito") {
+        pendings.push({
+          id: uid("pend"),
+          at,
+          direction: "pagar",
+          contactId: input.supplierId,
+          contactName: supplier?.name,
+          subject: `Compra ${purchase.id.slice(-4).toUpperCase()}`,
+          amountUsd: total,
+          paidUsd: 0,
+          note: "Generado por compra a crédito",
+          status: "abierto",
+        });
+      }
+
+      return {
+        ...s,
+        products,
+        accounts,
+        movements: [...movements, ...s.movements],
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        purchases: [purchase, ...s.purchases],
+        pendings: [...pendings, ...s.pendings],
+      };
+    });
+  }, []);
+
+  const addStockReturn = useCallback<StoreActions["addStockReturn"]>((input) => {
+    setAppState((s) => {
+      const at = new Date().toISOString();
+      const lines = input.lines
+        .filter((l) => l.qty > 0)
+        .map((l) => ({
+          productId: l.productId,
+          name: s.products.find((p) => p.id === l.productId)?.name ?? "",
+          qty: round2(l.qty),
+          costUnit: round2(l.costUnit),
+        }));
+      if (!lines.length) return s;
+      const supplier = s.contacts.find((c) => c.id === input.supplierId);
+      const ret: StockReturn = {
+        id: uid("dev"),
+        at,
+        supplierId: input.supplierId,
+        supplierName: supplier?.name ?? input.supplierName,
+        locationId: input.locationId,
+        lines,
+        totalUsd: round2(lines.reduce((a, l) => a + l.qty * l.costUnit, 0)),
+        reason: input.reason,
+        userId: USER,
+      };
+      const moves: InventoryMove[] = [];
+      const products = s.products.map((p) => {
+        const line = lines.find((l) => l.productId === p.id);
+        if (!line) return p;
+        moves.push(
+          inventoryMove(p, "salida", line.qty, line.costUnit, "Devolución", input.locationId, at)
+        );
+        return p.trackStock ? { ...p, stock: Math.max(0, round2(p.stock - line.qty)) } : p;
+      });
+      return {
+        ...s,
+        products,
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        stockReturns: [ret, ...s.stockReturns],
+      };
+    });
+  }, []);
+
+  const addStockAdjustment = useCallback<StoreActions["addStockAdjustment"]>((input) => {
+    setAppState((s) => {
+      const at = new Date().toISOString();
+      const lines = input.lines
+        .filter((l) => l.qty !== 0)
+        .map((l) => ({
+          productId: l.productId,
+          name: s.products.find((p) => p.id === l.productId)?.name ?? "",
+          qty: round2(l.qty),
+          costUnit: round2(s.products.find((p) => p.id === l.productId)?.cost ?? 0),
+        }));
+      if (!lines.length) return s;
+      const adj: StockAdjustment = {
+        id: uid("ajuste"),
+        at,
+        locationId: input.locationId,
+        reason: input.reason,
+        note: input.note,
+        lines,
+        userId: USER,
+      };
+      const moves: InventoryMove[] = [];
+      const products = s.products.map((p) => {
+        const line = lines.find((l) => l.productId === p.id);
+        if (!line) return p;
+        moves.push(
+          inventoryMove(
+            p,
+            line.qty > 0 ? "entrada" : "salida",
+            Math.abs(line.qty),
+            p.cost,
+            `Ajuste · ${input.reason}`,
+            input.locationId,
+            at
+          )
+        );
+        return { ...p, stock: round2(Math.max(0, p.stock + line.qty)) };
+      });
+      return {
+        ...s,
+        products,
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        stockAdjustments: [adj, ...s.stockAdjustments],
+      };
+    });
+  }, []);
+
+  const addStockTransfer = useCallback<StoreActions["addStockTransfer"]>((input) => {
+    setAppState((s) => {
+      if (input.fromId === input.toId) return s;
+      const at = new Date().toISOString();
+      const lines = input.lines
+        .filter((l) => l.qty > 0)
+        .map((l) => ({
+          productId: l.productId,
+          name: s.products.find((p) => p.id === l.productId)?.name ?? "",
+          qty: round2(l.qty),
+        }));
+      if (!lines.length) return s;
+      const tr: StockTransfer = {
+        id: uid("traslado"),
+        at,
+        fromId: input.fromId,
+        toId: input.toId,
+        lines,
+        note: input.note,
+        userId: USER,
+      };
+      // El stock global no cambia (una sola bodega de existencias por producto);
+      // se registran los asientos de salida y entrada por ubicación.
+      const moves: InventoryMove[] = [];
+      for (const l of lines) {
+        const p = s.products.find((x) => x.id === l.productId);
+        if (!p) continue;
+        moves.push(inventoryMove(p, "salida", l.qty, p.cost, "Traslado", input.fromId, at));
+        moves.push(inventoryMove(p, "entrada", l.qty, p.cost, "Traslado", input.toId, at));
+      }
+      return {
+        ...s,
+        inventoryMoves: [...moves, ...s.inventoryMoves],
+        stockTransfers: [tr, ...s.stockTransfers],
+      };
+    });
+  }, []);
+
+  // ---- Ajustes --------------------------------------------------
+  const updateBusiness = useCallback((patch: Partial<Business>) => {
+    setAppState((s) => ({ ...s, business: { ...s.business, ...patch } }));
+  }, []);
+
+  const setRate = useCallback((rate: number) => {
+    // Una tasa no válida (0, negativa o NaN) rompería las conversiones Bs/USD.
+    if (!Number.isFinite(rate) || rate <= 0) return;
+    setAppState((s) => ({ ...s, rate, rateUpdatedAt: new Date().toISOString() }));
+  }, []);
+
+  const actions = useMemo<StoreActions>(
+    () => ({
+      login,
+      logout,
+      addProduct,
+      updateProduct,
+      removeProduct,
+      setStock,
+      addCategory,
+      updateCategory,
+      removeCategory,
+      addChannel,
+      updateChannel,
+      removeChannel,
+      addLocation,
+      updateLocation,
+      removeLocation,
+      setChannelPrice,
+      bulkPrice,
+      addContact,
+      updateContact,
+      removeContact,
+      checkout,
+      voidSale,
+      openCash,
+      closeCash,
+      addAccount,
+      updateAccount,
+      removeAccount,
+      moveAccount,
+      adjustAccount,
+      transfer,
+      transferBetween,
+      addExpense,
+      updateExpense,
+      payExpense,
+      voidExpense,
+      addRecurringExpense,
+      removeRecurringExpense,
+      runRecurring,
+      addExpenseCategory,
+      updateExpenseCategory,
+      addPending,
+      abonoPending,
+      voidPending,
+      addTax,
+      updateTax,
+      setDefaultTax,
+      addDiscount,
+      updateDiscount,
+      removeDiscount,
+      addSurcharge,
+      updateSurcharge,
+      removeSurcharge,
+      addPurchase,
+      addStockReturn,
+      addStockAdjustment,
+      addStockTransfer,
+      updateBusiness,
+      setRate,
+      resetDemo,
+    }),
+    [
+      login, logout, addProduct, updateProduct, removeProduct, setStock,
+      addCategory, updateCategory, removeCategory,
+      addChannel, updateChannel, removeChannel,
+      addLocation, updateLocation, removeLocation,
+      setChannelPrice, bulkPrice,
+      addContact, updateContact, removeContact,
+      checkout, voidSale, openCash, closeCash,
+      addAccount, updateAccount, removeAccount, moveAccount, adjustAccount,
+      transfer, transferBetween,
+      addExpense, updateExpense, payExpense, voidExpense,
+      addRecurringExpense, removeRecurringExpense, runRecurring,
+      addExpenseCategory, updateExpenseCategory,
+      addPending, abonoPending, voidPending,
+      addTax, updateTax, setDefaultTax,
+      addDiscount, updateDiscount, removeDiscount,
+      addSurcharge, updateSurcharge, removeSurcharge,
+      addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
+      updateBusiness, setRate, resetDemo,
+    ]
+  );
+
+  return (
+    <MountedCtx.Provider value={true}>
+      <ActionsCtx.Provider value={actions}>
+        {children}
+        {storageError && (
+          <div className="storage-alert" role="alert">
+            <span>
+              No se pudo guardar en este dispositivo (almacenamiento lleno o no disponible).
+              Tus últimos cambios pueden perderse si cierras.
+            </span>
+            <button className="btn btn--soft btn--sm" onClick={downloadStateBackup}>
+              Descargar respaldo
+            </button>
+          </div>
+        )}
+      </ActionsCtx.Provider>
+    </MountedCtx.Provider>
+  );
+}
+
+function useMounted(): void {
+  const mounted = useContext(MountedCtx);
+  if (!mounted) throw new Error("El store debe usarse dentro de <StoreProvider>");
+}
+
+/** Suscripción solo al estado de autenticación (cambia rara vez). */
+export function useAuth(): boolean {
+  useMounted();
+  return useSyncExternalStore(subscribe, getAuthed, getAuthed);
+}
+
+/** Suscripción solo al estado (cambia cuando cambia el estado). */
+export function useStoreState(): StoreState {
+  useMounted();
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  const authed = useSyncExternalStore(subscribe, getAuthed, getAuthed);
+  return useMemo(() => ({ state, authed }), [state, authed]);
+}
+
+/** Suscripción solo a las acciones (identidad estable, no re-renderiza). */
+export function useStoreActions(): StoreActions {
+  const ctx = useContext(ActionsCtx);
+  if (!ctx) throw new Error("useStoreActions debe usarse dentro de <StoreProvider>");
+  return ctx;
+}
+
+/** API combinada (compatibilidad). */
+export function useStore(): StoreValue {
+  const { state, authed } = useStoreState();
+  const actions = useStoreActions();
+  return useMemo(() => ({ state, authed, ...actions }), [state, authed, actions]);
+}

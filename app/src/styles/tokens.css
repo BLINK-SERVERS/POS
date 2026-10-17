@@ -1,0 +1,69 @@
+/* ============================================================
+   BLINK POS — Design tokens
+   Paleta estricta de 3 colores (según la guía):
+     · Fondo   #FFFEFB  (todos los fondos)
+     · Acento  #007AFF  (acentos y el texto BLINK)
+     · Texto   #424242  (textos, bordes, etc.)
+   Las variaciones (sutiles, bordes, hovers) se derivan del color
+   de texto con transparencia, para no salir de la paleta.
+   ============================================================ */
+:root {
+  /* --- Marca --- */
+  --color-bg-primary: #fffefb;
+  --color-text-primary: #424242;
+  --color-accent: #007aff;
+  /* Hover derivado solo de la paleta (acento sobre texto), sin un 4.º color. */
+  --color-accent-hover: color-mix(in srgb, #007aff 82%, #424242);
+
+  /* --- Superficies: todo #FFFEFB --- */
+  --color-bg-elevated: #fffefb;
+  --color-bg-subtle: #fffefb;
+  --color-bg-inset: #fffefb;
+
+  /* --- Textos derivados del color base ---
+     Opacidades elegidas para cumplir contraste AA (≥4.5:1) sobre #FFFEFB. */
+  --color-text-secondary: rgba(66, 66, 66, 0.78);
+  --color-text-tertiary: rgba(66, 66, 66, 0.74);
+  --color-text-inverse: #fffefb;
+
+  /* --- Acentos derivados --- */
+  --color-accent-soft: rgba(0, 122, 255, 0.1);
+  --color-accent-soft-strong: rgba(0, 122, 255, 0.18);
+  --color-accent-ring: rgba(0, 122, 255, 0.35);
+
+  /* --- Bordes derivados del texto --- */
+  --color-border: rgba(66, 66, 66, 0.14);
+  --color-border-strong: rgba(66, 66, 66, 0.26);
+
+  /* --- Estados (misma paleta: solo acento o neutro) --- */
+  --color-neutral-soft: rgba(66, 66, 66, 0.07);
+
+  /* --- Tipografía --- */
+  --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    system-ui, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+
+  /* --- Formas --- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 50px;
+
+  --shadow-card: 0 1px 2px rgba(66, 66, 66, 0.04);
+  --shadow-pop: 0 12px 32px rgba(66, 66, 66, 0.18);
+
+  --transition-speed: 0.2s ease-in-out;
+
+  /* --- Layout --- */
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --ticket-w: 360px;
+  --page-max: 1320px;
+}

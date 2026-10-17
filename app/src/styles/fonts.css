@@ -1,0 +1,12 @@
+/* ============================================================
+   Tipografía del sistema (sin fuentes empaquetadas).
+
+   Antes se servía San Francisco (SF NS) desde /fonts, pero SF es una
+   tipografía de Apple y **no está licenciada para web pública**, así que
+   no se puede distribuir en un sitio de internet.
+
+   Ahora usamos la pila de fuentes del sistema: en dispositivos Apple se
+   ve San Francisco (`-apple-system`), en Windows Segoe UI, etcétera.
+   Así el aspecto se mantiene y no se distribuye ninguna fuente
+   propietaria. Ver `--font-primary` en `tokens.css`.
+   ============================================================ */
