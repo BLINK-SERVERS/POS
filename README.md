@@ -35,18 +35,18 @@ npm run build      # build de producción
 
 ## Publicación en GitHub Pages
 
-El sitio se publica en `https://go-plans.github.io/blink-pos/`.
+El sitio se publica en `https://blink-servers.github.io/POS/`.
 
 ```bash
 cd app
-npm run deploy     # build con base /blink-pos/ + push a la rama gh-pages
+npm run deploy     # build con base /POS/ + push a la rama gh-pages
 ```
 
-- `vite build --base=/blink-pos/` genera rutas de assets bajo el subdirectorio.
+- `vite build --base=/POS/` genera rutas de assets bajo el subdirectorio.
 - `scripts/postbuild-pages.mjs` crea `404.html` (copia de `index.html`) y
   `.nojekyll` para que las rutas profundas de la SPA funcionen en Pages.
 - El `basename` del router usa `import.meta.env.BASE_URL`, así que funciona
-  igual en local (`/`) y en Pages (`/blink-pos/`).
+  igual en local (`/`) y en Pages (`/POS/`).
 
 ## Notas
 

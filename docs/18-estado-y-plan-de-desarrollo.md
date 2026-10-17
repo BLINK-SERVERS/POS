@@ -20,7 +20,7 @@ manda `18`.
 | Tests | 🔴 no existen | — |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
-| Deploy | 🟢 en vivo | https://go-plans.github.io/blink-pos/ — ver doc `19` |
+| Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
 
 **Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).

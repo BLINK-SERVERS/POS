@@ -1,15 +1,15 @@
 # 19 · Despliegue en GitHub Pages
 
-**Sitio en vivo:** https://go-plans.github.io/blink-pos/
-**Repositorio:** https://github.com/go-plans/blink-pos (público)
+**Sitio en vivo:** https://blink-servers.github.io/POS/
+**Repositorio:** https://github.com/BLINK-SERVERS/POS (público)
 
 ## Cómo está armado
 
 | Pieza | Dónde | Qué hace |
 |---|---|---|
-| Base del build | `app/package.json` → `build:pages` | `vite build --base=/blink-pos/` genera los assets bajo el subdirectorio del proyecto. |
-| `basename` del router | `app/src/App.tsx` | `<BrowserRouter basename={import.meta.env.BASE_URL}>` → funciona igual en local (`/`) y en Pages (`/blink-pos/`). |
-| Fallback 404 | `app/scripts/postbuild-pages.mjs` | Copia `dist/index.html` a `dist/404.html` y crea `.nojekyll`. Así las rutas profundas de la SPA (p. ej. `/blink-pos/catalogo`) cargan la app en vez de dar 404. |
+| Base del build | `app/package.json` → `build:pages` | `vite build --base=/POS/` genera los assets bajo el subdirectorio del proyecto. |
+| `basename` del router | `app/src/App.tsx` | `<BrowserRouter basename={import.meta.env.BASE_URL}>` → funciona igual en local (`/`) y en Pages (`/POS/`). |
+| Fallback 404 | `app/scripts/postbuild-pages.mjs` | Copia `dist/index.html` a `dist/404.html` y crea `.nojekyll`. Así las rutas profundas de la SPA (p. ej. `/POS/catalogo`) cargan la app en vez de dar 404. |
 | Publicación | `gh-pages` (devDependency) | `npm run deploy` = build + push de `dist/` a la rama `gh-pages`. |
 | Pages | Config del repo | Fuente = rama `gh-pages`, carpeta `/`. HTTPS forzado. |
 
@@ -18,7 +18,7 @@
 ```bash
 cd app
 npm run build      # build normal (base /), para probar en local
-npm run build:pages # build con base /blink-pos/ + 404.html + .nojekyll
+npm run build:pages # build con base /POS/ + 404.html + .nojekyll
 npm run deploy     # build:pages + push a la rama gh-pages
 ```
 
