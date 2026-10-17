@@ -76,17 +76,26 @@ transparencia, para no salir de la paleta. No se usan verdes/ámbar/rojos.
 
 - Estado global **observable** (`useSyncExternalStore`) con selectores por hook
   (`useStoreSelector`); las acciones viven en un contexto aparte para no provocar renders.
-- Persistencia en `localStorage` con clave `blink-pos-state-v2` (migra `blink-pos-state-v1`),
-  escritura con *debounce* de 250 ms, volcado al cerrar/ocultar la pestaña y sincronización
-  entre pestañas. La sesión de autenticación usa `blink-pos-auth-v1`.
+- Persistencia **local + en Supabase**: el comercio es una fila en `businesses` (una por usuario,
+  con RLS) y en el navegador queda una **caché** (`blink-pos-state-v3`). Escritura con *debounce*
+  de 250 ms, volcado al cerrar/ocultar la pestaña y sincronización entre pestañas. La sesión la
+  administra `supabase-js`. Ver `docs/20`.
+
+## Supabase (cuentas y datos)
+
+Conexión con **solo la clave pública** (`sb_publishable_…`). La seguridad la impone el **RLS**:
+cada fila de `businesses` está atada a `auth.uid()`.
+
+- `src/lib/supabase.ts` — crea el cliente a partir de las variables de entorno.
+- `src/lib/cloud.ts` — autenticación (registro con código de 6 dígitos) y carga/guardado del
+  comercio.
+- `supabase/migrations/0001_init.sql` — esquema + políticas RLS (se ejecuta en el dashboard).
 - Moneda dual: los importes se guardan/computan en USD y se muestran también en Bs con la
   tasa de referencia.
 
 ## Supabase (cliente)
 
-Base de conexión a Supabase **solo con la clave pública**. La app sigue siendo
-*local-first*: el estado vive en `localStorage` y Supabase aún no se usa en ningún
-componente (es una base lista para el siguiente paso).
+Base de conexión a Supabase **solo con la clave pública** (`sb_publishable_…`/`anon`).
 
 - `src/lib/supabase.ts` — crea el cliente a partir de las variables de entorno.
 - `.env.local` — valores reales (ignorados por git; ver `.gitignore`).

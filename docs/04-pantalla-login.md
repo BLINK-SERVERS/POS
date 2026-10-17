@@ -1,5 +1,11 @@
 # 04 · Pantalla pública de Login (`/entrar`)
 
+> **Nota (2026-10-17).** Este documento describe la pantalla **observada en Wink** (referencia de
+> comportamiento). La implementación de BLINK difiere en lo acordado: login real con
+> **correo + contraseña** (sin «Continuar con Google»), registro en `/registro` con
+> **verificación por código de 6 dígitos** y alta guiada en `/onboarding`. Ver `docs/18` y
+> `docs/20`.
+
 Esta es la **única pantalla pública** y la base del snapshot reconstruido en `clone/`.
 
 ## 4.1 Estructura (DOM renderizado)

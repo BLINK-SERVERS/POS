@@ -6,12 +6,14 @@ import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
+import type { BusinessFeatures } from "../lib/types";
 
 interface NavItem {
   to: string;
   label: string;
   icon: IconName;
   sub?: { to: string; label: string }[];
+  feature?: keyof BusinessFeatures;
 }
 
 const NAV: NavItem[] = [
@@ -26,15 +28,15 @@ const NAV: NavItem[] = [
     ],
   },
   { to: "/catalogo", label: "Catálogo", icon: "tag" },
-  { to: "/inventario", label: "Inventario", icon: "box" },
-  { to: "/contactos", label: "Contactos", icon: "users" },
-  { to: "/finanzas", label: "Finanzas", icon: "wallet" },
-  { to: "/informes", label: "Informes", icon: "chart" },
+  { to: "/inventario", label: "Inventario", icon: "box", feature: "inventory" },
+  { to: "/contactos", label: "Contactos", icon: "users", feature: "providers" },
+  { to: "/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
+  { to: "/informes", label: "Informes", icon: "chart", feature: "reports" },
   { to: "/ajustes", label: "Ajustes", icon: "settings" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { state, logout, openCash, closeCash } = useStore();
+  const { state, user, logout, openCash, closeCash } = useStore();
   const nav = useNavigate();
   const [cashOpen, setCashOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -44,6 +46,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const [cUsd, setCUsd] = useState("0");
   const [cBs, setCBs] = useState("0");
   const [cNote, setCNote] = useState("");
+
+  const features = state.business.features;
+  const visibleNav = NAV.filter((item) => !item.feature || features[item.feature]);
+  const displayName =
+    user && (user.firstName || user.lastName)
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ")
+      : user?.email ?? "";
 
   const session = state.cashSession;
   const expected = session ? expectedCash(state) : { usd: 0, bs: 0 };
@@ -64,7 +73,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
         <div className="nav-group">Principal</div>
         <nav className="nav">
-          {NAV.map((item) => (
+          {visibleNav.map((item) => (
             <div key={item.to}>
               <NavLink
                 to={item.to}
@@ -100,7 +109,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); logout(); nav("/entrar"); }}>
+        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); void logout(); nav("/entrar"); }}>
           <Icon name="logout" />
           Cerrar sesión
         </button>
@@ -142,9 +151,11 @@ export function Shell({ children }: { children: ReactNode }) {
           </button>
         )}
         <div className="userchip">
-          <span className="avatar">DB</span>
+          <span className="avatar">
+            {(displayName || "?").slice(0, 2).toUpperCase()}
+          </span>
           <div className="stack" style={{ lineHeight: 1.15 }}>
-            <strong style={{ fontSize: "0.8rem" }}>Diego Beleño</strong>
+            <strong style={{ fontSize: "0.8rem" }}>{displayName || "Sesión activa"}</strong>
             <span className="dim" style={{ fontSize: "0.7rem" }}>
               Dueño
             </span>

@@ -1,5 +1,14 @@
 // Tipos del dominio de BLINK POS (definiciones propias).
 
+/** Módulos que BLINK habilita según el giro del comercio. */
+export interface BusinessFeatures {
+  inventory: boolean;
+  providers: boolean;
+  credit: boolean;
+  expenses: boolean;
+  reports: boolean;
+}
+
 export interface Business {
   name: string;
   legalName: string;
@@ -7,6 +16,9 @@ export interface Business {
   phone: string;
   address: string;
   currency: "USD" | "VES";
+  /** Giro del comercio: define qué módulos se muestran. */
+  type: string;
+  features: BusinessFeatures;
   receiptTitle: string;
   receiptFooter: string;
   printFormat: "58mm" | "80mm" | "carta";
@@ -154,7 +166,16 @@ export interface Account {
   balance: number;
   commissionIn: number; // % al recibir
   commissionOut: number; // % al enviar
+  /** Participa en el arqueo/cierre de caja. Por defecto sí. */
+  inCashClose?: boolean;
   active: boolean;
+}
+
+/** Estado del asistente de configuración inicial. */
+export interface Onboarding {
+  completed: boolean;
+  /** Último paso alcanzado (por si se recarga a mitad del asistente). */
+  step?: number;
 }
 
 /** Asiento del libro de movimientos de cuentas. */
@@ -385,4 +406,5 @@ export interface AppState {
   cashSession: CashSession | null;
   cashClosures: CashClosure[];
   openTabs: Sale[]; // cuentas abiertas del POS
+  onboarding: Onboarding;
 }

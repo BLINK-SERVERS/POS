@@ -1,57 +1,78 @@
-// Ajustes · Negocio, recibo y moneda.
+// Ajustes · Negocio, perfil, moneda, recibo y cuenta.
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { formatBsDirect, formatRate } from "../lib/money";
 
-const TABS = ["Negocio", "Moneda e impuestos", "Recibo"] as const;
+const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Cuenta"] as const;
 
 export function Ajustes() {
-  const { state } = useStoreState();
-  const { updateBusiness, setRate } = useStoreActions();
+  const { state, user } = useStoreState();
+  const { updateBusiness, setRate, updateProfile, clearAll, logout } = useStoreActions();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
   const [saved, setSaved] = useState(false);
-  const savedTimer = useRef<number | undefined>(undefined);
-  useEffect(
-    () => () => {
-      if (savedTimer.current) window.clearTimeout(savedTimer.current);
-    },
-    []
-  );
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const timer = useRef<number | undefined>(undefined);
+  const timer2 = useRef<number | undefined>(undefined);
 
-  const b = state.business;
   const [form, setForm] = useState({
-    name: b.name,
-    legalName: b.legalName,
-    rif: b.rif,
-    phone: b.phone,
-    address: b.address,
-    receiptTitle: b.receiptTitle,
-    receiptFooter: b.receiptFooter,
-    printFormat: b.printFormat,
+    name: state.business.name,
+    legalName: state.business.legalName,
+    rif: state.business.rif,
+    phone: state.business.phone,
+    address: state.business.address,
+    receiptTitle: state.business.receiptTitle,
+    receiptFooter: state.business.receiptFooter,
+    printFormat: state.business.printFormat,
   });
-  const [rateInput, setRateInput] = useState(String(state.rate));
+  const [rate, setRateField] = useState(String(state.rate || ""));
+  const [profile, setProfile] = useState({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    phone: user?.phone ?? "",
+  });
 
-  function onSubmit(e: FormEvent) {
+  useEffect(() => () => {
+    window.clearTimeout(timer.current);
+    window.clearTimeout(timer2.current);
+  }, []);
+
+  function onSubmitNegocio(e: FormEvent) {
     e.preventDefault();
     updateBusiness(form);
     setSaved(true);
-    if (savedTimer.current) window.clearTimeout(savedTimer.current);
-    savedTimer.current = window.setTimeout(() => setSaved(false), 2200);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setSaved(false), 2200);
   }
+
+  async function onSubmitPerfil(e: FormEvent) {
+    e.preventDefault();
+    setProfileError("");
+    const err = await updateProfile(profile);
+    if (err) {
+      setProfileError(err);
+      return;
+    }
+    setProfileSaved(true);
+    window.clearTimeout(timer2.current);
+    timer2.current = window.setTimeout(() => setProfileSaved(false), 2200);
+  }
+
+  const firstProduct = state.products[0];
 
   return (
     <div className="stack gap-16">
       <PageHead
         title="Ajustes"
-        subtitle="Configura tu comercio, tu equipo y tu forma de trabajar."
+        subtitle="Configura tu comercio, tu perfil y tu forma de trabajar."
       />
 
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {tab === "Negocio" && (
-        <form className="kpis" onSubmit={onSubmit}>
+        <form className="kpis" onSubmit={onSubmitNegocio}>
           <Card title="Datos del comercio" hint="Identificación y contacto de tu negocio.">
             <Field label="Nombre del comercio" required hint="Así lo verá tu equipo en BLINK POS.">
               <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -81,9 +102,9 @@ export function Ajustes() {
             </button>
           </Card>
 
-          <Card title="Vista previa del recibo" hint="Datos de ejemplo">
+          <Card title="Vista previa del recibo" hint="Con tus datos reales.">
             <div className="mono" style={{ fontSize: "0.82rem", lineHeight: 1.7 }}>
-              <div style={{ fontWeight: 700 }}>{form.name || "Mi Comercio"}</div>
+              <div style={{ fontWeight: 700 }}>{form.name || "Sin nombre"}</div>
               {form.rif && <div>RIF: {form.rif}</div>}
               {form.address && <div>{form.address}</div>}
               {form.phone && <div>{form.phone}</div>}
@@ -91,49 +112,108 @@ export function Ajustes() {
               <div>{form.receiptTitle || "Comprobante de venta"}</div>
               <div>Consumidor final</div>
               <hr />
-              <div className="between">
-                <span>Producto de ejemplo</span>
-                <span>$ 10,00</span>
-              </div>
-              <div className="dim">SKU-001</div>
+              {firstProduct ? (
+                <>
+                  <div className="between">
+                    <span>{firstProduct.name}</span>
+                    <span>${firstProduct.price.toFixed(2)}</span>
+                  </div>
+                  {firstProduct.sku && <div className="dim">SKU: {firstProduct.sku}</div>}
+                </>
+              ) : (
+                <div className="dim">Aún no tienes productos.</div>
+              )}
               <hr />
-              <div className="between">
-                <strong>Total</strong>
-                <strong>$ 10,00</strong>
-              </div>
               <div className="between">
                 <span>Total en bolívares</span>
-                <span>{formatBsDirect(10 * state.rate)}</span>
+                <span>{formatBsDirect((firstProduct?.price ?? 0) * state.rate)}</span>
               </div>
               <hr />
-              <div className="muted">{form.receiptFooter || "¡Gracias por su compra!"}</div>
+              <div className="muted">{form.receiptFooter || "(sin pie de recibo)"}</div>
             </div>
           </Card>
         </form>
       )}
 
+      {tab === "Perfil" && (
+        <Card title="Tu perfil" hint="Tus datos personales de la cuenta.">
+          <form onSubmit={onSubmitPerfil}>
+            <div className="row gap-12">
+              <Field label="Nombre" required>
+                <input
+                  className="input"
+                  value={profile.firstName}
+                  onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                />
+              </Field>
+              <Field label="Apellido" required>
+                <input
+                  className="input"
+                  value={profile.lastName}
+                  onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Teléfono">
+              <input
+                className="input"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              />
+            </Field>
+            <Field label="Correo electrónico" hint="Tu correo de acceso no se cambia desde aquí.">
+              <input className="input" value={user?.email ?? ""} disabled />
+            </Field>
+            {profileError && <p className="field__error">{profileError}</p>}
+            <button className="btn btn--primary" type="submit">
+              {profileSaved ? (
+                <>
+                  <Icon name="check" /> Guardado
+                </>
+              ) : (
+                "Guardar perfil"
+              )}
+            </button>
+          </form>
+        </Card>
+      )}
+
       {tab === "Moneda e impuestos" && (
-        <Card title="Moneda principal" hint="Dólares (USD) · los bolívares se conservan con exposición cambiaria.">
-          <Field label="Tasa de referencia (Bs por USD)" hint="Se usa para mostrar los precios en bolívares.">
-            <input className="input" type="number" value={rateInput} onChange={(e) => setRateInput(e.target.value)} />
+        <Card title="Moneda principal" hint="Dólares (USD) o bolívares (VES).">
+          <Field label="Tasa de referencia (Bs por USD)" hint="La tasa real del día. Con ella se muestra el total en bolívares.">
+            <input
+              className="input"
+              inputMode="decimal"
+              value={rate}
+              onChange={(e) => setRateField(e.target.value)}
+            />
           </Field>
           <button
             className="btn btn--primary"
-            onClick={() => setRate(Number(rateInput) || state.rate)}
+            onClick={() => setRate(Number(rate.replace(",", ".")) || 0)}
           >
-            Actualizar tasa
+            Guardar tasa
           </button>
-          <p className="field__hint" style={{ marginTop: "0.75rem" }}>
-            Actual: {formatRate(state.rate)} por USD · actualizada{" "}
-            {new Date(state.rateUpdatedAt).toLocaleString()}
-          </p>
+          {state.rate > 0 && (
+            <p className="field__hint" style={{ marginTop: "0.6rem" }}>
+              1 USD = {formatRate(state.rate)} Bs
+              {state.rateUpdatedAt
+                ? ` · actualizada ${new Date(state.rateUpdatedAt).toLocaleString()}`
+                : ""}
+            </p>
+          )}
         </Card>
       )}
 
       {tab === "Recibo" && (
-        <Card title="Formato de impresión" hint="Formato del comprobante que reciben tus clientes.">
-          <Field label="Título del recibo" hint="Si lo dejas vacío se usa 'Comprobante de venta'.">
-            <input className="input" value={form.receiptTitle} onChange={(e) => setForm({ ...form, receiptTitle: e.target.value })} />
+        <Card title="Formato del recibo" hint="Cómo se ve el comprobante que entregas.">
+          <Field label="Título del recibo">
+            <input
+              className="input"
+              value={form.receiptTitle}
+              onChange={(e) => setForm({ ...form, receiptTitle: e.target.value })}
+              placeholder="Comprobante de venta"
+            />
           </Field>
           <Field label="Formato">
             <select
@@ -156,6 +236,38 @@ export function Ajustes() {
           </Field>
           <button className="btn btn--primary" onClick={() => updateBusiness(form)}>
             Guardar
+          </button>
+        </Card>
+      )}
+
+      {tab === "Cuenta" && (
+        <Card title="Tu cuenta" hint="Sesión y datos del comercio.">
+          <p className="muted" style={{ marginBottom: "0.75rem" }}>
+            Sesión iniciada como <strong>{user?.email}</strong>.
+          </p>
+          <button className="btn btn--ghost" onClick={() => void logout()}>
+            <Icon name="logout" /> Cerrar sesión
+          </button>
+
+          <hr style={{ margin: "1.25rem 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
+
+          <p className="muted" style={{ marginBottom: "0.75rem" }}>
+            Borrar todos los datos vuelve a dejar el sistema en blanco y te lleva al alta guiada.
+            Esta acción no se puede deshacer.
+          </p>
+          <button
+            className="btn btn--soft"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "¿Borrar todos los datos del comercio? Se eliminarán productos, ventas, cuentas y ajustes."
+                )
+              ) {
+                clearAll();
+              }
+            }}
+          >
+            <Icon name="trash" /> Borrar todos los datos
           </button>
         </Card>
       )}

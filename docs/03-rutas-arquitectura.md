@@ -26,6 +26,12 @@ GET https://app.wink-pos.com/
 > El parámetro `volver=%2Finicio` confirma que **`/inicio` es la pantalla post-login**
 > y que el guard restaura el destino tras autenticarse.
 
+> **Rutas de BLINK (implementación propia, 2026-10-17).** BLINK usa las mismas bases pero con
+> registro real: `/entrar` (login), `/registro` (datos personales + código de 6 dígitos),
+> `/onboarding` (alta guiada) y, ya dentro del shell, `/inicio`, `/ventas`, `/ventas/historial`,
+> `/catalogo`, `/inventario`, `/contactos`, `/finanzas`, `/informes`, `/ajustes`. Las rutas
+> internas exigen sesión y alta completada (ver `docs/18` y `docs/20`).
+
 ## Patrón de routing
 - **SPA con cliente-side routing** por hash de assets; **todas** las rutas desconocidas
   devuelven `200 index.html` (fallback del servidor → `index.html`).

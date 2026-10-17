@@ -1,4 +1,4 @@
-// Estado global de la aplicación + persistencia local + datos de ejemplo.
+// Estado global de la aplicación + persistencia (local y en Supabase).
 //
 // Optimizaciones de rendimiento y escalabilidad:
 //  · STORE EXTERNO observable expuesto con `useSyncExternalStore`. Permite
@@ -23,6 +23,7 @@ import type {
   Account,
   AppState,
   Business,
+  BusinessFeatures,
   CashClosure,
   CashSession,
   Category,
@@ -50,14 +51,29 @@ import type {
 } from "./types";
 import { round2 } from "./money";
 import { expectedCash } from "./metrics";
+import {
+  authResendCode,
+  authSignIn,
+  authSignOut,
+  authSignUp,
+  authUpdateProfile,
+  authVerifyCode,
+  cloudLoadBusiness,
+  cloudSaveBusiness,
+  userFromSession,
+  type SessionUser,
+} from "./cloud";
+import { supabase } from "./supabase";
 
-const STORAGE_KEY = "blink-pos-state-v2";
-const LEGACY_KEY = "blink-pos-state-v1";
-const AUTH_KEY = "blink-pos-auth-v1";
+const STORAGE_KEY = "blink-pos-state-v3";
+const LEGACY_KEYS = ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"];
 const WRITE_DELAY = 250;
 
-/** Usuario de la sesión demo. */
-export const USER = "Diego Beleño";
+/**
+ * Nombre del usuario de la sesión para firmar movimientos.
+ * Se rellena desde el perfil autenticado; "Dueño" es el respaldo neutro.
+ */
+export let USER = "Dueño";
 
 export function uid(prefix = "id"): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now()
@@ -66,25 +82,24 @@ export function uid(prefix = "id"): string {
 }
 
 // ------------------------------------------------------------------
-// Datos de ejemplo
+// Estado inicial vacío. No hay datos ficticios: el comercio lo llena
+// el usuario durante el alta guiada (onboarding).
 // ------------------------------------------------------------------
-function seed(): AppState {
-  const now = new Date().toISOString();
-  const catAlimentos: Category = { id: "cat_alim", name: "Alimentos", active: true, order: 0 };
-  const catServicios: Category = { id: "cat_serv", name: "Servicios", active: true, order: 1 };
+export const DEFAULT_FEATURES: BusinessFeatures = {
+  inventory: true,
+  providers: true,
+  credit: true,
+  expenses: true,
+  reports: true,
+};
+
+function emptyState(): AppState {
   const canalPrincipal: Channel = {
     id: "ch_principal",
     name: "Principal",
-    description: "Canal de venta predeterminado.",
+    description: "",
     active: true,
     isDefault: true,
-  };
-  const canalDelivery: Channel = {
-    id: "ch_delivery",
-    name: "Delivery",
-    description: "Pedidos a domicilio.",
-    active: true,
-    isDefault: false,
   };
   const locPrincipal: Location = {
     id: "loc_principal",
@@ -94,98 +109,9 @@ function seed(): AppState {
     defaultSales: true,
     defaultPurchases: true,
   };
-
-  const product: Product = {
-    id: "prod_harina",
-    name: "Harina de maíz 1kg",
-    sku: "HAR-1K",
-    barcode: "7591234567890",
-    unit: "und",
-    cost: 1.2,
-    price: 2,
-    channelPrices: { ch_principal: 2, ch_delivery: 2.5 },
-    category: "Alimentos",
-    type: "simple",
-    taxRate: 0.16,
-    active: true,
-    archived: false,
-    trackStock: true,
-    stock: 24,
-    minStock: 6,
-  };
-  const service: Product = {
-    id: "prod_delivery",
-    name: "Servicio de delivery",
-    sku: "DEL-01",
-    barcode: "",
-    unit: "servicio",
-    cost: 0,
-    price: 1.5,
-    channelPrices: { ch_principal: 1.5 },
-    category: "Servicios",
-    type: "servicio",
-    taxRate: 0.16,
-    active: true,
-    archived: false,
-    trackStock: false,
-    stock: 0,
-    minStock: 0,
-  };
-  const provider: Contact = {
-    id: "cont_andina",
-    name: "Distribuidora Andina",
-    document: "J-342015804",
-    docType: "J",
-    phone: "0414-555-3435",
-    email: "ventas@andina.com",
-    isClient: false,
-    isProvider: true,
-    creditDays: 30,
-    address: "",
-    notes: "",
-  };
-  const client: Contact = {
-    id: "cont_final",
-    name: "Consumidor final",
-    document: "",
-    docType: "",
-    phone: "",
-    email: "",
-    isClient: true,
-    isProvider: false,
-    creditDays: 0,
-    address: "",
-    notes: "",
-  };
-  const account: Account = {
-    id: "acc_caja",
-    name: "Caja principal",
-    type: "efectivo",
-    currency: "USD",
-    balance: 0,
-    commissionIn: 0,
-    commissionOut: 0,
-    active: true,
-  };
   const iva: Tax = { id: "tax_iva", name: "IVA 16%", rate: 0.16, active: true, isDefault: true };
   const exento: Tax = { id: "tax_0", name: "Exento", rate: 0, active: true };
-  const bienvenida: Discount = {
-    id: "disc_bienvenida",
-    name: "Bienvenida 5%",
-    code: "BIENVENIDA",
-    type: "porcentaje",
-    value: 5,
-    maxUses: null,
-    used: 0,
-    active: true,
-  };
-  const delivery: Surcharge = {
-    id: "sur_delivery",
-    name: "Delivery",
-    type: "monto",
-    value: 1,
-    active: true,
-  };
+  // Categorías de gasto estándar (estructura del sistema, no datos del usuario).
   const cats: ExpenseCategory[] = [
     "Alquiler",
     "Compra de productos e insumos",
@@ -207,18 +133,20 @@ function seed(): AppState {
 
   return {
     business: {
-      name: "Mi Comercio",
+      name: "",
       legalName: "",
-      rif: "V-00000000",
+      rif: "",
       phone: "",
       address: "",
       currency: "USD",
-      receiptTitle: "Comprobante de venta",
-      receiptFooter: "¡Gracias por su compra!",
+      type: "",
+      features: { ...DEFAULT_FEATURES },
+      receiptTitle: "",
+      receiptFooter: "",
       printFormat: "80mm",
       receiptFields: {
         legalName: false,
-        rif: true,
+        rif: false,
         address: false,
         phone: false,
         customer: true,
@@ -228,38 +156,25 @@ function seed(): AppState {
         notes: true,
       },
     },
-    rate: 877.9023,
-    rateUpdatedAt: now,
+    rate: 0,
+    rateUpdatedAt: "",
     taxes: [iva, exento],
-    categories: [catAlimentos, catServicios],
-    channels: [canalPrincipal, canalDelivery],
+    categories: [],
+    channels: [canalPrincipal],
     locations: [locPrincipal],
-    products: [product, service],
-    contacts: [provider, client],
+    products: [],
+    contacts: [],
     sales: [],
-    accounts: [account],
+    accounts: [],
     movements: [],
     transfers: [],
     pendings: [],
     expenses: [],
     recurringExpenses: [],
     expenseCategories: cats,
-    discounts: [bienvenida],
-    surcharges: [delivery],
-    inventoryMoves: [
-      {
-        id: "mov_inv_apertura",
-        at: now,
-        productId: product.id,
-        productName: product.name,
-        kind: "entrada",
-        qty: 24,
-        costUnit: 1.2,
-        origin: "Apertura",
-        locationId: locPrincipal.id,
-        userId: USER,
-      },
-    ],
+    discounts: [],
+    surcharges: [],
+    inventoryMoves: [],
     purchases: [],
     stockReturns: [],
     stockAdjustments: [],
@@ -267,6 +182,7 @@ function seed(): AppState {
     cashSession: null,
     cashClosures: [],
     openTabs: [],
+    onboarding: { completed: false },
   };
 }
 
@@ -293,6 +209,13 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
   merged.surcharges ??= base.surcharges;
   merged.cashClosures ??= [];
   merged.business.receiptFields ??= base.business.receiptFields;
+  merged.business.features = { ...DEFAULT_FEATURES, ...(raw.business?.features ?? {}) };
+  merged.business.type ??= "";
+  merged.onboarding ??= base.onboarding;
+  merged.accounts = (merged.accounts ?? []).map((a) => ({
+    ...a,
+    inCashClose: a.inCashClose ?? true,
+  }));
   merged.products = (merged.products ?? []).map((p) => ({
     ...p,
     archived: p.archived ?? false,
@@ -337,9 +260,11 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
 }
 
 function load(): AppState {
-  const base = seed();
+  const base = emptyState();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    // Limpia claves antiguas (versiones con datos ficticios).
+    for (const k of LEGACY_KEYS) localStorage.removeItem(k);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return normalize(base, JSON.parse(raw) as Partial<AppState>);
   } catch {
     /* datos corruptos: se regenera */
@@ -368,7 +293,12 @@ function downloadStateBackup(): void {
 // Store externo (fuente única de verdad, independiente de React)
 // ------------------------------------------------------------------
 let currentState: AppState = load();
-let currentAuthed: boolean = localStorage.getItem(AUTH_KEY) === "1";
+let currentAuthed = false;
+let currentUser: SessionUser | null = null;
+/** true hasta que se resuelve la sesión y se carga el comercio remoto. */
+let booting = true;
+/** true cuando ya se cargó (o creó) el comercio remoto; evita pisarlo. */
+let hydrated = false;
 
 const listeners = new Set<() => void>();
 
@@ -389,6 +319,14 @@ function getAuthed(): boolean {
   return currentAuthed;
 }
 
+function getUser(): SessionUser | null {
+  return currentUser;
+}
+
+function getBooting(): boolean {
+  return booting;
+}
+
 function setAppState(next: AppState | ((s: AppState) => AppState)): void {
   const value =
     typeof next === "function" ? (next as (s: AppState) => AppState)(currentState) : next;
@@ -400,6 +338,20 @@ function setAppState(next: AppState | ((s: AppState) => AppState)): void {
 function setAuthed(value: boolean): void {
   if (value === currentAuthed) return;
   currentAuthed = value;
+  emit();
+}
+
+function setUser(value: SessionUser | null): void {
+  currentUser = value;
+  USER = value
+    ? [value.firstName, value.lastName].filter(Boolean).join(" ").trim() || value.email
+    : "";
+  emit();
+}
+
+function setBooting(value: boolean): void {
+  if (value === booting) return;
+  booting = value;
   emit();
 }
 
@@ -479,7 +431,12 @@ function toUsd(native: number, currency: "USD" | "VES", rate: number): number {
 // ------------------------------------------------------------------
 // Contextos y provider
 // ------------------------------------------------------------------
-type StoreState = { state: AppState; authed: boolean };
+type StoreState = {
+  state: AppState;
+  authed: boolean;
+  user: SessionUser | null;
+  booting: boolean;
+};
 
 export interface CheckoutInput {
   lines: SaleLine[];
@@ -508,8 +465,23 @@ export interface PurchaseInput {
 }
 
 type StoreActions = {
-  login: (email: string) => void;
-  logout: () => void;
+  // Autenticación (Supabase). Devuelven un mensaje de error o null si fue bien.
+  login: (email: string, password: string) => Promise<string | null>;
+  logout: () => Promise<void>;
+  signUp: (input: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }) => Promise<string | null>;
+  verifyEmail: (email: string, code: string) => Promise<string | null>;
+  resendCode: (email: string) => Promise<string | null>;
+  updateProfile: (input: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }) => Promise<string | null>;
   // Catálogo
   addProduct: (p: Omit<Product, "id">) => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
@@ -592,7 +564,12 @@ type StoreActions = {
   // Ajustes
   updateBusiness: (patch: Partial<Business>) => void;
   setRate: (rate: number) => void;
-  resetDemo: () => void;
+  /** Marca el alta guiada como terminada. */
+  completeOnboarding: () => void;
+  /** Borra todos los datos del comercio y vuelve al alta. */
+  clearAll: () => void;
+  /** Reintenta cargar el comercio desde la nube. */
+  reloadCloud: () => Promise<void>;
 };
 
 export type StoreValue = StoreState & StoreActions;
@@ -603,8 +580,10 @@ const MountedCtx = createContext(false);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const state = useSyncExternalStore(subscribe, getState, getState);
   const [storageError, setStorageError] = useState(false);
+  const [cloudError, setCloudError] = useState(false);
 
-  const persist = useCallback(() => {
+  const persistLocal = useCallback(() => {
+    if (!currentAuthed) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
       setStorageError(false);
@@ -615,13 +594,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const persistCloud = useCallback(() => {
+    // No pisar la nube antes de terminar de cargarla ni tras cerrar sesión.
+    if (!currentAuthed || !hydrated) return;
+    cloudSaveBusiness(currentState)
+      .then(() => setCloudError(false))
+      .catch(() => {
+        setCloudError(true);
+      });
+  }, []);
+
+  // Guardado con *debounce*: copia local + sincronización con Supabase.
   useEffect(() => {
-    const id = window.setTimeout(persist, WRITE_DELAY);
+    const id = window.setTimeout(() => {
+      persistLocal();
+      persistCloud();
+    }, WRITE_DELAY);
     return () => window.clearTimeout(id);
-  }, [state, persist]);
+  }, [state, persistLocal, persistCloud]);
 
   useEffect(() => {
-    const flush = () => persist();
+    const flush = () => {
+      persistLocal();
+      persistCloud();
+    };
     const onHidden = () => {
       if (document.visibilityState === "hidden") flush();
     };
@@ -633,18 +629,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", onHidden);
     };
-  }, [persist]);
+  }, [persistLocal, persistCloud]);
 
+  // Sincronización entre pestañas del mismo navegador.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === AUTH_KEY) {
-        setAuthed(e.newValue === "1");
-        return;
-      }
       if (e.key !== STORAGE_KEY || !e.newValue) return;
       if (e.newValue === JSON.stringify(currentState)) return;
       try {
-        setAppState(normalize(seed(), JSON.parse(e.newValue) as Partial<AppState>));
+        setAppState(normalize(emptyState(), JSON.parse(e.newValue) as Partial<AppState>));
       } catch {
         /* ignore */
       }
@@ -653,27 +646,122 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const login = useCallback((_email: string) => {
-    try {
-      localStorage.setItem(AUTH_KEY, "1");
-    } catch {
-      /* ignore */
+  // Carga el comercio del usuario autenticado desde Supabase.
+  const hydrate = useCallback(async (user: SessionUser | null) => {
+    hydrated = false;
+    if (!user) {
+      setAppState(emptyState());
+      hydrated = true;
+      return;
     }
-    setAuthed(true);
+    try {
+      const remote = await cloudLoadBusiness();
+      setAppState(remote ? normalize(emptyState(), remote.data) : emptyState());
+      setCloudError(false);
+    } catch {
+      setCloudError(true);
+    } finally {
+      hydrated = true;
+    }
   }, []);
 
-  const logout = useCallback(() => {
-    try {
-      localStorage.removeItem(AUTH_KEY);
-    } catch {
-      /* ignore */
-    }
+  // Observa la sesión de Supabase (alta, verificación, login, logout).
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      const user = userFromSession(data.session);
+      setUser(user);
+      setAuthed(!!user);
+      if (!user) {
+        setBooting(false);
+        hydrated = true;
+        setAppState(emptyState());
+        return;
+      }
+      setBooting(true);
+      void hydrate(user).finally(() => {
+        if (!cancelled) setBooting(false);
+      });
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION") return; // ya lo resolvió getSession()
+      const user = userFromSession(session);
+      setUser(user);
+      setAuthed(!!user);
+      if (!user) {
+        setBooting(false);
+        hydrated = true;
+        setAppState(emptyState());
+        return;
+      }
+      setBooting(true);
+      void hydrate(user).finally(() => setBooting(false));
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [hydrate]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await authSignIn(email.trim(), password);
+    return error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await authSignOut();
+    setUser(null);
     setAuthed(false);
+    hydrated = true;
+    setAppState(emptyState());
   }, []);
 
-  const resetDemo = useCallback(() => {
-    setAppState(seed());
+  const signUp = useCallback(
+    async (input: { email: string; password: string; firstName: string; lastName: string; phone: string }) => {
+      const { error } = await authSignUp(input);
+      return error;
+    },
+    []
+  );
+
+  const verifyEmail = useCallback(async (email: string, code: string) => {
+    const { error } = await authVerifyCode(email.trim(), code.trim());
+    return error;
   }, []);
+
+  const resendCode = useCallback(async (email: string) => {
+    const { error } = await authResendCode(email.trim());
+    return error;
+  }, []);
+
+  const updateProfile = useCallback(
+    async (input: { firstName: string; lastName: string; phone: string }) => {
+      const { error } = await authUpdateProfile(input);
+      if (!error) setUser(currentUser ? { ...currentUser, ...input } : currentUser);
+      return error;
+    },
+    []
+  );
+
+  const completeOnboarding = useCallback(() => {
+    setAppState((s) => ({ ...s, onboarding: { completed: true } }));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setAppState(emptyState());
+  }, []);
+
+  const reloadCloud = useCallback(async () => {
+    setBooting(true);
+    try {
+      await hydrate(currentUser);
+    } finally {
+      setBooting(false);
+    }
+  }, [hydrate]);
 
   // ---- Catálogo -------------------------------------------------
   const addProduct = useCallback((p: Omit<Product, "id">) => {
@@ -1810,7 +1898,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStockTransfer,
       updateBusiness,
       setRate,
-      resetDemo,
+      signUp,
+      verifyEmail,
+      resendCode,
+      updateProfile,
+      completeOnboarding,
+      clearAll,
+      reloadCloud,
     }),
     [
       login, logout, addProduct, updateProduct, removeProduct, setStock,
@@ -1830,7 +1924,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addDiscount, updateDiscount, removeDiscount,
       addSurcharge, updateSurcharge, removeSurcharge,
       addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
-      updateBusiness, setRate, resetDemo,
+      updateBusiness, setRate,
+      signUp, verifyEmail, resendCode, updateProfile,
+      completeOnboarding, clearAll, reloadCloud,
     ]
   );
 
@@ -1844,9 +1940,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               No se pudo guardar en este dispositivo (almacenamiento lleno o no disponible).
               Tus últimos cambios pueden perderse si cierras.
             </span>
-            <button className="btn btn--soft btn--sm" onClick={downloadStateBackup}>
+            <button className="btn btn--soft btn--sm" type="button" onClick={downloadStateBackup}>
               Descargar respaldo
             </button>
+          </div>
+        )}
+        {cloudError && (
+          <div className="storage-alert" role="alert">
+            <span>
+              No se pudo sincronizar con el servidor. Revisa tu conexión; seguiremos intentando.
+            </span>
           </div>
         )}
       </ActionsCtx.Provider>
@@ -1865,12 +1968,26 @@ export function useAuth(): boolean {
   return useSyncExternalStore(subscribe, getAuthed, getAuthed);
 }
 
+/** Suscripción solo al usuario de la sesión. */
+export function useSessionUser(): SessionUser | null {
+  useMounted();
+  return useSyncExternalStore(subscribe, getUser, getUser);
+}
+
+/** true mientras se resuelve la sesión y se carga el comercio remoto. */
+export function useBooting(): boolean {
+  useMounted();
+  return useSyncExternalStore(subscribe, getBooting, getBooting);
+}
+
 /** Suscripción solo al estado (cambia cuando cambia el estado). */
 export function useStoreState(): StoreState {
   useMounted();
   const state = useSyncExternalStore(subscribe, getState, getState);
   const authed = useSyncExternalStore(subscribe, getAuthed, getAuthed);
-  return useMemo(() => ({ state, authed }), [state, authed]);
+  const user = useSyncExternalStore(subscribe, getUser, getUser);
+  const booting = useSyncExternalStore(subscribe, getBooting, getBooting);
+  return useMemo(() => ({ state, authed, user, booting }), [state, authed, user, booting]);
 }
 
 /** Suscripción solo a las acciones (identidad estable, no re-renderiza). */
@@ -1882,7 +1999,10 @@ export function useStoreActions(): StoreActions {
 
 /** API combinada (compatibilidad). */
 export function useStore(): StoreValue {
-  const { state, authed } = useStoreState();
+  const { state, authed, user, booting } = useStoreState();
   const actions = useStoreActions();
-  return useMemo(() => ({ state, authed, ...actions }), [state, authed, actions]);
+  return useMemo(
+    () => ({ state, authed, user, booting, ...actions }),
+    [state, authed, user, booting, actions]
+  );
 }

@@ -1,10 +1,11 @@
 // Rutas de la aplicación.
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { StoreProvider, useAuth } from "./lib/store";
+import { StoreProvider, useAuth, useBooting, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
 import { Login } from "./pages/Login";
-import { CrearComercio } from "./pages/CrearComercio";
+import { Registro } from "./pages/Registro";
+import { Onboarding } from "./pages/Onboarding";
 
 // Carga diferida por ruta → el bundle inicial es más pequeño y cada página
 // se descarga solo cuando se visita (mejor caché y arranque más rápido).
@@ -24,7 +25,11 @@ function PageLoader() {
 
 function Protected({ children }: { children: ReactNode }) {
   const authed = useAuth();
+  const booting = useBooting();
+  const onboarded = useStoreState().state.onboarding.completed;
+  if (booting) return <PageLoader />;
   if (!authed) return <Navigate to="/entrar" replace />;
+  if (!onboarded) return <Navigate to="/onboarding" replace />;
   return (
     <Shell>
       <Suspense fallback={<PageLoader />}>{children}</Suspense>
@@ -34,7 +39,19 @@ function Protected({ children }: { children: ReactNode }) {
 
 function PublicOnly({ children }: { children: ReactNode }) {
   const authed = useAuth();
+  const booting = useBooting();
+  if (booting) return <PageLoader />;
   if (authed) return <Navigate to="/inicio" replace />;
+  return <>{children}</>;
+}
+
+function OnboardingGate({ children }: { children: ReactNode }) {
+  const authed = useAuth();
+  const booting = useBooting();
+  const onboarded = useStoreState().state.onboarding.completed;
+  if (booting) return <PageLoader />;
+  if (!authed) return <Navigate to="/entrar" replace />;
+  if (onboarded) return <Navigate to="/inicio" replace />;
   return <>{children}</>;
 }
 
@@ -51,11 +68,19 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/crear-comercio"
+        path="/registro"
         element={
           <PublicOnly>
-            <CrearComercio />
+            <Registro />
           </PublicOnly>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <OnboardingGate>
+            <Onboarding />
+          </OnboardingGate>
         }
       />
       <Route path="/inicio" element={<Protected><Inicio /></Protected>} />

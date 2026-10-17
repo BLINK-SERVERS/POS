@@ -190,7 +190,9 @@ export function expectedCash(state: AppState): { usd: number; bs: number } {
   if (!session) return { usd: 0, bs: 0 };
   const rate = state.rate || 1;
   const cash = new Map(
-    state.accounts.filter((a) => a.type === "efectivo").map((a) => [a.id, a])
+    state.accounts
+      .filter((a) => a.type === "efectivo" && a.inCashClose !== false)
+      .map((a) => [a.id, a])
   );
   const openedAt = new Date(session.openedAt).getTime();
   let usd = session.openingUsd;

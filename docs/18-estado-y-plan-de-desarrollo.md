@@ -29,6 +29,18 @@ manda `18`.
 > contenido). El chip de tasa se acorta en móvil y el nombre del negocio se recorta con
 > elipsis. Verificado sin overflow de **320 a 1280 px** en las 9 rutas y en el POS.
 
+> **Cambios recientes (2026-10-17) · Fase 3: cuentas reales, datos en la nube y alta guiada.**
+> Se reemplazó el acceso simulado por **Supabase Auth** (correo + contraseña). El registro pide
+> datos personales reales (nombre, apellido, teléfono, correo) y **verifica el correo con un
+> código de 6 dígitos** (plantilla con `{{ .Token }}`). Tras verificar, un **asistente paso a
+> paso (onboarding)** pide: datos del comercio y su giro, los módulos que quiere usar, su
+> **cuenta para recibir pagos** (nombre, divisa USD/VES y si participa del cierre de caja),
+> categorías, productos y proveedores. **Se eliminaron los datos ficticios**: el estado inicial
+> está vacío y el comercio se guarda en **Supabase** (tabla `businesses`, una fila por usuario,
+> con RLS). Detalle de la configuración en el documento `20`. La persistencia es local
+> (caché) y remota (debounce), y el acceso directo al `store` sin sesión queda bloqueado por el
+> *gate* de `App.tsx`.
+
 **Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).
 
@@ -61,25 +73,33 @@ npm run build                    # build producción -> dist/
 npm run preview                  # sirve dist/
 ```
 
-**Datos:** no hay backend. Todo vive en `localStorage`:
+**Datos:** la cuenta y el comercio viven en **Supabase** (doc `20`). En el navegador queda una
+**caché** y la sesión:
 
-- `blink-pos-state-v2` — estado de negocio (migra automáticamente desde `blink-pos-state-v1`).
-- `blink-pos-auth-v1` — sesión.
+- `blink-pos-state-v3` — caché local del documento del comercio (la fuente de verdad es Supabase).
+- Sesión de Supabase — la administra `supabase-js` en `localStorage`.
+- Las claves antiguas (`blink-pos-state-v1`, `blink-pos-state-v2`, `blink-pos-auth-v1`) se
+  **borran** al arrancar (tenían datos ficticios).
 
-Para reiniciar los datos de demo: borrar esas claves en las herramientas del navegador, o
-llamar `resetDemo()` desde la consola (`window.__blink` no está expuesto hoy — ver deuda §6).
+Para reiniciar el comercio: **Ajustes → Cuenta → Borrar todos los datos** (vuelve al alta
+guiada y sincroniza el borrado con Supabase).
 
-### 2.1 Supabase (base del cliente, 2026-10-15)
+### 2.1 Supabase (cliente + uso en la UI)
 
-Se instaló `@supabase/supabase-js` y se creó la **base del cliente** sin tocar la
-arquitectura local-first. La app sigue guardando todo en `localStorage`; Supabase **todavía
-no se usa en ninguna página**. Es el cimiento para el paso futuro (auth + tablas + RLS).
+`src/lib/supabase.ts` expone `createClient(url, publishableKey)` con las dos variables `VITE_*`.
+Desde la Fase 3 **sí se usa en la interfaz**: `lib/cloud.ts` envuelve autenticación y datos.
+
+Se instaló `@supabase/supabase-js` como base y, en la Fase 3, pasó a ser la capa de datos real:
+**auth + `businesses` (con RLS)**. El cliente mantiene un enfoque local-first con **caché** local
+y sincronización remota. El detalle está en el documento `20`.
 
 Archivos nuevos en `app/`:
 
 | Archivo | Qué es |
 |---|---|
 | `src/lib/supabase.ts` | `export const supabase = createClient(url, publishableKey)` |
+| `src/lib/cloud.ts` | sesión, registro con OTP y comercio (una fila por usuario) |
+| `supabase/migrations/0001_init.sql` | esquema + políticas RLS (se ejecuta en Supabase) |
 | `src/vite-env.d.ts` | tipado de `import.meta.env` para las dos variables `VITE_*` |
 | `.env.local` | valores reales (en `.gitignore`, **no** se versiona) |
 | `.env.example` | plantilla con la explicación de seguridad |
@@ -107,13 +127,14 @@ Verificado: `typecheck` y `build` en verde; la clave pública responde en
 
 ```
 lib/types.ts      modelo de dominio (interfaces puras; sin lógica)
-lib/store.tsx     estado global observable + acciones + persistencia + seed
+lib/store.tsx     estado global observable + acciones + persistencia (local + nube)
+lib/cloud.ts      Supabase: sesión, registro con OTP y comercio (una fila por usuario)
 lib/fiscal.ts     cálculo fiscal puro (base, IVA, recargos, IGTF)
 lib/metrics.ts    métricas de negocio puras (ventas, utilidad, capital, series)
 lib/money.ts      formato USD/Bs, redondeo
-lib/supabase.ts   cliente de Supabase (solo clave pública; aún sin uso en la UI)
-components/*      Shell, ui (primitivas), Icon, DataTable
-pages/*           una página por módulo, autocontenida
+lib/supabase.ts   cliente de Supabase (solo clave pública)
+components/*      Shell, ui (primitivas), Icon, DataTable, OtpInput
+pages/*           una página por módulo, autocontenida (+ Login, Registro, Onboarding)
 ```
 
 - **Store externo:** `useSyncExternalStore` + selectores por hook (`useStoreSelector`).
@@ -178,10 +199,12 @@ ya implementadas, esperando pantalla · **Falta** = el trabajo real pendiente.
 
 ### 5.1 Persistencia
 
-- `STORAGE_KEY = "blink-pos-state-v2"` · `LEGACY_KEY = "blink-pos-state-v1"` (migra) ·
-  `AUTH_KEY = "blink-pos-auth-v1"` · `WRITE_DELAY = 250` ms.
-- `USER = "Diego Beleño"`: constante; **no hay multiusuario real** (el `userId` de las ventas
-  usa esta constante). Usuarios/roles es Fase 4.
+- `STORAGE_KEY = "blink-pos-state-v3"` (caché local) · `LEGACY_KEYS` (v1, v2, auth) se borran ·
+  `WRITE_DELAY = 250` ms. La **fuente de verdad es Supabase** (`businesses.data`), ver doc `20`.
+- `USER`: variable (ya no constante) con el nombre del perfil autenticado; firma los movimientos.
+  La sesión la resuelve `supabase.auth` (`useSessionUser`). Usuarios/roles de equipo es Fase 4.
+- `booting` / `hydrate`: mientras se resuelve la sesión y se carga el comercio remoto, la UI
+  muestra «Cargando…»; `hydrated` evita pisar la nube con el estado vacío antes de tiempo.
 
 ### 5.2 Firmas clave
 
@@ -313,6 +336,12 @@ marcas del topbar y totales (Shell/Vender/Ajustes) — si aplica la regla de pes
 ## 7. Backlog priorizado (orden de trabajo recomendado)
 
 Cada ítem: **qué**, **archivo(s)**, **acciones a usar**, **criterio de aceptación (CA)**.
+
+> **Nota (2026-10-17).** Además del backlog numerado, se ejecutó una **Fase 3 (cuentas reales +
+> datos en Supabase + alta guiada)**, pedida aparte: Supabase Auth con código de 6 dígitos,
+> asistente de onboarding sin datos ficticios y persistencia en `businesses` con RLS (doc `20`).
+> Los ítems «Fase 3» de abajo son la **configuración y reportes** que ya estaban planificados; no
+> confundir ambos usos del nombre.
 
 ### Fase 0 — Correcciones críticas (salen antes que todo lo demás)
 

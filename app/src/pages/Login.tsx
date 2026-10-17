@@ -1,4 +1,4 @@
-// Pantalla de acceso (propia).
+// Pantalla de acceso (Supabase Auth).
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
@@ -11,15 +11,22 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!email.includes("@") || password.length < 3) {
-      setError("Introduce un correo válido y una contraseña de al menos 3 caracteres.");
+    if (!email.includes("@") || password.length < 6) {
+      setError("Introduce tu correo y tu contraseña.");
       return;
     }
+    setBusy(true);
     setError("");
-    login(email);
+    const err = await login(email, password);
+    setBusy(false);
+    if (err) {
+      setError(err);
+      return;
+    }
     nav("/inicio");
   }
 
@@ -49,7 +56,7 @@ export function Login() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
+              placeholder="tucorreo@dominio.com"
             />
           </Field>
           <Field label="Contraseña" required>
@@ -59,36 +66,21 @@ export function Login() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Tu contraseña"
             />
           </Field>
 
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="field__error">{error}</p>}
 
-          <button className="btn btn--primary btn--block" type="submit" style={{ marginTop: "0.5rem" }}>
-            Entrar
-          </button>
-
-          <div className="row gap-8" style={{ margin: "1rem 0" }}>
-            <hr className="grow" style={{ border: "none", borderTop: "1px solid var(--color-border)" }} />
-            <span className="dim" style={{ fontSize: "0.75rem" }}>o</span>
-            <hr className="grow" style={{ border: "none", borderTop: "1px solid var(--color-border)" }} />
-          </div>
-
-          <button
-            type="button"
-            className="btn btn--ghost btn--block"
-            onClick={() => {
-              login("demo@blink.local");
-              nav("/inicio");
-            }}
-          >
-            <Icon name="google" />
-            Continuar con Google
+          <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
+            {busy ? "Entrando…" : "Entrar"}
           </button>
 
           <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
-            ¿Nuevo por aquí? <Link to="/crear-comercio">Vamos a crear tu comercio</Link>
+            ¿Nuevo por aquí? <Link to="/registro">Crear mi comercio</Link>
+          </p>
+          <p className="muted" style={{ fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
+            <Icon name="lock" /> Tu correo se verifica con un código.
           </p>
         </form>
       </div>

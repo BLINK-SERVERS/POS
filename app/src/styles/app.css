@@ -995,3 +995,187 @@ table.data tbody tr:hover {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-pop);
 }
+
+/* ============================================================
+   Autenticación: errores, código OTP y alta guiada (onboarding)
+   ============================================================ */
+.field__error {
+  margin-top: 0.6rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+}
+
+.auth__steps {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+.auth__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.auth__step--on {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.auth__step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.otp {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+.otp__box {
+  width: 100%;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.otp__box:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+.otp__box:disabled {
+  opacity: 0.6;
+}
+
+.wizard__steps {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.wizard__steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 600;
+  color: rgba(66, 66, 66, 0.45);
+}
+.wizard__steps li.is-current,
+.wizard__steps li.is-done {
+  color: var(--color-text-primary);
+}
+.wizard__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  font-size: 0.8rem;
+}
+.wizard__steps li.is-current .wizard__dot {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.wizard__steps li.is-done .wizard__dot {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+.wizard__panel {
+  width: 100%;
+  max-width: 34rem;
+}
+.wizard__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.feature input {
+  margin-top: 0.2rem;
+  accent-color: var(--color-accent);
+}
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+.mini-list__row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+.mini-list__row span {
+  flex: 1;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+}
+.icon-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+@media (max-width: 860px) {
+  .otp {
+    gap: 0.35rem;
+  }
+  .otp__box {
+    font-size: 1.1rem;
+  }
+  .wizard__panel {
+    max-width: 100%;
+  }
+}

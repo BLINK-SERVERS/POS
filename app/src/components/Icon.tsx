@@ -23,7 +23,8 @@ export type IconName =
   | "arrowRight"
   | "receipt"
   | "menu"
-  | "google";
+  | "mail"
+  | "lock";
 
 const P: Record<IconName, ReactElement> = {
   home: (
@@ -146,14 +147,19 @@ const P: Record<IconName, ReactElement> = {
       <path d="M4 17h16" />
     </>
   ),
-  google: (
+  mail: (
     <>
-      <path d="M20.5 12.2A8.5 8.5 0 1 0 12 20.5c2.3 0 4.3-.9 5.8-2.4" />
-      <path d="M12 12h8.4" />
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
     </>
   ),
 };
-
 export const Icon = memo(function Icon({
   name,
   size = "md",
