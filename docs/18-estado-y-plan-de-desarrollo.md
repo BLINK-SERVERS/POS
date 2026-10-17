@@ -13,7 +13,7 @@ manda `18`.
 
 ## 1. Estado en un vistazo
 
-**Versión actual: `1.0.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+**Versión actual: `1.1.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
@@ -21,10 +21,28 @@ Historial en `CHANGELOG.md`.
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
-| Tests | 🔴 no existen | — |
+| Tests | 🟢 26 pruebas (Vitest) | `npm test` |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-17) · v1.1.0 — base de escalabilidad.** La interfaz no cambia
+> (bundle idéntico a 1.0.0); se prepara el terreno para soportar miles de comercios y alto
+> volumen, y se añade la red de seguridad de pruebas.
+> (1) **Esquema normalizado** (`supabase/migrations/0002_normalize.sql`): los datos pasan de un
+> único documento JSONB reescrito entero con cada cambio a **tablas reales** — catálogo
+> (`products`, `contacts`, `accounts`) y **libros de solo-agregar** (`sales`+`sale_lines`,
+> `movements`, `inventory_moves`, `purchases`+`purchase_lines`, `expenses`, `pendings`+
+> `pending_payments`, `transfers`, `cash_closures`, `cash_sessions`). Es **aditivo**: no toca
+> `businesses.data`, así que la app sigue funcionando mientras se migra el cliente (Fase B).
+> (2) **Membresías** (`business_members`) y **RLS por membresía/rol**: hoy solo el propietario;
+> deja listo cajeros/gerentes sin migrar el esquema. (3) **Desempaquetado**
+> (`0003_unpack.sql`): `unpack_business(id)` / `unpack_all_businesses()` vuelcan el JSONB
+> existente hacia las tablas, de forma repitable y sin borrar el original. (4) **Arnés de
+> pruebas** (`npm test`, Vitest): 26 pruebas sobre `fiscal.ts` (IVA proporcional, IGTF 3 %,
+> total del ticket) y `metrics.ts` (neto, costo, sin descuento doble, arqueo de caja). **Siguiente
+> paso: Fase B** — capa de datos que lea/escriba las tablas manteniendo la API del store intacta.
+> Historial en `CHANGELOG.md`.
 
 > **Cambios recientes (2026-10-17) · v1.0.0.** Se fija la versión `1.0.0` (primer lanzamiento;
 > antes `0.1.0`, sin etiquetas). Se corrigieron tres cosas: (1) el **capital** de Inicio e
