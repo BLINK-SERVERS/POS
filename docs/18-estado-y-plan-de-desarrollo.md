@@ -1,9 +1,9 @@
 # 18 · Estado del desarrollo y plan de traspaso
 
-**Fecha de este documento: 2026-10-15.** Este es el documento de referencia del **estado real
-del código** y de **qué queda por hacer**. Los documentos `16` (inventario funcional de Wink)
-y `17` (mapa de brechas) son referencia de comportamiento; si algo contradice a este `18`,
-manda `18`.
+**Documento vivo: última revisión 2026-10-18 (v1.1.1).** Este es el documento de referencia
+del **estado real del código** y de **qué queda por hacer**. Los documentos `16` (inventario
+funcional de Wink) y `17` (mapa de brechas) son referencia de comportamiento; si algo
+contradice a este `18`, manda `18`.
 
 > Regla del proyecto: replicamos **comportamiento funcional** de Wink, nunca código, estilos,
 > marca ni marcado. Todo en BLINK es diseño y código originales, con la paleta estricta
@@ -27,6 +27,17 @@ Historial en `CHANGELOG.md`.
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-18) · v1.1.1 — prueba en navegador y corrección de bugs.**
+> Se probó la app en el navegador (arranque, registro, guardia de rutas, consola limpia) y se
+> corrigieron dos fallos: (1) **`ErrorBoundary` global** (`components/ErrorBoundary.tsx`,
+> envuelve la app en `main.tsx`) — antes cualquier `throw` durante el render desmontaba React y
+> dejaba la pantalla **en blanco**; ahora muestra «Recargar y continuar» / «Volver al inicio».
+> (2) **Control de stock en el POS** (`pages/Vender.tsx`) — en productos con control de
+> existencias la cantidad se **acota al stock disponible** (agregar y «+») y los agotados se
+> deshabilitan con etiqueta **«Agotado»**; antes se permitía vender de más y el stock quedaba en
+> 0 sin avisar. Verificado: `typecheck`/`build`/`test` (26) en verde, **desplegado a GitHub
+> Pages** (commit `8d9b57c`, en vivo con `versión 1.1.1`). Historial en `CHANGELOG.md`.
 
 > **Cambios recientes (2026-10-18) · Migraciones en producción + investigación REA.**
 > (1) **Las migraciones `0002_normalize.sql` y `0003_unpack.sql` ya están aplicadas en la base de
@@ -92,7 +103,8 @@ Historial en `CHANGELOG.md`.
 > (caché) y remota (debounce), y el acceso directo al `store` sin sesión queda bloqueado por el
 > *gate* de `App.tsx`.
 
-**Consecuencia:** el `typecheck` es la única red de seguridad. Toda tarea debe terminar con
+**Consecuencia:** el `typecheck` (junto a las 26 pruebas de `npm test` y la prueba de
+integración de migraciones) es la red de seguridad. Toda tarea debe terminar con
 `npm run typecheck` y `npm run build` en verde (ver checklist §8).
 
 Tamaño actual de los *chunks* del build (gzip): vendor 136,64 kB · index 20,11 kB ·
@@ -321,8 +333,10 @@ voidSale(id, reason)                                 // anula y revierte stock/d
 7. **~~Historial sin anulación~~** resuelto en Fase 1, ítem 2 (requiere motivo; `voidSale`
    revierte stock, dinero y pendientes en el store).
 8. **`receiptFields` sin UI:** el modelo define qué datos lleva el recibo; Ajustes no lo expone.
-9. **Sin tests:** considerar tests unitarios de `fiscal.ts`, `metrics.ts` y `checkout` antes
-   de tocar reglas fiscales (son funciones puras, baratas de testear).
+9. **~~Sin tests~~ resuelto en v1.1.0:** 26 pruebas (`npm test`, Vitest) sobre `fiscal.ts`
+   (IVA proporcional, IGTF 3 %, total del ticket) y `metrics.ts` (neto, costo, sin descuento
+   doble, arqueo), más `npm run test:migrations` (integración de migraciones con PostgreSQL
+   embebido). *Pendiente:* ampliar cobertura a `checkout` y a la capa de datos de la Fase B.
 10. **~~Sin backend~~** resuelto en Fase 3: los datos se guardan en **Supabase** (`businesses`,
     una fila JSONB por comercio, con RLS). El caché local es respaldo sin conexión.
     Pendiente (P3): exportar/importar estado y **sincronización multi-dispositivo** (hoy el
@@ -507,12 +521,14 @@ Hallazgos de la auditoría de código del 2026-10-15 (detalle en §6.1):
 ## 8. Checklist de verificación por cambio
 
 1. `npm run typecheck` → sin errores.
-2. `npm run build` → sin errores; revisar el tamaño de chunks si cambió mucho.
-3. Flujo manual mínimo: **abrir caja → vender (descuento + recargo + IVA) → cobrar en USD
+2. `npm test` → 26 pruebas en verde (si se tocó lógica fiscal/métrica o migraciones).
+3. `npm run build` → sin errores; revisar el tamaño de chunks si cambió mucho.
+4. Flujo manual mínimo: **abrir caja → vender (descuento + recargo + IVA) → cobrar en USD
    (ver IGTF) y otra a crédito → Historial → cerrar caja con arqueo → Informes cuadra**.
-4. Si cambió UI: probar por LAN en el celular (`npx vite --host 0.0.0.0`) — la app es
-   responsive y el POS está pensado para tacto.
-5. Si se tocaron reglas fiscales: revisar `lib/fiscal.ts` con una calculadora real.
+5. Si cambió UI: probar por LAN en el celular (`npx vite --host 0.0.0.0`) — la app es
+   responsive y el POS está pensado para tacto. Además, recorrer en el navegador arranque,
+   registro y guardia de rutas y revisar la **consola** (debe quedar sin errores).
+6. Si se tocaron reglas fiscales: revisar `lib/fiscal.ts` con una calculadora real.
 
 ---
 

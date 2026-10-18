@@ -26,11 +26,12 @@ Corrección de bugs detectados al probar la app en el navegador. Sin cambios de 
   incrementar por encima de lo disponible, y los productos agotados aparecen deshabilitados con
   la etiqueta «Agotado». Antes se permitía vender de más y el stock quedaba en 0 sin avisar.
 
-### Verificación
+### Verificación y despliegue
 
 - `npm run typecheck`, `npm run build` y `npm test` (26 pruebas) en verde.
 - Probado en el navegador: arranque limpio sin errores de consola, guardia de rutas protegidas
   redirige a `/entrar`, y la app no se en blanco ante un fallo.
+- **Desplegado** a GitHub Pages (commit `8d9b57c`); en vivo con `versión 1.1.1` y consola limpia.
 
 ---
 

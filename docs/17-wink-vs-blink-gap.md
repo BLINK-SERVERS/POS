@@ -10,11 +10,11 @@ BLINK implementa hoy, e indica qué falta y en qué prioridad.
 **Leyenda:** ✅ presente · 🟡 parcial · ❌ ausente.
 **Prioridad:** P1 (núcleo de negocio) · P2 (productividad) · P3 (avanzado/contable).
 
-> **Estado real consolidado en `18-estado-y-plan-de-desarrollo.md` (2026-10-15).** Este
-> documento conserva el detalle funcional de referencia (qué debe hacer cada función); el
-> `18` dice qué está implementado hoy, qué acciones del store ya existen sin UI, la deuda
-> técnica conocida y el backlog exacto con archivos y criterios de aceptación. En caso de
-> contradicción, manda el `18`.
+> **Estado real consolidado en `18-estado-y-plan-de-desarrollo.md` (revisión 2026-10-18,
+> v1.1.1).** Este documento conserva el detalle funcional de referencia (qué debe hacer cada
+> función); el `18` dice qué está implementado hoy, qué acciones del store ya existen sin UI,
+> la deuda técnica conocida y el backlog exacto con archivos y criterios de aceptación. En caso
+> de contradicción, manda el `18`.
 
 ---
 
@@ -257,3 +257,51 @@ Encargado / Cajero / Almacén* (Cajero sin costos ni márgenes), **no emite fact
 del SENIAT** (solo recibos), importación/exportación Excel de catálogo, contactos y
 existencias, mesas y cuentas que se dividen/mueven, recetas que descuentan insumos,
 variantes de talla/color con existencia propia.
+
+---
+
+## 7. Evidencia de comportamiento (análisis estático REA · 2026-10-18)
+
+Análisis **estático** del bundle de Wink con REA (*reverse-engineer-anything*, clonado en
+`recon/rea`, gitignored) sobre el JS descargado (`recon/assets/…`, informe en
+`recon/rea-report.json`). Sirve para **contrastar el mapa de brechas con evidencia** de qué
+superficie cubre realmente el producto. **Solo observación de comportamiento:** aquí no se
+copió código, estilos ni marca.
+
+### 7.1 Rutas del SPA (alcance de pantallas observadas)
+
+`entrar` · `verificar-correo` · `recuperar-contrasena` / `restablecer-contrasena` ·
+`crear-comercio` · `elegir-perfil` · `aceptar-invitacion` · `inicio` · `ventas` ·
+`inventario` · `catalogo` · `contactos` · `finanzas` · `informes` · `ajustes` ·
+`auth/google/listo` · `dev/ui-kit`.
+
+**Contraste con BLINK:**
+
+| Ruta Wink | BLINK | Delta |
+|---|---|---|
+| `entrar`, `verificar-correo`, `crear-comercio` | ✅ `/entrar`, `/registro` (OTP 6 dígitos) | alineado |
+| `recuperar/restablecer-contrasena` | ❌ | **P2**: recuperar contraseña (requiere *Redirect URL*) |
+| `aceptar-invitacion`, `elegir-perfil` | ❌ (schema `business_members` listo) | **P3**: equipo/roles; hoy 1 usuario = 1 comercio |
+| `auth/google/listo` | ❌ **a propósito** | BLINK no usa Google (doc `20`) |
+| `dev/ui-kit` | — (interno) | no aplica |
+
+### 7.2 Endpoints REST observados (API de servidor)
+
+`GET/POST /sales` · `/sales/summary` · `/sales/surcharges` · `/purchases` ·
+`/purchases/summary` · `/pendings` · `/commission-settlements` ·
+`/commission-settlements/owed`.
+
+**Contraste con BLINK:**
+
+| Endpoint Wink | Equivalente en BLINK | Nota |
+|---|---|---|
+| `/sales`, `/sales/summary` | `sales` + `salesSummary` (cliente) | Resumen agregado en servidor → BLINK agrega en cliente (hoy). Fase B puede moverlo a SQL. |
+| `/sales/surcharges` | ✅ `surcharge` (CRUD en Catálogo) | Wink trata recargos como recurso propio; BLINK también, pero dentro del documento. |
+| `/purchases`, `/purchases/summary` | `purchases` + `addPurchase` | BLINK registra compras (v1.0.0); falta sub-informe. |
+| `/pendings` | ✅ `pendings` (CxC/CxP) | alineado (alta, abono, anulación). |
+| `/commission-settlements` + `/owed` | 🟡 parcial | Wink modela **liquidaciones de comisión** como documento con saldo “owed”; BLINK solo tiene `commissionIn/Out` por cuenta. **P3** (bloque al implementar equipo/comisiones). |
+
+**Lectura para el plan:** la superficie observada confirma que el núcleo de BLINK (ventas,
+compras, pendientes, recargos, descuentos) está alineado; las brechas reales siguen siendo
+**recuperación de contraseña**, **equipo/roles/invitaciones**, **liquidación de comisiones** y
+**agregados de reporte en servidor** (últimos dos ya anticipados en `18` §7, Fases 3–4).

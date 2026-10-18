@@ -48,11 +48,24 @@ correo con código de 6 dígitos, alta guiada y almacenamiento del comercio en S
 
 1. Entra a <https://supabase.com/dashboard> → tu proyecto.
 2. **SQL Editor → New query**.
-3. Pega **todo** el contenido de `supabase/migrations/0001_init.sql` y pulsa **Run**.
-4. Debe responder «Success. No rows returned».
+3. Ejecuta **en orden** los archivos de `supabase/migrations/`, uno por uno (pulsa **Run** y
+   debe responder «Success. No rows returned»):
+   1. `0001_init.sql` — tabla `businesses` (una fila por usuario), sus **políticas RLS**
+      (cada quien solo ve lo suyo) y el `updated_at` automático.
+   2. `0002_normalize.sql` — **esquema normalizado**: catálogo (`products`, `contacts`,
+      `accounts`) y libros de solo-agregar (`sales`+`sale_lines`, `movements`,
+      `inventory_moves`, `purchases`+`purchase_lines`, `expenses`, `pendings`+
+      `pending_payments`, `transfers`, `cash_closures`, `cash_sessions`), más
+      `business_members` (membresías) con RLS por membresía/rol. **Aditivo**: no toca
+      `businesses.data`, así que la app sigue funcionando mientras se migra el cliente.
+   3. `0003_unpack.sql` — funciones `unpack_business(id)` / `unpack_all_businesses()` que
+      vuelcan el JSONB existente hacia las tablas (repitibles, sin borrar el original).
 
-Esto crea la tabla `businesses` (una fila por usuario), sus **políticas RLS** (cada quien solo ve
-lo suyo) y el `updated_at` automático.
+> **Estado en producción (2026-10-18):** los tres archivos **ya están aplicados** en el
+> proyecto Supabase de producción (`zspgwnbkcvnhdwsidjnn`) vía Management API: 17 tablas
+> públicas, 66 políticas RLS (activo en todas), 6 funciones. La app **cliente** sigue
+> leyendo/escribiendo el JSONB de `businesses.data` hasta la **Fase B** (capa de datos sobre
+> las tablas normalizadas). Ver `18` y el arnés `npm run test:migrations`.
 
 ### 2.2 Correo con SMTP propio (obligatorio para usuarios reales)
 
@@ -135,9 +148,10 @@ businesses(
 
 **¿Por qué un documento JSON y no tablas por entidad?** El POS es hoy un sistema **local-first**
 con ~23 colecciones sincronizadas y lógica pura síncrona. Guardar el documento completo en una
-fila da **persistencia real, RLS y multi-dispositivo** sin reescribir la lógica (y sin romper
-nada). Normalizar (ventas, productos, movimientos… como tablas) es una **fase posterior** si se
-necesitan consultas o informes del lado del servidor.
+fila dio **persistencia real, RLS y multi-dispositivo** sin reescribir la lógica. **Ya existe el
+esquema normalizado** (migración `0002`, aplicado en producción: 17 tablas, ver §2.1), pero
+**la capa cliente todavía escribe el JSONB** hasta la **Fase B**: repositorios que lean/escriban
+las tablas manteniendo intacta la API del store (`useStoreActions()`), sin cambiar la interfaz.
 
 ### 3.3 RLS (seguridad)
 
@@ -164,7 +178,9 @@ Nadie —ni con la clave pública— puede leer ni escribir filas de otro comerc
 
 ## 5. Pendientes / decisiones de esta fase
 
-- Normalizar entidades en tablas (solo si se necesitan consultas del lado del servidor).
+- ~~Normalizar entidades en tablas~~ **[Hecho (Fase A): migración `0002` aplicada en
+  producción.]** Queda la **Fase B**: capa de datos cliente sobre esas tablas
+  (repositorios) manteniendo la API del store intacta.
 - Recuperar contraseña (por enlace, requiere *Redirect URL* configurada).
-- Invitaciones/roles de equipo (hoy: un usuario = un comercio).
+- Invitaciones/roles de equipo (hoy: un usuario = un comercio; `business_members` ya preparado).
 - Resolución de conflictos multi-dispositivo (hoy gana la última escritura con *debounce*).

@@ -2,6 +2,8 @@
 
 **Sitio en vivo:** https://blink-servers.github.io/POS/
 **Repositorio:** https://github.com/BLINK-SERVERS/POS (público)
+**Último despliegue:** v1.1.1 · 2026-10-18 (commit `8d9b57c`) — verificado en vivo (consola
+sin errores; `versión 1.1.1` visible en la pantalla de acceso).
 
 ## Cómo está armado
 

@@ -5,6 +5,32 @@
 > qué está roto, para priorizar la réplica P1 de `docs/17`.
 > Fecha: 2026-10-15 · Método: lectura completa de `app/src` + `tsc --noEmit` + `vite build`.
 
+> ## ⚠️ Estado al 2026-10-18 (v1.1.1) — este informe es un **instantánea histórica**
+>
+> Los hallazgos de abajo se levantaron el **2026-10-15**. Desde entonces se corrigió lo
+> esencial; **no tomes esta fecha como estado actual** (el estado vigente vive en
+> `18-estado-y-plan-de-desarrollo.md`). Resumen de lo resuelto:
+>
+> | Hallazgo del 2026-10-15 | Estado hoy |
+> |---|---|
+> | «Compilación rota: **9 errores** de `tsc`» (§3) | 🟢 **0 errores** — `npm run typecheck` en verde |
+> | «Caja se abre pero **nunca cierra**» (B2) | 🟢 **Cerrada** — `closeCash` con arqueo real (Fase 1 · ítem 8) |
+> | `moveAccount` inexistente → `TypeError` (B1) | 🟢 corregido (la acción real es `adjustAccount`) |
+> | `metrics` sumaba gastos y capital mal (B4) | 🟢 corregido (v1.0.0) |
+> | Compras/stock sin trazabilidad (B6) | 🟢 corregido (v1.0.0: `addPurchase` + pestañas reales) |
+> | Alta de producto/contacto descartaba campos (B7/B8) | 🟢 corregido (forms completos, Fase 1–2) |
+> | Historial sin estados reales ni anulación (B9) | 🟢 corregido (Fase 1 · ítem 2) |
+> | **Pruebas: 0** | 🟢 **26 pruebas** (`npm test`) + integración de migraciones |
+> | **`app/README.md` corrupto (7 MB)** | 🟢 reescrito (5 KB) |
+> | **Sin `.gitignore` ni repo git** | 🟢 repo `BLINK-SERVERS/POS` con `.gitignore` |
+> | Sin `ErrorBoundary` (pantalla blanca) | 🟢 añadido en **v1.1.1** |
+> | Sin validación de existencia en el POS (menor) | 🟢 **v1.1.1**: acota al stock y marca «Agotado» |
+>
+> Se mantiene el detalle histórico abajo para trazabilidad. Los ítems que **siguen abiertos**
+> (sub-informes, `receiptFields`/impresión, canales/ubicaciones en la venta, filtros,
+> importación, confirmaciones destructivas, accesibilidad del `Modal`) están priorizados en el
+> backlog de `18` §7.
+
 ---
 
 ## 1. Resumen ejecutivo
@@ -179,4 +205,6 @@ Acciones definidas en el store que **ninguna** página invoca:
 | 9 | Inicio: "Por atender" completo | `Inicio.tsx` |
 | 10 | Arreglos de cálculo (`metrics.ts`) y accesibilidad (`ui.tsx`) | `metrics.ts`, `ui.tsx` |
 
-El detalle de lo implementado queda en `docs/19-cobertura-y-replica.md`.
+El detalle de lo implementado y el backlog vigente viven en `18-estado-y-plan-de-desarrollo.md`
+(§4 mapa de estado, §7 backlog). *(Nota: aquí se enlazaba antes `docs/19-cobertura-y-replica.md`,
+un nombre que nunca existió en disco; el `19` real es `19-despliegue-gh-pages.md`.)*
