@@ -25,7 +25,9 @@ miles de comercios y mucho volumen de operaciones, y se añade la red de segurid
   `pending_payments`, `transfers`, `cash_closures`) y caja (`cash_sessions`). Es **aditivo**: no
   toca `businesses.data`, así que la app actual sigue funcionando mientras se migra la capa cliente.
 - **Multi-usuario preparado** (`business_members` + RLS por membresía y rol). Hoy solo el
-  propietario; abre la puerta a cajeros/gerentes sin migrar el esquema después.
+  propietario; abre la puerta a cajeros/gerentes sin migrar el esquema después. La migración
+  **backfilla** la membresía de los comercios que ya existían (si no, RLS bloquearía a su propio
+  dueño al aplicarla) y un trigger la da de alta en los comercios nuevos.
 - **IDs `text`, `business_id` uuid**: los IDs de entidad que genera el cliente son cadenas
   (`prodx_a1b2c3`), no UUIDs; se usan como `text` para migrar datos existentes sin reescribirlos.
 - **Desempaquetado** (`0003_unpack.sql`): función `unpack_business(id)` / `unpack_all_businesses()`
@@ -41,6 +43,11 @@ miles de comercios y mucho volumen de operaciones, y se añade la red de segurid
   `metrics.ts` (neto, costo, total sin descuento doble, qué cuenta en KPIs, capital en USD,
   saldo de pendientes y **arqueo de caja**). Es el seguro antes de tocar la lógica de dinero en la
   migración a las tablas.
+- **Prueba de integración de migraciones** (`npm run test:migrations`). Levanta un PostgreSQL
+  embebido (devDep `embedded-postgres`), imita el esquema `auth` de Supabase y ejecuta las tres
+  migraciones reales: verifica membresías (backfill + trigger), el desempaquetado JSONB → tablas
+  (conteos, neto de venta, casteo de fechas, ids de línea), idempotencia y aislamiento por RLS.
+  Encontró y corrigió el fallo de backfill antes de tocar producción.
 
 ### Sin cambios visibles
 

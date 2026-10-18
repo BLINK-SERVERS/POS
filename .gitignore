@@ -21,7 +21,9 @@ clone/
 recon/
 screenshots/
 app/screenshots/
-scripts/
+# Anclado a la raíz: era del arnés de reconocimiento. Sin la barra inicial
+# también ignoraba app/scripts/ (donde vive postbuild-pages.mjs del deploy).
+/scripts/
 
 # El package.json de la raíz es del arnés de reconocimiento; la app tiene el suyo.
 # (Anclado a la raíz: sin la barra inicial también ignoraba app/package.json.)

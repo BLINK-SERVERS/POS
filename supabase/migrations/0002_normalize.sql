@@ -434,6 +434,13 @@ create trigger on_business_created
   after insert on public.businesses
   for each row execute function public.handle_new_business_owner();
 
+-- Backfill: los comercios que YA existían (creados antes de esta migración)
+-- no pasaron por el trigger de arriba. Sin esta línea, RLS los bloquearía
+-- a su propio propietario. Idempotente.
+insert into public.business_members (business_id, user_id, role)
+select id, owner_id, 'owner' from public.businesses
+on conflict (business_id, user_id) do nothing;
+
 -- ------------------------------------------------------------------
 -- 12. Row Level Security.
 --     · Cualquier miembro puede LEER y AGREGAR (un cajero debe poder

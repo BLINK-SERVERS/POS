@@ -22,6 +22,7 @@ Historial en `CHANGELOG.md`.
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
 | Tests | 🟢 26 pruebas (Vitest) | `npm test` |
+| Migraciones SQL | 🟢 23 comprobaciones (PG embebido) | `npm run test:migrations` |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
@@ -40,7 +41,11 @@ Historial en `CHANGELOG.md`.
 > (`0003_unpack.sql`): `unpack_business(id)` / `unpack_all_businesses()` vuelcan el JSONB
 > existente hacia las tablas, de forma repitable y sin borrar el original. (4) **Arnés de
 > pruebas** (`npm test`, Vitest): 26 pruebas sobre `fiscal.ts` (IVA proporcional, IGTF 3 %,
-> total del ticket) y `metrics.ts` (neto, costo, sin descuento doble, arqueo de caja). **Siguiente
+> total del ticket) y `metrics.ts` (neto, costo, sin descuento doble, arqueo de caja).
+> (5) **Prueba de integración de migraciones** (`npm run test:migrations`): PostgreSQL embebido
+> que imita el esquema `auth` de Supabase y ejecuta las migraciones reales; encontró y corrigió
+> un fallo de **backfill** (los comercios previos a la migración no tenían membresía y RLS
+> habría bloqueado a su dueño). **Siguiente
 > paso: Fase B** — capa de datos que lea/escriba las tablas manteniendo la API del store intacta.
 > Historial en `CHANGELOG.md`.
 
