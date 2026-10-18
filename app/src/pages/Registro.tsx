@@ -1,15 +1,14 @@
-// Registro: datos personales → verificación por código de 6 dígitos.
+// Registro: datos personales → verificación por enlace mágico.
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
-import { OtpInput } from "../components/OtpInput";
 
 export function Registro() {
-  const { signUp, verifyEmail, resendCode } = useStoreActions();
-  const nav = useNavigate();
-  const [step, setStep] = useState<"datos" | "codigo">("datos");
+  const { signUp, resendCode } = useStoreActions();
+
+  const [step, setStep] = useState<"datos" | "link">("datos");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -18,12 +17,10 @@ export function Registro() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 
-  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [trust, setTrust] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -68,23 +65,9 @@ export function Registro() {
       setError(err);
       return;
     }
-    setStep("codigo");
+    setStep("link");
     setCooldown(45);
-    setInfo(`Enviamos un correo a ${email.trim()}. Abre el enlace o escribe el código de 6 dígitos.`);
-  }
-
-  async function onSubmitCodigo(e: FormEvent) {
-    e.preventDefault();
-    if (code.length < 6) return;
-    setBusy(true);
-    setError("");
-    const err = await verifyEmail(email.trim(), code, trust);
-    setBusy(false);
-    if (err) {
-      setError(err);
-      return;
-    }
-    nav("/onboarding");
+    setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo equipo o dispositivo para continuar.`);
   }
 
   async function reenviar() {
@@ -98,7 +81,7 @@ export function Registro() {
       return;
     }
     setCooldown(45);
-    setInfo("Te enviamos un código nuevo.");
+    setInfo("Te enviamos un nuevo enlace de verificación.");
   }
 
   return (
@@ -119,7 +102,7 @@ export function Registro() {
           <div className="auth__steps" aria-hidden>
             <span className={step === "datos" ? "auth__step auth__step--on" : "auth__step"}>1</span>
             <span className="auth__step-line" />
-            <span className={step === "codigo" ? "auth__step auth__step--on" : "auth__step"}>2</span>
+            <span className={step === "link" ? "auth__step auth__step--on" : "auth__step"}>2</span>
           </div>
 
           {step === "datos" ? (
@@ -158,7 +141,7 @@ export function Registro() {
                 />
               </Field>
 
-              <Field label="Correo electrónico" required hint="Aquí llegará el correo de verificación.">
+              <Field label="Correo electrónico" required hint="Cada comercio debe usar un correo único. Aquí llegará el enlace de verificación.">
                 <input
                   className="input"
                   type="email"
@@ -193,7 +176,7 @@ export function Registro() {
               {error && <p className="field__error">{error}</p>}
 
               <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
-                {busy ? "Creando cuenta…" : "Continuar"}
+                {busy ? "Enviando enlace…" : "Continuar"}
               </button>
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
@@ -201,13 +184,12 @@ export function Registro() {
               </p>
             </form>
           ) : (
-            <form onSubmit={onSubmitCodigo}>
+            <div>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
                 onClick={() => {
                   setStep("datos");
-                  setCode("");
                   setError("");
                 }}
                 style={{ marginBottom: "0.75rem" }}
@@ -215,31 +197,18 @@ export function Registro() {
                 ← Cambiar datos
               </button>
               <h1>Verifica tu correo</h1>
-              <p className="muted" style={{ marginBottom: "1.25rem" }}>
-                {info || `Abre el enlace o escribe el código de 6 dígitos que enviamos a ${email.trim()}.`}
+              <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
+                {info || `Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo navegador para continuar.`}
+              </p>
+              <p className="muted" style={{ fontSize: "0.9rem", marginBottom: "1.25rem" }}>
+                <Icon name="mail" /> Revisa también Spam o Promociones si no lo ves.
               </p>
 
-              <OtpInput value={code} onChange={setCode} disabled={busy} />
-
               {error && (
-                <p className="field__error" style={{ marginTop: "0.75rem" }}>
+                <p className="field__error" style={{ marginBottom: "0.75rem" }}>
                   {error}
                 </p>
               )}
-
-              <label className="row gap-8 auth__trust" style={{ marginTop: "0.75rem" }}>
-                <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} />
-                <span>Confiar en este dispositivo (no volver a pedir el código aquí)</span>
-              </label>
-
-              <button
-                className="btn btn--primary btn--block"
-                type="submit"
-                style={{ marginTop: "1rem" }}
-                disabled={busy || code.length < 6}
-              >
-                {busy ? "Verificando…" : "Verificar"}
-              </button>
 
               <button
                 type="button"
@@ -249,13 +218,13 @@ export function Registro() {
                 disabled={busy || cooldown > 0}
               >
                 <Icon name="mail" />
-                {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar código"}
+                {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
               </button>
 
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
-                ¿No llega? Revisa spam o promociones. El código vence en unos minutos.
+                Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión automáticamente.
               </p>
-            </form>
+            </div>
           )}
         </div>
       </div>

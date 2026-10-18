@@ -808,7 +808,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDeviceVerified(true);
       return null;
     }
-    // Equipo nuevo: enviamos un código de 6 dígitos y lo pedimos antes de entrar.
+    // Equipo nuevo: enviamos un enlace mágico por correo para verificarlo.
     const { error: sendError } = await authSendDeviceCode(email.trim());
     return sendError;
   }, []);

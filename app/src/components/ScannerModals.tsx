@@ -42,8 +42,10 @@ export function MobileScannerModal({ onClose }: { onClose: () => void }) {
       </p>
 
       {pairingUrl ? (
-        <div className="scan-pair">
-          <QrCode value={pairingUrl} size={208} />
+        <div className="scan-pair" style={{ justifyContent: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <QrCode value={pairingUrl} size={208} />
+          </div>
           <div className="scan-pair__info stack gap-8">
             <PhoneState active={remoteActive} />
             <span className="dim" style={{ fontSize: "0.8rem" }}>

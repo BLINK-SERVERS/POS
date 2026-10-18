@@ -37,7 +37,7 @@ export function QrCode({
     return (
       <div
         className="qr qr--loading"
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, margin: "0 auto", justifyContent: "center", alignItems: "center" }}
         role="img"
         aria-label="Generando código QR"
       />
@@ -46,7 +46,7 @@ export function QrCode({
   return (
     <div
       className={"qr" + (className ? ` ${className}` : "")}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, margin: "0 auto", justifyContent: "center", alignItems: "center" }}
       // Solo insertamos el SVG que genera la librería `qrcode`; el texto
       // codificado no se inyecta como HTML, va dentro de rutas del dibujo.
       dangerouslySetInnerHTML={{ __html: svg }}

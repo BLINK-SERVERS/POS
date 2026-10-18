@@ -1,33 +1,23 @@
 // Pantalla de acceso (Supabase Auth).
 //
-// Dos pasos: correo + contraseña y, si el equipo NO es de confianza, un código
-// de 6 dígitos enviado al correo. Al marcar «Confiar en este dispositivo» no
-// se vuelve a pedir el código en este equipo.
+// Autenticación por enlace mágico (magic link). Se envía un enlace al correo
+// para verificar el inicio de sesión.
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useAuth, useDeviceVerified, useSessionUser, useStoreActions } from "../lib/store";
+import { useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
-import { OtpInput } from "../components/OtpInput";
 
 export function Login() {
-  const { login, sendDeviceCode, verifyDevice, logout } = useStoreActions();
-  const authed = useAuth();
-  const verified = useDeviceVerified();
-  const user = useSessionUser();
+  const { login, sendDeviceCode, logout } = useStoreActions();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
-  const [trust, setTrust] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [step, setStep] = useState<"cred" | "link">("cred");
   const timer = useRef<number | undefined>(undefined);
-
-  // Hay sesión pero el equipo aún no está verificado → pedimos el código.
-  const needsCode = authed && !verified;
-  const codeEmail = user?.email ?? email.trim();
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -53,41 +43,29 @@ export function Login() {
       setError(err);
       return;
     }
-    // Si el equipo no era de confianza, el store ya envió el código.
+    setStep("link");
     setCooldown(45);
-  }
-
-  async function onSubmitCodigo(e: FormEvent) {
-    e.preventDefault();
-    if (code.length < 6) return;
-    setBusy(true);
-    setError("");
-    const err = await verifyDevice(codeEmail, code, trust);
-    setBusy(false);
-    if (err) setError(err);
   }
 
   async function reenviar() {
     if (cooldown > 0) return;
     setBusy(true);
     setError("");
-    const err = await sendDeviceCode(codeEmail);
+    const err = await sendDeviceCode(email.trim());
     setBusy(false);
     if (err) {
       setError(err);
       return;
     }
-    setCode("");
     setCooldown(45);
   }
 
   async function usarOtraCuenta() {
     await logout();
-    setCode("");
     setPassword("");
-    setTrust(false);
     setCooldown(0);
     setError("");
+    setStep("cred");
   }
 
   return (
@@ -105,8 +83,8 @@ export function Login() {
 
       <div className="auth__panel">
         <div className="auth__card">
-          {needsCode ? (
-            <form onSubmit={onSubmitCodigo}>
+          {step === "link" ? (
+            <div>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
@@ -115,33 +93,15 @@ export function Login() {
               >
                 ← Usar otra cuenta
               </button>
-              <h1>Verifica este dispositivo</h1>
-              <p className="muted" style={{ marginBottom: "1.25rem" }}>
-                Por seguridad enviamos un correo a <strong>{codeEmail}</strong>. Abre el enlace o
-                escribe el código de 6 dígitos.
+              <h1>Verifica tu correo</h1>
+              <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
+                Enviamos un enlace de verificación a <strong>{email.trim()}</strong>. Ábrelo desde este navegador para completar el inicio de sesión.
+              </p>
+              <p className="muted" style={{ fontSize: "0.9rem", marginBottom: "1.25rem" }}>
+                <Icon name="mail" /> Revisa Spam o Promociones si no lo ves.
               </p>
 
-              <OtpInput value={code} onChange={setCode} disabled={busy} />
-
-              {error && (
-                <p className="field__error" style={{ marginTop: "0.75rem" }}>
-                  {error}
-                </p>
-              )}
-
-              <label className="row gap-8 auth__trust" style={{ marginTop: "0.75rem" }}>
-                <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} />
-                <span>Confiar en este dispositivo (no volver a pedir el código aquí)</span>
-              </label>
-
-              <button
-                className="btn btn--primary btn--block"
-                type="submit"
-                style={{ marginTop: "1rem" }}
-                disabled={busy || code.length < 6}
-              >
-                {busy ? "Verificando…" : "Verificar y entrar"}
-              </button>
+              {error && <p className="field__error">{error}</p>}
 
               <button
                 type="button"
@@ -151,13 +111,13 @@ export function Login() {
                 disabled={busy || cooldown > 0}
               >
                 <Icon name="mail" />
-                {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar código"}
+                {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
               </button>
 
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
-                ¿No llega? Revisa spam o promociones. El código vence en unos minutos.
+                Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión automáticamente.
               </p>
-            </form>
+            </div>
           ) : (
             <form onSubmit={onSubmitCredenciales}>
               <h1>Qué bueno verte por aquí.</h1>
@@ -196,7 +156,7 @@ export function Login() {
                 ¿Nuevo por aquí? <Link to="/registro">Crear mi comercio</Link>
               </p>
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
-                <Icon name="lock" /> Tu correo se verifica con un código.
+                <Icon name="lock" /> Verificación por enlace mágico.
               </p>
               <p className="dim" style={{ fontSize: "0.72rem", marginTop: "0.75rem", textAlign: "center" }}>
                 versión {__APP_VERSION__}

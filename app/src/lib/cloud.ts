@@ -74,10 +74,11 @@ export async function authSignUp(input: {
   lastName: string;
   phone: string;
 }): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.signUp({
+  // Usamos enlace mágico (link) en lugar de código de 6 dígitos.
+  const { error } = await supabase.auth.signInWithOtp({
     email: input.email,
-    password: input.password,
     options: {
+      shouldCreateUser: true,
       emailRedirectTo: appRedirectUrl(),
       data: {
         first_name: input.firstName,
@@ -89,26 +90,27 @@ export async function authSignUp(input: {
   return { error: error ? authError(error.message) : null };
 }
 
-/** Verifica el código de 6 dígitos del alta de cuenta. */
+/** Verificación por enlace: ya no usamos código OTP de 6 dígitos. */
 export async function authVerifyCode(
-  email: string,
-  token: string
+  _email: string,
+  _token: string
 ): Promise<{ error: string | null; userId?: string }> {
-  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
-  return { error: error ? authError(error.message) : null, userId: data.user?.id };
+  return {
+    error:
+      "La verificación por enlace ya no usa código. Abre el enlace que recibiste en tu correo.",
+  };
 }
 
-/** Reenvía el código del alta de cuenta. */
+/** Reenvía el enlace mágico para alta de cuenta. */
 export async function authResendCode(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.resend({
-    type: "signup",
+  const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: appRedirectUrl() },
+    options: { shouldCreateUser: true, emailRedirectTo: appRedirectUrl() },
   });
   return { error: error ? authError(error.message) : null };
 }
 
-/** Envía un código de acceso al correo (verificación al entrar desde un equipo nuevo). */
+/** Envía un enlace mágico (magic link) para verificar el equipo al entrar. */
 export async function authSendDeviceCode(email: string): Promise<{ error: string | null }> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -117,13 +119,15 @@ export async function authSendDeviceCode(email: string): Promise<{ error: string
   return { error: error ? authError(error.message) : null };
 }
 
-/** Verifica el código de acceso del dispositivo y abre la sesión. */
+/** No aplica: dejamos la verificación por enlace. */
 export async function authVerifyLoginCode(
-  email: string,
-  token: string
+  _email: string,
+  _token: string
 ): Promise<{ error: string | null; userId?: string }> {
-  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  return { error: error ? authError(error.message) : null, userId: data.user?.id };
+  return {
+    error:
+      "Abre el enlace que recibiste en tu correo para verificar este equipo.",
+  };
 }
 
 export async function authSignIn(
