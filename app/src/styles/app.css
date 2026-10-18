@@ -1051,6 +1051,18 @@ table.data tbody tr:hover {
   padding: 0.5rem 0.7rem;
 }
 
+/* Casilla «Confiar en este dispositivo» (alta y acceso). */
+.auth__trust {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.auth__trust input {
+  accent-color: var(--color-accent);
+  width: 1rem;
+  height: 1rem;
+}
+
 .auth__steps {
   display: flex;
   align-items: center;

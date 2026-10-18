@@ -69,20 +69,28 @@ correo con código de 6 dígitos, alta guiada y almacenamiento del comercio en S
 
 ### 2.2 Correo con SMTP propio (obligatorio para usuarios reales)
 
-El correo por defecto de Supabase **solo entrega al dueño del proyecto** y está limitado. Para
-enviar los códigos a cualquier persona:
+El correo por defecto de Supabase **solo entrega al dueño del proyecto** y está limitado (≈2
+correos por hora por proyecto). Para enviar los códigos a cualquier persona:
 
 1. **Project Settings → Auth → SMTP Settings** → activa **Enable Custom SMTP** y completa
    *host*, *port*, *user*, *password* y *sender* de tu proveedor (Resend, SendGrid, Brevo, Gmail
-   SMTP…).
+   SMTP…). Con SMTP propio también se **desbloquea la edición de plantillas**.
 2. Recomendado: **Auth → Rate Limits** → ajusta a tu volumen.
+
+> **Cambio de Supabase (3-jun-2026):** los proyectos **gratuitos** con el proveedor de correo por
+> defecto **ya no pueden editar las plantillas** de correo (confirmación, enlace mágico, etc.). El
+> correo por defecto trae **solo un enlace** (`{{ .ConfirmationURL }}`), no el código de 6
+> dígitos. La app acepta **ambos**: si llega el código lo verifica con `verifyOtp`, y si el usuario
+> abre el **enlace**, la sesión se crea sola y el equipo queda verificado. Para que llegue el
+> **código** de verdad hay que configurar **SMTP propio** (paso 1) o pasar a plan **Pro**.
 
 ### 2.3 Plantilla del correo con el código de 6 dígitos
 
-El cliente no puede cambiar la plantilla: hay que editar el **Confirm signup** para incluir el
-token.
+**Requiere SMTP propio o plan Pro** (en el plan gratuito con el proveedor por defecto la edición
+está bloqueada, ver 2.2).
 
-1. **Authentication → Email Templates → Confirm signup**.
+1. **Authentication → Email Templates → Confirm signup** (y **Magic Link**, que es el que se usa
+   al entrar desde un equipo nuevo).
 2. Asegúrate de que el cuerpo incluye `{{ .Token }}` (el código de 6 dígitos). Ejemplo mínimo:
 
    ```html
@@ -92,15 +100,19 @@ token.
    <p>Si no creaste una cuenta, ignora este mensaje.</p>
    ```
 
-3. Guarda. **No** hace falta `{{ .ConfirmationURL }}`; BLINK usa el código, no el enlace.
+3. Guarda. Idealmente incluye **también** `{{ .ConfirmationURL }}` (enlace) como respaldo: si el
+   usuario no puede escribir el código, puede abrir el enlace y el equipo queda verificado igual.
 
 ### 2.4 Otros ajustes
 
 - **Authentication → Providers → Email**: activado; «Confirm email» **activado** (así el código
   es obligatorio).
 - **Providers → Google / Phone**: **desactivados** (BLINK no usa Google).
-- **URL Configuration**: agrega `https://blink-servers.github.io/POS/` como *Site URL* /
-  *Redirect URLs* (por si más adelante se usa recuperación de contraseña por enlace).
+- **URL Configuration** (ya aplicado en producción): *Site URL* =
+  `https://blink-servers.github.io/POS/` y *Redirect URLs* = `https://blink-servers.github.io/POS/`
+  y `https://blink-servers.github.io/POS/**` (más `http://localhost:5173/**` para desarrollo).
+  Antes el *Site URL* seguía en `http://localhost:3000`, y por eso los enlaces de los correos
+  apuntaban a **localhost**.
 
 ### 2.5 Variables de entorno del cliente
 
@@ -121,12 +133,30 @@ Estas dos se incluyen en el bundle (son públicas). **Nunca** pongas la secret k
 
 | Función | Supabase |
 |---|---|
-| `authSignUp` | `signUp({ email, password, options.data: { first_name, last_name, phone } })` |
+| `authSignUp` | `signUp({ email, password, options: { emailRedirectTo, data: { first_name, last_name, phone } } })` |
 | `authVerifyCode` | `verifyOtp({ email, token, type: "signup" })` |
-| `authResendCode` | `resend({ type: "signup", email })` |
+| `authResendCode` | `resend({ type: "signup", email, options: { emailRedirectTo } })` |
+| `authSendDeviceCode` | `signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo } })` |
+| `authVerifyLoginCode` | `verifyOtp({ email, token, type: "email" })` |
 | `authSignIn` | `signInWithPassword({ email, password })` |
 | `authSignOut` | `signOut()` |
 | `authUpdateProfile` | `updateUser({ data })` |
+
+Los errores se traducen al español (`authError`). `emailRedirectTo` se calcula con
+`window.location.origin + import.meta.env.BASE_URL` (producción o local).
+
+**«Confiar en este dispositivo»** (`src/lib/store.tsx`): el equipo se marca por usuario en
+`localStorage` (`blink-pos-trusted-devices`); la verificación de una sola pestaña se guarda en
+`sessionStorage` (`blink-pos-device-verified`). Al entrar:
+
+- **Equipo de confianza** → correo + contraseña y entra directo.
+- **Equipo nuevo** → correo + contraseña, luego `authSendDeviceCode` envía el código y se pide con
+  `authVerifyLoginCode` antes de entrar. La casilla «Confiar en este dispositivo» guarda el equipo.
+- Si el usuario llega **abriendo el enlace** del correo, `consumeLinkAuthType()` detecta el tipo y
+  el equipo queda verificado sin pedir nada.
+
+Las guardias de ruta (`App.tsx`) exigen `authed && deviceVerified`; con sesión pero sin equipo
+verificado se vuelve a `/entrar`, que muestra el paso del código.
 
 Los errores se traducen al español (`authError`).
 

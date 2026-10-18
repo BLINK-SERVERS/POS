@@ -23,6 +23,7 @@ export function Registro() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [trust, setTrust] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function Registro() {
     }
     setStep("codigo");
     setCooldown(45);
-    setInfo(`Enviamos un código de 6 dígitos a ${email.trim()}.`);
+    setInfo(`Enviamos un correo a ${email.trim()}. Abre el enlace o escribe el código de 6 dígitos.`);
   }
 
   async function onSubmitCodigo(e: FormEvent) {
@@ -77,7 +78,7 @@ export function Registro() {
     if (code.length < 6) return;
     setBusy(true);
     setError("");
-    const err = await verifyEmail(email.trim(), code);
+    const err = await verifyEmail(email.trim(), code, trust);
     setBusy(false);
     if (err) {
       setError(err);
@@ -157,7 +158,7 @@ export function Registro() {
                 />
               </Field>
 
-              <Field label="Correo electrónico" required hint="Aquí llegará el código de verificación.">
+              <Field label="Correo electrónico" required hint="Aquí llegará el correo de verificación.">
                 <input
                   className="input"
                   type="email"
@@ -215,7 +216,7 @@ export function Registro() {
               </button>
               <h1>Verifica tu correo</h1>
               <p className="muted" style={{ marginBottom: "1.25rem" }}>
-                {info || `Escribe el código de 6 dígitos que enviamos a ${email.trim()}.`}
+                {info || `Abre el enlace o escribe el código de 6 dígitos que enviamos a ${email.trim()}.`}
               </p>
 
               <OtpInput value={code} onChange={setCode} disabled={busy} />
@@ -225,6 +226,11 @@ export function Registro() {
                   {error}
                 </p>
               )}
+
+              <label className="row gap-8 auth__trust" style={{ marginTop: "0.75rem" }}>
+                <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} />
+                <span>Confiar en este dispositivo (no volver a pedir el código aquí)</span>
+              </label>
 
               <button
                 className="btn btn--primary btn--block"

@@ -1,7 +1,7 @@
 // Rutas de la aplicación.
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { StoreProvider, useAuth, useBooting, useStoreState } from "./lib/store";
+import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
 import { Login } from "./pages/Login";
 import { Registro } from "./pages/Registro";
@@ -25,10 +25,12 @@ function PageLoader() {
 
 function Protected({ children }: { children: ReactNode }) {
   const authed = useAuth();
+  const verified = useDeviceVerified();
   const booting = useBooting();
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
-  if (!authed) return <Navigate to="/entrar" replace />;
+  // Con sesión pero sin equipo verificado se vuelve a /entrar para pedir el código.
+  if (!authed || !verified) return <Navigate to="/entrar" replace />;
   if (!onboarded) return <Navigate to="/onboarding" replace />;
   return (
     <Shell>
@@ -39,18 +41,22 @@ function Protected({ children }: { children: ReactNode }) {
 
 function PublicOnly({ children }: { children: ReactNode }) {
   const authed = useAuth();
+  const verified = useDeviceVerified();
   const booting = useBooting();
   if (booting) return <PageLoader />;
-  if (authed) return <Navigate to="/inicio" replace />;
+  // Solo se entra si además el equipo ya está verificado; si no, /entrar
+  // muestra el paso del código.
+  if (authed && verified) return <Navigate to="/inicio" replace />;
   return <>{children}</>;
 }
 
 function OnboardingGate({ children }: { children: ReactNode }) {
   const authed = useAuth();
+  const verified = useDeviceVerified();
   const booting = useBooting();
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
-  if (!authed) return <Navigate to="/entrar" replace />;
+  if (!authed || !verified) return <Navigate to="/entrar" replace />;
   if (onboarded) return <Navigate to="/inicio" replace />;
   return <>{children}</>;
 }

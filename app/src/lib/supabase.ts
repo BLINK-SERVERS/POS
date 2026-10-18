@@ -18,4 +18,26 @@ if (!url || !publishableKey) {
   );
 }
 
+// Tipo de enlace de correo (`signup`, `magiclink`, `email`, `recovery`…) si el
+// usuario llegó abriendo un enlace de verificación. Hay que leerlo ANTES de
+// crear el cliente: supabase-js consume el hash de la URL para crear la sesión
+// y luego lo limpia.
+let linkAuthType: string | null = null;
+try {
+  const raw = (window.location.hash || window.location.search).replace(/^[#?]/, "");
+  const params = new URLSearchParams(raw);
+  linkAuthType =
+    params.get("type") ||
+    (params.has("access_token") || params.has("code") ? "link" : null);
+} catch {
+  linkAuthType = null;
+}
+
+/** Devuelve (una sola vez) el tipo de enlace con el que llegó el usuario. */
+export function consumeLinkAuthType(): string | null {
+  const type = linkAuthType;
+  linkAuthType = null;
+  return type;
+}
+
 export const supabase: SupabaseClient = createClient(url, publishableKey);

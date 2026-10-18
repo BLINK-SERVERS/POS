@@ -11,6 +11,44 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.2.0] · 2026-10-18
+
+Verificación por correo: se arregla el enlace que apuntaba a **localhost** y se añade
+**«Confiar en este dispositivo»** con verificación por código al entrar desde un equipo nuevo.
+
+### Acceso y verificación
+
+- **Arregla el enlace a localhost** (configuración de Supabase Auth, no código): el `site_url`
+  del proyecto era `http://localhost:5173`; ahora es `https://blink-servers.github.io/POS/` y la
+  lista de URLs permitidas incluye producción y desarrollo local. Antes los enlaces de los
+  correos de verificación llevaban a `localhost`.
+- **«Confiar en este dispositivo»** (`pages/Login.tsx`, `pages/Registro.tsx`, `lib/store.tsx`):
+  casilla en el paso del código. Los equipos de confianza se recuerdan **por usuario**
+  (`localStorage`); la verificación de una sola pestaña vive en `sessionStorage`.
+- **Código también al entrar** (nuevo): al iniciar sesión desde un equipo **no** confiable, tras
+  validar correo y contraseña se envía un código de 6 dígitos y se pide antes de entrar. Desde un
+  equipo de confianza se entra directo. Las guardias de ruta (`App.tsx`) ahora exigen equipo
+  verificado, no solo sesión.
+- **Se acepta también el enlace del correo**: si el usuario llega abriendo el enlace de
+  verificación, el equipo queda verificado solo (`supabase.ts` guarda el tipo de enlace y
+  `store.tsx` lo aplica).
+
+### Limitación conocida (plan gratuito de Supabase)
+
+- Desde el **3-jun-2026**, los proyectos **gratuitos** con el proveedor de correo por defecto
+  **no pueden editar las plantillas** de correo. El correo trae un **enlace**, no un código de 6
+  dígitos, y el servicio por defecto limita a ~2 correos por hora por proyecto. Para que llegue el
+  **código** hace falta **SMTP propio** (p. ej. Resend + dominio verificado) o plan Pro; con eso se
+  activa la plantilla con `{{ .Token }}` (la app ya está lista para el código).
+
+### Verificación
+
+- `npm run typecheck`, `npm run build` y `npm test` (26 pruebas) en verde.
+- Probado en el navegador: `/entrar` y `/registro` renderizan; la guardia de rutas redirige
+  `/inicio` → `/entrar`; sin errores de consola.
+
+---
+
 ## [1.1.2] · 2026-10-18
 
 Wordmark BLINK POS. Cambio de identidad visual aprobado por el dueño. Sin cambios de esquema.

@@ -248,7 +248,7 @@ negocio, no solo UI):
 | 5 | **Dividir cuenta** solo entre cuentas **del mismo canal y ubicación** | BLINK no tiene dividir (Fase 2); incorporar la restricción |
 | 6 | **Traslados**: si el origen no alcanza, **no mueve nada** y dice cuánto falta; corrección por **traslado inverso** con documento | `addStockTransfer` debe validar y soportar reversa |
 | 7 | **Permisos por ubicación**: sin ubicación asignada = todas; Dueño siempre. **Alertas de bajo mínimo suman todas las ubicaciones** | Al implementar usuarios (Fase 4) y al filtrar stock |
-| 8 | **Mi perfil**: moneda principal (USD/Bs/ambas), ubicación por defecto, resumen diario por correo, modo oscuro, dispositivos y sesiones | No existe en BLINK (P3) |
+| 8 | **Mi perfil**: moneda principal (USD/Bs/ambas), ubicación por defecto, resumen diario por correo, modo oscuro, dispositivos y sesiones | No existe en BLINK (P3). *Parcial v1.2.0:* **«Confiar en este dispositivo»** + verificación al entrar desde equipo nuevo (aún sin vista de "dispositivos y sesiones") |
 | 9 | **Exposición cambiaria** calculada por mes en Finanzas (cuentas en Bs vs USD) con selector de mes | Modelo previsto; sin UI |
 | 10 | Estructura confirmada en vivo: Finanzas 8 pestañas · Catálogo 5 · Inventario 7 (Existencias, Movimientos, Compras, Devoluciones, Ajustes, Traslados, Lotes) · Ajustes 8 (Negocio, Moneda, Impuestos, Canales, Ubicaciones, Comportamiento, Usuarios y roles, Bitácora) | Coincide con el mapa §2; BLINK está alineado en el núcleo y atrasa en pestañas (todas con acciones ya escritas, ver `18` §4) |
 

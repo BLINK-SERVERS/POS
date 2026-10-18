@@ -53,17 +53,19 @@ import { round2 } from "./money";
 import { expectedCash } from "./metrics";
 import {
   authResendCode,
+  authSendDeviceCode,
   authSignIn,
   authSignOut,
   authSignUp,
   authUpdateProfile,
   authVerifyCode,
+  authVerifyLoginCode,
   cloudLoadBusiness,
   cloudSaveBusiness,
   userFromSession,
   type SessionUser,
 } from "./cloud";
-import { supabase } from "./supabase";
+import { supabase, consumeLinkAuthType } from "./supabase";
 
 const STORAGE_KEY = "blink-pos-state-v3";
 const LEGACY_KEYS = ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"];
@@ -299,6 +301,79 @@ let currentUser: SessionUser | null = null;
 let booting = true;
 /** true cuando ya se cargó (o creó) el comercio remoto; evita pisarlo. */
 let hydrated = false;
+/** true cuando el equipo ya está verificado por código (o es de confianza). */
+let currentDeviceVerified = false;
+
+// --- Equipos de confianza -----------------------------------------
+// El usuario puede marcar «Confiar en este dispositivo» para no volver a
+// pedir el código al entrar. Los equipos de confianza se guardan de forma
+// permanente (localStorage); la verificación de un solo uso (tras escribir
+// el código) dura lo que dure la pestaña (sessionStorage).
+const TRUSTED_KEY = "blink-pos-trusted-devices";
+const VERIFIED_KEY = "blink-pos-device-verified";
+
+function safeStorage(kind: "local" | "session"): Storage | null {
+  try {
+    return kind === "local" ? window.localStorage : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+const localStore = safeStorage("local");
+const sessionStore = safeStorage("session");
+
+function readIds(store: Storage | null, key: string): Set<string> {
+  try {
+    const raw = store?.getItem(key);
+    if (!raw) return new Set();
+    const arr: unknown = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+function writeIds(store: Storage | null, key: string, ids: Set<string>): void {
+  try {
+    store?.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+const trustedIds = readIds(localStore, TRUSTED_KEY);
+const verifiedIds = readIds(sessionStore, VERIFIED_KEY);
+
+function isVerifiedDevice(userId: string | null | undefined): boolean {
+  return !!userId && (trustedIds.has(userId) || verifiedIds.has(userId));
+}
+function trustDevice(userId: string): void {
+  trustedIds.add(userId);
+  writeIds(localStore, TRUSTED_KEY, trustedIds);
+}
+function markVerified(userId: string): void {
+  if (!verifiedIds.has(userId)) {
+    verifiedIds.add(userId);
+    writeIds(sessionStore, VERIFIED_KEY, verifiedIds);
+  }
+  setDeviceVerified(true);
+}
+function clearSessionVerified(): void {
+  if (verifiedIds.size) {
+    verifiedIds.clear();
+    writeIds(sessionStore, VERIFIED_KEY, verifiedIds);
+  }
+  setDeviceVerified(false);
+}
+
+/** Si el usuario llegó abriendo un enlace de verificación del correo, marcamos
+ *  el equipo como verificado (así el enlace también sirve como verificación). */
+function applyEmailLinkVerification(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const type = consumeLinkAuthType();
+  if (!type) return false;
+  markVerified(userId);
+  return true;
+}
 
 const listeners = new Set<() => void>();
 
@@ -325,6 +400,16 @@ function getUser(): SessionUser | null {
 
 function getBooting(): boolean {
   return booting;
+}
+
+function getDeviceVerified(): boolean {
+  return currentDeviceVerified;
+}
+
+function setDeviceVerified(value: boolean): void {
+  if (value === currentDeviceVerified) return;
+  currentDeviceVerified = value;
+  emit();
 }
 
 function setAppState(next: AppState | ((s: AppState) => AppState)): void {
@@ -436,6 +521,8 @@ type StoreState = {
   authed: boolean;
   user: SessionUser | null;
   booting: boolean;
+  /** true cuando el equipo está verificado (de confianza o con código). */
+  deviceVerified: boolean;
 };
 
 export interface CheckoutInput {
@@ -475,8 +562,12 @@ type StoreActions = {
     lastName: string;
     phone: string;
   }) => Promise<string | null>;
-  verifyEmail: (email: string, code: string) => Promise<string | null>;
+  verifyEmail: (email: string, code: string, trust?: boolean) => Promise<string | null>;
   resendCode: (email: string) => Promise<string | null>;
+  /** Envía un código de acceso al correo (verificación del equipo al entrar). */
+  sendDeviceCode: (email: string) => Promise<string | null>;
+  /** Verifica el código de acceso del equipo. */
+  verifyDevice: (email: string, code: string, trust?: boolean) => Promise<string | null>;
   updateProfile: (input: {
     firstName: string;
     lastName: string;
@@ -673,6 +764,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const user = userFromSession(data.session);
       setUser(user);
       setAuthed(!!user);
+      setDeviceVerified(!!user && (isVerifiedDevice(user.id) || applyEmailLinkVerification(user.id)));
       if (!user) {
         setBooting(false);
         hydrated = true;
@@ -690,6 +782,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const user = userFromSession(session);
       setUser(user);
       setAuthed(!!user);
+      setDeviceVerified(!!user && (isVerifiedDevice(user.id) || applyEmailLinkVerification(user.id)));
       if (!user) {
         setBooting(false);
         hydrated = true;
@@ -707,14 +800,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [hydrate]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await authSignIn(email.trim(), password);
-    return error;
+    const { error, userId } = await authSignIn(email.trim(), password);
+    if (error) return error;
+    // Equipo ya verificado (de confianza o verificado en esta pestaña): entra.
+    if (isVerifiedDevice(userId)) {
+      setDeviceVerified(true);
+      return null;
+    }
+    // Equipo nuevo: enviamos un código de 6 dígitos y lo pedimos antes de entrar.
+    const { error: sendError } = await authSendDeviceCode(email.trim());
+    return sendError;
   }, []);
 
   const logout = useCallback(async () => {
     await authSignOut();
     setUser(null);
     setAuthed(false);
+    clearSessionVerified();
     hydrated = true;
     setAppState(emptyState());
   }, []);
@@ -727,14 +829,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const verifyEmail = useCallback(async (email: string, code: string) => {
-    const { error } = await authVerifyCode(email.trim(), code.trim());
-    return error;
+  const verifyEmail = useCallback(async (email: string, code: string, trust = false) => {
+    const { error, userId } = await authVerifyCode(email.trim(), code.trim());
+    if (error) return error;
+    if (userId) {
+      markVerified(userId);
+      if (trust) trustDevice(userId);
+    }
+    return null;
   }, []);
 
+  /** Reenvía el código del alta. */
   const resendCode = useCallback(async (email: string) => {
     const { error } = await authResendCode(email.trim());
     return error;
+  }, []);
+
+  /** Envía (o reenvía) el código de acceso del dispositivo al entrar. */
+  const sendDeviceCode = useCallback(async (email: string) => {
+    const { error } = await authSendDeviceCode(email.trim());
+    return error;
+  }, []);
+
+  /** Verifica el código de acceso del equipo y, si se pide, lo marca de confianza. */
+  const verifyDevice = useCallback(async (email: string, code: string, trust = false) => {
+    const { error, userId } = await authVerifyLoginCode(email.trim(), code.trim());
+    if (error) return error;
+    if (userId) {
+      markVerified(userId);
+      if (trust) trustDevice(userId);
+    }
+    return null;
   }, []);
 
   const updateProfile = useCallback(
@@ -1901,6 +2026,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       signUp,
       verifyEmail,
       resendCode,
+      sendDeviceCode,
+      verifyDevice,
       updateProfile,
       completeOnboarding,
       clearAll,
@@ -1925,7 +2052,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addSurcharge, updateSurcharge, removeSurcharge,
       addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
       updateBusiness, setRate,
-      signUp, verifyEmail, resendCode, updateProfile,
+      signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
       completeOnboarding, clearAll, reloadCloud,
     ]
   );
@@ -1980,6 +2107,12 @@ export function useBooting(): boolean {
   return useSyncExternalStore(subscribe, getBooting, getBooting);
 }
 
+/** true cuando el equipo está verificado (de confianza o con código). */
+export function useDeviceVerified(): boolean {
+  useMounted();
+  return useSyncExternalStore(subscribe, getDeviceVerified, getDeviceVerified);
+}
+
 /** Suscripción solo al estado (cambia cuando cambia el estado). */
 export function useStoreState(): StoreState {
   useMounted();
@@ -1987,7 +2120,11 @@ export function useStoreState(): StoreState {
   const authed = useSyncExternalStore(subscribe, getAuthed, getAuthed);
   const user = useSyncExternalStore(subscribe, getUser, getUser);
   const booting = useSyncExternalStore(subscribe, getBooting, getBooting);
-  return useMemo(() => ({ state, authed, user, booting }), [state, authed, user, booting]);
+  const deviceVerified = useSyncExternalStore(subscribe, getDeviceVerified, getDeviceVerified);
+  return useMemo(
+    () => ({ state, authed, user, booting, deviceVerified }),
+    [state, authed, user, booting, deviceVerified]
+  );
 }
 
 /** Suscripción solo a las acciones (identidad estable, no re-renderiza). */
@@ -1999,10 +2136,10 @@ export function useStoreActions(): StoreActions {
 
 /** API combinada (compatibilidad). */
 export function useStore(): StoreValue {
-  const { state, authed, user, booting } = useStoreState();
+  const { state, authed, user, booting, deviceVerified } = useStoreState();
   const actions = useStoreActions();
   return useMemo(
-    () => ({ state, authed, user, booting, ...actions }),
-    [state, authed, user, booting, actions]
+    () => ({ state, authed, user, booting, deviceVerified, ...actions }),
+    [state, authed, user, booting, deviceVerified, actions]
   );
 }

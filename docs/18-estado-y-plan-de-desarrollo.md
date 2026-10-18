@@ -13,7 +13,7 @@ contradice a este `18`, manda `18`.
 
 ## 1. Estado en un vistazo
 
-**Versión actual: `1.1.1`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+**Versión actual: `1.2.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
@@ -37,6 +37,26 @@ Historial en `CHANGELOG.md`.
 > (el CSS propuesto con `#0075FF`/`#434343` seguía descartado por salirse de paleta; solo se
 > adoptaron sus pesos y estructura con los colores de token correctos). Verificado en navegador
 > (colores/pesos computados correctos) y `typecheck`/`build`/`test` (26) en verde.
+
+> **Cambios recientes (2026-10-18) · v1.2.0 — verificación por correo y «confiar en este dispositivo».**
+> (1) **Arreglado el enlace que apuntaba a `localhost`**: era configuración de Supabase Auth, no
+> código. El `site_url` del proyecto estaba en `http://localhost:5173`; ahora es
+> `https://blink-servers.github.io/POS/` y la lista de URLs permitidas incluye producción y
+> desarrollo (`docs/20`, §2.4).
+> (2) **«Confiar en este dispositivo»**: casilla en el paso del código (registro y acceso). Los
+> equipos de confianza se recuerdan por usuario en `localStorage`; la verificación de una sola
+> pestaña vive en `sessionStorage` (`lib/store.tsx`).
+> (3) **Código también al entrar**: desde un equipo **no** confiable, tras validar correo y
+> contraseña se envía un código de 6 dígitos y se pide antes de entrar (`authSendDeviceCode` /
+> `authVerifyLoginCode`); desde un equipo de confianza se entra directo. Las guardias de ruta
+> (`App.tsx`) exigen `authed && deviceVerified`.
+> (4) **También funciona el enlace**: si el usuario llega abriendo el enlace de verificación,
+> `supabase.ts` guarda el tipo de enlace y `store.tsx` marca el equipo verificado solo.
+> (5) **Limitación conocida**: desde el 3-jun-2026, los proyectos **gratuitos** de Supabase con el
+> proveedor de correo por defecto **no pueden editar plantillas** (el correo trae un enlace, no el
+> código) y el correo por defecto está muy limitado (≈2/hora). Para el código real hay que poner
+> **SMTP propio** (Resend + dominio) o plan Pro (`docs/20`, §2.2–2.3). Verificado:
+> `typecheck`/`build`/`test` (26) en verde y navegador sin errores.
 
 > **Cambios recientes (2026-10-18) · v1.1.1 — prueba en navegador y corrección de bugs.**
 > Se probó la app en el navegador (arranque, registro, guardia de rutas, consola limpia) y se
@@ -106,7 +126,9 @@ Historial en `CHANGELOG.md`.
 > **Cambios recientes (2026-10-17) · Fase 3: cuentas reales, datos en la nube y alta guiada.**
 > Se reemplazó el acceso simulado por **Supabase Auth** (correo + contraseña). El registro pide
 > datos personales reales (nombre, apellido, teléfono, correo) y **verifica el correo con un
-> código de 6 dígitos** (plantilla con `{{ .Token }}`). Tras verificar, un **asistente paso a
+> código de 6 dígitos** (plantilla con `{{ .Token }}`). *(Aclaración v1.2.0: en el plan gratuito
+> con el proveedor de correo por defecto la plantilla no se puede editar y el correo trae un
+> **enlace**; la app acepta las dos vías — ver nota superior y doc `20`.)* Tras verificar, un **asistente paso a
 > paso (onboarding)** pide: datos del comercio y su giro, los módulos que quiere usar, su
 > **cuenta para recibir pagos** (nombre, divisa USD/VES y si participa del cierre de caja),
 > categorías, productos y proveedores. **Se eliminaron los datos ficticios**: el estado inicial

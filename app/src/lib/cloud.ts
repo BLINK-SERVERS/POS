@@ -24,13 +24,25 @@ export function authError(message: string): string {
   if (m.includes("password should be at least"))
     return "La contraseña es muy corta (mínimo 6 caracteres).";
   if (m.includes("unable to validate email")) return "El correo no es válido.";
-  if (m.includes("token has expired") || m.includes("invalid token"))
+  if (m.includes("token has expired") || m.includes("invalid token") || m.includes("otp expired"))
     return "El código no es válido o ya venció. Pide uno nuevo.";
+  if (m.includes("signups not allowed") || m.includes("user not found"))
+    return "Ese correo no tiene una cuenta. Regístrate primero.";
   if (m.includes("for security purposes") || m.includes("rate limit"))
     return "Demasiados intentos. Espera unos segundos y vuelve a intentar.";
   if (m.includes("failed to fetch") || m.includes("network"))
     return "Sin conexión con el servidor. Revisa tu internet.";
   return message;
+}
+
+/** URL base de la app (para los enlaces que llegan por correo).
+ *  En producción es la URL publicada; en local, el servidor de desarrollo. */
+function appRedirectUrl(): string | undefined {
+  try {
+    return `${window.location.origin}${import.meta.env.BASE_URL}`;
+  } catch {
+    return undefined;
+  }
 }
 
 function nameFromUser(user: {
@@ -66,6 +78,7 @@ export async function authSignUp(input: {
     email: input.email,
     password: input.password,
     options: {
+      emailRedirectTo: appRedirectUrl(),
       data: {
         first_name: input.firstName,
         last_name: input.lastName,
@@ -76,21 +89,49 @@ export async function authSignUp(input: {
   return { error: error ? authError(error.message) : null };
 }
 
-/** Verifica el código alfanumérico/numérico de 6 dígitos enviado al correo. */
-export async function authVerifyCode(email: string, token: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
-  return { error: error ? authError(error.message) : null };
+/** Verifica el código de 6 dígitos del alta de cuenta. */
+export async function authVerifyCode(
+  email: string,
+  token: string
+): Promise<{ error: string | null; userId?: string }> {
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+  return { error: error ? authError(error.message) : null, userId: data.user?.id };
 }
 
-/** Reenvía el código de verificación. */
+/** Reenvía el código del alta de cuenta. */
 export async function authResendCode(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.resend({ type: "signup", email });
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: appRedirectUrl() },
+  });
   return { error: error ? authError(error.message) : null };
 }
 
-export async function authSignIn(email: string, password: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+/** Envía un código de acceso al correo (verificación al entrar desde un equipo nuevo). */
+export async function authSendDeviceCode(email: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false, emailRedirectTo: appRedirectUrl() },
+  });
   return { error: error ? authError(error.message) : null };
+}
+
+/** Verifica el código de acceso del dispositivo y abre la sesión. */
+export async function authVerifyLoginCode(
+  email: string,
+  token: string
+): Promise<{ error: string | null; userId?: string }> {
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  return { error: error ? authError(error.message) : null, userId: data.user?.id };
+}
+
+export async function authSignIn(
+  email: string,
+  password: string
+): Promise<{ error: string | null; userId?: string }> {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  return { error: error ? authError(error.message) : null, userId: data.user?.id };
 }
 
 export async function authSignOut(): Promise<void> {
