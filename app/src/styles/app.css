@@ -749,6 +749,14 @@ table.data tbody tr:hover {
   border-color: var(--color-accent);
   transform: translateY(-1px);
 }
+.prod:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.prod:disabled:hover {
+  border-color: var(--color-border);
+  transform: none;
+}
 .prod__name {
   font-weight: 600;
   font-size: var(--fs-sm);

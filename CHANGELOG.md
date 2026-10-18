@@ -11,6 +11,29 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.1.1] · 2026-10-18
+
+Corrección de bugs detectados al probar la app en el navegador. Sin cambios de esquema.
+
+### Correcciones
+
+- **Límite de errores global** (`components/ErrorBoundary.tsx`): antes, cualquier error de render
+  sin capturar desmontaba React y dejaba la pantalla **en blanco** (punto de venta inutilizable).
+  Ahora un fallo muestra un mensaje claro con «Recargar y continuar» y «Volver al inicio», en vez
+  de perder la operación. Se envuelve `<App />` en `main.tsx`.
+- **No se vende más stock del disponible** (`pages/Vender.tsx`): en productos con control de
+  existencias, el POS ahora limita la cantidad al stock real — no se puede agregar al ticket ni
+  incrementar por encima de lo disponible, y los productos agotados aparecen deshabilitados con
+  la etiqueta «Agotado». Antes se permitía vender de más y el stock quedaba en 0 sin avisar.
+
+### Verificación
+
+- `npm run typecheck`, `npm run build` y `npm test` (26 pruebas) en verde.
+- Probado en el navegador: arranque limpio sin errores de consola, guardia de rutas protegidas
+  redirige a `/entrar`, y la app no se en blanco ante un fallo.
+
+---
+
 ## [1.1.0] · 2026-10-17
 
 Base de escalabilidad. La app no cambia para el usuario; se prepara el terreno para soportar

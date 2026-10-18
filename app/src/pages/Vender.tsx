@@ -64,9 +64,10 @@ const ProductCard = memo(function ProductCard({
   rate: number;
   onAdd: (id: string) => void;
 }) {
-  const low = product.trackStock && product.stock <= product.minStock;
+  const soldOut = product.trackStock && product.stock <= 0;
+  const low = product.trackStock && product.stock > 0 && product.stock <= product.minStock;
   return (
-    <button type="button" className="prod" onClick={() => onAdd(product.id)}>
+    <button type="button" className="prod" onClick={() => onAdd(product.id)} disabled={soldOut}>
       <div className="prod__name">{product.name}</div>
       <div className="prod__cat">{product.category}</div>
       <div className="prod__price">
@@ -76,11 +77,15 @@ const ProductCard = memo(function ProductCard({
           · {formatBs(product.price, rate)}
         </span>
       </div>
-      {low && (
+      {soldOut ? (
+        <div style={{ marginTop: "0.4rem" }}>
+          <Badge tone="warning" icon="alert">Agotado</Badge>
+        </div>
+      ) : low ? (
         <div style={{ marginTop: "0.4rem" }}>
           <Badge tone="warning" icon="alert">Stock bajo</Badge>
         </div>
-      )}
+      ) : null}
     </button>
   );
 });
@@ -126,14 +131,19 @@ export function Vender() {
     (id: string) => {
       const p = catalog.find((x) => x.id === id);
       if (!p) return;
+      // No deja vender más de lo disponible en productos con control de stock.
+      const max = p.trackStock ? p.stock : Infinity;
+      if (max < 1) return;
       setDrafts((ds) =>
         ds.map((d) => {
           if (d.id !== draft.id) return d;
           const found = d.lines.find((l) => l.productId === id);
           if (found) {
+            const nextQty = Math.min(found.qty + 1, max);
+            if (nextQty === found.qty) return d;
             return {
               ...d,
-              lines: d.lines.map((l) => (l.productId === id ? { ...l, qty: l.qty + 1 } : l)),
+              lines: d.lines.map((l) => (l.productId === id ? { ...l, qty: nextQty } : l)),
             };
           }
           return {
@@ -166,6 +176,18 @@ export function Vender() {
       );
     },
     [draft.id]
+  );
+
+  // Incrementa una línea respetando el stock disponible del producto.
+  const incLine = useCallback(
+    (id: string) => {
+      const p = catalog.find((x) => x.id === id);
+      const line = draft.lines.find((l) => l.productId === id);
+      if (!p || !line) return;
+      const max = p.trackStock ? p.stock : Infinity;
+      setQty(id, Math.min(line.qty + 1, max));
+    },
+    [catalog, draft.lines, setQty]
   );
 
   const discount: Discount | undefined = useMemo(
@@ -418,7 +440,7 @@ export function Vender() {
                       <span className="tabular" style={{ minWidth: 24, textAlign: "center" }}>
                         {l.qty}
                       </span>
-                      <button onClick={() => setQty(l.productId, l.qty + 1)} aria-label="Añadir una unidad">
+                      <button onClick={() => incLine(l.productId)} aria-label="Añadir una unidad">
                         <Icon name="plus" />
                       </button>
                     </span>

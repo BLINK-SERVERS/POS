@@ -13,7 +13,7 @@ manda `18`.
 
 ## 1. Estado en un vistazo
 
-**Versión actual: `1.1.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+**Versión actual: `1.1.1`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
@@ -360,13 +360,13 @@ migración v1→v2 incompleta que puede crashear `closeCash` (I4, **corregido** 
 - Historial etiqueta "Cobrada" para anuladas/cotizaciones y no hay UI de anulación. **[Fase 1 · ítem 2: resuelto.]**
 - Gasto "Pagado ahora" sin cuenta (no mueve dinero) y admite montos negativos. **[Fase 1 · ítem 6: la cuenta es obligatoria y los montos se acotan a ≥ 0.]**
 - ~~Autenticación ficticia (cualquier contraseña ≥3 chars)~~ **[Fase 3: sustituida por Supabase Auth real.]**
-- Sin `ErrorBoundary`: cualquier throw deja la app en blanco.
+- Sin `ErrorBoundary`: cualquier throw deja la app en blanco. **[v1.1.1: corregido — `components/ErrorBoundary.tsx` envuelve la app y muestra «Recargar y volver al inicio» en vez de pantalla blanca.]**
 - Descuentos: `from`/`to` nunca se leen; las pistas "Créalos en Catálogo → Descuentos" apuntan a un Catálogo que no los tiene todavía. **[Resuelto: vigencia validada en el POS y CRUD completo en Catálogo → Descuentos/Recargos (Fase 1 · ítems 1, 9).]**
 - *(Bug corregido)* `discounts.filter(isDiscountValid)` pasaba el índice como `now`, descartando todo descuento con `from`/`to`. Corregido a `filter((d) => isDiscountValid(d))`. **[Fase 1 · ítem 1.]**
 
 **Menores:** etiqueta "IVA (16%)" hardcodeada en el POS; valores `"—"` guardados como datos;
 `ExpenseRow` **ya muestra el nombre del gasto**; cierre convierte Bs a tasa actual; `key={i}`;
-escáner sin auto-agregar con Enter; sin validación de existencia al agregar líneas;
+escáner sin auto-agregar con Enter; ~~sin validación de existencia al agregar líneas~~ **[v1.1.1: el POS acota la cantidad al stock disponible y marca «Agotado"]**;
 páginas enteras suscritas al estado completo (Shell re-renderiza en cada cambio);
 `runRecurring` muerto y con overflow de fecha (29-31); `remove*` sin confirmación ni
 cascada; `storage` multi-pestaña last-write-wins; `dist/` commiteada.
