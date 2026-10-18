@@ -108,9 +108,7 @@ export function Registro() {
           {step === "datos" ? (
             <form onSubmit={onSubmitDatos}>
               <h1>Crea tu cuenta</h1>
-              <p className="muted" style={{ marginBottom: "1.25rem" }}>
-                Tus datos reales, sin plantillas. Los usamos para tu operación y tu recibo.
-              </p>
+
 
               <div className="row gap-12">
                 <Field label="Nombre" required>
