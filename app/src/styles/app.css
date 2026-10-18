@@ -49,20 +49,53 @@ button {
 }
 
 /* --- Wordmark BLINK POS ---
-   BLINK en cursiva · POS en normal · todo en mayúsculas · sin bold */
+   Identidad: BLINK en acento (#007AFF), cursiva y extra bold (800); POS en
+   texto (#424242), recta y ligera (300). Paleta estricta vía tokens y pila de
+   fuentes del sistema (sin fuentes empaquetadas). Dos variantes:
+   `.blink-pos-title` = grande (pantallas de acceso);
+   `.brand` = compacta (barra lateral y pantalla de error). */
+.blink-pos-title {
+  font-family: var(--font-primary);
+  font-size: clamp(2.25rem, 7vw, 4rem); /* hasta 64px en escritorio */
+  line-height: 1;
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.blink-pos-title .blink {
+  color: var(--color-accent); /* #007AFF */
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.03em;
+}
+.blink-pos-title .pos {
+  color: var(--color-text-primary); /* #424242 */
+  font-weight: 300;
+  font-style: normal;
+  letter-spacing: -0.01em;
+}
+
 .brand {
   display: inline-flex;
   align-items: baseline;
   gap: 0.3em;
-  color: var(--color-accent);
   font-weight: 400;
   font-style: normal;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   line-height: 1;
 }
 .brand__blink {
+  color: var(--color-accent); /* #007AFF */
+  font-weight: 800;
   font-style: italic;
+}
+.brand__pos {
+  color: var(--color-text-primary); /* #424242 */
+  font-weight: 300;
 }
 .brand--lg {
   font-size: 1.4rem;

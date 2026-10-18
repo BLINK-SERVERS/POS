@@ -11,6 +11,30 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.1.2] · 2026-10-18
+
+Wordmark BLINK POS. Cambio de identidad visual aprobado por el dueño. Sin cambios de esquema.
+
+### Visual
+
+- **Identidad del logo** (`app.css`): **BLINK** en acento `#007AFF`, cursiva y **extra bold (800)**;
+  **POS** en texto `#424242`, recta y **ligera (300)**; tracking negativo y pila de fuentes del
+  sistema (sin Inter empaquetada). Paleta estricta por tokens (sin colores nuevos).
+- Dos variantes: **`.blink-pos-title`** (grande, pantallas de acceso — Login, Registro, Asistente)
+  y **`.brand`** compacta (barra lateral y pantalla de error), con POS envuelto en su propio span
+  (`brand__pos`) para aplicar el gris claro.
+- **Actualiza la regla de peso 400** del wordmark (documentada en `docs/18`) a **800/300**. El CSS
+  propuesto con `#0075FF`/`#434343` seguía descartado por salirse de la paleta; solo se adoptaron
+  sus pesos y estructura, corregidos a los colores de token.
+
+### Verificación
+
+- `npm run typecheck`, `npm run build` y `npm test` (26 pruebas) en verde.
+- Comprobado en navegador: colores y pesos computados (`BLINK` = `rgb(0,122,255)`/800/cursiva,
+  `POS` = `rgb(66,66,66)`/300/recta), consola sin errores.
+
+---
+
 ## [1.1.1] · 2026-10-18
 
 Corrección de bugs detectados al probar la app en el navegador. Sin cambios de esquema.

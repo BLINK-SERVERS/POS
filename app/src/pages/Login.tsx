@@ -33,8 +33,9 @@ export function Login() {
   return (
     <main className="auth">
       <div className="auth__pitch">
-        <span className="brand brand--lg">
-          <span className="brand__blink">BLINK</span> POS
+        <span className="blink-pos-title">
+          <span className="blink">BLINK</span>
+          <span className="pos">POS</span>
         </span>
         <h2>Tu punto de venta, rápido y claro.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>

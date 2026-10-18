@@ -67,7 +67,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
           <span className="brand brand--lg">
-            <span className="brand__blink">BLINK</span> POS
+            <span className="brand__blink">BLINK</span>
+            <span className="brand__pos">POS</span>
           </span>
         </div>
 

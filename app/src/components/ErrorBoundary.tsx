@@ -39,7 +39,8 @@ export class ErrorBoundary extends Component<Props, State> {
       <main className="auth" style={{ minHeight: "100dvh", alignItems: "center" }}>
         <div className="auth__card" style={{ maxWidth: "30rem" }}>
           <span className="brand brand--lg">
-            <span className="brand__blink">BLINK</span> POS
+            <span className="brand__blink">BLINK</span>
+            <span className="brand__pos">POS</span>
           </span>
           <h1 style={{ marginTop: "0.5rem" }}>Algo salió mal.</h1>
           <p className="muted" style={{ marginBottom: "1rem" }}>

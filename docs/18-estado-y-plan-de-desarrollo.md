@@ -28,6 +28,16 @@ Historial en `CHANGELOG.md`.
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
 
+> **Cambios recientes (2026-10-18) · v1.1.2 — wordmark BLINK POS.** Se definió la identidad del
+> logo (decisión del dueño): **BLINK** en acento `#007AFF`, **cursiva** y **extra bold (800)**;
+> **POS** en texto `#424242`, **recta** y **ligera (300)**; pila de fuentes del sistema (sin
+> Inter empaquetada) y **paleta estricta por tokens**. Dos variantes en `app.css`: `.blink-pos-title`
+> (grande, pantallas de acceso) y `.brand` (compacta, barra lateral y pantalla de error). Esto
+> **actualiza la regla de peso 400** del wordmark a 800/300; la paleta estricta se mantiene
+> (el CSS propuesto con `#0075FF`/`#434343` seguía descartado por salirse de paleta; solo se
+> adoptaron sus pesos y estructura con los colores de token correctos). Verificado en navegador
+> (colores/pesos computados correctos) y `typecheck`/`build`/`test` (26) en verde.
+
 > **Cambios recientes (2026-10-18) · v1.1.1 — prueba en navegador y corrección de bugs.**
 > Se probó la app en el navegador (arranque, registro, guardia de rutas, consola limpia) y se
 > corrigieron dos fallos: (1) **`ErrorBoundary` global** (`components/ErrorBoundary.tsx`,
@@ -37,7 +47,7 @@ Historial en `CHANGELOG.md`.
 > existencias la cantidad se **acota al stock disponible** (agregar y «+») y los agotados se
 > deshabilitan con etiqueta **«Agotado»**; antes se permitía vender de más y el stock quedaba en
 > 0 sin avisar. Verificado: `typecheck`/`build`/`test` (26) en verde, **desplegado a GitHub
-> Pages** (commit `8d9b57c`, en vivo con `versión 1.1.1`). Historial en `CHANGELOG.md`.
+> Pages** (commit `8d9b57c`, en vivo con `versión 1.1.2`). Historial en `CHANGELOG.md`.
 
 > **Cambios recientes (2026-10-18) · Migraciones en producción + investigación REA.**
 > (1) **Las migraciones `0002_normalize.sql` y `0003_unpack.sql` ya están aplicadas en la base de
@@ -51,7 +61,9 @@ Historial en `CHANGELOG.md`.
 > 1,25 MB) para enriquecer el mapa de brechas (`17`) sin copiar código, estilos ni marca.
 > (3) **Auditoría del wordmark**: se verificó que el CSS oficial (`.brand`, `app.css:53`) cumple
 > paleta estricta, peso 400, BLINK cursiva y mayúsculas; se descartó un CSS propuesto con colores
-> fuera de paleta (`#0075FF`, `#434343`) y pesos 800/300.
+> fuera de paleta (`#0075FF`, `#434343`) y pesos 800/300. *(Actualizado en **v1.1.2**: el dueño
+> adoptó 800/300 con los colores de token correctos — ver nota superior; la paleta estricta se
+> mantiene.)*
 
 > **Cambios recientes (2026-10-17) · v1.1.0 — base de escalabilidad.** La interfaz no cambia
 > (bundle idéntico a 1.0.0); se prepara el terreno para soportar miles de comercios y alto

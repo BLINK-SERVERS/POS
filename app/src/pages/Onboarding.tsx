@@ -239,8 +239,9 @@ export function Onboarding() {
   return (
     <main className="auth wizard">
       <div className="auth__pitch">
-        <span className="brand brand--lg">
-          <span className="brand__blink">BLINK</span> POS
+        <span className="blink-pos-title">
+          <span className="blink">BLINK</span>
+          <span className="pos">POS</span>
         </span>
         <h2>Vamos a dejar tu punto de venta listo.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.05rem", fontWeight: 600 }}>

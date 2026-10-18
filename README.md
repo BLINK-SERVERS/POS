@@ -4,7 +4,7 @@ Punto de venta web (Vite + React 19 + TypeScript). Original: código, diseño y
 marca propios. Vende, cobra en dólares y bolívares, y controla inventario,
 finanzas e informes desde un solo lugar.
 
-**Estado:** v1.1.1 · en vivo en <https://blink-servers.github.io/POS/> ·
+**Estado:** v1.1.2 · en vivo en <https://blink-servers.github.io/POS/> ·
 typecheck / build / **26 pruebas** en verde · backend Supabase (auth + esquema
 normalizado en producción). Hoja de ruta y backlog en
 [`docs/18-estado-y-plan-de-desarrollo.md`](docs/18-estado-y-plan-de-desarrollo.md);
