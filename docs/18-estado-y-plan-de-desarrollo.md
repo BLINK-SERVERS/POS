@@ -17,15 +17,30 @@ manda `18`.
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
-| Verificación | Estado (2026-10-17) | Cómo |
+| Verificación | Estado (2026-10-18) | Cómo |
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
 | Tests | 🟢 26 pruebas (Vitest) | `npm test` |
 | Migraciones SQL | 🟢 23 comprobaciones (PG embebido) | `npm run test:migrations` |
+| Migraciones en producción | 🟢 aplicadas 2026-10-18 | `0002` + `0003` vía Management API; verificado (17 tablas, 66 políticas RLS) |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-18) · Migraciones en producción + investigación REA.**
+> (1) **Las migraciones `0002_normalize.sql` y `0003_unpack.sql` ya están aplicadas en la base de
+> Supabase en producción** (Management API): 17 tablas públicas, 66 políticas RLS, RLS activo en
+> todas las tablas, 6 funciones. Prueba funcional en vivo con `ROLLBACK` (trigger de membresía +
+> FK venta→línea) sin dejar datos. `unpack_all_businesses()` fue no-op: `businesses` estaba vacía
+> (cero comercios reales), así que hubo **cero riesgo**. El cliente (app) sigue usando el JSONB
+> hasta la **Fase B**.
+> (2) **Investigación de Wink con REA** (reverse-engineer-anything, clonado en `recon/rea`,
+> gitignored): análisis estático del bundle descargado de Wink (`recon/assets/main-IXWMM7SO.js`,
+> 1,25 MB) para enriquecer el mapa de brechas (`17`) sin copiar código, estilos ni marca.
+> (3) **Auditoría del wordmark**: se verificó que el CSS oficial (`.brand`, `app.css:53`) cumple
+> paleta estricta, peso 400, BLINK cursiva y mayúsculas; se descartó un CSS propuesto con colores
+> fuera de paleta (`#0075FF`, `#434343`) y pesos 800/300.
 
 > **Cambios recientes (2026-10-17) · v1.1.0 — base de escalabilidad.** La interfaz no cambia
 > (bundle idéntico a 1.0.0); se prepara el terreno para soportar miles de comercios y alto

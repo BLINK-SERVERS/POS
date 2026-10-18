@@ -49,6 +49,17 @@ miles de comercios y mucho volumen de operaciones, y se añade la red de segurid
   (conteos, neto de venta, casteo de fechas, ids de línea), idempotencia y aislamiento por RLS.
   Encontró y corrigió el fallo de backfill antes de tocar producción.
 
+### Despliegue en producción
+
+- **Migraciones aplicadas a la base de Supabase en producción (2026-10-18)** vía Management
+  API: `0002_normalize.sql` + `0003_unpack.sql` + `unpack_all_businesses()`. Verificación
+  posterior: 17 tablas públicas, 66 políticas RLS, RLS habilitado en todas las tablas
+  (`business_members` sin forzar, por diseño), 6 funciones creadas. **Prueba funcional en vivo**
+  (dentro de una transacción con `ROLLBACK`): alta de usuario + comercio dispara el trigger de
+  membresía, y venta + línea respetan la FK; la base quedó intacta tras el rollback. El
+  desempaquetado fue no-op: la tabla `businesses` estaba vacía (cero comercios en vivo), por lo
+  que la aplicación no supuso riesgo de pérdida de datos.
+
 ### Sin cambios visibles
 
 - El bundle y la interfaz son idénticos a 1.0.0; la migración del cliente (leer/escribir las
