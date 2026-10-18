@@ -24,7 +24,9 @@ export type IconName =
   | "receipt"
   | "menu"
   | "mail"
-  | "lock";
+  | "lock"
+  | "scan"
+  | "phone";
 
 const P: Record<IconName, ReactElement> = {
   home: (
@@ -157,6 +159,21 @@ const P: Record<IconName, ReactElement> = {
     <>
       <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
       <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
+  scan: (
+    <>
+      <path d="M4 8.5V6a2 2 0 0 1 2-2h2.5" />
+      <path d="M15.5 4H18a2 2 0 0 1 2 2v2.5" />
+      <path d="M20 15.5V18a2 2 0 0 1-2 2h-2.5" />
+      <path d="M8.5 20H6a2 2 0 0 1-2-2v-2.5" />
+      <path d="M3.5 12h17" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.4" />
+      <path d="M10.5 18.6h3" />
     </>
   ),
 };

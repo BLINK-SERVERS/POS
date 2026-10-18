@@ -11,6 +11,57 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.0] · 2026-10-18
+
+**Módulo Escáner.** Tres formas de leer códigos de barras, integradas en Vender, Catálogo,
+Inventario y Ajustes:
+
+1. **Lector USB/Bluetooth (HID)**: se conecta como teclado y funciona sin instalar nada.
+2. **Cámara del equipo**: usa la API nativa `BarcodeDetector` (Chrome/Edge y Safari 17+).
+3. **Celular como escáner remoto**: se vincula una vez con un código QR y queda emparejado
+   **30 días** (sin volver a escanear el QR cada día).
+
+### Escáner
+
+- **Detección del lector físico** (`lib/scanner/hid.ts`, `lib/scanner/ScannerProvider.tsx`): se
+  distingue un lector de una persona por el tiempo entre teclas (≤ 70 ms) y la terminación en
+  Enter/Tab; se intercepta en fase de captura para que el código no se escriba en los campos ni
+  dispare formularios. Lógica pura y probada.
+- **Cámara** (`lib/scanner/CameraScanner.tsx`): vista previa con guía; si el navegador no puede
+  decodificar, avisa y sugiere el lector USB o el celular. Sin dependencias.
+- **Celular remoto** (`pages/Escaner.tsx`, `lib/scanner/pairing.ts`): la caja genera un
+  emparejamiento (id público + secreto) y muestra un **QR**; el teléfono lo guarda y envía los
+  códigos por **Supabase Realtime**. Incluye **heartbeat** (estado "activo"), **reconexión** al
+  volver a la pestaña (`visibilitychange`) y **cola** para microcortes. La caja verifica el secreto
+  antes de aceptar cada código.
+- **Revocación** (`Ajustes › Dispositivos`): "Desvincular teléfonos" regenera el secreto y deja
+  fuera a los equipos anteriores. El emparejamiento es **local** (por equipo) y por eso no guarda
+  nada en la base de datos.
+- **Integración**: en **Vender** el código agrega el producto a la cuenta (o propone registrarlo);
+  en **Catálogo** abre el producto existente o el alta con el código precargado; en **Inventario**
+  abre el ajuste de existencias. Botón de cámara y "generar código interno" (`INT-…`) en el alta
+  de producto.
+- **Nuevo campo interno `brand`** (marca/fabricante) en el producto: solo para uso interno, nunca
+  sale en el recibo. Se normaliza en el cargador (`store.tsx`) y se edita en el alta.
+
+### Dependencias
+
+- Se añade **`qrcode`** (+ `@types/qrcode`, solo en desarrollo) para dibujar el QR del
+  emparejamiento como SVG local. No hay servicios externos de QR.
+
+### Verificación
+
+- `npm run typecheck`, `npm run build` y `npm test` (**35 pruebas**: 9 nuevas del escáner) en
+  verde.
+- Migraciones: sin cambios (`npm run test:migrations` sigue igual).
+
+### Pendiente (siguiente fase)
+
+- **Catálogo global colaborativo** (fase **2.0.0**): diccionario de autocompletado en IndexedDB,
+  sincronización completa + delta y contribución opcional. Requiere la migración `0004`.
+
+---
+
 ## [1.2.0] · 2026-10-18
 
 Verificación por correo: se arregla el enlace que apuntaba a **localhost** y se añade

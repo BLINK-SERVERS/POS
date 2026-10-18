@@ -18,6 +18,7 @@ const Contactos = lazy(() => import("./pages/Contactos").then((m) => ({ default:
 const Finanzas = lazy(() => import("./pages/Finanzas").then((m) => ({ default: m.Finanzas })));
 const Informes = lazy(() => import("./pages/Informes").then((m) => ({ default: m.Informes })));
 const Ajustes = lazy(() => import("./pages/Ajustes").then((m) => ({ default: m.Ajustes })));
+const Escaner = lazy(() => import("./pages/Escaner").then((m) => ({ default: m.Escaner })));
 
 function PageLoader() {
   return <div className="page-loader">Cargando…</div>;
@@ -98,6 +99,15 @@ function AppRoutes() {
       <Route path="/finanzas" element={<Protected><Finanzas /></Protected>} />
       <Route path="/informes" element={<Protected><Informes /></Protected>} />
       <Route path="/ajustes" element={<Protected><Ajustes /></Protected>} />
+      {/* Escáner remoto: lo abre el celular desde el QR. Sin sesión ni Shell. */}
+      <Route
+        path="/escaner"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <Escaner />
+          </Suspense>
+        }
+      />
       <Route path="*" element={<Navigate to="/inicio" replace />} />
     </Routes>
   );

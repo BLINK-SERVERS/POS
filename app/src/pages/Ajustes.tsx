@@ -3,14 +3,19 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs } from "../components/ui";
 import { Icon } from "../components/Icon";
+import { MobileScannerModal } from "../components/ScannerModals";
+import { useScanner } from "../lib/scanner/ScannerProvider";
+import { PAIRING_DAYS } from "../lib/scanner/pairing";
 import { formatBsDirect, formatRate } from "../lib/money";
 
-const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Cuenta"] as const;
+const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Dispositivos", "Cuenta"] as const;
 
 export function Ajustes() {
   const { state, user } = useStoreState();
   const { updateBusiness, setRate, updateProfile, clearAll, logout } = useStoreActions();
+  const { pairing, remoteActive, rotatePairing } = useScanner();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
+  const [qrOpen, setQrOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -240,6 +245,48 @@ export function Ajustes() {
         </Card>
       )}
 
+      {tab === "Dispositivos" && (
+        <Card
+          title="Escáner móvil"
+          hint="Usa un celular como lector inalámbrico de códigos de barras."
+        >
+          <p className="muted" style={{ marginBottom: "0.75rem" }}>
+            Vincula un celular con un código QR. Queda emparejado {PAIRING_DAYS} días: no
+            tendrás que escanear el QR cada mañana, basta con abrir la dirección del QR.
+          </p>
+          <div className="row gap-8" style={{ flexWrap: "wrap" }}>
+            <button className="btn btn--primary" onClick={() => setQrOpen(true)}>
+              <Icon name="scan" /> Vincular celular
+            </button>
+            {pairing && (
+              <button
+                className="btn btn--soft"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "¿Generar un código nuevo? Los teléfonos vinculados antes quedarán desvinculados."
+                    )
+                  ) {
+                    rotatePairing();
+                  }
+                }}
+              >
+                <Icon name="close" /> Desvincular teléfonos
+              </button>
+            )}
+          </div>
+          {pairing && (
+            <p className="field__hint" style={{ marginTop: "0.6rem" }}>
+              Estado: {remoteActive ? "celular activo" : "sin señal del celular"} · vence el{" "}
+              {new Date(pairing.expiresAt).toLocaleDateString()}.
+            </p>
+          )}
+          <p className="field__hint" style={{ marginTop: "0.6rem" }}>
+            ¿Un lector USB o Bluetooth? Conéctalo y escanea: se lee solo, sin instalar nada.
+          </p>
+        </Card>
+      )}
+
       {tab === "Cuenta" && (
         <Card title="Tu cuenta" hint="Sesión y datos del comercio.">
           <p className="muted" style={{ marginBottom: "0.75rem" }}>
@@ -248,7 +295,6 @@ export function Ajustes() {
           <button className="btn btn--ghost" onClick={() => void logout()}>
             <Icon name="logout" /> Cerrar sesión
           </button>
-
           <hr style={{ margin: "1.25rem 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
 
           <p className="muted" style={{ marginBottom: "0.75rem" }}>
@@ -271,6 +317,8 @@ export function Ajustes() {
           </button>
         </Card>
       )}
+
+      {qrOpen && <MobileScannerModal onClose={() => setQrOpen(false)} />}
 
       <p className="dim" style={{ textAlign: "center", fontSize: "0.8rem" }}>
         BLINK POS · versión {__APP_VERSION__}

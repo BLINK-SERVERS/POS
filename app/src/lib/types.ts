@@ -76,6 +76,8 @@ export interface Location {
 export interface Product {
   id: string;
   name: string;
+  /** Fabricante/marca: uso interno, nunca sale en el recibo. */
+  brand: string;
   sku: string;
   barcode: string;
   unit: string;

@@ -1,6 +1,6 @@
 # 18 · Estado del desarrollo y plan de traspaso
 
-**Documento vivo: última revisión 2026-10-18 (v1.1.1).** Este es el documento de referencia
+**Documento vivo: última revisión 2026-10-18 (v1.3.0).** Este es el documento de referencia
 del **estado real del código** y de **qué queda por hacer**. Los documentos `16` (inventario
 funcional de Wink) y `17` (mapa de brechas) son referencia de comportamiento; si algo
 contradice a este `18`, manda `18`.
@@ -21,7 +21,7 @@ Historial en `CHANGELOG.md`.
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
-| Tests | 🟢 26 pruebas (Vitest) | `npm test` |
+| Tests | 🟢 35 pruebas (Vitest) | `npm test` |
 | Migraciones SQL | 🟢 23 comprobaciones (PG embebido) | `npm run test:migrations` |
 | Migraciones en producción | 🟢 aplicadas 2026-10-18 | `0002` + `0003` vía Management API; verificado (17 tablas, 66 políticas RLS) |
 | Linter / formateador | 🔴 no existen | — |
@@ -37,6 +37,13 @@ Historial en `CHANGELOG.md`.
 > (el CSS propuesto con `#0075FF`/`#434343` seguía descartado por salirse de paleta; solo se
 > adoptaron sus pesos y estructura con los colores de token correctos). Verificado en navegador
 > (colores/pesos computados correctos) y `typecheck`/`build`/`test` (26) en verde.
+
+> **Cambios recientes (2026-10-18) · v1.3.0 — módulo Escáner.** Tres formas de leer códigos de
+> barras: **lector USB/Bluetooth (HID)**, **cámara** (`BarcodeDetector`) y **celular como escáner
+> remoto** (emparejado por QR, persistente). Integrado en Vender, Catálogo, Inventario y Ajustes.
+> Sin cambios de base de datos. Detalle en `docs/21-escaner.md`; resumen en `CHANGELOG.md`.
+> Añade la dependencia `qrcode` (solo para dibujar el QR local) y el campo interno `brand` del
+> producto. `typecheck`/`build`/`test` (35 pruebas) en verde.
 
 > **Cambios recientes (2026-10-18) · v1.2.0 — verificación por correo y «confiar en este dispositivo».**
 > (1) **Arreglado el enlace que apuntaba a `localhost`**: era configuración de Supabase Auth, no
@@ -253,7 +260,9 @@ pages/*           una página por módulo, autocontenida (+ Login, Registro, Onb
 5. **Selectores específicos:** `useStoreSelector((s) => s.x)` cuando solo se necesita un
    campo; `useStoreState()` completo solo en páginas que usan muchos campos.
 6. **`Modal` recibe `{ title, onClose, children }`**, nada más.
-7. **Sin dependencias nuevas** sin acordar (hoy solo React, React DOM y React Router).
+7. **Dependencias acordadas**: React, React DOM, React Router, `@supabase/supabase-js` y
+   `qrcode` (esta última solo para dibujar el QR del emparejamiento del escáner). No añadir
+   otras sin acordarlo.
 
 ### 3.3 Cómo añadir una funcionalidad (paso a paso)
 
@@ -281,14 +290,14 @@ ya implementadas, esperando pantalla · **Falta** = el trabajo real pendiente.
 |---|---|---|---|
 | **Login / Crear comercio** | ✅ completo | — | — |
 | **Inicio** | ✅ KPIs Hoy/Mes, checklist de arranque, "Por atender" (stock bajo), cierre del día, capital | — | ampliar "Por atender": caja sin cerrar, pendientes vencidos, gastos fijos del mes |
-| **Vender (POS)** | ✅ multi-cuenta (pestañas), buscador por nombre/SKU/código de barras, descuento por código **con vigencia validada**, recargos múltiples, nota de venta, IVA por producto, cobro multi-método (cuentas + A crédito), IGTF 3 % en USD, "monto exacto", cotización | `channelId`/`locationId` en `Sale` | dividir cuenta; mesas; registrar canal/ubicación de la cuenta en la venta |
+| **Vender (POS)** | ✅ multi-cuenta (pestañas), buscador por nombre/SKU/código de barras **y escáner (USB/cámara/celular)**, descuento por código **con vigencia validada**, recargos múltiples, nota de venta, IVA por producto, cobro multi-método (cuentas + A crédito), IGTF 3 % en USD, "monto exacto", cotización | `channelId`/`locationId` en `Sale` | dividir cuenta; mesas; registrar canal/ubicación de la cuenta en la venta |
 | **Historial** | ✅ KPIs (vendido, nº, ticket, a crédito), estados Cobrada/Crédito/Cotización/Anulada, botón **Anular** con motivo | `voidSale(id, reason)` | filtros por fecha/estado, detalle de venta |
-| **Catálogo** | ✅ 5 tabs: Productos (alta/edición/archivar/reactivar), **Precios por canal** (edición por canal + % masivo), Descuentos y Recargos (CRUD), **Categorías** (CRUD con orden/estado) | — | filtros Todos/Activos/Archivados; importar |
-| **Inventario** | ✅ Existencias (KPIs valor costo/venta, alertas, ajuste manual de stock) | compras reales (`addPurchase`), libro de movimientos (`inventoryMoves`), devoluciones (`addStockReturn`), ajustes documentados (`addStockAdjustment`), traslados (`addStockTransfer`) | tab **Movimientos** con datos reales; tab **Compras** que registre compra real (proveedor, pago, líneas); devoluciones/ajustes/traslados con pantalla; filtros bajo mínimo/agotados |
+| **Catálogo** | ✅ 5 tabs: Productos (alta/edición/archivar/reactivar, campo **Marca** interno y **código interno** `INT-…`), **Precios por canal** (edición por canal + % masivo), Descuentos y Recargos (CRUD), **Categorías** (CRUD con orden/estado); alta por **escaneo** | — | filtros Todos/Activos/Archivados; importar |
+| **Inventario** | ✅ Existencias (KPIs valor costo/venta, alertas, ajuste manual de stock, **escaneo abre el ajuste**), Movimientos y Compras con datos reales | compras reales (`addPurchase`), libro de movimientos (`inventoryMoves`), devoluciones (`addStockReturn`), ajustes documentados (`addStockAdjustment`), traslados (`addStockTransfer`) | devoluciones/ajustes/traslados con pantalla; filtros bajo mínimo/agotados |
 | **Contactos** | ✅ tabla + alta completa (tipo doc, documento, teléfono, correo, dirección, notas, cliente/proveedor/ambos, días de crédito) | `updateContact` | editar contacto, ficha con cuenta corriente (pendientes del contacto), filtros |
 | **Finanzas** | ✅ Cuentas (alta con moneda/tipo **y comisiones**; ingreso/retiro manual con movimiento), Movimientos (libro con filtro por cuenta), Transferencias (con comisión), Pendientes CxC/CxP (alta, abono, anulación), Gastos (alta con nombre/categoría/cuenta, pagar, anular con reverso de dinero), Gastos recurrentes (alta + generar vencidos), Categorías de gasto (alta, activar/desactivar; la del sistema IVA/IGTF queda fija), Cierres de caja | `adjustAccount`, `updateAccount`, `removeAccount` | ajuste con motivo, editar/eliminar cuenta |
 | **Informes** | ✅ Resultados (KPIs, comparación vs mes anterior, desglose ventas→utilidad, capital), tabs Ventas/Inventario/Finanzas básicas | — | sub-informes completos: ventas por canal/categoría/cliente/método; finanzas (entradas/salidas, antigüedad CxC/CxP); export PDF |
-| **Ajustes** | ✅ Negocio (datos), Moneda (tasa + fecha), Recibo (título, formato, pie, vista previa) | impuestos (`addTax`, `updateTax`, `setDefaultTax`), canales (CRUD), ubicaciones (CRUD), `receiptFields` | tabs **Impuestos**, **Canales**, **Ubicaciones**; UI de `receiptFields`; más adelante: comportamiento, usuarios/roles, bitácora |
+| **Ajustes** | ✅ Negocio (datos), Moneda (tasa + fecha), Recibo (título, formato, pie, vista previa), **Dispositivos** (escáner móvil: vincular/desvincular) | impuestos (`addTax`, `updateTax`, `setDefaultTax`), canales (CRUD), ubicaciones (CRUD), `receiptFields` | tabs **Impuestos**, **Canales**, **Ubicaciones**; UI de `receiptFields`; más adelante: comportamiento, usuarios/roles, bitácora |
 | **Shell** | ✅ navegación, chip de tasa, abrir caja, cerrar caja con **arqueo real** (esperado = fondo + entradas − salidas del turno; contado USD/Bs + nota) | `cashClosures` | calculadora de tasa |
 
 ---
@@ -414,7 +423,7 @@ migración v1→v2 incompleta que puede crashear `closeCash` (I4, **corregido** 
 
 **Menores:** etiqueta "IVA (16%)" hardcodeada en el POS; valores `"—"` guardados como datos;
 `ExpenseRow` **ya muestra el nombre del gasto**; cierre convierte Bs a tasa actual; `key={i}`;
-escáner sin auto-agregar con Enter; ~~sin validación de existencia al agregar líneas~~ **[v1.1.1: el POS acota la cantidad al stock disponible y marca «Agotado"]**;
+~~escáner sin auto-agregar con Enter~~ **[v1.3.0: módulo Escáner completo — USB (Enter), cámara y celular remoto]**; ~~sin validación de existencia al agregar líneas~~ **[v1.1.1: el POS acota la cantidad al stock disponible y marca «Agotado"]**;
 páginas enteras suscritas al estado completo (Shell re-renderiza en cada cambio);
 `runRecurring` muerto y con overflow de fecha (29-31); `remove*` sin confirmación ni
 cascada; `storage` multi-pestaña last-write-wins; `dist/` commiteada.
@@ -431,7 +440,9 @@ cascada; `storage` multi-pestaña last-write-wins; `dist/` commiteada.
 gastos recurrentes, comisiones de cuenta, y el CRUD de descuentos/recargos y `updateProduct`
 desde Catálogo). Sigue habiendo deuda de interfaz, no de modelo.
 
-**Cumplimiento de diseño:** cero emoji, iconos 100 % SVG, cero `any`/`dangerouslySetInnerHTML`.
+**Cumplimiento de diseño:** cero emoji, iconos 100 % SVG, cero `any`.
+*(v1.3.0: `components/QrCode.tsx` usa `dangerouslySetInnerHTML` **solo** con el SVG que genera
+la librería `qrcode`; el texto codificado no se inyecta como HTML.)*
 **Dos desvíos:** (a) `--color-accent-hover: #0062cc` (`tokens.css:15`) es un 4.º color —
 derivarlo con `color-mix` sobre `#007AFF`; (b) `<strong>` pone negrita 700 implícita en
 marcas del topbar y totales (Shell/Vender/Ajustes) — si aplica la regla de peso 400, resetear
@@ -555,7 +566,7 @@ Hallazgos de la auditoría de código del 2026-10-15 (detalle en §6.1):
 ## 8. Checklist de verificación por cambio
 
 1. `npm run typecheck` → sin errores.
-2. `npm test` → 26 pruebas en verde (si se tocó lógica fiscal/métrica o migraciones).
+2. `npm test` → 35 pruebas en verde (si se tocó lógica fiscal/métrica, escáner o migraciones).
 3. `npm run build` → sin errores; revisar el tamaño de chunks si cambió mucho.
 4. Flujo manual mínimo: **abrir caja → vender (descuento + recargo + IVA) → cobrar en USD
    (ver IGTF) y otra a crédito → Historial → cerrar caja con arqueo → Informes cuadra**.

@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { uid, useStoreActions, useStoreSelector } from "../lib/store";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon } from "../components/Icon";
+import { CameraScannerModal } from "../components/ScannerModals";
+import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
 import {
   discountAmount,
@@ -103,6 +105,8 @@ export function Vender() {
   const [drafts, setDrafts] = useState<Draft[]>([emptyDraft()]);
   const [activeId, setActiveId] = useState(() => drafts[0].id);
   const [query, setQuery] = useState("");
+  const [camOpen, setCamOpen] = useState(false);
+  const [scanCode, setScanCode] = useState("");
   const [payOpen, setPayOpen] = useState(false);
   const [discOpen, setDiscOpen] = useState(false);
   const [surOpen, setSurOpen] = useState(false);
@@ -158,6 +162,25 @@ export function Vender() {
     },
     [catalog, draft.id]
   );
+
+  // Escáner (USB · cámara · celular): agrega el producto a la cuenta activa.
+  // Si el código no está en el catálogo, se ofrece darlo de alta.
+  const handleScan = (code: string) => {
+    const q = code.trim().toLowerCase();
+    const p = catalog.find(
+      (x) =>
+        x.active &&
+        !x.archived &&
+        (x.barcode === code || x.sku.toLowerCase() === q || x.name.toLowerCase() === q)
+    );
+    if (p) {
+      addLine(p.id);
+      setScanCode("");
+      return;
+    }
+    setScanCode(code);
+  };
+  useScanHandler(handleScan);
 
   const setQty = useCallback(
     (id: string, qty: number) => {
@@ -387,13 +410,37 @@ export function Vender() {
 
       <div className="pos">
         <div className="pos__catalog">
-          <input
-            className="input"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar o escanear…"
-            aria-label="Buscar o escanear"
-          />
+          <div className="row gap-8" style={{ alignItems: "center" }}>
+            <input
+              className="input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar o escanear…"
+              aria-label="Buscar o escanear"
+            />
+            <button
+              type="button"
+              className="btn btn--soft btn--sm"
+              title="Escanear con la cámara"
+              onClick={() => setCamOpen(true)}
+            >
+              <Icon name="scan" />
+            </button>
+          </div>
+          {scanCode && (
+            <div className="scan-hint">
+              <span>
+                “{scanCode}” no está en tu catálogo. Puedes registrarlo con su precio.
+              </span>
+              <Link
+                className="btn btn--soft btn--sm"
+                to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
+                onClick={() => setScanCode("")}
+              >
+                <Icon name="plus" /> Crear producto
+              </Link>
+            </div>
+          )}
           <div className="pos__grid">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} rate={rate} onAdd={addLine} />
@@ -776,6 +823,13 @@ export function Vender() {
             Confirmar venta
           </button>
         </Modal>
+      )}
+
+      {camOpen && (
+        <CameraScannerModal
+          onScan={(code) => handleScan(code)}
+          onClose={() => setCamOpen(false)}
+        />
       )}
     </>
   );

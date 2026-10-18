@@ -220,6 +220,7 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
   }));
   merged.products = (merged.products ?? []).map((p) => ({
     ...p,
+    brand: p.brand ?? "",
     archived: p.archived ?? false,
     channelPrices: p.channelPrices ?? { ch_principal: p.price },
   }));

@@ -1,12 +1,21 @@
 // Catálogo · Productos, descuentos, recargos y categorías.
 import { memo, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
 import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge } from "../components/ui";
+import { Icon } from "../components/Icon";
+import { CameraScannerModal } from "../components/ScannerModals";
+import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatUsd } from "../lib/money";
 import type { Category, Discount, Product, Surcharge } from "../lib/types";
 
 const TABS = ["Productos", "Precios", "Descuentos", "Recargos", "Categorías"] as const;
+
+/** Código interno para productos sin código de barras (prefijo INT-). */
+function internalCode(): string {
+  return `INT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
 
 const margin = (p: number, c: number) => (p > 0 ? Math.round(((p - c) / p) * 100) : 0);
 
@@ -234,6 +243,7 @@ const ChannelPriceCell = memo(function ChannelPriceCell({
 
 const EMPTY_PRODUCT = {
   name: "",
+  brand: "",
   sku: "",
   cost: "0",
   price: "0",
@@ -274,9 +284,11 @@ export function Catalogo() {
   } = useStoreActions();
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Productos");
+  const [params, setParams] = useSearchParams();
 
   /* Producto */
   const [open, setOpen] = useState(false);
+  const [camOpen, setCamOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_PRODUCT });
 
@@ -333,6 +345,7 @@ export function Catalogo() {
     setEditId(p.id);
     setForm({
       name: p.name,
+      brand: p.brand,
       sku: p.sku,
       cost: String(p.cost),
       price: String(p.price),
@@ -352,6 +365,37 @@ export function Catalogo() {
     setOpen(true);
   };
 
+  // --- Escáner (USB · cámara · celular) ---------------------------
+  // Si el código ya existe, abre ese producto; si no, prepara el alta con
+  // el código precargado. Vale para los tres métodos de lectura.
+  const scanProduct = (code: string) => {
+    const found = products.find((p) => p.barcode && p.barcode === code);
+    if (found) {
+      openEdit(found);
+      return;
+    }
+    setEditId(null);
+    setForm({ ...EMPTY_PRODUCT, barcode: code });
+    setOpen(true);
+  };
+  useScanHandler((code) => scanProduct(code));
+
+  // El POS puede mandar aquí con ?barcode=… al no encontrar un producto.
+  useEffect(() => {
+    const code = params.get("barcode");
+    if (!code) return;
+    const found = products.find((p) => p.barcode && p.barcode === code);
+    if (found) openEdit(found);
+    else {
+      setEditId(null);
+      setForm({ ...EMPTY_PRODUCT, barcode: code });
+      setOpen(true);
+    }
+    setParams({}, { replace: true });
+    // Solo debe correr cuando cambia el parámetro de la URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
   function saveProduct() {
     if (!form.name.trim()) return;
     const channelPrices: Record<string, number> = {};
@@ -361,6 +405,7 @@ export function Catalogo() {
     }
     const data = {
       name: form.name.trim(),
+      brand: form.brand.trim(),
       sku: form.sku.trim(),
       cost: Math.max(0, Number(form.cost) || 0),
       price: Math.max(0, Number(form.price) || 0),
@@ -740,6 +785,9 @@ export function Catalogo() {
           <Field label="Nombre" required>
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
+          <Field label="Marca" hint="Fabricante. Uso interno; no aparece en el recibo.">
+            <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
+          </Field>
           <Field label="SKU" hint="Opcional, único por comercio.">
             <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
           </Field>
@@ -793,8 +841,31 @@ export function Catalogo() {
               </select>
             </Field>
           </div>
-          <Field label="Código de barras" hint="Opcional. Se lee con el escáner.">
-            <input className="input" value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} />
+          <Field label="Código de barras" hint="Opcional. Léelo con el escáner o genera un código interno.">
+            <div className="row gap-8" style={{ alignItems: "center" }}>
+              <input
+                className="input"
+                value={form.barcode}
+                onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                placeholder="Ej.: 7591234567890"
+              />
+              <button
+                type="button"
+                className="btn btn--soft btn--sm"
+                title="Escanear con la cámara"
+                onClick={() => setCamOpen(true)}
+              >
+                <Icon name="scan" />
+              </button>
+              <button
+                type="button"
+                className="btn btn--soft btn--sm"
+                title="Generar código interno"
+                onClick={() => setForm({ ...form, barcode: internalCode() })}
+              >
+                <Icon name="tag" />
+              </button>
+            </div>
           </Field>
           {channels.length > 0 && (
             <div className="field">
@@ -851,6 +922,13 @@ export function Catalogo() {
             {editId ? "Guardar cambios" : "Guardar producto"}
           </button>
         </Modal>
+      )}
+
+      {camOpen && (
+        <CameraScannerModal
+          onScan={(code) => setForm((f) => ({ ...f, barcode: code }))}
+          onClose={() => setCamOpen(false)}
+        />
       )}
 
       {discOpen && (

@@ -3,6 +3,9 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
+import { CameraScannerModal } from "../components/ScannerModals";
+import { useScanHandler } from "../lib/scanner/ScannerProvider";
+import { Icon } from "../components/Icon";
 import { Card, EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
 import { formatUsd, round2 } from "../lib/money";
 import type { Product } from "../lib/types";
@@ -90,6 +93,15 @@ export function Inventario() {
     setOpen(true);
   }, []);
 
+  const [camOpen, setCamOpen] = useState(false);
+
+  // Escáner: leer un código abre el ajuste de existencias de ese producto.
+  useScanHandler((code) => {
+    const q = code.trim().toLowerCase();
+    const p = products.find((x) => (x.barcode && x.barcode === code) || (x.sku && x.sku.toLowerCase() === q));
+    if (p) openAdjust(p.id, p.stock);
+  });
+
   function applyAdjust() {
     if (!target) return;
     setStock(target, Number(qty) || 0);
@@ -149,9 +161,14 @@ export function Inventario() {
         title="Inventario"
         subtitle="Existencias, mínimos y valor de tu mercancía."
         actions={
-          <button className="btn btn--primary" onClick={() => setPurchaseOpen(true)}>
-            Registrar compra
-          </button>
+          <div className="row gap-8">
+            <button className="btn btn--soft" onClick={() => setCamOpen(true)}>
+              <Icon name="scan" /> Escanear
+            </button>
+            <button className="btn btn--primary" onClick={() => setPurchaseOpen(true)}>
+              Registrar compra
+            </button>
+          </div>
         }
       />
 
@@ -435,6 +452,19 @@ export function Inventario() {
             Registrar compra
           </button>
         </Modal>
+      )}
+
+      {camOpen && (
+        <CameraScannerModal
+          onScan={(code) => {
+            const q = code.trim().toLowerCase();
+            const p = products.find(
+              (x) => (x.barcode && x.barcode === code) || (x.sku && x.sku.toLowerCase() === q)
+            );
+            if (p) openAdjust(p.id, p.stock);
+          }}
+          onClose={() => setCamOpen(false)}
+        />
       )}
     </div>
   );

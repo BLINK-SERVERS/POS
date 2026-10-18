@@ -186,6 +186,7 @@ export function Onboarding() {
     const stock = Number(prodStock.replace(",", ".")) || 0;
     actions.addProduct({
       name,
+      brand: "",
       sku: "",
       barcode: "",
       unit: "und",

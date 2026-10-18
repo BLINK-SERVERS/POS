@@ -6,6 +6,8 @@ import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
+import { MobileScannerModal } from "./ScannerModals";
+import { ScannerProvider, useScanner } from "../lib/scanner/ScannerProvider";
 import type { BusinessFeatures } from "../lib/types";
 
 interface NavItem {
@@ -35,6 +37,28 @@ const NAV: NavItem[] = [
   { to: "/ajustes", label: "Ajustes", icon: "settings" },
 ];
 
+/** Botón del topbar: abre el modal del escáner y muestra si el celular está activo. */
+function ScannerTopbarButton() {
+  const { remoteActive, pairing } = useScanner();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className={"btn btn--soft btn--sm scan-topbtn" + (remoteActive ? " scan-topbtn--on" : "")}
+        onClick={() => setOpen(true)}
+        title="Escáner móvil"
+      >
+        <Icon name="scan" />
+        <span className="scan-topbtn__label">
+          {remoteActive ? "Escáner activo" : pairing ? "Escáner" : "Vincular"}
+        </span>
+        {remoteActive && <span className="dot dot--on" aria-hidden />}
+      </button>
+      {open && <MobileScannerModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { state, user, logout, openCash, closeCash } = useStore();
   const nav = useNavigate();
@@ -63,6 +87,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const hasDiff = diffUsd !== 0 || diffBs !== 0;
 
   return (
+    <ScannerProvider>
     <div className={"shell" + (navOpen ? " shell--nav-open" : "")}>
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
@@ -128,6 +153,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Icon name={navOpen ? "close" : "menu"} />
         </button>
         <strong className="topbar__name">{state.business.name}</strong>
+        <ScannerTopbarButton />
         <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
           <strong>{formatRate(state.rate)}</strong>
           <span className="rate-chip__suffix"> / $ · BCV</span>
@@ -278,5 +304,6 @@ export function Shell({ children }: { children: ReactNode }) {
         </Modal>
       )}
     </div>
+    </ScannerProvider>
   );
 }
