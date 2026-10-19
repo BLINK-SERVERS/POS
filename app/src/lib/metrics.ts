@@ -167,7 +167,13 @@ export function taxesCollected(state: AppState) {
 /** Productos activos (no servicios) por debajo o en su mínimo. */
 export function lowStock(state: AppState) {
   return state.products.filter(
-    (p) => p.active && !p.archived && p.trackStock && p.type !== "servicio" && p.stock <= p.minStock
+    (p) =>
+      p.active &&
+      !p.archived &&
+      p.trackStock &&
+      p.type !== "servicio" &&
+      p.minStock > 0 &&
+      p.stock <= p.minStock
   );
 }
 

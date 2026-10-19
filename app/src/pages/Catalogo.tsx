@@ -45,10 +45,12 @@ const ProductRow = memo(function ProductRow({
       <td style={{ textTransform: "capitalize" }}>{product.type}</td>
       <td className="tabular">
         {formatUsd(product.price)}
-        <span className="dim" style={{ fontSize: "0.72rem" }}>
-          {" "}
-          {formatBs(product.price, rate)}
-        </span>
+        {rate > 0 && (
+          <span className="dim" style={{ fontSize: "0.72rem" }}>
+            {" "}
+            {formatBs(product.price, rate)}
+          </span>
+        )}
       </td>
       <td>
         {product.archived ? (
@@ -466,12 +468,18 @@ export function Catalogo() {
 
   function saveDiscount() {
     if (!discForm.name.trim() || !discForm.code.trim()) return;
+    // "Usos máximos": vacío, 0 o un valor no numérico = ilimitado (null). Un
+    // descuento con tope 0 nunca se podría aplicar, así que no se permite.
+    const rawUses = discForm.maxUses.trim();
+    const parsedUses = rawUses === "" ? NaN : Number(rawUses);
+    const maxUses =
+      Number.isFinite(parsedUses) && parsedUses > 0 ? Math.floor(parsedUses) : null;
     const data = {
       name: discForm.name.trim(),
       code: discForm.code.trim().toUpperCase(),
       type: discForm.type,
       value: Math.max(0, Number(discForm.value) || 0),
-      maxUses: discForm.maxUses.trim() === "" ? null : Math.max(0, Number(discForm.maxUses) || 0),
+      maxUses,
       active: discForm.active,
       from: discForm.from || undefined,
       to: discForm.to || undefined,

@@ -178,7 +178,11 @@ export function Ajustes() {
               <hr />
               <div className="between">
                 <span>Total en bolívares</span>
-                <span>{formatBsDirect((firstProduct?.price ?? 0) * state.rate)}</span>
+                <span>
+                  {state.rate > 0
+                    ? formatBsDirect((firstProduct?.price ?? 0) * state.rate)
+                    : "Configura la tasa"}
+                </span>
               </div>
               <hr />
               <div className="muted">{form.receiptFooter || "(sin pie de recibo)"}</div>
@@ -433,10 +437,6 @@ export function Ajustes() {
       )}
 
       {qrOpen && <MobileScannerModal onClose={() => setQrOpen(false)} />}
-
-      <p className="dim" style={{ textAlign: "center", fontSize: "0.8rem" }}>
-        BLINK POS · versión {__APP_VERSION__}
-      </p>
     </div>
   );
 }

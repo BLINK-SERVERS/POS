@@ -34,7 +34,7 @@ const StockRow = memo(function StockRow({
         {formatUsd(round2(product.cost * Math.max(0, product.stock)))}
       </td>
       <td>
-        {product.stock <= product.minStock ? (
+        {product.minStock > 0 && product.stock <= product.minStock ? (
           <Badge tone="warning" icon="alert">Stock bajo</Badge>
         ) : (
           <Badge tone="success" icon="check">Disponible</Badge>
@@ -82,7 +82,8 @@ export function Inventario() {
     () => ({
       valorCosto: round2(products.reduce((a, p) => a + p.cost * Math.max(0, p.stock), 0)),
       valorVenta: round2(products.reduce((a, p) => a + p.price * Math.max(0, p.stock), 0)),
-      low: products.filter((p) => p.type !== "servicio" && p.stock <= p.minStock),
+      // Stock bajo: solo cuando el mínimo es > 0 y las existencias lo alcanzan/igualan.
+      low: products.filter((p) => p.type !== "servicio" && p.minStock > 0 && p.stock <= p.minStock),
     }),
     [products]
   );

@@ -68,8 +68,8 @@ const AccountRow = memo(function AccountRow({
         {account.currency === "USD" ? formatUsd(account.balance) : formatBsDirect(account.balance)}
         <div className="dim" style={{ fontSize: "0.72rem" }}>
           {account.currency === "USD"
-            ? formatBsDirect(account.balance * rate)
-            : formatUsd(round2(account.balance / rate))}
+            ? rate > 0 && formatBsDirect(account.balance * rate)
+            : formatUsd(round2(account.balance / (rate || 1)))}
         </div>
       </td>
       <td>
@@ -429,7 +429,7 @@ export function Finanzas() {
   const { total, bsConserved } = useMemo(
     () => ({
       total: round2(
-        state.accounts.reduce((a, x) => a + (x.currency === "USD" ? x.balance : x.balance / rate), 0)
+        state.accounts.reduce((a, x) => a + (x.currency === "USD" ? x.balance : x.balance / (rate || 1)), 0)
       ),
       bsConserved: round2(
         state.accounts.filter((a) => a.currency === "VES").reduce((a, x) => a + x.balance, 0)
@@ -541,12 +541,25 @@ export function Finanzas() {
             <Card flat>
               <div className="kpi__label">Bolívares conservados</div>
               <div className="kpi__value">{formatBsDirect(bsConserved)}</div>
-              <div className="kpi__hint">equivale a {formatUsd(round2(bsConserved / rate))} a la tasa oficial</div>
+              <div className="kpi__hint">
+                {rate > 0
+                  ? `equivale a ${formatUsd(round2(bsConserved / rate))} a la tasa oficial`
+                  : "sin tasa configurada"}
+              </div>
             </Card>
             <Card flat>
               <div className="kpi__label">Tasa oficial</div>
-              <div className="kpi__value" style={{ fontSize: "1.3rem" }}>{formatRate(rate)}</div>
-              <div className="kpi__hint">por USD</div>
+              {rate > 0 ? (
+                <>
+                  <div className="kpi__value" style={{ fontSize: "1.3rem" }}>{formatRate(rate)}</div>
+                  <div className="kpi__hint">por USD</div>
+                </>
+              ) : (
+                <>
+                  <div className="kpi__value" style={{ fontSize: "1.3rem" }}>Sin configurar</div>
+                  <div className="kpi__hint">Configúrala en Ajustes → Moneda e impuestos.</div>
+                </>
+              )}
             </Card>
           </div>
 
@@ -1293,10 +1306,13 @@ export function Finanzas() {
           </div>
           <Field
             label={abonoPendingObj.direction === "cobrar" ? "Monto a recibir (USD)" : "Monto a pagar (USD)"}
+            hint={`Máximo ${formatUsd(round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd))}`}
           >
             <input
               className="input"
               type="number"
+              min="0"
+              max={round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd)}
               value={abonoAmount}
               onChange={(e) => setAbonoAmount(e.target.value)}
             />

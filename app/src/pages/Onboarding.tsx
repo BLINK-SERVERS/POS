@@ -206,6 +206,7 @@ export function Onboarding() {
     setProdPrice("");
     setProdCost("");
     setProdStock("");
+    setProdCat("");
     setError("");
   }
 

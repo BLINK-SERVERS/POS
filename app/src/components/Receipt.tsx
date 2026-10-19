@@ -32,7 +32,10 @@ export function Receipt({
   };
 
   const format = business.printFormat ?? "80mm";
-  const effectiveRate = sale.rate || rate || 1;
+  // Tasa real del ticket: la de la venta o la vigente del comercio. Si no hay
+  // ninguna (comercio nuevo sin tasa), no se inventa un "Bs 1:1" engañoso.
+  const hasRate = (sale.rate ?? 0) > 0 || (rate ?? 0) > 0;
+  const effectiveRate = sale.rate || rate || 0;
   const total = round2(saleTotal(sale));
   const totalBs = round2(total * effectiveRate);
 
@@ -65,6 +68,11 @@ export function Receipt({
           <h2 className="receipt__title">
             {business.receiptTitle?.trim() || business.name || "BLINK POS"}
           </h2>
+          {sale.status === "cotizacion" && (
+            <p className="receipt__sub" style={{ fontWeight: 700, letterSpacing: "0.08em" }}>
+              COTIZACIÓN
+            </p>
+          )}
           {fields.legalName && business.legalName && (
             <p className="receipt__sub">{business.legalName}</p>
           )}
@@ -106,6 +114,12 @@ export function Receipt({
             <div className="receipt__row receipt__row--alert">
               <span>ESTADO:</span>
               <strong>*** ANULADA ***</strong>
+            </div>
+          )}
+          {sale.status === "cotizacion" && (
+            <div className="receipt__row receipt__row--alert">
+              <span>DOCUMENTO:</span>
+              <strong>SIN VALOR FISCAL</strong>
             </div>
           )}
         </div>
@@ -175,7 +189,7 @@ export function Receipt({
             <strong>TOTAL USD:</strong>
             <strong className="mono">{formatUsd(total)}</strong>
           </div>
-          {fields.totalBs && (
+          {fields.totalBs && hasRate && (
             <div className="receipt__row receipt__row--bs">
               <span>TOTAL BS:</span>
               <strong className="mono">{formatBsDirect(totalBs)}</strong>

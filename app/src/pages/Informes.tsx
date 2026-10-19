@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useStoreState } from "../lib/store";
 import { Card, Money, PageHead, Tabs, DualInline } from "../components/ui";
 import { Icon } from "../components/Icon";
-import { capital, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet } from "../lib/metrics";
+import { capital, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal } from "../lib/metrics";
 import { formatUsd, round2 } from "../lib/money";
 import {
   downloadText,
@@ -83,7 +83,7 @@ export function Informes() {
       s.paymentMethod || "—",
       round2(saleNet(s)),
       round2(s.tax),
-      round2(saleNet(s) + s.tax + s.surcharge + s.igtf),
+      round2(saleTotal(s)),
     ]);
     return { headers, rows };
   };

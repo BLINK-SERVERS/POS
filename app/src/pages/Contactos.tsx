@@ -66,7 +66,8 @@ export function Contactos() {
       notes: form.notes.trim(),
       isClient: form.kind === "cliente" || form.kind === "ambos",
       isProvider: form.kind === "proveedor" || form.kind === "ambos",
-      creditDays: Number(form.creditDays) || 0,
+      // Días de crédito: entero no negativo (un crédito negativo no tiene sentido).
+      creditDays: Math.max(0, Math.floor(Number(form.creditDays) || 0)),
     });
     setOpen(false);
     setForm({
@@ -177,6 +178,7 @@ export function Contactos() {
               <input
                 className="input"
                 type="number"
+                min="0"
                 value={form.creditDays}
                 onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
               />

@@ -88,17 +88,20 @@ const ProductCard = memo(function ProductCard({
   onAdd: (id: string) => void;
 }) {
   const soldOut = product.trackStock && product.stock <= 0;
-  const low = product.trackStock && product.stock > 0 && product.stock <= product.minStock;
+  const low =
+    product.trackStock && product.minStock > 0 && product.stock > 0 && product.stock <= product.minStock;
   return (
     <button type="button" className="prod" onClick={() => onAdd(product.id)} disabled={soldOut}>
       <div className="prod__name">{product.name}</div>
       <div className="prod__cat">{product.category}</div>
       <div className="prod__price">
         {formatUsd(product.price)}
-        <span className="dim" style={{ fontWeight: 400, fontSize: "0.72rem" }}>
-          {" "}
-          · {formatBs(product.price, rate)}
-        </span>
+        {rate > 0 && (
+          <span className="dim" style={{ fontWeight: 400, fontSize: "0.72rem" }}>
+            {" "}
+            · {formatBs(product.price, rate)}
+          </span>
+        )}
       </div>
       {soldOut ? (
         <div style={{ marginTop: "0.4rem" }}>
@@ -586,7 +589,7 @@ export function Vender() {
                     </span>
                   </div>
                   <div className="dim tabular" style={{ textAlign: "right", fontSize: "0.72rem" }}>
-                    {formatBs(round2(l.price * l.qty), rate)}
+                    {rate > 0 && formatBs(round2(l.price * l.qty), rate)}
                   </div>
                 </div>
               ))
@@ -829,7 +832,7 @@ export function Vender() {
             </div>
           )}
 
-          <Field label="Método de pago">
+          <Field label="Método de pago" as="group">
             <div className="row gap-8" style={{ flexWrap: "wrap" }}>
               {accounts
                 .filter((a) => a.active)

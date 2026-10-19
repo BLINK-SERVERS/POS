@@ -17,7 +17,7 @@ export function Money({
   return (
     <span className={size === "sm" ? "tabular" : "kpi__value"}>
       {value}
-      {size !== "sm" && (
+      {size !== "sm" && rate > 0 && (
         <span className="kpi__alt" style={{ display: "block" }}>
           {formatBs(usd, rate)}
         </span>
@@ -29,8 +29,9 @@ export function Money({
 export function DualInline({ usd, rate }: { usd: number; rate: number }) {
   return (
     <span className="tabular">
-      {formatUsd(usd)}{" "}
-      <span className="dim">· {formatBs(usd, rate)}</span>
+      {formatUsd(usd)}
+      {/* Sin tasa configurada no se muestra "Bs 0,00" engañoso. */}
+      {rate > 0 && <span className="dim"> · {formatBs(usd, rate)}</span>}
     </span>
   );
 }
@@ -138,22 +139,41 @@ export function Field({
   hint,
   children,
   required,
+  as = "field",
 }: {
   label: string;
   hint?: string;
   children: ReactNode;
   required?: boolean;
+  /**
+   * "field" (por defecto): envuelve un único control y usa <label> para asociarlo.
+   * "group": cuando el contenido son varios controles (p. ej. botones), usa un
+   * <div role="group"> con nombre accesible; un <label> aquí robaría el nombre
+   * del primer control y produciría lecturas como "Método de pago Banco … · VES".
+   */
+  as?: "field" | "group";
 }) {
-  return (
-    <label className="field">
-      <span className="field__label">
-        {label}
-        {required && " *"}
-      </span>
+  const labelNode = (
+    <span className="field__label">
+      {label}
+      {required && " *"}
+    </span>
+  );
+  const body = (
+    <>
+      {labelNode}
       {children}
       {hint && <span className="field__hint">{hint}</span>}
-    </label>
+    </>
   );
+  if (as === "group") {
+    return (
+      <div className="field" role="group" aria-label={label}>
+        {body}
+      </div>
+    );
+  }
+  return <label className="field">{body}</label>;
 }
 
 /* --- Modal --- */

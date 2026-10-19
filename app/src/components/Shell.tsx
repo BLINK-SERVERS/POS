@@ -155,8 +155,14 @@ export function Shell({ children }: { children: ReactNode }) {
         <strong className="topbar__name">{state.business.name}</strong>
         <ScannerTopbarButton />
         <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
-          <strong>{formatRate(state.rate)}</strong>
-          <span className="rate-chip__suffix"> / $ · BCV</span>
+          {state.rate > 0 ? (
+            <>
+              <strong>{formatRate(state.rate)}</strong>
+              <span className="rate-chip__suffix"> / $ · BCV</span>
+            </>
+          ) : (
+            <strong style={{ fontSize: "0.8rem" }}>Sin tasa</strong>
+          )}
         </span>
         <span className="grow" />
         {session ? (

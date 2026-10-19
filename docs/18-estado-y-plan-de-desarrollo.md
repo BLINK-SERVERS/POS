@@ -1,6 +1,6 @@
 # 18 · Estado del desarrollo y plan de traspaso
 
-**Documento vivo: última revisión 2026-10-18 (v1.3.1).** Este es el documento de referencia
+**Documento vivo: última revisión 2026-10-19 (v1.3.2).** Este es el documento de referencia
 del **estado real del código** y de **qué queda por hacer**. Los documentos `16` (inventario
 funcional de Wink) y `17` (mapa de brechas) son referencia de comportamiento; si algo
 contradice a este `18`, manda `18`.
@@ -13,11 +13,11 @@ contradice a este `18`, manda `18`.
 
 ## 1. Estado en un vistazo
 
-**Versión actual: `1.3.1`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+**Versión actual: `1.3.2`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
-| Verificación | Estado (2026-10-18) | Cómo |
+| Verificación | Estado (2026-10-19) | Cómo |
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
@@ -27,6 +27,16 @@ Historial en `CHANGELOG.md`.
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-19) · v1.3.2 — QA: caza de bugs de punta a punta.** Revisión manual
+> del POS como comerciante (efectivo, cotización, crédito, pago en bolívares con referencia,
+> anulación, cierre de caja, transferencia multimoneda, exportación CSV). 13 bugs corregidos:
+> distintivo de **cotización** (COTIZACIÓN / SIN VALOR FISCAL) en el comprobante; **abonos a
+> pendientes** acotados al saldo; limpieza de categoría en Onboarding; **"Usos máximos" 0 =
+> ilimitado**; **stock bajo** solo con mínimo `> 0`; **tasa sin configurar** sin cifras engañosas
+> en toda la app; accesibilidad del grupo "Método de pago"; **días de crédito** no negativos; y
+> se retira la versión visible en Ajustes. Detalle en `docs/22-qa-caza-de-bugs.md`.
+> Verificado: `typecheck`/`build`/`test` (**38 pruebas**) en verde y navegador sin errores.
 
 > **Cambios recientes (2026-10-18) · v1.3.1 — Cierre de bloqueadores de MVP para producción.**
 > (1) **Vuelto / cambio multimoneda**: el modal de cobro permite pagos con exceso, calcula en tiempo

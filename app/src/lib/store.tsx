@@ -68,6 +68,8 @@ import {
   type SessionUser,
 } from "./cloud";
 import { supabase, consumeLinkAuthType } from "./supabase";
+// TEMP-BYPASS (pruebas manuales sin cuenta) — se retira con el archivo bypass.ts.
+import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 
 const STORAGE_KEY = "blink-pos-state-v3";
 const LEGACY_KEYS = ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"];
@@ -698,6 +700,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const persistCloud = useCallback(() => {
     // No pisar la nube antes de terminar de cargarla ni tras cerrar sesión.
     if (!currentAuthed || !hydrated) return;
+    if (isBypassActive()) return; // TEMP-BYPASS: sin sesión real en la nube
     cloudSaveBusiness(currentState)
       .then(() => setCloudError(false))
       .catch(() => {
@@ -769,6 +772,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Observa la sesión de Supabase (alta, verificación, login, logout).
   useEffect(() => {
     let cancelled = false;
+    // TEMP-BYPASS: sesión local falsa; ni getSession ni nube.
+    if (isBypassActive()) {
+      const fake = bypassUser();
+      setUser(fake);
+      setAuthed(true);
+      markVerified(fake.id);
+      trustDevice(fake.id);
+      setDeviceVerified(true);
+      hydrated = true;
+      setBooting(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       const user = userFromSession(data.session);
@@ -795,6 +810,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (isBypassActive()) return; // TEMP-BYPASS: eventos reales no aplican
       if (event === "INITIAL_SESSION") return; // ya lo resolvió getSession()
       const user = userFromSession(session);
       setUser(user);
@@ -835,6 +851,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (isBypassActive()) clearBypass(); // TEMP-BYPASS: salir vuelve al Login real
     await authSignOut();
     setUser(null);
     setAuthed(false);
@@ -1674,14 +1691,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const p = s.pendings.find((x) => x.id === id);
         const acc = s.accounts.find((a) => a.id === accountId);
         if (!p || !acc || amountUsd <= 0) return s;
-        const paid = round2(p.paidUsd + amountUsd);
+        if (p.status === "saldado" || p.status === "anulado") return s;
+        // No se puede abonar más de lo que queda por cobrar/pagar: acota el
+        // monto al saldo restante para no acreditar dinero de más en la cuenta.
+        const remaining = round2(Math.max(0, p.amountUsd - p.paidUsd));
+        const applied = round2(Math.min(amountUsd, remaining));
+        if (applied <= 0) return s;
+        const paid = round2(p.paidUsd + applied);
         const status: Pending["status"] = paid >= p.amountUsd ? "saldado" : "parcial";
         const at = new Date().toISOString();
         const isCollect = p.direction === "cobrar";
         // Al recibir se descuenta la comisión; al pagar se suma la comisión.
         const net = isCollect
-          ? round2(amountUsd - commission(amountUsd, acc.commissionIn))
-          : round2(amountUsd + commission(amountUsd, acc.commissionOut));
+          ? round2(applied - commission(applied, acc.commissionIn))
+          : round2(applied + commission(applied, acc.commissionOut));
         const native = toNative(net, acc.currency, s.rate);
         return {
           ...s,

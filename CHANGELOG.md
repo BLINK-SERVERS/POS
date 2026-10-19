@@ -11,6 +11,32 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.2] · 2026-10-19
+
+**QA · caza de bugs de punta a punta (rol comerciante).** Revisión manual completa del POS y
+correcciones. Detalle en `docs/22-qa-caza-de-bugs.md`.
+
+- **Cotización con distintivo**: el comprobante de una cotización ahora muestra **COTIZACIÓN** y
+  **SIN VALOR FISCAL** (antes se imprimía igual que un ticket de venta).
+- **Abonos a pendientes acotados**: no se puede abonar más que el saldo restante; el store acota
+  el monto y calcula la comisión sobre lo aplicado (la cuenta ya no se acredita de más).
+- **Onboarding**: se limpia la categoría al añadir varios productos seguidos (antes se retenía).
+- **Descuentos**: "Usos máximos" vacío/0/inválido = ilimitado (antes 0 dejaba el descuento
+  inservible).
+- **Stock bajo**: solo alerta cuando el mínimo es `> 0` (evita falsos positivos con mínimo 0).
+- **Tasa sin configurar**: se ocultan equivalencias/valores engañosos (`Bs 0,00`, `$ ∞`, `NaN`) en
+  Inicio, POS, Catálogo, Finanzas, Ajustes, chip de tasa y recibo; textos claros en su lugar.
+- **Accesibilidad**: la etiqueta "Método de pago" ya no corrompe el nombre accesible del primer
+  botón de cuenta (`Field` con `as="group"`).
+- **Contactos**: "Días de crédito" no acepta negativos.
+- **Requisito**: se retira la versión visible al pie de Ajustes (la versión se declara solo en
+  `app/package.json`).
+- **Verificado**: typecheck y 38 pruebas en verde; flujos de efectivo, cotización, crédito, pago
+  en bolívares con referencia, anulación, cierre de caja (arqueo), transferencia multimoneda y
+  exportación CSV probados en vivo.
+
+---
+
 ## [1.3.1] · 2026-10-18
 
 **Cierre de Bloqueadores de MVP y Preparación para Producción.**
