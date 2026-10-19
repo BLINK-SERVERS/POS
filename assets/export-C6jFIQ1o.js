@@ -2,9 +2,9 @@ function e(e){if(e==null)return``;let t=typeof e==`boolean`?e?`Sí`:`No`:String(
 `)+`\r
 `}function n(e,t,n=`text/csv;charset=utf-8`){let r=new Blob([t],{type:n}),i=URL.createObjectURL(r),a=document.createElement(`a`);a.href=i,a.download=e,document.body.appendChild(a),a.click(),document.body.removeChild(a),setTimeout(()=>URL.revokeObjectURL(i),1e3)}function r(){let e=new Date,t=e=>String(e).padStart(2,`0`);return`${e.getFullYear()}-${t(e.getMonth()+1)}-${t(e.getDate())}_${t(e.getHours())}${t(e.getMinutes())}`}function i(e){return`${e}_${r()}`}function a({title:e,subtitle:t,business:n,bodyHtml:r}){let i=document.getElementById(`printable-report`);if(!i)return;let a=new Date().toLocaleString(`es`,{dateStyle:`long`,timeStyle:`short`});i.innerHTML=`
     <div class="pr-head">
-      ${n?`<div class="pr-business">${n}</div>`:``}
-      <h1 class="pr-title">${e}</h1>
-      ${t?`<div class="pr-subtitle">${t}</div>`:``}
+      ${n?`<div class="pr-business">${c(n)}</div>`:``}
+      <h1 class="pr-title">${c(e)}</h1>
+      ${t?`<div class="pr-subtitle">${c(t)}</div>`:``}
       <div class="pr-meta">Generado el ${a}</div>
     </div>
     <div class="pr-body">${r}</div>
