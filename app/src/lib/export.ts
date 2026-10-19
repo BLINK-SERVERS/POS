@@ -65,11 +65,14 @@ export function printReport({ title, subtitle, business, bodyHtml }: PrintableRe
   const root = document.getElementById("printable-report");
   if (!root) return;
   const now = new Date().toLocaleString("es", { dateStyle: "long", timeStyle: "short" });
+  // Título/subtítulo/negocio también se escapan: `business` lo escribe el
+  // usuario y viaja por innerHTML (defensa ante inyección, aunque el riesgo
+  // es mínimo porque cada comercio solo ve sus datos).
   root.innerHTML = `
     <div class="pr-head">
-      ${business ? `<div class="pr-business">${business}</div>` : ""}
-      <h1 class="pr-title">${title}</h1>
-      ${subtitle ? `<div class="pr-subtitle">${subtitle}</div>` : ""}
+      ${business ? `<div class="pr-business">${escapeHtml(business)}</div>` : ""}
+      <h1 class="pr-title">${escapeHtml(title)}</h1>
+      ${subtitle ? `<div class="pr-subtitle">${escapeHtml(subtitle)}</div>` : ""}
       <div class="pr-meta">Generado el ${now}</div>
     </div>
     <div class="pr-body">${bodyHtml}</div>
