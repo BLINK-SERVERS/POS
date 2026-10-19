@@ -194,6 +194,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="page">{children}</div>
       </main>
 
+      {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
+      <div id="printable-report" aria-hidden="true" />
+
       {cashOpen && (
         <Modal title="Abrir caja" onClose={() => setCashOpen(false)}>
           <Field label="Fondo inicial (USD)" hint="Efectivo con el que abre la caja.">

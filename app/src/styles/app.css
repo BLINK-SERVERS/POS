@@ -1605,6 +1605,65 @@ table.data tbody tr:hover {
   font-size: 0.75rem;
 }
 
+/* ============================================================
+   Reporte imprimible (PDF vía "Guardar como PDF" del navegador)
+   ============================================================ */
+#printable-report {
+  display: none;
+}
+.pr-head {
+  margin-bottom: 1rem;
+}
+.pr-business {
+  font-size: 0.85rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pr-title {
+  font-size: 1.35rem;
+  margin: 0.2rem 0;
+}
+.pr-subtitle {
+  font-size: 0.95rem;
+  color: #444;
+}
+.pr-meta {
+  font-size: 0.78rem;
+  color: #777;
+  margin-top: 0.35rem;
+}
+.pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.pr-table th,
+.pr-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+}
+.pr-table th {
+  font-weight: 700;
+  border-bottom: 2px solid #999;
+}
+.pr-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pr-table--pairs td:first-child {
+  color: #555;
+}
+.pr-table--pairs td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+.pr-total td {
+  border-top: 2px solid #666;
+  font-weight: 700;
+}
+
 @media print {
   /* Ocultar todo en la página excepto el recibo */
   body * {
@@ -1616,6 +1675,11 @@ table.data tbody tr:hover {
   #printable-receipt,
   #printable-receipt * {
     visibility: visible !important;
+  }
+  #printable-report,
+  #printable-report * {
+    visibility: visible !important;
+    display: block;
   }
   #printable-receipt {
     position: absolute !important;

@@ -2,8 +2,18 @@
 import { useMemo, useState } from "react";
 import { useStoreState } from "../lib/store";
 import { Card, Money, PageHead, Tabs, DualInline } from "../components/ui";
-import { capital, metrics, monthRange, monthlySeries, prevMonthRange } from "../lib/metrics";
+import { Icon } from "../components/Icon";
+import { capital, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet } from "../lib/metrics";
 import { formatUsd, round2 } from "../lib/money";
+import {
+  downloadText,
+  printReport,
+  printablePairs,
+  printableTable,
+  reportName,
+  toCsv,
+  type CsvCell,
+} from "../lib/export";
 
 const TABS = ["Resultados", "Ventas", "Inventario", "Finanzas"] as const;
 
@@ -32,12 +42,148 @@ export function Informes() {
   };
 
   const dayCount = new Date().getDate();
+  const monthLabel = new Date().toLocaleDateString("es", { month: "long", year: "numeric" });
+  const businessName = state.business.legalName || state.business.name || "Mi negocio";
+
+  // ---- Datos de exportación por pestaña (memorizados) ----
+  const monthSales = useMemo(
+    () => state.sales.filter((s) => isCountable(s) && new Date(s.at).getMonth() === new Date().getMonth()),
+    [state.sales]
+  );
+
+  const buildResultados = () => {
+    const headers: string[] = ["Concepto", "USD"];
+    const rows: CsvCell[][] = [
+      ["Ventas netas", cur.net],
+      ["Costo de lo vendido", cur.cogs],
+      ["Utilidad bruta", cur.gross],
+      ["Gastos", cur.expenses],
+      ["Utilidad neta", cur.profit],
+      ["Nº de ventas", cur.count],
+      ["Ticket promedio", cur.avgTicket],
+      ["", ""],
+      ["Capital: En cuentas", cap.accounts],
+      ["Capital: Inventario a costo", cap.inventory],
+      ["Capital: Por cobrar", cap.receivable],
+      ["Capital: Por pagar", cap.payable],
+      ["Patrimonio neto", cap.net],
+      ["", ""],
+      ...months.map((m): CsvCell[] => [`${m.label} (neto)`, m.net]),
+    ];
+    return { headers, rows };
+  };
+
+  const buildVentas = () => {
+    const headers = ["Código", "Fecha", "Cliente", "Estado", "Método", "Neto USD", "IVA", "Total USD"];
+    const rows: CsvCell[][] = monthSales.map((s) => [
+      s.code,
+      new Date(s.at).toLocaleString("es"),
+      s.customerName || "—",
+      s.status,
+      s.paymentMethod || "—",
+      round2(saleNet(s)),
+      round2(s.tax),
+      round2(saleNet(s) + s.tax + s.surcharge + s.igtf),
+    ]);
+    return { headers, rows };
+  };
+
+  const buildInventario = () => {
+    const headers = ["Producto", "SKU", "Categoría", "Stock", "Mínimo", "Costo USD", "Precio USD", "Valor costo", "Valor precio"];
+    const rows: CsvCell[][] = state.products
+      .filter((p) => !p.archived)
+      .map((p) => [
+        p.name,
+        p.sku,
+        p.category || "—",
+        p.stock,
+        p.minStock,
+        p.cost,
+        p.price,
+        round2(p.cost * Math.max(0, p.stock)),
+        round2(p.price * Math.max(0, p.stock)),
+      ]);
+    return { headers, rows };
+  };
+
+  const buildFinanzas = () => {
+    const headers = ["Cuenta", "Tipo", "Moneda", "Saldo"];
+    const rows: CsvCell[][] = state.accounts.map((a) => [a.name, a.type, a.currency, a.balance]);
+    return { headers, rows };
+  };
+
+  const builders: Record<(typeof TABS)[number], () => { headers: string[]; rows: CsvCell[][] }> = {
+    Resultados: buildResultados,
+    Ventas: buildVentas,
+    Inventario: buildInventario,
+    Finanzas: buildFinanzas,
+  };
+
+  const exportCsv = () => {
+    const { headers, rows } = builders[tab]();
+    downloadText(`${reportName(`informe-${tab.toLowerCase()}`)}.csv`, toCsv(headers, rows));
+  };
+
+  const exportPdf = () => {
+    const title = `Informe de ${tab}`;
+    const subtitle = tab === "Resultados" || tab === "Ventas" ? `Mes en curso: ${monthLabel}` : undefined;
+
+    let bodyHtml = "";
+    if (tab === "Resultados") {
+      bodyHtml =
+        printablePairs([
+          ["Ventas netas", formatUsd(cur.net)],
+          ["Costo de lo vendido", `− ${formatUsd(cur.cogs)}`],
+          ["Utilidad bruta", formatUsd(cur.gross)],
+          ["Gastos", `− ${formatUsd(cur.expenses)}`],
+          ["Utilidad neta", formatUsd(cur.profit)],
+          ["Nº de ventas", String(cur.count)],
+          ["Ticket promedio", formatUsd(cur.avgTicket)],
+        ]) +
+        `<h3>Capital (a hoy)</h3>` +
+        printablePairs([
+          ["En cuentas", formatUsd(cap.accounts)],
+          ["Inventario a costo", formatUsd(cap.inventory)],
+          ["Por cobrar", formatUsd(cap.receivable)],
+          ["Por pagar", formatUsd(cap.payable)],
+          ["Patrimonio neto", formatUsd(cap.net)],
+        ]) +
+        `<h3>Últimos 6 meses (neto)</h3>` +
+        printableTable(
+          ["Mes", "Neto USD"],
+          months.map((m): CsvCell[] => [m.label, formatUsd(m.net)])
+        );
+    } else if (tab === "Ventas") {
+      const { headers, rows } = buildVentas();
+      bodyHtml = printableTable(headers, rows);
+    } else if (tab === "Inventario") {
+      const { headers, rows } = buildInventario();
+      bodyHtml = printableTable(headers, rows);
+    } else {
+      const { headers, rows } = buildFinanzas();
+      bodyHtml = printableTable(headers, rows);
+    }
+
+    printReport({ title, subtitle, business: businessName, bodyHtml });
+  };
 
   return (
     <div className="stack gap-16">
       <PageHead title="Informes" subtitle="El resultado de tu negocio, mes a mes." />
 
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
+
+      {/* Exportar el informe de la pestaña activa */}
+      <div className="row gap-8 no-print" style={{ justifyContent: "flex-end" }}>
+        <button className="btn btn--ghost" onClick={exportCsv} title="Descargar reporte en CSV (Excel)">
+          <Icon name="table" />
+          CSV
+        </button>
+        <button className="btn btn--primary" onClick={exportPdf} title="Exportar reporte en PDF (Guardar como PDF)">
+          <Icon name="download" />
+          PDF
+        </button>
+      </div>
 
       {tab === "Resultados" && (
         <>

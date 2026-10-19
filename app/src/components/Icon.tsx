@@ -27,7 +27,13 @@ export type IconName =
   | "mail"
   | "lock"
   | "scan"
-  | "phone";
+  | "phone"
+  | "download"
+  | "fileText"
+  | "table"
+  | "calendar"
+  | "filter"
+  | "share";
 
 const P: Record<IconName, ReactElement> = {
   home: (
@@ -183,6 +189,45 @@ const P: Record<IconName, ReactElement> = {
     <>
       <rect x="7" y="2.5" width="10" height="19" rx="2.4" />
       <path d="M10.5 18.6h3" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 3.5v11" />
+      <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+      <path d="M4.5 19.5h15" />
+    </>
+  ),
+  fileText: (
+    <>
+      <path d="M6 2.8h7.5L18 7.3v13.9H6z" />
+      <path d="M13.2 2.8v4.7H18" />
+      <path d="M9 12h6M9 15.5h6" />
+    </>
+  ),
+  table: (
+    <>
+      <rect x="3.2" y="4.2" width="17.6" height="15.6" rx="2" />
+      <path d="M3.2 9.4h17.6M9.4 9.4v10.4" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4" />
+    </>
+  ),
+  filter: (
+    <>
+      <path d="M3.5 5h17l-6.6 7.6V19l-3.8 2v-8.4z" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="17.5" cy="5.5" r="2.6" />
+      <circle cx="17.5" cy="18.5" r="2.6" />
+      <path d="m8.3 10.7 6.9-3.9M8.3 13.3l6.9 3.9" />
     </>
   ),
 };
