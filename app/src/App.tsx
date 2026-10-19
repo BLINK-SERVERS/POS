@@ -5,6 +5,7 @@ import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } 
 import { Shell } from "./components/Shell";
 import { Login } from "./pages/Login";
 import { Registro } from "./pages/Registro";
+import { Recuperar } from "./pages/Recuperar";
 import { Onboarding } from "./pages/Onboarding";
 
 // Carga diferida por ruta → el bundle inicial es más pequeño y cada página
@@ -82,6 +83,9 @@ function AppRoutes() {
           </PublicOnly>
         }
       />
+      {/* Recuperar contraseña: sin PublicOnly, porque el enlace del correo crea
+          una sesión de recuperación y hay que poder fijar la nueva clave. */}
+      <Route path="/recuperar" element={<Recuperar />} />
       <Route
         path="/onboarding"
         element={

@@ -37,9 +37,9 @@ export function authError(message: string): string {
 
 /** URL base de la app (para los enlaces que llegan por correo).
  *  En producción es la URL publicada; en local, el servidor de desarrollo. */
-function appRedirectUrl(): string | undefined {
+function appRedirectUrl(path = ""): string | undefined {
   try {
-    return `${window.location.origin}${import.meta.env.BASE_URL}`;
+    return `${window.location.origin}${import.meta.env.BASE_URL}${path}`;
   } catch {
     return undefined;
   }
@@ -140,6 +140,21 @@ export async function authSignIn(
 
 export async function authSignOut(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+/** Envía el enlace de recuperación de contraseña al correo. */
+export async function authResetPassword(email: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    // El enlace lleva a la pantalla de nueva contraseña.
+    redirectTo: appRedirectUrl("recuperar"),
+  });
+  return { error: error ? authError(error.message) : null };
+}
+
+/** Establece una nueva contraseña para la sesión de recuperación activa. */
+export async function authUpdatePassword(newPassword: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  return { error: error ? authError(error.message) : null };
 }
 
 /** Actualiza el perfil (nombre, apellido, teléfono) en los metadatos del usuario. */

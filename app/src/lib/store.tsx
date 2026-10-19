@@ -53,10 +53,12 @@ import { round2 } from "./money";
 import { expectedCash } from "./metrics";
 import {
   authResendCode,
+  authResetPassword,
   authSendDeviceCode,
   authSignIn,
   authSignOut,
   authSignUp,
+  authUpdatePassword,
   authUpdateProfile,
   authVerifyCode,
   authVerifyLoginCode,
@@ -572,6 +574,10 @@ type StoreActions = {
   sendDeviceCode: (email: string) => Promise<string | null>;
   /** Verifica el código de acceso del equipo. */
   verifyDevice: (email: string, code: string, trust?: boolean) => Promise<string | null>;
+  /** Envía el enlace de recuperación de contraseña al correo. */
+  resetPassword: (email: string) => Promise<string | null>;
+  /** Establece la nueva contraseña (con sesión de recuperación activa). */
+  updatePassword: (newPassword: string) => Promise<string | null>;
   updateProfile: (input: {
     firstName: string;
     lastName: string;
@@ -886,6 +892,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  /** Envía el enlace de recuperación de contraseña al correo. */
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await authResetPassword(email.trim());
+    return error;
+  }, []);
+
+  /** Establece la nueva contraseña tras abrir el enlace de recuperación. */
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const { error } = await authUpdatePassword(newPassword);
+    return error;
+  }, []);
 
   const completeOnboarding = useCallback(() => {
     setAppState((s) => ({ ...s, onboarding: { completed: true } }));
@@ -2053,6 +2071,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendDeviceCode,
       verifyDevice,
       updateProfile,
+      resetPassword,
+      updatePassword,
       completeOnboarding,
       clearAll,
       reloadCloud,
@@ -2077,6 +2097,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
       updateBusiness, setRate,
       signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
+      resetPassword, updatePassword,
       completeOnboarding, clearAll, reloadCloud,
     ]
   );

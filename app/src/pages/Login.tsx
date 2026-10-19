@@ -176,6 +176,10 @@ export function Login() {
                 <Icon name="mail" /> Entrar con enlace al correo
               </button>
 
+              <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.9rem", textAlign: "center" }}>
+                <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+              </p>
+
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
                 ¿Nuevo por aquí? <Link to="/registro">Crear mi comercio</Link>
               </p>
