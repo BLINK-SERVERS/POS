@@ -11,6 +11,30 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.1] · 2026-10-18
+
+**Cierre de Bloqueadores de MVP y Preparación para Producción.**
+
+- **Cálculo de vuelto / cambio multimoneda**: el modal de cobro ahora permite pagar con exceso
+  (monto recibido > monto exacto). Calcula en tiempo real el vuelto a entregar en USD y su
+  equivalente en bolívares a la tasa BCV del día, muestra botones rápidos de efectivo (\$5, \$10,
+  \$20, \$50, \$100), e imputa a la cuenta y al arqueo únicamente el monto necesario para saldar
+  la venta (sin inflar la caja con dinero que salió de vuelto).
+- **Comprobante de venta (Ticket térmico 58mm / 80mm e impresión)**: nuevo componente
+  `Receipt.tsx` con soporte de impresión física (`window.print()`) y reglas CSS `@media print`.
+  Se muestra automáticamente tras confirmar la venta en el POS con modal de éxito y botón para
+  imprimir el ticket, y se añade botón de reimpresión directa desde la tabla de Historial.
+- **Persistencia de carritos / cuentas abiertas (`drafts`)**: las cuentas abiertas del POS se
+  persisten en `localStorage` (`blink-pos-drafts-v1`), evitando la pérdida accidental de tickets
+  en curso si el usuario recarga la página, cambia de pestaña o se reactiva la PWA.
+- **Guardia de caja abierta en POS**: si el turno de caja no ha sido abierto con su fondo inicial,
+  el botón de cobro abre automáticamente el modal de apertura con fondo inicial en USD y Bs
+  antes de procesar el pago, asegurando la consistencia del arqueo.
+- **Pruebas y estabilidad**: 38 pruebas unitarias en verde (+3 pruebas de cálculos de vuelto),
+  typecheck y build de producción limpios.
+
+---
+
 ## [1.3.0] · 2026-10-18
 
 **Módulo Escáner.** Tres formas de leer códigos de barras, integradas en Vender, Catálogo,

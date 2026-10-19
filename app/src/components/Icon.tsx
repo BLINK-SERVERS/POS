@@ -22,6 +22,7 @@ export type IconName =
   | "trash"
   | "arrowRight"
   | "receipt"
+  | "printer"
   | "menu"
   | "mail"
   | "lock"
@@ -140,6 +141,14 @@ const P: Record<IconName, ReactElement> = {
     <>
       <path d="M6 3v18l3-1.8 3 1.8 3-1.8 3 1.8V3z" />
       <path d="M9.5 8h5M9.5 12h5" />
+    </>
+  ),
+  printer: (
+    <>
+      <path d="M6 9V4h12v5" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="7" rx="1" />
+      <circle cx="18" cy="12" r="1" fill="currentColor" stroke="none" />
     </>
   ),
   menu: (

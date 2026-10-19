@@ -1,15 +1,13 @@
 // Pantalla de acceso (Supabase Auth).
-//
-// Autenticación por enlace mágico (magic link). Se envía un enlace al correo
-// para verificar el inicio de sesión.
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 
 export function Login() {
   const { login, sendDeviceCode, logout } = useStoreActions();
+  const nav = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +36,22 @@ export function Login() {
     }
     setBusy(true);
     const err = await login(email, password);
+    setBusy(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    nav("/inicio", { replace: true });
+  }
+
+  async function pedirEnlaceMagico() {
+    setError("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Escribe tu correo electrónico para enviarte el enlace de acceso.");
+      return;
+    }
+    setBusy(true);
+    const err = await sendDeviceCode(email.trim());
     setBusy(false);
     if (err) {
       setError(err);
@@ -152,14 +166,18 @@ export function Login() {
                 {busy ? "Entrando…" : "Entrar"}
               </button>
 
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm btn--block"
+                style={{ marginTop: "0.6rem" }}
+                onClick={pedirEnlaceMagico}
+                disabled={busy}
+              >
+                <Icon name="mail" /> Entrar con enlace al correo
+              </button>
+
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
                 ¿Nuevo por aquí? <Link to="/registro">Crear mi comercio</Link>
-              </p>
-              <p className="muted" style={{ fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
-                <Icon name="lock" /> Verificación por enlace mágico.
-              </p>
-              <p className="dim" style={{ fontSize: "0.72rem", marginTop: "0.75rem", textAlign: "center" }}>
-                versión {__APP_VERSION__}
               </p>
             </form>
           )}

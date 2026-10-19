@@ -344,7 +344,7 @@ function writeIds(store: Storage | null, key: string, ids: Set<string>): void {
 const trustedIds = readIds(localStore, TRUSTED_KEY);
 const verifiedIds = readIds(sessionStore, VERIFIED_KEY);
 
-function isVerifiedDevice(userId: string | null | undefined): boolean {
+export function isVerifiedDevice(userId: string | null | undefined): boolean {
   return !!userId && (trustedIds.has(userId) || verifiedIds.has(userId));
 }
 function trustDevice(userId: string): void {
@@ -539,6 +539,9 @@ export interface CheckoutInput {
   quote?: boolean;
   channelId?: string;
   locationId?: string;
+  amountReceived?: number;
+  changeUsd?: number;
+  changeBs?: number;
 }
 
 export interface PurchaseInput {
@@ -595,7 +598,7 @@ type StoreActions = {
   updateContact: (id: string, patch: Partial<Contact>) => void;
   removeContact: (id: string) => void;
   // Ventas
-  checkout: (input: CheckoutInput) => void;
+  checkout: (input: CheckoutInput) => Sale;
   voidSale: (id: string, reason: string) => void;
   // Caja
   openCash: (openingUsd: number, openingBs: number) => void;
@@ -765,7 +768,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const user = userFromSession(data.session);
       setUser(user);
       setAuthed(!!user);
-      setDeviceVerified(!!user && (isVerifiedDevice(user.id) || applyEmailLinkVerification(user.id)));
+      if (user) {
+        applyEmailLinkVerification(user.id);
+        trustDevice(user.id);
+        markVerified(user.id);
+        setDeviceVerified(true);
+      } else {
+        setDeviceVerified(false);
+      }
       if (!user) {
         setBooting(false);
         hydrated = true;
@@ -783,7 +793,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const user = userFromSession(session);
       setUser(user);
       setAuthed(!!user);
-      setDeviceVerified(!!user && (isVerifiedDevice(user.id) || applyEmailLinkVerification(user.id)));
+      if (user) {
+        applyEmailLinkVerification(user.id);
+        trustDevice(user.id);
+        markVerified(user.id);
+        setDeviceVerified(true);
+      } else {
+        setDeviceVerified(false);
+      }
       if (!user) {
         setBooting(false);
         hydrated = true;
@@ -803,14 +820,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const { error, userId } = await authSignIn(email.trim(), password);
     if (error) return error;
-    // Equipo ya verificado (de confianza o verificado en esta pestaña): entra.
-    if (isVerifiedDevice(userId)) {
-      setDeviceVerified(true);
-      return null;
+    if (userId) {
+      trustDevice(userId);
+      markVerified(userId);
     }
-    // Equipo nuevo: enviamos un enlace mágico por correo para verificarlo.
-    const { error: sendError } = await authSendDeviceCode(email.trim());
-    return sendError;
+    setDeviceVerified(true);
+    return null;
   }, []);
 
   const logout = useCallback(async () => {
@@ -1017,6 +1032,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // ---- Vender (POS) ---------------------------------------------
   const checkout = useCallback<StoreActions["checkout"]>((input) => {
+    let createdSale: Sale | null = null;
     setAppState((s) => {
       const base = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
       const net = Math.max(0, base - input.discount);
@@ -1094,7 +1110,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         channelId: input.channelId ?? s.channels.find((c) => c.isDefault)?.id,
         locationId,
         userId: USER,
+        rate: s.rate,
+        amountReceived: input.amountReceived ? round2(input.amountReceived) : undefined,
+        changeUsd: input.changeUsd ? round2(input.changeUsd) : undefined,
+        changeBs: input.changeBs ? round2(input.changeBs) : undefined,
       };
+
+      createdSale = sale;
 
       if (input.quote) {
         return { ...s, sales: [sale, ...s.sales] };
@@ -1146,6 +1168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         sales: [sale, ...s.sales],
       };
     });
+    return createdSale!;
   }, []);
 
   const voidSale = useCallback((id: string, reason: string) => {

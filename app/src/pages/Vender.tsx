@@ -1,10 +1,11 @@
 // Vender — punto de venta (POS).
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { uid, useStoreActions, useStoreSelector } from "../lib/store";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
+import { Receipt } from "../components/Receipt";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
 import {
@@ -15,7 +16,7 @@ import {
   saleTax,
   surchargeAmount,
 } from "../lib/fiscal";
-import type { Discount, Product, SaleLine, SalePayment, Surcharge } from "../lib/types";
+import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
 
 /** Cuenta abierta (borrador) del POS. */
 interface Draft {
@@ -35,6 +36,26 @@ const emptyDraft = (): Draft => ({
   surchargeIds: [],
   customerId: "",
 });
+
+const DRAFTS_KEY = "blink-pos-drafts-v1";
+const ACTIVE_TAB_KEY = "blink-pos-active-tab-v1";
+
+function loadInitialDrafts(): { drafts: Draft[]; activeId: string } {
+  try {
+    const raw = localStorage.getItem(DRAFTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Draft[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const active = localStorage.getItem(ACTIVE_TAB_KEY) || parsed[0].id;
+        return { drafts: parsed, activeId: active };
+      }
+    }
+  } catch {
+    /* fallback a nuevo draft */
+  }
+  const fresh = emptyDraft();
+  return { drafts: [fresh], activeId: fresh.id };
+}
 
 /** Inicio del día (00:00:00) para una fecha "YYYY-MM-DD" u otro ISO. */
 const dayStart = (iso: string) =>
@@ -100,10 +121,12 @@ export function Vender() {
   const discounts = useStoreSelector((s) => s.discounts);
   const surcharges = useStoreSelector((s) => s.surcharges);
   const accounts = useStoreSelector((s) => s.accounts);
-  const { checkout } = useStoreActions();
+  const business = useStoreSelector((s) => s.business);
+  const { checkout, openCash } = useStoreActions();
 
-  const [drafts, setDrafts] = useState<Draft[]>([emptyDraft()]);
-  const [activeId, setActiveId] = useState(() => drafts[0].id);
+  const [initial] = useState(loadInitialDrafts);
+  const [drafts, setDrafts] = useState<Draft[]>(initial.drafts);
+  const [activeId, setActiveId] = useState<string>(initial.activeId);
   const [query, setQuery] = useState("");
   const [camOpen, setCamOpen] = useState(false);
   const [scanCode, setScanCode] = useState("");
@@ -111,6 +134,20 @@ export function Vender() {
   const [discOpen, setDiscOpen] = useState(false);
   const [surOpen, setSurOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [openCashModal, setOpenCashModal] = useState(false);
+  const [openUsd, setOpenUsd] = useState("0");
+  const [openBs, setOpenBs] = useState("0");
+  const [successSale, setSuccessSale] = useState<Sale | null>(null);
+
+  // Persistir cuentas abiertas en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+      localStorage.setItem(ACTIVE_TAB_KEY, activeId);
+    } catch {
+      /* ignore */
+    }
+  }, [drafts, activeId]);
 
   const draft = useMemo(() => drafts.find((d) => d.id === activeId) ?? drafts[0], [drafts, activeId]);
   const lines = draft.lines;
@@ -279,15 +316,46 @@ export function Vender() {
       ? round2(missing / (1 - IGTF_RATE))
       : round2(missing * (rate || 1))
     : 0;
+
+  // Cálculo en vivo del vuelto según lo tecleado
+  const typedAmount = Number(payAmount) || 0;
+  const isOverpaying = payAccount && typedAmount > exactAmount && exactAmount > 0;
+
+  const liveChangeUsd = useMemo(() => {
+    if (!payAccount || !isOverpaying) return 0;
+    if (inUsd) {
+      return round2(typedAmount - exactAmount);
+    }
+    const changeBs = typedAmount - exactAmount;
+    return round2(changeBs / (rate || 1));
+  }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, rate]);
+
+  const liveChangeBs = useMemo(() => {
+    if (!payAccount || !isOverpaying) return 0;
+    if (!inUsd) {
+      return round2(typedAmount - exactAmount);
+    }
+    return round2(liveChangeUsd * (rate || 1));
+  }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, liveChangeUsd, rate]);
+
   const amountUsd = payAccount
-    ? round2((Number(payAmount) || 0) / (inUsd ? 1 : rate || 1))
+    ? round2(
+        (isOverpaying ? exactAmount : typedAmount) / (inUsd ? 1 : rate || 1)
+      )
     : 0;
 
   const addPayment = useCallback(() => {
     if (!payAccount) return;
     const typed = round2(Number(payAmount) || 0);
-    const value = round2(typed / (inUsd ? 1 : rate || 1));
+    if (typed <= 0) return;
+
+    // Si el cliente paga de más, el monto que acredita a la venta se acota a exactAmount
+    const chargedInput = typed > exactAmount && exactAmount > 0 ? exactAmount : typed;
+    const value = round2(chargedInput / (inUsd ? 1 : rate || 1));
     if (value <= 0) return;
+
+    const changeVal = typed > exactAmount && exactAmount > 0 ? round2(typed - exactAmount) : 0;
+
     setPayments((ps) => [
       ...ps,
       {
@@ -295,14 +363,16 @@ export function Vender() {
         accountId: payAccount.id,
         amountUsd: value,
         currency: payAccount.currency,
-        amountInput: typed,
+        amountInput: chargedInput,
+        amountReceived: typed,
+        change: changeVal,
         reference: payRef.trim() || undefined,
         igtf: inUsd ? igtfFor(value) : 0,
       },
     ]);
     setPayAmount("");
     setPayRef("");
-  }, [payAccount, payAmount, payRef, inUsd, rate]);
+  }, [payAccount, payAmount, payRef, inUsd, rate, exactAmount]);
 
   const finish = useCallback(() => {
     if (!lines.length) return;
@@ -310,7 +380,22 @@ export function Vender() {
     if (!credit && !settled) return;
     // Wink: una venta a crédito exige cliente.
     if (credit && !draft.customerId) return;
-    checkout({
+
+    const totalReceivedUsd = round2(
+      payments.reduce((a, p) => {
+        const rec = p.amountReceived ?? p.amountInput ?? p.amountUsd;
+        return a + (p.currency === "USD" ? rec : rec / (rate || 1));
+      }, 0)
+    );
+    const totalChangeUsd = round2(
+      payments.reduce((a, p) => {
+        if (!p.change) return a;
+        return a + (p.currency === "USD" ? p.change : p.change / (rate || 1));
+      }, 0)
+    );
+    const totalChangeBs = round2(totalChangeUsd * (rate || 1));
+
+    const sale = checkout({
       lines,
       customerId: draft.customerId || undefined,
       discount: discountValue,
@@ -320,7 +405,11 @@ export function Vender() {
       tax,
       notes: draft.notes,
       payments,
+      amountReceived: totalReceivedUsd > 0 ? totalReceivedUsd : undefined,
+      changeUsd: totalChangeUsd > 0 ? totalChangeUsd : undefined,
+      changeBs: totalChangeBs > 0 ? totalChangeBs : undefined,
     });
+
     // Reinicia la cuenta activa.
     const fresh = emptyDraft();
     setDrafts((ds) => ds.map((d) => (d.id === draft.id ? fresh : d)));
@@ -328,9 +417,10 @@ export function Vender() {
     setPayments([]);
     setCredit(false);
     setPayOpen(false);
+    setSuccessSale(sale);
   }, [
     lines, draft, discountValue, discount, surchargeValue, appliedSurcharges, tax,
-    payments, credit, checkout,
+    payments, credit, checkout, settled, rate,
   ]);
 
   const saveQuote = useCallback(() => {
@@ -379,7 +469,7 @@ export function Vender() {
       />
 
       {/* Cuentas abiertas */}
-      <div className="row gap-6" style={{ flexWrap: "wrap", marginBottom: "0.75rem" }}>
+      <div className="row gap-8" style={{ flexWrap: "wrap", marginBottom: "0.75rem" }}>
         {drafts.map((d, i) => (
           <span
             key={d.id}
@@ -528,7 +618,7 @@ export function Vender() {
               {formatBsDirect(totalPreIgtf * rate)}
             </div>
 
-            <div className="row gap-6" style={{ marginTop: "0.6rem", flexWrap: "wrap" }}>
+            <div className="row gap-8" style={{ marginTop: "0.75rem", flexWrap: "wrap" }}>
               <button className="btn btn--soft btn--sm" onClick={() => setDiscOpen(true)}>
                 Descuento
               </button>
@@ -547,13 +637,17 @@ export function Vender() {
               className="btn btn--primary btn--block"
               disabled={!lines.length}
               onClick={() => {
+                if (!cashSession) {
+                  setOpenCashModal(true);
+                  return;
+                }
                 setPayments([]);
                 setCredit(false);
                 setPayOpen(true);
               }}
               style={{ marginTop: "0.5rem" }}
             >
-              Cobrar
+              {cashSession ? "Cobrar" : "Abrir caja y cobrar"}
             </button>
           </div>
         </div>
@@ -725,6 +819,9 @@ export function Vender() {
                     {p.method}
                     {p.reference ? ` · ref ${p.reference}` : ""}
                     {(p.igtf ?? 0) > 0 ? ` · IGTF ${formatUsd(p.igtf ?? 0)}` : ""}
+                    {p.change != null && p.change > 0 && (
+                      <span className="dim"> (Vuelto: {p.currency === "VES" ? formatBsDirect(p.change) : formatUsd(p.change)})</span>
+                    )}
                   </span>
                   <span className="tabular">{formatUsd(p.amountUsd)}</span>
                 </div>
@@ -733,7 +830,7 @@ export function Vender() {
           )}
 
           <Field label="Método de pago">
-            <div className="row gap-6" style={{ flexWrap: "wrap" }}>
+            <div className="row gap-8" style={{ flexWrap: "wrap" }}>
               {accounts
                 .filter((a) => a.active)
                 .map((a) => (
@@ -777,14 +874,58 @@ export function Vender() {
                   placeholder={inUsd ? "0.00" : "0"}
                 />
               </Field>
-              <div className="between" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+
+              <div className="between" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
                 <span className="dim tabular">
                   ≈ {inUsd ? formatBsDirect(amountUsd * rate) : formatUsd(amountUsd)}
                 </span>
-                <button className="btn btn--ghost btn--sm" onClick={() => setPayAmount(String(exactAmount))}>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => setPayAmount(String(exactAmount))}
+                >
                   Monto exacto
                 </button>
               </div>
+
+              {inUsd && exactAmount > 0 && (
+                <div className="row gap-4" style={{ marginBottom: "0.6rem", flexWrap: "wrap" }}>
+                  {[5, 10, 20, 50, 100].map((denom) => (
+                    <button
+                      key={denom}
+                      type="button"
+                      className="btn btn--soft btn--sm"
+                      onClick={() => setPayAmount(String(denom))}
+                    >
+                      ${denom}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {isOverpaying && (
+                <div
+                  style={{
+                    padding: "0.6rem 0.75rem",
+                    marginBottom: "0.75rem",
+                    background: "rgba(0, 122, 255, 0.08)",
+                    border: "1px solid var(--color-accent)",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                >
+                  <div className="between" style={{ fontWeight: 600 }}>
+                    <span>Vuelto a entregar:</span>
+                    <span className="mono" style={{ fontSize: "1.05rem", color: "var(--color-accent)" }}>
+                      {formatUsd(liveChangeUsd)}
+                    </span>
+                  </div>
+                  <div className="between dim" style={{ fontSize: "0.75rem", marginTop: 2 }}>
+                    <span>Equivalente en bolívares:</span>
+                    <span className="mono">{formatBsDirect(liveChangeBs)}</span>
+                  </div>
+                </div>
+              )}
+
               <Field label="Referencia (opcional)">
                 <input
                   className="input"
@@ -793,6 +934,7 @@ export function Vender() {
                   placeholder="N° de referencia o comprobante"
                 />
               </Field>
+
               <button className="btn btn--soft btn--block" onClick={addPayment} style={{ marginBottom: "0.75rem" }}>
                 <Icon name="plus" />
                 Agregar cobro
@@ -822,6 +964,68 @@ export function Vender() {
           >
             Confirmar venta
           </button>
+        </Modal>
+      )}
+
+      {/* --- Modal para abrir caja cuando está cerrada --- */}
+      {openCashModal && (
+        <Modal title="Abrir caja para cobrar" onClose={() => setOpenCashModal(false)}>
+          <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+            Debes registrar el fondo inicial con el que abre la caja para garantizar que el arqueo de tu
+            turno sea exacto.
+          </p>
+          <Field label="Fondo inicial (USD)" hint="Efectivo en dólares con el que inicia la caja.">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              step="0.01"
+              value={openUsd}
+              onChange={(e) => setOpenUsd(e.target.value)}
+            />
+          </Field>
+          <Field label="Fondo inicial (Bs)" hint="Efectivo en bolívares.">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              step="0.01"
+              value={openBs}
+              onChange={(e) => setOpenBs(e.target.value)}
+            />
+          </Field>
+          <button
+            className="btn btn--primary btn--block"
+            onClick={() => {
+              openCash(Number(openUsd) || 0, Number(openBs) || 0);
+              setOpenCashModal(false);
+              setPayments([]);
+              setCredit(false);
+              setPayOpen(true);
+            }}
+          >
+            Confirmar apertura y continuar
+          </button>
+        </Modal>
+      )}
+
+      {/* --- Modal de comprobante / venta exitosa --- */}
+      {successSale && (
+        <Modal
+          title={`Venta #${successSale.code} realizada`}
+          onClose={() => setSuccessSale(null)}
+        >
+          <div style={{ marginBottom: "0.75rem" }}>
+            <Badge tone="success" icon="check">
+              Venta procesada con éxito
+            </Badge>
+          </div>
+          <Receipt
+            sale={successSale}
+            business={business}
+            rate={rate}
+            onClose={() => setSuccessSale(null)}
+          />
         </Modal>
       )}
 

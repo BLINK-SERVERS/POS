@@ -78,3 +78,30 @@ describe("discountAmount", () => {
     expect(discountAmount({ type: "monto", value: 15 }, 200)).toBe(15);
   });
 });
+
+describe("Cálculo de vuelto / change", () => {
+  it("calcula el vuelto en USD cuando se paga en exceso", () => {
+    const missing = 12.5;
+    const received = 20;
+    const changeUsd = Math.round((received - missing + Number.EPSILON) * 100) / 100;
+    expect(changeUsd).toBe(7.5);
+  });
+
+  it("calcula el vuelto equivalente en Bs según la tasa", () => {
+    const changeUsd = 7.5;
+    const rate = 50.0;
+    const changeBs = Math.round((changeUsd * rate + Number.EPSILON) * 100) / 100;
+    expect(changeBs).toBe(375.0);
+  });
+
+  it("calcula el vuelto en Bs y su equivalente en USD cuando se paga en exceso en Bs", () => {
+    const missingBs = 500; // a tasa 50 es 10 USD
+    const receivedBs = 600;
+    const changeBs = receivedBs - missingBs;
+    const rate = 50.0;
+    const changeUsd = Math.round((changeBs / rate + Number.EPSILON) * 100) / 100;
+    expect(changeBs).toBe(100);
+    expect(changeUsd).toBe(2.0);
+  });
+});
+

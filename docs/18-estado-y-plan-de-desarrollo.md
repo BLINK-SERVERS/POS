@@ -1,6 +1,6 @@
 # 18 · Estado del desarrollo y plan de traspaso
 
-**Documento vivo: última revisión 2026-10-18 (v1.3.0).** Este es el documento de referencia
+**Documento vivo: última revisión 2026-10-18 (v1.3.1).** Este es el documento de referencia
 del **estado real del código** y de **qué queda por hacer**. Los documentos `16` (inventario
 funcional de Wink) y `17` (mapa de brechas) son referencia de comportamiento; si algo
 contradice a este `18`, manda `18`.
@@ -13,7 +13,7 @@ contradice a este `18`, manda `18`.
 
 ## 1. Estado en un vistazo
 
-**Versión actual: `1.2.0`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
+**Versión actual: `1.3.1`** (en `app/package.json`; se muestra en Ajustes › Cuenta y en el
 acceso). Esquema: MAJOR = cambios grandes de fase, MINOR = módulos nuevos, PATCH = correcciones.
 Historial en `CHANGELOG.md`.
 
@@ -21,12 +21,24 @@ Historial en `CHANGELOG.md`.
 |---|---|---|
 | Tipos | 🟢 verde | `npm run typecheck` (exit 0) |
 | Build producción | 🟢 verde (~3 s) | `npm run build` |
-| Tests | 🟢 35 pruebas (Vitest) | `npm test` |
+| Tests | 🟢 38 pruebas (Vitest) | `npm test` |
 | Migraciones SQL | 🟢 23 comprobaciones (PG embebido) | `npm run test:migrations` |
 | Migraciones en producción | 🟢 aplicadas 2026-10-18 | `0002` + `0003` vía Management API; verificado (17 tablas, 66 políticas RLS) |
 | Linter / formateador | 🔴 no existen | — |
 | CI | 🔴 no existe | — |
 | Deploy | 🟢 en vivo | https://blink-servers.github.io/POS/ — ver doc `19` |
+
+> **Cambios recientes (2026-10-18) · v1.3.1 — Cierre de bloqueadores de MVP para producción.**
+> (1) **Vuelto / cambio multimoneda**: el modal de cobro permite pagos con exceso, calcula en tiempo
+> real el vuelto en USD y bolívares a la tasa BCV del día, añade botones de denominación rápida y
+> acredita a la caja únicamente lo necesario para saldar la venta, manteniendo el arqueo cuadrado.
+> (2) **Comprobante de venta e impresión térmica**: nuevo componente `Receipt.tsx` con soporte de
+> `window.print()` y `@media print` para tickets de 58 mm, 80 mm y carta. Modal automático post-venta
+> y botón de reimpresión directa en Historial.
+> (3) **Persistencia de carritos (`drafts`)**: las cuentas abiertas se guardan en `localStorage`
+> (`blink-pos-drafts-v1`), evitando perder ventas en curso si el cajero refresca la página o la PWA.
+> (4) **Guardia de caja abierta**: el POS exige registrar el fondo inicial de apertura antes de
+> procesar el cobro. Verificado: `typecheck`/`build`/`test` (**38 pruebas**) en verde.
 
 > **Cambios recientes (2026-10-18) · v1.1.2 — wordmark BLINK POS.** Se definió la identidad del
 > logo (decisión del dueño): **BLINK** en acento `#007AFF`, **cursiva** y **extra bold (800)**;

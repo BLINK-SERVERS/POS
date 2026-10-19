@@ -128,6 +128,8 @@ export interface SalePayment {
   amountUsd: number;
   currency: "USD" | "VES";
   amountInput?: number; // lo que se tecleó, en la moneda del cobro
+  amountReceived?: number; // lo que entregó el cliente si pagó con exceso
+  change?: number; // vuelto en la moneda del cobro
   reference?: string;
   commission?: number; // USD (comisión de la cuenta)
   /** Monto realmente acreditado a la cuenta, en su moneda nativa. */
@@ -156,6 +158,10 @@ export interface Sale {
   channelId?: string;
   locationId?: string;
   userId: string;
+  rate?: number; // Tasa BCV aplicada al momento de la venta
+  amountReceived?: number; // Total entregado por el cliente en USD
+  changeUsd?: number; // Vuelto entregado en USD
+  changeBs?: number; // Vuelto entregado en Bs
   voidedAt?: string;
   voidReason?: string;
 }

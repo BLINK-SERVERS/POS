@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
 import { Card, EmptyState, Field, Modal, Money, PageHead, Badge } from "../components/ui";
+import { Icon } from "../components/Icon";
+import { Receipt } from "../components/Receipt";
 import { isCountable, saleNet, saleTotal } from "../lib/metrics";
 import { formatUsd, round2 } from "../lib/money";
 import type { Sale } from "../lib/types";
@@ -19,10 +21,12 @@ function saleStatus(s: Sale): { label: string; tone: "success" | "warning" | "ne
 export function Historial() {
   const rate = useStoreSelector((s) => s.rate);
   const sales = useStoreSelector((s) => s.sales);
+  const business = useStoreSelector((s) => s.business);
   const { voidSale } = useStoreActions();
 
   const [voidId, setVoidId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [receiptSale, setReceiptSale] = useState<Sale | null>(null);
 
   const voidTarget = useMemo(() => sales.find((s) => s.id === voidId), [sales, voidId]);
 
@@ -126,7 +130,15 @@ export function Historial() {
                 <td className="tabular" style={{ textAlign: "right" }}>
                   {formatUsd(saleTotal(s))}
                 </td>
-                <td>
+                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                  <button
+                    className="btn btn--soft btn--sm"
+                    title="Ver e imprimir ticket"
+                    onClick={() => setReceiptSale(s)}
+                    style={{ marginRight: 6 }}
+                  >
+                    <Icon name="printer" />
+                  </button>
                   {!anulada && s.status !== "cotizacion" && (
                     <button
                       className="btn btn--ghost btn--sm"
@@ -143,6 +155,20 @@ export function Historial() {
             );
           }}
         />
+      )}
+
+      {receiptSale && (
+        <Modal
+          title={`Comprobante #${receiptSale.code}`}
+          onClose={() => setReceiptSale(null)}
+        >
+          <Receipt
+            sale={receiptSale}
+            business={business}
+            rate={rate}
+            onClose={() => setReceiptSale(null)}
+          />
+        </Modal>
       )}
 
       {voidTarget && (
