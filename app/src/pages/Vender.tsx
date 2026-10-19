@@ -125,7 +125,7 @@ export function Vender() {
   const surcharges = useStoreSelector((s) => s.surcharges);
   const accounts = useStoreSelector((s) => s.accounts);
   const business = useStoreSelector((s) => s.business);
-  const { checkout, openCash } = useStoreActions();
+  const { checkout, openCash, syncRate } = useStoreActions();
 
   const [initial] = useState(loadInitialDrafts);
   const [drafts, setDrafts] = useState<Draft[]>(initial.drafts);
@@ -151,6 +151,11 @@ export function Vender() {
       /* ignore */
     }
   }, [drafts, activeId]);
+
+  // Auto-sync de la tasa oficial al abrir el POS (respeta la caché de 1 h).
+  useEffect(() => {
+    syncRate();
+  }, [syncRate]);
 
   const draft = useMemo(() => drafts.find((d) => d.id === activeId) ?? drafts[0], [drafts, activeId]);
   const lines = draft.lines;

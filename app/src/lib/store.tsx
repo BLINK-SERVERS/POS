@@ -50,6 +50,7 @@ import type {
   Transfer,
 } from "./types";
 import { round2 } from "./money";
+import { cachedRate, fetchOfficialRate, isCacheFresh } from "./exchange";
 import { expectedCash } from "./metrics";
 import {
   authResendCode,
@@ -667,6 +668,11 @@ type StoreActions = {
   // Ajustes
   updateBusiness: (patch: Partial<Business>) => void;
   setRate: (rate: number) => void;
+  /**
+   * Sincroniza la tasa oficial desde la API pública y la aplica si es válida.
+   * Nunca lanza: devuelve el resultado para que la UI informe sin romper nada.
+   */
+  syncRate: () => Promise<"ok" | "cached" | "error">;
   /** Marca el alta guiada como terminada. */
   completeOnboarding: () => void;
   /** Borra todos los datos del comercio y vuelve al alta. */
@@ -2028,6 +2034,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAppState((s) => ({ ...s, rate, rateUpdatedAt: new Date().toISOString() }));
   }, []);
 
+  const syncRate = useCallback(async (): Promise<"ok" | "cached" | "error"> => {
+    // Dentro de la ventana de caché no se golpea la API.
+    if (isCacheFresh()) {
+      const c = cachedRate();
+      if (c) {
+        setRate(c.rate);
+        return "cached";
+      }
+    }
+    const fresh = await fetchOfficialRate();
+    if (fresh) {
+      setRate(fresh.rate);
+      return "ok";
+    }
+    // Sin red o API caída: si hay caché previa, se usa; si no, se respeta la
+    // tasa que el comercio ya tenía y se reporta el fallo.
+    const c = cachedRate();
+    if (c) {
+      setRate(c.rate);
+      return "cached";
+    }
+    return "error";
+  }, [setRate]);
+
   const actions = useMemo<StoreActions>(
     () => ({
       login,
@@ -2088,6 +2118,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStockTransfer,
       updateBusiness,
       setRate,
+      syncRate,
       signUp,
       verifyEmail,
       resendCode,
@@ -2118,7 +2149,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addDiscount, updateDiscount, removeDiscount,
       addSurcharge, updateSurcharge, removeSurcharge,
       addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
-      updateBusiness, setRate,
+      updateBusiness, setRate, syncRate,
       signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
       resetPassword, updatePassword,
       completeOnboarding, clearAll, reloadCloud,

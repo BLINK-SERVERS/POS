@@ -11,6 +11,24 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.4] · 2026-10-19
+
+**Fase A — Tasa oficial automática (`ve.dolarapi.com`).** Detalle en `docs/23-plan-nuevas-especificaciones.md`.
+
+- Nuevo servicio `lib/exchange.ts`: consulta la tasa oficial BCV con caché de 1 h en
+  `localStorage`, timeout de 8 s y nunca lanza errores; si falla, se mantiene la tasa
+  manual.
+- Acción `syncRate()` en el store: devuelve `ok | cached | error` y actualiza `rate` y
+  `rateUpdatedAt`.
+- **Ajustes › Moneda e impuestos**: botón "Actualizar desde la API" que sincroniza y
+  muestra el resultado ("Tasa oficial actualizada" / "Tasa oficial vigente aplicada" /
+  "Sin conexión, se mantiene la tasa guardada").
+- **POS (Vender)**: sincronización automática al abrir la caja (respeta la caché, no
+  golpea la API en cada carga).
+- **Verificado**: typecheck y 38 pruebas en verde; build de Pages limpio.
+
+---
+
 ## [1.3.3] · 2026-10-19
 
 **Escáner: pulido de cámara, beep y vista previa en el celular.** Detalle en `docs/21-escaner.md`.

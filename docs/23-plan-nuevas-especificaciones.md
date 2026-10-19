@@ -50,14 +50,14 @@ Antes de implementar hay que reconocer qué contradice el estado actual:
 
 ## 2. Fases propuestas
 
-### Fase A — Tasa oficial automática (baja fricción, sin cambios de esquema)
+### Fase A — Tasa oficial automática (baja fricción, sin cambios de esquema) ✅ **COMPLETADA v1.3.4**
 
 - Servicio `lib/exchange.ts`: consulta `https://ve.dolarapi.com/v1/dolares/oficial` (y `/euros`
-  para el futuro), con **caché local** (`localStorage`, p. ej. 30–60 min) y **fallback silencioso**
+  para el futuro), con **caché local** (`localStorage`, 60 min) y **fallback silencioso**
   a la tasa manual si falla la red o el comercio no tiene internet.
-- Se consulta **al abrir el POS** (y al abrir el módulo de caja), nunca en cada render.
-- Botón **"Actualizar tasa"** en el chip de tasa / Ajustes; muestra la fecha de la última
-  sincronización (`rateUpdatedAt` ya existe).
+- Se consulta **al abrir el POS** (y al abrir Ajustes › Moneda), nunca en cada render.
+- Botón **"Actualizar desde la API"** en Ajustes › Moneda e impuestos; muestra el resultado
+  y la fecha de la última sincronización (`rateUpdatedAt`).
 - **No** se cambia el esquema. `setRate` sigue siendo la única vía de escritura.
 - Criterio de aceptación: sin internet, la app funciona igual que hoy (tasa manual).
 

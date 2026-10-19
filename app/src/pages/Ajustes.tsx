@@ -14,7 +14,7 @@ const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Exportar", "
 
 export function Ajustes() {
   const { state, user } = useStoreState();
-  const { updateBusiness, setRate, updateProfile, clearAll, logout } = useStoreActions();
+  const { updateBusiness, setRate, syncRate, updateProfile, clearAll, logout } = useStoreActions();
   const { pairing, remoteActive, rotatePairing } = useScanner();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
   const [qrOpen, setQrOpen] = useState(false);
@@ -35,6 +35,8 @@ export function Ajustes() {
     printFormat: state.business.printFormat,
   });
   const [rate, setRateField] = useState(String(state.rate || ""));
+  const [rateMsg, setRateMsg] = useState("");
+  const [rateBusy, setRateBusy] = useState(false);
   const [profile, setProfile] = useState({
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
@@ -65,6 +67,19 @@ export function Ajustes() {
     setProfileSaved(true);
     window.clearTimeout(timer2.current);
     timer2.current = window.setTimeout(() => setProfileSaved(false), 2200);
+  }
+
+  async function onSyncRate() {
+    setRateBusy(true);
+    setRateMsg("");
+    const result = await syncRate();
+    setRateBusy(false);
+    if (result === "error") {
+      setRateMsg("Sin conexión con la fuente oficial. Se mantiene la tasa guardada.");
+      return;
+    }
+    // Refleja en el campo la tasa recién aplicada al estado.
+    setRateMsg(result === "cached" ? "Tasa oficial vigente aplicada." : "Tasa oficial actualizada.");
   }
 
   const firstProduct = state.products[0];
@@ -244,12 +259,22 @@ export function Ajustes() {
               onChange={(e) => setRateField(e.target.value)}
             />
           </Field>
-          <button
-            className="btn btn--primary"
-            onClick={() => setRate(Number(rate.replace(",", ".")) || 0)}
-          >
-            Guardar tasa
-          </button>
+          <div className="row gap-8" style={{ flexWrap: "wrap", marginTop: "0.25rem" }}>
+            <button
+              className="btn btn--primary"
+              onClick={() => setRate(Number(rate.replace(",", ".")) || 0)}
+            >
+              Guardar tasa
+            </button>
+            <button className="btn btn--soft" onClick={onSyncRate} disabled={rateBusy}>
+              <Icon name="download" /> {rateBusy ? "Consultando…" : "Actualizar desde la API"}
+            </button>
+          </div>
+          {rateMsg && (
+            <p className="field__hint" style={{ marginTop: "0.6rem" }}>
+              {rateMsg}
+            </p>
+          )}
           {state.rate > 0 && (
             <p className="field__hint" style={{ marginTop: "0.6rem" }}>
               1 USD = {formatRate(state.rate)} Bs
