@@ -1,5 +1,5 @@
 // Modales del escáner: vincular el celular (QR) y escanear con la cámara.
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Modal } from "./ui";
 import { Icon } from "./Icon";
 import { QrCode } from "./QrCode";
@@ -82,21 +82,35 @@ export function MobileScannerModal({ onClose }: { onClose: () => void }) {
 export function CameraScannerModal({
   onScan,
   onClose,
+  continuous = false,
+  hint = "Apunta al código de barras. Si tu navegador no puede decodificar, usa el lector USB o vincula un celular.",
+  footer,
 }: {
   onScan: (code: string) => void;
   onClose: () => void;
+  /**
+   * true (caja): la cámara no se cierra al leer y queda pendiente de
+   * "Continuar", para escanear varios productos seguidos.
+   * false (Catálogo/Inventario): se lee una vez y el modal se cierra.
+   */
+  continuous?: boolean;
+  /** Texto de ayuda bajo la cámara. */
+  hint?: string;
+  /** Contenido extra bajo la cámara (p. ej. la vista previa del ticket). */
+  footer?: ReactNode;
 }) {
   return (
     <Modal title="Escanear con cámara" onClose={onClose}>
       <CameraScanner
         onScan={(code) => {
           onScan(code);
-          onClose();
+          if (!continuous) onClose();
         }}
+        continuous={continuous}
       />
+      {footer}
       <p className="field__hint" style={{ marginTop: "0.75rem" }}>
-        Apunta al código de barras. Si tu navegador no puede decodificar, usa el lector
-        USB o vincula un celular.
+        {hint}
       </p>
     </Modal>
   );

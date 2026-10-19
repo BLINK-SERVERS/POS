@@ -6,7 +6,7 @@ import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { Receipt } from "../components/Receipt";
-import { useScanHandler } from "../lib/scanner/ScannerProvider";
+import { useScanHandler, useScanner } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
 import {
   discountAmount,
@@ -221,6 +221,35 @@ export function Vender() {
     setScanCode(code);
   };
   useScanHandler(handleScan);
+
+  // El teléfono remoto pide el nombre/precio de lo que va leyendo para mostrar
+  // su propia lista. La caja es la que tiene el catálogo, así que responde.
+  const { pairing: scanPairing, sendToRemote, subscribeRemote } = useScanner();
+  useEffect(() => {
+    if (!scanPairing) return;
+    return subscribeRemote("names", (payload: { token?: string; codes?: string[] }) => {
+      if (payload.token !== scanPairing.token || !Array.isArray(payload.codes)) return;
+      const items = payload.codes
+        .map((code: string) => {
+          const q = code.trim().toLowerCase();
+          const p = catalog.find(
+            (x) =>
+              x.active &&
+              !x.archived &&
+              (x.barcode === code || x.sku.toLowerCase() === q || x.name.toLowerCase() === q)
+          );
+          return p ? { code, name: p.name, price: p.price } : null;
+        })
+        .filter(
+          (x: { code: string; name: string; price: number } | null): x is {
+            code: string;
+            name: string;
+            price: number;
+          } => x !== null
+        );
+      if (items.length) sendToRemote("names", { token: scanPairing.token, items });
+    });
+  }, [scanPairing, catalog, sendToRemote, subscribeRemote]);
 
   const setQty = useCallback(
     (id: string, qty: number) => {
@@ -1036,6 +1065,22 @@ export function Vender() {
         <CameraScannerModal
           onScan={(code) => handleScan(code)}
           onClose={() => setCamOpen(false)}
+          continuous
+          hint="Cada producto leído se suma a la cuenta. Toca “Continuar” para seguir escaneando."
+          footer={
+            scanCode ? (
+              <div className="scan-hint" style={{ marginTop: "0.75rem" }}>
+                <span>“{scanCode}” no está en tu catálogo.</span>
+                <Link
+                  className="btn btn--soft btn--sm"
+                  to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
+                  onClick={() => setCamOpen(false)}
+                >
+                  <Icon name="plus" /> Crear producto
+                </Link>
+              </div>
+            ) : undefined
+          }
         />
       )}
     </>

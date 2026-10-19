@@ -33,6 +33,7 @@ import {
   type Pairing,
 } from "./pairing";
 import { hidKey, initialHidState } from "./hid";
+import { beepOk, primeBeeper } from "../audio";
 
 export type ScanSource = "hardware" | "camera" | "remote";
 type ScanHandler = (code: string, source: ScanSource) => void;
@@ -53,6 +54,14 @@ interface ScannerContextValue {
   dispatch: (code: string, source?: ScanSource) => void;
   /** Registra el manejador de la vista activa. Devuelve el "desregistro". */
   register: (fn: ScanHandler) => () => void;
+  /**
+   * Escucha un evento del teléfono remoto (p. ej. "names") en el canal de la
+   * caja. El payload ya viene validado con el secreto del emparejamiento.
+   * Devuelve la función para dejar de escuchar.
+   */
+  subscribeRemote: (event: string, fn: (payload: any) => void) => () => void;
+  /** Envía un evento al teléfono remoto (p. ej. la lista de nombres). */
+  sendToRemote: (event: string, payload: Record<string, unknown>) => void;
 }
 
 const ScannerContext = createContext<ScannerContextValue | null>(null);
@@ -85,6 +94,9 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef<ScanHandler[]>([]);
   const lastSeenRef = useRef(0);
   const dispatchRef = useRef<(code: string, source?: ScanSource) => void>(() => {});
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  // Oyentes de eventos del teléfono (p. ej. "names"), por nombre de evento.
+  const remoteListenersRef = useRef<Map<string, Set<(payload: any) => void>>>(new Map());
 
   const register = useCallback((fn: ScanHandler) => {
     handlersRef.current.push(fn);
@@ -96,10 +108,27 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
   const dispatch = useCallback((code: string, source: ScanSource = "hardware") => {
     const clean = code.trim();
     if (!clean) return;
+    // Un escaneo recibido (USB, cámara o celular) siempre confirma con un beep.
+    beepOk();
     const handler = handlersRef.current[handlersRef.current.length - 1];
     if (handler) handler(clean, source);
   }, []);
   dispatchRef.current = dispatch;
+
+  // ---- Desbloqueo del audio (feedback sonoro) ----------------------
+  // Los navegadores exigen un gesto del usuario antes de sonar. Con el primer
+  // toque/tecla dejamos el contexto listo para que el beep sea instantáneo.
+  useEffect(() => {
+    const unlock = () => primeBeeper();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   // ---- Lector físico (HID) ----------------------------------------
   useEffect(() => {
@@ -165,6 +194,7 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
     let channel: RealtimeChannel | null = supabase.channel(`scanner:${pairingId}`, {
       config: { broadcast: { self: false } },
     });
+    channelRef.current = channel;
 
     channel.on("broadcast", { event: "hello" }, (msg) => {
       const payload = msg.payload as { token?: string } | undefined;
@@ -182,15 +212,45 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
       dispatchRef.current(payload.code, "remote");
     });
 
+    // Eventos del teléfono distintos del código (hoy: "names" = pide nombres).
+    channel.on("broadcast", { event: "names" }, (msg) => {
+      const payload = msg.payload as { token?: string } | undefined;
+      if (!payload || payload.token !== pairingToken) return;
+      lastSeenRef.current = Date.now();
+      setRemoteActive(true);
+      remoteListenersRef.current.get("names")?.forEach((fn) => fn(payload));
+    });
+
     channel.subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     return () => {
       const ch = channel;
       channel = null;
+      channelRef.current = null;
       if (ch) void supabase.removeChannel(ch);
       setConnected(false);
     };
   }, [pairingId, pairingToken]);
+
+  const subscribeRemote = useCallback((event: string, fn: (payload: any) => void) => {
+    let set = remoteListenersRef.current.get(event);
+    if (!set) {
+      set = new Set();
+      remoteListenersRef.current.set(event, set);
+    }
+    set.add(fn);
+    return () => {
+      set?.delete(fn);
+    };
+  }, []);
+
+  const sendToRemote = useCallback(
+    (event: string, payload: Record<string, unknown>) => {
+      const ch = channelRef.current;
+      if (ch) void ch.send({ type: "broadcast", event, payload });
+    },
+    []
+  );
 
   // Marca al teléfono como inactivo si deja de dar señales.
   useEffect(() => {
@@ -216,8 +276,22 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
       forgetPairing,
       dispatch,
       register,
+      subscribeRemote,
+      sendToRemote,
     }),
-    [pairing, pairingUrl, remoteActive, connected, ensurePairing, rotatePairing, forgetPairing, dispatch, register]
+    [
+      pairing,
+      pairingUrl,
+      remoteActive,
+      connected,
+      ensurePairing,
+      rotatePairing,
+      forgetPairing,
+      dispatch,
+      register,
+      subscribeRemote,
+      sendToRemote,
+    ]
   );
 
   return <ScannerContext.Provider value={value}>{children}</ScannerContext.Provider>;

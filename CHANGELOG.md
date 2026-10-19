@@ -11,6 +11,25 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.3] · 2026-10-19
+
+**Escáner: pulido de cámara, beep y vista previa en el celular.** Detalle en `docs/21-escaner.md`.
+
+- **Apertura instantánea de la cámara**: se piden constraints mínimas y el `BarcodeDetector` se
+  prepara en paralelo; los ajustes de sensor no bloquean la imagen. Se elimina el texto
+  "Iniciando cámara rápidamente…".
+- **Escaneo seguido ("Continuar")**: en el POS la cámara ya **no se cierra** al leer; se pausa un
+  instante y aparece un botón **Continuar** para pasar al siguiente producto.
+- **Feedback sonoro (beep)**: nuevo `lib/audio.ts` (Web Audio, sin archivos). Suena en los tres
+  métodos (USB, cámara y celular); el audio se desbloquea en el primer gesto del usuario.
+- **Celular remoto con vista previa**: el teléfono muestra su propia lista de lo escaneado (nombre,
+  cantidad, subtotal) y una **vista previa del ticket**; la caja responde los nombres/precios por
+  el canal (`names`).
+- **Corrección**: el canal de Realtime del teléfono ya no se reconstruye en cada escaneo.
+- **Verificado**: typecheck y 38 pruebas en verde; build de Pages limpio.
+
+---
+
 ## [1.3.2] · 2026-10-19
 
 **QA · caza de bugs de punta a punta (rol comerciante).** Revisión manual completa del POS y

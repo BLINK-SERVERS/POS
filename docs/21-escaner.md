@@ -46,6 +46,7 @@ La página activa registra su manejador con `useScanHandler`. Cuando hay varios
 | `app/src/components/QrCode.tsx` | Render del QR como SVG (librería `qrcode`). |
 | `app/src/components/ScannerModals.tsx` | Modales "Celular como escáner" y "Escanear con cámara". |
 | `app/src/pages/Escaner.tsx` | Página `/escaner` (la abre el celular). |
+| `app/src/lib/audio.ts` | Beep de escaneo (Web Audio, sin archivos). |
 
 ## 1. Lector físico (USB / Bluetooth HID)
 
@@ -76,6 +77,41 @@ disponible en **Chrome/Edge** (escritorio y Android) y **Safari 17+**.
   decodificación** en esta fase.
 - Los códigos repetidos se ignoran durante **1,5 s** para no duplicar lecturas.
 
+### Apertura instantánea
+
+La cámara debe aparecer **ya**, sin textos de espera:
+
+- Se piden **constraints mínimas** (`facingMode: environment`) para que el sensor
+  entregue el primer fotograma cuanto antes; los ajustes finos de enfoque,
+  exposición y balance de blancos se aplican **en segundo plano** y no bloquean
+  la imagen.
+- El **detector** `BarcodeDetector` se prepara **en paralelo** con la apertura de
+  la cámara; el ciclo de lectura arranca en cuanto **ambos** están listos.
+- Se eliminó cualquier mensaje tipo "Iniciando cámara rápidamente…": mientras
+  abre, se ve el video directamente (sin `status === "starting"`).
+
+### Escaneo seguido ("Continuar")
+
+Para pasar **varios productos seguidos** sin volver a abrir la cámara, el modo
+**continuo** (`continuous`), que usa el POS, funciona así:
+
+1. Al leer un código, la cámara **no se cierra**.
+2. La lectura se **pausa** y aparece un botón **"Continuar"** sobre el video.
+3. Al pulsarlo, se reanuda para el siguiente producto.
+
+En Catálogo e Inventario el modal **sí** se cierra al leer (`continuous` en
+`false`): allí solo se busca un producto para editarlo.
+
+### Feedback sonoro (beep)
+
+Un escaneo **siempre** confirma con un **beep** corto (Web Audio, sin archivos):
+
+- `src/lib/audio.ts` genera el tono (o dos tonos descendentes para error).
+- Como el navegador exige un gesto del usuario, el audio se **desbloquea** en el
+  primer `pointerdown`/`touchstart`/`keydown` (`primeBeeper`).
+- El beep lo dispara el **`ScannerProvider.dispatch`** (lector USB y celular) y
+  la propia **`CameraScanner`** (cámara), de modo que suena con los tres métodos.
+
 ## 2. Celular como escáner remoto
 
 Es un **token de capacidad**: no hay cuenta en el teléfono y la **caja es la
@@ -104,6 +140,21 @@ Detalles pensados para el día a día:
   se **encola** y se envía al recuperar la conexión (se muestra "+N en cola").
 - **Revocación**: "Desvincular teléfonos" genera un **secreto nuevo**; los
   teléfonos anteriores dejan de ser aceptados. Está en `Ajustes › Dispositivos`.
+
+### El teléfono muestra lo que va leyendo
+
+Para no tener que mirar la pantalla del mostrador, el teléfono lleva su **propia
+lista** de lo escaneado: nombre, cantidad, **subtotal** y una **vista previa del
+ticket** (no fiscal).
+
+- Cada lectura se **agrupa por código** y se suman cantidades.
+- Como el catálogo vive en la **caja**, el teléfono pide **nombres y precios** por
+  el canal (evento `names`), y la caja los responde con `ScannerProvider.sendToRemote`.
+- Mientras la caja no responde, se muestra el **código** como nombre y un precio
+  de reserva **0,01** (solo si parece un código de barras); para SKU/QR se muestra
+  **0,00** para no descuadrar el subtotal con un precio inventado.
+- El **subtotal** del teléfono es orientativo: el total final (IVA, descuentos,
+  recargos) lo calcula la **caja**.
 
 > El emparejamiento es **local** (por equipo) y no se guarda en la base de datos.
 > Como el teléfono no tiene cuenta, **la caja es la autoridad** y basta con que

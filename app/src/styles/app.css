@@ -1432,6 +1432,53 @@ table.data tbody tr:hover {
   font-size: var(--fs-sm);
   color: var(--color-text-secondary);
 }
+/* Lectura en pausa: se abre hueco abajo para el botón "Continuar". */
+.cam__paused {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.6rem 0.75rem 0.75rem;
+  background: linear-gradient(transparent, rgba(66, 66, 66, 0.55));
+}
+
+/* Vista previa de la cuenta durante el escaneo (para no mirar la caja). */
+.scan-cart {
+  margin-top: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+}
+.scan-cart__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.28rem 0;
+  font-size: var(--fs-sm);
+}
+.scan-cart__row + .scan-cart__row {
+  border-top: 1px solid var(--color-border);
+}
+.scan-cart__line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.scan-cart__line span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scan-cart__qty {
+  flex: none;
+  font-weight: 600;
+}
+.scan-cart__total {
+  font-weight: 700;
+  font-size: 1rem;
+}
 
 .scan-remote {
   min-height: 100dvh;
@@ -1483,6 +1530,25 @@ table.data tbody tr:hover {
 }
 .scan-pill.online .dot {
   background: var(--color-accent);
+}
+
+/* Vista previa del ticket en el celular remoto (hoja sobre la página). */
+.scan-ticket {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(66, 66, 66, 0.42);
+  animation: fade-in var(--transition-speed) ease-out;
+}
+.scan-ticket__card {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* ============================================================
