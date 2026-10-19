@@ -49,6 +49,7 @@ import type {
   Tax,
   Transfer,
 } from "./types";
+import { UNIT_OPTIONS } from "./types";
 import { round2 } from "./money";
 import { cachedRate, fetchOfficialRate, isCacheFresh } from "./exchange";
 import { expectedCash } from "./metrics";
@@ -223,12 +224,23 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
     ...a,
     inCashClose: a.inCashClose ?? true,
   }));
-  merged.products = (merged.products ?? []).map((p) => ({
-    ...p,
-    brand: p.brand ?? "",
-    archived: p.archived ?? false,
-    channelPrices: p.channelPrices ?? { ch_principal: p.price },
-  }));
+  merged.products = (merged.products ?? []).map((p) => {
+    // Migración de esquema (Fase B): se elimina `type` y se normaliza la
+    // presentación a cantidad + unidad de la lista cerrada.
+    const legacy = p as typeof p & { type?: "simple" | "servicio" };
+    const unit = UNIT_OPTIONS.includes(legacy.unit as (typeof UNIT_OPTIONS)[number])
+      ? legacy.unit
+      : "unidad";
+    return {
+      ...p,
+      brand: p.brand ?? "",
+      archived: p.archived ?? false,
+      channelPrices: p.channelPrices ?? { ch_principal: p.price },
+      presentationQty: p.presentationQty ?? 1,
+      unit,
+      trackStock: legacy.type === "servicio" ? false : (p.trackStock ?? true),
+    };
+  });
   merged.contacts = (merged.contacts ?? []).map((c) => {
     const legacy = c as Contact & { kind?: "cliente" | "proveedor" | "ambos" };
     return {

@@ -83,7 +83,7 @@ export function Inventario() {
       valorCosto: round2(products.reduce((a, p) => a + p.cost * Math.max(0, p.stock), 0)),
       valorVenta: round2(products.reduce((a, p) => a + p.price * Math.max(0, p.stock), 0)),
       // Stock bajo: solo cuando el mínimo es > 0 y las existencias lo alcanzan/igualan.
-      low: products.filter((p) => p.type !== "servicio" && p.minStock > 0 && p.stock <= p.minStock),
+      low: products.filter((p) => p.minStock > 0 && p.stock <= p.minStock),
     }),
     [products]
   );

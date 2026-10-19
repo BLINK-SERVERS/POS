@@ -17,6 +17,7 @@ import {
   surchargeAmount,
 } from "../lib/fiscal";
 import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
+import { presentationLabel } from "../lib/types";
 
 /** Cuenta abierta (borrador) del POS. */
 interface Draft {
@@ -199,7 +200,7 @@ export function Vender() {
             ...d,
             lines: [
               ...d.lines,
-              { productId: p.id, name: p.name, qty: 1, price: p.price, cost: p.cost, taxRate: p.taxRate },
+              { productId: p.id, name: p.name, presentation: presentationLabel(p), qty: 1, price: p.price, cost: p.cost, taxRate: p.taxRate },
             ],
           };
         })

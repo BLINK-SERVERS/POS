@@ -185,16 +185,16 @@ export function Onboarding() {
     const cost = Number(prodCost.replace(",", ".")) || 0;
     const stock = Number(prodStock.replace(",", ".")) || 0;
     actions.addProduct({
-      name,
+      name: name.toUpperCase(),
       brand: "",
       sku: "",
       barcode: "",
-      unit: "und",
+      presentationQty: 1,
+      unit: "unidad",
       cost,
       price,
       channelPrices: { [defaultChannel]: price },
       category: prodCat,
-      type: "simple",
       taxRate: 0.16,
       active: true,
       archived: false,

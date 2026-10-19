@@ -398,6 +398,25 @@ svg {
   font-size: var(--fs-xs);
   color: var(--color-text-tertiary);
 }
+/* Sección de un formulario largo (agrupa campos con un título claro). */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+.form-section + .form-section {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+.form-section__title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.5rem;
+}
 .input,
 .select,
 .textarea {

@@ -8,7 +8,8 @@ import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatUsd } from "../lib/money";
-import type { Category, Discount, Product, Surcharge } from "../lib/types";
+import { catalogoLookup, catalogoUpsert } from "../lib/cloud";
+import { UNIT_OPTIONS, type Category, type Discount, type Product, type Surcharge } from "../lib/types";
 
 const TABS = ["Productos", "Precios", "Descuentos", "Recargos", "Categorías"] as const;
 
@@ -42,7 +43,9 @@ const ProductRow = memo(function ProductRow({
       <td className="tabular">{formatUsd(product.cost)}</td>
       <td className="tabular">{margin(product.price, product.cost)}%</td>
       <td>{product.category}</td>
-      <td style={{ textTransform: "capitalize" }}>{product.type}</td>
+      <td className="dim" style={{ whiteSpace: "nowrap" }}>
+        {product.presentationQty > 0 ? `${product.presentationQty} ${product.unit}` : product.unit}
+      </td>
       <td className="tabular">
         {formatUsd(product.price)}
         {rate > 0 && (
@@ -252,8 +255,8 @@ const EMPTY_PRODUCT = {
   category: "",
   stock: "0",
   minStock: "0",
-  type: "simple" as "simple" | "servicio",
-  unit: "und",
+  presentationQty: "1",
+  unit: "unidad",
   taxRate: "0.16",
   barcode: "",
   trackStock: true,
@@ -354,7 +357,7 @@ export function Catalogo() {
       category: p.category,
       stock: String(p.stock),
       minStock: String(p.minStock),
-      type: p.type,
+      presentationQty: String(p.presentationQty ?? 1),
       unit: p.unit,
       taxRate: String(p.taxRate),
       barcode: p.barcode,
@@ -368,9 +371,10 @@ export function Catalogo() {
   };
 
   // --- Escáner (USB · cámara · celular) ---------------------------
-  // Si el código ya existe, abre ese producto; si no, prepara el alta con
-  // el código precargado. Vale para los tres métodos de lectura.
-  const scanProduct = (code: string) => {
+  // Si el código ya existe en MI tienda, abre ese producto; si no, consulta
+  // el catálogo global para autocompletar; si tampoco está, prepara el alta
+  // con el código precargado. Vale para los tres métodos de lectura.
+  const scanProduct = async (code: string) => {
     const found = products.find((p) => p.barcode && p.barcode === code);
     if (found) {
       openEdit(found);
@@ -379,20 +383,31 @@ export function Catalogo() {
     setEditId(null);
     setForm({ ...EMPTY_PRODUCT, barcode: code });
     setOpen(true);
+    // Autocompleta con la ficha colaborativa, si alguna tienda ya la aportó.
+    const entry = await catalogoLookup(code);
+    if (entry) {
+      setForm((f) =>
+        // No pisa lo que el usuario haya escrito mientras llegaba la respuesta.
+        f.barcode === code && f.name.trim() === ""
+          ? {
+              ...f,
+              name: entry.name,
+              brand: entry.brand || f.brand,
+              category: entry.category || f.category,
+              presentationQty: String(entry.presentationQty ?? 1),
+              unit: entry.unit || f.unit,
+            }
+          : f,
+      );
+    }
   };
-  useScanHandler((code) => scanProduct(code));
+  useScanHandler((code) => void scanProduct(code));
 
   // El POS puede mandar aquí con ?barcode=… al no encontrar un producto.
   useEffect(() => {
     const code = params.get("barcode");
     if (!code) return;
-    const found = products.find((p) => p.barcode && p.barcode === code);
-    if (found) openEdit(found);
-    else {
-      setEditId(null);
-      setForm({ ...EMPTY_PRODUCT, barcode: code });
-      setOpen(true);
-    }
+    void scanProduct(code);
     setParams({}, { replace: true });
     // Solo debe correr cuando cambia el parámetro de la URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,26 +420,40 @@ export function Catalogo() {
       const raw = form.channelPrices[ch.id];
       if (raw !== undefined && raw !== "") channelPrices[ch.id] = Math.max(0, Number(raw) || 0);
     }
+    const barcode = form.barcode.trim();
+    // Normalización del catálogo global: el nombre SIEMPRE se guarda en
+    // MAYÚSCULAS para evitar duplicados por diferencias de escritura.
+    const name = form.name.trim().toUpperCase();
+    const presentationQty = Math.max(0, Number(form.presentationQty) || 0);
+    const unit = form.unit || "unidad";
+    const brand = form.brand.trim();
+    const category = form.category.trim();
     const data = {
-      name: form.name.trim(),
-      brand: form.brand.trim(),
+      name,
+      brand,
       sku: form.sku.trim(),
       cost: Math.max(0, Number(form.cost) || 0),
       price: Math.max(0, Number(form.price) || 0),
-      category: form.category.trim(),
+      category,
       stock: Math.max(0, Number(form.stock) || 0),
       minStock: Math.max(0, Number(form.minStock) || 0),
-      type: form.type,
-      unit: form.unit.trim() || "und",
+      presentationQty,
+      unit,
       taxRate: Number(form.taxRate) || 0,
-      barcode: form.barcode.trim(),
-      trackStock: form.type === "servicio" ? false : form.trackStock,
+      barcode,
+      trackStock: form.trackStock,
       active: form.active,
     };
     if (editId) {
       updateProduct(editId, { ...data, channelPrices });
     } else {
       addProduct({ ...data, channelPrices, archived: false });
+    }
+    // Aporta la ficha descriptiva al catálogo global (solo si hay código
+    // de barras). Es asíncrono y no bloquea el guardado local: si falla
+    // la red o no hay sesión, el producto ya quedó guardado.
+    if (barcode) {
+      void catalogoUpsert({ barcode, name, presentationQty, unit, category, brand });
     }
     setOpen(false);
   }
@@ -567,7 +596,7 @@ export function Catalogo() {
                 <th>Costo</th>
                 <th>Margen</th>
                 <th>Categoría</th>
-                <th>Tipo</th>
+                <th>Presentación</th>
                 <th>Precio</th>
                 <th>Estado</th>
                 <th />
@@ -790,142 +819,175 @@ export function Catalogo() {
 
       {open && (
         <Modal title={editId ? "Editar producto" : "Nuevo producto"} onClose={() => setOpen(false)}>
-          <Field label="Nombre" required>
-            <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </Field>
-          <Field label="Marca" hint="Fabricante. Uso interno; no aparece en el recibo.">
-            <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
-          </Field>
-          <Field label="SKU" hint="Opcional, único por comercio.">
-            <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
-          </Field>
-          <div className="row gap-12">
-            <Field label="Tipo">
-              <select
-                className="select"
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value as typeof form.type })}
-              >
-                <option value="simple">Simple</option>
-                <option value="servicio">Servicio</option>
-              </select>
-            </Field>
-            <Field label="Unidad">
-              <input className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="und" />
-            </Field>
-          </div>
-          <div className="row gap-12">
-            <Field label="Costo (USD)">
-              <input className="input" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
-            </Field>
-            <Field label="Precio (USD)">
-              <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-            </Field>
-          </div>
-          <div className="row gap-12">
-            <Field label="Categoría">
-              <select
-                className="select"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              >
-                <option value="">Sin categoría</option>
-                {activeCategories.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                {form.category &&
-                  !activeCategories.some((c) => c.name === form.category) && (
-                    <option value={form.category}>{form.category}</option>
-                  )}
-              </select>
-            </Field>
-            <Field label="IVA">
-              <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
-                <option value="0.16">IVA 16% (predeterminado)</option>
-                <option value="0.08">IVA 8%</option>
-                <option value="0">Exento (0%)</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Código de barras" hint="Opcional. Léelo con el escáner o genera un código interno.">
-            <div className="row gap-8" style={{ alignItems: "center" }}>
+          {/* 1 · Qué es: identificación del producto */}
+          <div className="form-section">
+            <span className="form-section__title">Producto</span>
+            <Field label="Nombre" required hint="Se guarda en MAYÚSCULAS en el catálogo.">
               <input
                 className="input"
-                value={form.barcode}
-                onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                placeholder="Ej.: 7591234567890"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ej.: Harina de maíz"
               />
-              <button
-                type="button"
-                className="btn btn--soft btn--sm"
-                title="Escanear con la cámara"
-                onClick={() => setCamOpen(true)}
-              >
-                <Icon name="scan" />
-              </button>
-              <button
-                type="button"
-                className="btn btn--soft btn--sm"
-                title="Generar código interno"
-                onClick={() => setForm({ ...form, barcode: internalCode() })}
-              >
-                <Icon name="tag" />
-              </button>
-            </div>
-          </Field>
-          {channels.length > 0 && (
-            <div className="field">
-              <span className="field__label">Precios por canal (USD)</span>
-              <div className="stack gap-8">
-                {channels.map((ch) => (
-                  <div key={ch.id} className="row gap-8" style={{ alignItems: "center" }}>
-                    <span className="dim" style={{ flex: 1 }}>
-                      {ch.name}
-                      {ch.isDefault ? " (predeterminado)" : ""}
-                    </span>
-                    <input
-                      className="input"
-                      type="number"
-                      style={{ width: 130 }}
-                      placeholder={form.price}
-                      value={form.channelPrices[ch.id] ?? ""}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          channelPrices: { ...form.channelPrices, [ch.id]: e.target.value },
-                        })
-                      }
-                    />
-                  </div>
-                ))}
+            </Field>
+            <Field label="Código de barras" hint="Escanea o genera un código interno.">
+              <div className="row gap-8" style={{ alignItems: "center" }}>
+                <input
+                  className="input"
+                  value={form.barcode}
+                  onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                  placeholder="Ej.: 7591234567890"
+                />
+                <button
+                  type="button"
+                  className="btn btn--soft btn--sm"
+                  title="Escanear con la cámara"
+                  onClick={() => setCamOpen(true)}
+                >
+                  <Icon name="scan" />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--soft btn--sm"
+                  title="Generar código interno"
+                  onClick={() => setForm({ ...form, barcode: internalCode() })}
+                >
+                  <Icon name="tag" />
+                </button>
               </div>
-            </div>
-          )}
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input
-              type="checkbox"
-              checked={form.trackStock}
-              disabled={form.type === "servicio"}
-              onChange={(e) => setForm({ ...form, trackStock: e.target.checked })}
-            />
-            Controlar inventario
-          </label>
-          {form.trackStock && form.type === "simple" && (
+            </Field>
             <div className="row gap-12">
-              <Field label="Stock">
-                <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+              <Field label="SKU" hint="Opcional.">
+                <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
               </Field>
-              <Field label="Stock mínimo">
-                <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
+              <Field label="Categoría">
+                <select
+                  className="select"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                >
+                  <option value="">Sin categoría</option>
+                  {activeCategories.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                  {form.category &&
+                    !activeCategories.some((c) => c.name === form.category) && (
+                      <option value={form.category}>{form.category}</option>
+                    )}
+                </select>
               </Field>
             </div>
-          )}
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
-            Activo (disponible para vender)
-          </label>
+          </div>
+
+          {/* 2 · Cuánto mide: cantidad + unidad (lista cerrada) */}
+          <div className="form-section">
+            <span className="form-section__title">Presentación</span>
+            <div className="row gap-12">
+              <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  value={form.presentationQty}
+                  onChange={(e) => setForm({ ...form, presentationQty: e.target.value })}
+                />
+              </Field>
+              <Field label="Unidad">
+                <select
+                  className="select"
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                >
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Field label="Fabricante / marca" hint="Uso interno. No aparece en el recibo.">
+              <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
+            </Field>
+          </div>
+
+          {/* 3 · Cuánto cuesta: precios e impuesto */}
+          <div className="form-section">
+            <span className="form-section__title">Precios e impuesto</span>
+            <div className="row gap-12">
+              <Field label="Costo (USD)">
+                <input className="input" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+              </Field>
+              <Field label="Precio (USD)">
+                <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              </Field>
+              <Field label="IVA">
+                <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
+                  <option value="0.16">16%</option>
+                  <option value="0.08">8%</option>
+                  <option value="0">Exento</option>
+                </select>
+              </Field>
+            </div>
+            {channels.length > 0 && (
+              <div className="field">
+                <span className="field__label">Precios por canal (USD)</span>
+                <div className="stack gap-8">
+                  {channels.map((ch) => (
+                    <div key={ch.id} className="row gap-8" style={{ alignItems: "center" }}>
+                      <span className="dim" style={{ flex: 1 }}>
+                        {ch.name}
+                        {ch.isDefault ? " (predeterminado)" : ""}
+                      </span>
+                      <input
+                        className="input"
+                        type="number"
+                        style={{ width: 130 }}
+                        placeholder={form.price}
+                        value={form.channelPrices[ch.id] ?? ""}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            channelPrices: { ...form.channelPrices, [ch.id]: e.target.value },
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 4 · Inventario y estado */}
+          <div className="form-section">
+            <span className="form-section__title">Inventario</span>
+            <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
+              <input
+                type="checkbox"
+                checked={form.trackStock}
+                onChange={(e) => setForm({ ...form, trackStock: e.target.checked })}
+              />
+              Controlar inventario
+            </label>
+            {form.trackStock && (
+              <div className="row gap-12">
+                <Field label="Stock">
+                  <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                </Field>
+                <Field label="Stock mínimo">
+                  <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
+                </Field>
+              </div>
+            )}
+            <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
+              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
+              Activo (disponible para vender)
+            </label>
+          </div>
+
           <button className="btn btn--primary btn--block" onClick={saveProduct}>
             {editId ? "Guardar cambios" : "Guardar producto"}
           </button>

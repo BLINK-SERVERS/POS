@@ -138,6 +138,7 @@ export function Receipt({
                 <div className="receipt__row">
                   <span className="receipt__item-name" style={{ flex: 1 }}>
                     {l.qty} x {l.name}
+                    {l.presentation && l.qty === 1 ? <> {l.presentation}</> : null}
                   </span>
                   <span className="receipt__item-price mono" style={{ textAlign: "right" }}>
                     {formatUsd(lineTotal)}

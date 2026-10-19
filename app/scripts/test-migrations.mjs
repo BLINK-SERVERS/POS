@@ -74,7 +74,9 @@ async function run() {
   await c.query(read('0002_normalize.sql'));
   console.log('· running 0003_unpack.sql');
   await c.query(read('0003_unpack.sql'));
-  ok('las 3 migraciones se ejecutan sin error', true);
+  console.log('· running 0004_catalogo_global.sql');
+  await c.query(read('0004_catalogo_global.sql'));
+  ok('las 4 migraciones se ejecutan sin error', true);
 
   const memb1 = await c.query(`select role from public.business_members where business_id = $1 and user_id = $2`, [bizId, userId]);
   ok('BACKFILL: comercio preexistente gana membresía owner', memb1.rowCount === 1 && memb1.rows[0].role === 'owner', `(got ${memb1.rowCount})`);
@@ -169,12 +171,67 @@ async function run() {
   const other = await c.query(`insert into auth.users (email) values ('o@o.com') returning id`);
   await c.query(`create role testuser login password 'x'`);
   await c.query(`grant usage on schema public to testuser; grant all on all tables in schema public to testuser;`);
-  await c.query(`select set_config('blink_test.uid', $1, false)`, [other.rows[0].id]);
+  await c.query(`grant authenticated to testuser;`);
   const rls = new Client({ host: 'localhost', port: PORT, user: 'testuser', password: 'x', database: 'blink' });
   await rls.connect();
+  // El uid va en la conexión `rls`: `auth.uid()` es una variable de sesión.
+  // `testuser` es superusuario de su propia sesión para set_config; luego
+  // se le quita con `set role authenticated` en el bloque de 0004.
+  await rls.query(`select set_config('blink_test.uid', $1, false)`, [other.rows[0].id]);
   const seen = await rls.query(`select count(*)::int n from public.businesses`);
   ok('RLS: usuario ajeno NO ve otros negocios', seen.rows[0].n === 0, `(got ${seen.rows[0].n})`);
+
+  // --- 0004 · Catálogo global colaborativo ---
+  // Nota: al correr 0004 en esta prueba `products` aún está vacío (se
+  // llena con unpack_business más abajo), así que el backfill se verifica
+  // DESPUÉS del desempaquetado, más abajo.
+  // IMPORTANTE: `auth.uid()` lee una variable de SESIÓN, y cada conexión
+  // tiene la suya. Por eso el uid se fija en la conexión `rls`.
+
+  await rls.query(`set role authenticated`);
+
+  // Aislamiento: un usuario autenticado SIN comercio no puede insertar.
+  await rls.query(`select set_config('blink_test.uid', $1, false)`, [other.rows[0].id]);
+  let denied = false;
+  try {
+    await rls.query(`insert into public.catalogo_global (barcode, name) values ('999','NO AUTORIZADO')`);
+  } catch { denied = true; }
+  ok('RLS: sin membresía no puede insertar en el catálogo global', denied);
+
+  // Un owner/manager SÍ aporta fichas nuevas.
+  await rls.query(`select set_config('blink_test.uid', $1, false)`, [userId]);
+  const ins = await rls.query(`insert into public.catalogo_global (barcode, name, unit) values ('789','HARINA PAN 1KG','kg') returning barcode`);
+  ok('RLS: owner/manager puede insertar en el catálogo global', ins.rowCount === 1);
+
+  // Cualquier autenticado LEE el catálogo global, incluso sin ser el autor.
+  await rls.query(`select set_config('blink_test.uid', $1, false)`, [other.rows[0].id]);
+  const gRead = await rls.query(`select count(*)::int n from public.catalogo_global`);
+  ok('RLS: cualquier autenticado LEE el catálogo global', gRead.rows[0].n === 1, `(got ${gRead.rows[0].n})`);
+
+  // UPDATE/DELETE bloqueados a comercios (no hay política para authenticated).
+  let updDenied = false;
+  try {
+    await rls.query(`update public.catalogo_global set name='ALTERADO' where barcode='789'`);
+    updDenied = (await rls.query(`select count(*)::int n from public.catalogo_global where name='ALTERADO'`)).rows[0].n === 0;
+  } catch { updDenied = true; }
+  ok('RLS: comercio NO puede modificar el catálogo global', updDenied);
+
+  await rls.query(`reset role`);
   await rls.end();
+
+  // --- 0004 · Backfill del catálogo global desde productos existentes ---
+  // Ahora que `products` tiene filas (unpack), re-correr 0004 debe crear
+  // fichas y seguir siendo idempotente.
+  await c.query(read('0004_catalogo_global.sql'));
+  const gAll = (await c.query(`select barcode, name from public.catalogo_global where barcode in ('123','456') order by barcode`)).rows;
+  ok('catálogo global backfill: 2 fichas de products', gAll.length === 2, `(got ${gAll.length})`);
+  // `upper()` de Postgres es sensible al locale: con lc_ctype 'C' no
+  // mayúsculiza acentos. La normalización REAL la hace el cliente en JS
+  // (`toUpperCase()`), así que aquí solo se comprueba el caso ASCII.
+  const pan = gAll.find((r) => r.barcode === '456');
+  ok('catálogo global: nombre en MAYÚSCULAS', pan?.name === 'PAN', `(got ${pan?.name})`);
+  await c.query(read('0004_catalogo_global.sql'));
+  ok('catálogo global: 0004 idempotente', (await c.query(`select count(*)::int n from public.catalogo_global`)).rows[0].n === 3);
 
   await c.end();
   await pg.stop();

@@ -202,3 +202,82 @@ export async function cloudSaveBusiness(state: AppState): Promise<void> {
   );
   if (error) throw new Error(error.message);
 }
+
+// ------------------------------------------------------------------
+// Catálogo global colaborativo (migración 0004).
+// Nivel 1 compartido: ficha descriptiva universal, clave = código de barras.
+// Nivel 2 privado: `products` (precios, costo, IVA, stock) vive en el AppState.
+//
+// Seguridad: la tabla `catalogo_global` tiene RLS. Cualquier usuario
+// autenticado LEE; solo owner/manager INSERTA. Nadie actualiza ni borra
+// una ficha ajena (evita sabotear el catálogo de otras tiendas).
+// ------------------------------------------------------------------
+
+/** Ficha descriptiva universal de un producto del catálogo global. */
+export interface CatalogEntry {
+  barcode: string;
+  /** Nombre normalizado (MAYÚSCULAS). */
+  name: string;
+  /** Cantidad de medida de la presentación (ej.: 500 en "500 g"). */
+  presentationQty: number;
+  /** Unidad de medida de la lista cerrada. */
+  unit: string;
+  category: string;
+  /** Fabricante/marca: uso interno, nunca sale en el recibo. */
+  brand: string;
+}
+
+/**
+ * Busca una ficha por código de barras. Devuelve `null` si no existe,
+ * si el navegador está sin sesión o si no hay conexión. Nunca lanza:
+ * el alta de producto debe funcionar aunque el catálogo global falle.
+ */
+export async function catalogoLookup(barcode: string): Promise<CatalogEntry | null> {
+  const code = barcode.trim();
+  if (!code) return null;
+  try {
+    const { data, error } = await supabase
+      .from("catalogo_global")
+      .select("barcode,name,presentation_qty,unit,category,brand")
+      .eq("barcode", code)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      barcode: String(data.barcode ?? ""),
+      name: String(data.name ?? ""),
+      presentationQty: Number(data.presentation_qty ?? 1),
+      unit: String(data.unit ?? "unidad"),
+      category: String(data.category ?? ""),
+      brand: String(data.brand ?? ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Aporta (o refresca) una ficha al catálogo global. Solo se crea si no
+ * existe: no pisa la ficha que ya pudieran estar usando otras tiendas.
+ * Nunca lanza: el producto ya se guardó localmente; esto es red de apoyo.
+ * Devuelve `true` si la ficha quedó registrada.
+ */
+export async function catalogoUpsert(entry: CatalogEntry): Promise<boolean> {
+  const code = entry.barcode.trim();
+  if (!code) return false;
+  try {
+    const { error } = await supabase.from("catalogo_global").insert({
+      barcode: code,
+      name: entry.name.trim().toUpperCase(),
+      presentation_qty: Math.max(0, Number(entry.presentationQty) || 0),
+      unit: entry.unit || "unidad",
+      category: entry.category.trim(),
+      brand: entry.brand.trim(),
+    });
+    // 23505 = violación de clave única: la ficha ya existe (otra tienda
+    // la creó). No es un error: el catálogo global ya la tiene.
+    if (error && error.code !== "23505") return false;
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -164,14 +164,13 @@ export function taxesCollected(state: AppState) {
   return { iva: round2(Math.max(0, iva - paid)), igtf: round2(igtf), rate };
 }
 
-/** Productos activos (no servicios) por debajo o en su mínimo. */
+/** Productos activos por debajo o en su mínimo. */
 export function lowStock(state: AppState) {
   return state.products.filter(
     (p) =>
       p.active &&
       !p.archived &&
       p.trackStock &&
-      p.type !== "servicio" &&
       p.minStock > 0 &&
       p.stock <= p.minStock
   );

@@ -30,11 +30,11 @@ export function buildDatasets(state: AppState): Dataset[] {
     kind: "productos",
     label: "Productos (catálogo)",
     headers: [
-      "Nombre", "Marca", "SKU", "Código", "Categoría", "Tipo", "Unidad",
+      "Nombre", "Marca", "SKU", "Código", "Categoría", "Presentación", "Unidad",
       "Costo USD", "Precio USD", "Stock", "Mínimo", "Activo", "Archivado",
     ],
     rows: state.products.map((p) => [
-      p.name, p.brand, p.sku, p.barcode, p.category || "—", p.type, p.unit,
+      p.name, p.brand, p.sku, p.barcode, p.category || "—", p.presentationQty, p.unit,
       p.cost, p.price, p.stock, p.minStock, p.active, p.archived,
     ]),
   });

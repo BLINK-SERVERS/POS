@@ -80,13 +80,15 @@ export interface Product {
   brand: string;
   sku: string;
   barcode: string;
+  /** Cantidad de medida de la presentación (ej.: 500 en "500 g"). */
+  presentationQty: number;
+  /** Unidad de medida, de la lista cerrada `UNIT_OPTIONS`. */
   unit: string;
   cost: number; // en USD (costo promedio)
   price: number; // en USD (canal predeterminado)
   /** Precio por canal (id de canal → USD). El canal predeterminado usa `price`. */
   channelPrices: Record<string, number>;
   category: string; // nombre de la categoría ("" = sin categoría)
-  type: "simple" | "servicio";
   taxRate: number; // fracción de IVA (por producto)
   active: boolean;
   archived: boolean;
@@ -94,6 +96,19 @@ export interface Product {
   stock: number;
   minStock: number;
 }
+
+/** Unidades de medida normalizadas (lista cerrada, sin texto libre). */
+export const UNIT_OPTIONS = [
+  "unidad",
+  "kg",
+  "g",
+  "mg",
+  "L",
+  "ml",
+  "pack",
+] as const;
+
+export type UnitOption = (typeof UNIT_OPTIONS)[number];
 
 export interface Contact {
   id: string;
@@ -112,11 +127,24 @@ export interface Contact {
 export interface SaleLine {
   productId: string;
   name: string;
+  /** Presentación para imprimir (ej.: "500 g"). Solo etiqueta. */
+  presentation?: string;
   qty: number;
   price: number; // USD
   cost: number; // USD
   taxRate: number; // fracción
   note?: string;
+}
+
+/**
+ * Etiqueta de presentación de un producto (ej.: "500 g", "1 unidad").
+ * Se deriva de `presentationQty` + `unit` y solo se usa para imprimir.
+ */
+export function presentationLabel(p: Pick<Product, "presentationQty" | "unit">): string {
+  const qty = Number(p.presentationQty) || 0;
+  const unit = p.unit || "";
+  if (qty > 0 && unit) return `${qty} ${unit}`;
+  return unit || "";
 }
 
 export type SaleStatus = "cobrada" | "credito" | "anulada" | "cotizacion";
