@@ -1,5 +1,5 @@
-// Ajustes · Negocio, perfil, moneda, recibo y cuenta.
-import { useEffect, useRef, useState, type FormEvent } from "react";
+// Ajustes · Negocio, perfil, moneda, recibo, exportación y cuenta.
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs } from "../components/ui";
 import { Icon } from "../components/Icon";
@@ -7,8 +7,10 @@ import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
 import { PAIRING_DAYS } from "../lib/scanner/pairing";
 import { formatBsDirect, formatRate } from "../lib/money";
+import { buildDatasets, type Dataset } from "../lib/exportData";
+import { downloadText, printReport, printableTable, reportName, toCsv } from "../lib/export";
 
-const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Dispositivos", "Cuenta"] as const;
+const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Exportar", "Dispositivos", "Cuenta"] as const;
 
 export function Ajustes() {
   const { state, user } = useStoreState();
@@ -66,6 +68,51 @@ export function Ajustes() {
   }
 
   const firstProduct = state.products[0];
+
+  // Todos los conjuntos exportables, memorizados.
+  const datasets = useMemo(() => buildDatasets(state), [state]);
+
+  const exportOneCsv = (ds: Dataset) =>
+    downloadText(`${reportName(ds.kind)}.csv`, toCsv(ds.headers, ds.rows));
+
+  const exportOnePdf = (ds: Dataset) =>
+    printReport({
+      title: ds.label,
+      business: state.business.legalName || state.business.name || "Mi negocio",
+      bodyHtml: printableTable(ds.headers, ds.rows),
+    });
+
+  /** Descarga todos los CSV en cascada (un archivo por conjunto). */
+  function exportAllCsv() {
+    datasets.forEach((ds, i) => {
+      if (!ds.rows.length) return;
+      window.setTimeout(() => exportOneCsv(ds), i * 350);
+    });
+  }
+
+  /** Resumen imprimible (PDF) con TODOS los conjuntos en un solo documento. */
+  function exportAllPdf() {
+    const bodyHtml = datasets
+      .filter((ds) => ds.rows.length)
+      .map((ds) => `<h3 class="pr-section">${ds.label}</h3>${printableTable(ds.headers, ds.rows)}`)
+      .join("");
+    printReport({
+      title: "Resumen general",
+      business: state.business.legalName || state.business.name || "Mi negocio",
+      bodyHtml,
+    });
+  }
+
+  /** Copia de seguridad completa (JSON) de todo el estado. */
+  function exportBackupJson() {
+    downloadText(
+      `${reportName("copia-seguridad")}.json`,
+      JSON.stringify(state, null, 2),
+      "application/json"
+    );
+  }
+
+  const totalRows = datasets.reduce((a, ds) => a + ds.rows.length, 0);
 
   return (
     <div className="stack gap-16">
@@ -243,6 +290,73 @@ export function Ajustes() {
             Guardar
           </button>
         </Card>
+      )}
+
+      {tab === "Exportar" && (
+        <>
+          <Card
+            title="Exportar todo"
+            hint={`Copia de seguridad y reportes completos · ${datasets.length} conjuntos, ${totalRows} registros.`}
+          >
+            <p className="muted" style={{ marginBottom: "0.75rem" }}>
+              Descarga la información de tu negocio en CSV (para Excel), PDF (para imprimir o
+              compartir) o una copia de seguridad JSON con todos tus datos.
+            </p>
+            <div className="row gap-8" style={{ flexWrap: "wrap" }}>
+              <button className="btn btn--primary" onClick={exportAllPdf}>
+                <Icon name="download" /> Resumen general (PDF)
+              </button>
+              <button className="btn btn--ghost" onClick={exportAllCsv}>
+                <Icon name="table" /> Todos los reportes (CSV)
+              </button>
+              <button className="btn btn--soft" onClick={exportBackupJson}>
+                <Icon name="fileText" /> Copia de seguridad (JSON)
+              </button>
+            </div>
+          </Card>
+
+          <Card title="Por sección" hint="Elige el conjunto y el formato.">
+            <div className="stack gap-8">
+              {datasets.map((ds) => (
+                <div
+                  key={ds.kind}
+                  className="between"
+                  style={{
+                    padding: "0.6rem 0.75rem",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                >
+                  <span className="row gap-8">
+                    <Icon name="fileText" />
+                    <span>{ds.label}</span>
+                    <span className="dim" style={{ fontSize: "0.78rem" }}>
+                      {ds.rows.length} reg.
+                    </span>
+                  </span>
+                  <span className="row gap-8">
+                    <button
+                      className="btn btn--soft btn--sm"
+                      onClick={() => exportOneCsv(ds)}
+                      disabled={!ds.rows.length}
+                      title="Descargar CSV"
+                    >
+                      <Icon name="table" /> CSV
+                    </button>
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => exportOnePdf(ds)}
+                      disabled={!ds.rows.length}
+                      title="Exportar PDF"
+                    >
+                      <Icon name="download" /> PDF
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
       )}
 
       {tab === "Dispositivos" && (

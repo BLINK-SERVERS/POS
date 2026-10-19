@@ -1663,6 +1663,12 @@ table.data tbody tr:hover {
   border-top: 2px solid #666;
   font-weight: 700;
 }
+.pr-section {
+  font-size: 1.05rem;
+  margin: 1.1rem 0 0.4rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid #bbb;
+}
 
 @media print {
   /* Ocultar todo en la página excepto el recibo */
