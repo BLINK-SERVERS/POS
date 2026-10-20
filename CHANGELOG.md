@@ -13,6 +13,25 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ## [1.4.0] · 2026-10-20
 
+**Landing page comercial en la raíz + iconos de marca reales (favicon y PWA).**
+
+- **Iconos de marca reales** — se copiaron los assets originales de `clone/`:
+  `favicon.svg`, `favicon-dark.svg`, `favicon.ico` e `icons/icon.svg`. Los dos stubs
+  de 207 bytes (`favicon.svg` y `apple-touch-icon.png`) quedan reemplazados por los
+  archivos reales.
+- **PNG generados** — `icon-192.png`, `icon-512.png`, `icon-maskable-192.png`,
+  `icon-maskable-512.png` y `apple-touch-icon.png` (180×180), rasterizados desde los
+  SVG con Chromium. Nueva variante *maskable* con fondo a sangre y marca blanca en
+  la zona segura del 80%.
+- **Script reproducible** — `npm run icons` (`app/scripts/build-icons.mjs`) regenera
+  los PNG cuando cambia un SVG.
+- **Manifest completo** — 5 iconos (`any` + `maskable`), `theme_color` `#3347DD` y
+  `background_color` `#FFFEFB`; `id`/`start_url`/`scope` en la raíz.
+- **HTML** — `favicon.svg`, `favicon.ico`, `favicon-dark.svg` (tema oscuro del SO) y
+  tres `apple-touch-icon` para iOS.
+
+**Landing page comercial en la raíz + reorganización de rutas bajo `/app`.**
+
 **Landing page comercial en la raíz + reorganización de rutas bajo `/app`.**
 
 - **Landing pública en `/`** — la raíz del dominio deja de redirigir al login y muestra

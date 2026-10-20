@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:migrations": "node scripts/test-migrations.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
