@@ -61,7 +61,7 @@
 - [x] Páginas legales con el texto real de Blink (`/app/terminos`, `/app/privacidad`)
 - [x] SEO: `title`, `description`, Open Graph y Twitter Card en `index.html`
 - [x] Iconos de marca reales: favicon (claro/oscuro/.ico) + 5 iconos PWA (any + maskable)
-- [ ] Imagen de preview Open Graph 1200×630 (`og:image`) — pendiente
+- [x] Imagen Open Graph 1200×630 (`og-image.png`) con favicon + marca BLINK POS
 
 Detalle en [`LANDING_PAGE.md`](./LANDING_PAGE.md) e [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md).
 

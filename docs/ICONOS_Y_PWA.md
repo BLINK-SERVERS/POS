@@ -77,6 +77,47 @@ nunca toque el dibujo.
 <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 ```
 
+## Imagen de preview Open Graph
+
+`app/public/og-image.png` (1200×630) — la miniatura que se ve al compartir el link
+en WhatsApp, Telegram, X o Facebook.
+
+**Generador:** `app/scripts/build-og-image.mjs` (`npm run og`)
+
+Composición:
+
+| Zona | Contenido |
+|---|---|
+| Izquierda (730 px) | Lockup *BLINK* (azul `#3347DD`, itálica 800) + *POS* (negro, peso 300) con el isotipo del favicon · titular de 3 líneas · subtítulo · 3 píldoras de beneficio · pie con `blink.com.ve` y el precio |
+| Derecha (470 px) | Panel Negro Blink (`#1D1D1F`) con círculos brand-blue y la maqueta del POS (líneas de venta, total en USD y equivalente en Bs a tasa BCV) |
+
+Fuentes: SF Pro Display (Bold / Semibold / Regular / Light / Italic) embebidas en
+base64 desde `app/public/fonts`, para que el render no dependa de las fuentes del
+sistema.
+
+### Metadatos en `app/index.html`
+
+```html
+<meta property="og:image" content="https://www.blink.com.ve/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="BLINK POS — El punto de venta más rápido…" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://www.blink.com.ve/og-image.png" />
+```
+
+> Las URL de `og:image` son **absolutas** (con dominio). Las plataformas de social
+> no resuelven rutas relativas.
+
+### Regenerarla
+
+```bash
+cd app
+npm run og      # node scripts/build-og-image.mjs
+```
+
+---
+
 ## Antes vs después
 
 | Antes | Ahora |
@@ -87,6 +128,7 @@ nunca toque el dibujo.
 | Sin favicon para tema oscuro | `favicon-dark.svg` con `prefers-color-scheme` |
 | Manifest con 1 icono SVG | Manifest con 5 iconos (any + maskable) |
 | Sin script de generación | `npm run icons` regenera los PNG |
+| Sin imagen para compartir | `og-image.png` 1200×630 con favicon + marca |
 
 ## Verificación en producción
 

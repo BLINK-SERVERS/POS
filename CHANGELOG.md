@@ -29,6 +29,9 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
   `background_color` `#FFFEFB`; `id`/`start_url`/`scope` en la raíz.
 - **HTML** — `favicon.svg`, `favicon.ico`, `favicon-dark.svg` (tema oscuro del SO) y
   tres `apple-touch-icon` para iOS.
+- **Imagen Open Graph** — `og-image.png` (1200×630) generada con el favicon y el
+  lockup *BLINK POS*, con la maqueta del POS y el precio. Se publica en `og:image`,
+  `og:image:width/height`, `og:image:alt` y `twitter:image`. Nuevo script `npm run og`.
 
 **Landing page comercial en la raíz + reorganización de rutas bajo `/app`.**
 

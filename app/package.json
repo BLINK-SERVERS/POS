@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:migrations": "node scripts/test-migrations.mjs",
     "typecheck": "tsc --noEmit",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "og": "node scripts/build-og-image.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
