@@ -55,7 +55,7 @@ export function Historial() {
         title="Historial de ventas"
         subtitle="Lo vendido, sus cobros y devoluciones."
         actions={
-          <Link className="btn btn--primary" to="/ventas">
+          <Link className="btn btn--primary" to="/app/ventas">
             Ir al POS
           </Link>
         }
@@ -87,7 +87,7 @@ export function Historial() {
           title="Aún no hay ventas"
           hint="Las ventas que cobres en el POS aparecerán aquí al instante."
           action={
-            <Link className="btn btn--soft btn--sm" to="/ventas">
+            <Link className="btn btn--soft btn--sm" to="/app/ventas">
               Ir al POS
             </Link>
           }

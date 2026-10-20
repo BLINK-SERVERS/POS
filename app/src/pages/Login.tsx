@@ -41,7 +41,7 @@ export function Login() {
       setError(err);
       return;
     }
-    nav("/inicio", { replace: true });
+    nav("/app/inicio", { replace: true });
   }
 
   async function pedirEnlaceMagico() {
@@ -177,11 +177,11 @@ export function Login() {
               </button>
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.9rem", textAlign: "center" }}>
-                <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+                <Link to="/app/recuperar">¿Olvidaste tu contraseña?</Link>
               </p>
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
-                ¿Nuevo por aquí? <Link to="/registro">Crear mi comercio</Link>
+                ¿Nuevo por aquí? <Link to="/app/registro">Crear mi comercio</Link>
               </p>
             </form>
           )}

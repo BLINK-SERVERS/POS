@@ -117,7 +117,7 @@ export function Inicio() {
                 </span>
               </div>
             ))}
-            <Link className="btn btn--soft btn--sm" to="/inventario" style={{ alignSelf: "flex-start" }}>
+            <Link className="btn btn--soft btn--sm" to="/app/inventario" style={{ alignSelf: "flex-start" }}>
               Ver inventario
             </Link>
           </div>

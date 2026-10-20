@@ -565,7 +565,7 @@ export function Vender() {
                 title="Escanea o busca"
                 hint="Escanea con el lector USB, celular vinculado o usa la búsqueda predictiva."
                 action={
-                  <Link className="btn btn--soft btn--sm" to="/catalogo">
+                  <Link className="btn btn--soft btn--sm" to="/app/catalogo">
                     Ir al Catálogo
                   </Link>
                 }
@@ -704,7 +704,7 @@ export function Vender() {
               title="Sin descuentos"
               hint="Aún no hay descuentos vigentes."
               action={
-                <Link className="btn btn--soft btn--sm" to="/catalogo">
+                <Link className="btn btn--soft btn--sm" to="/app/catalogo">
                   Ir a Catálogo
                 </Link>
               }

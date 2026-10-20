@@ -75,7 +75,7 @@ export function Recuperar() {
     }
     // Contraseña actualizada: cerramos la sesión de recuperación y volvemos al acceso.
     await logout();
-    nav("/entrar", { replace: true });
+    nav("/app/entrar", { replace: true });
   }
 
   async function reenviar() {
@@ -203,7 +203,7 @@ export function Recuperar() {
               )}
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
-                ¿Ya la recuerdas? <Link to="/entrar">Volver a entrar</Link>
+                ¿Ya la recuerdas? <Link to="/app/entrar">Volver a entrar</Link>
               </p>
             </form>
           )}

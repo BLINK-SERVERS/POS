@@ -159,7 +159,7 @@ export function Inventario() {
               title="Sin existencias"
               hint="Registra productos para controlar entradas y mínimos."
               action={
-                <Link className="btn btn--soft btn--sm" to="/catalogo">
+                <Link className="btn btn--soft btn--sm" to="/app/catalogo">
                   Ir a Catálogo
                 </Link>
               }
@@ -334,7 +334,7 @@ export function Inventario() {
         <Modal title="Registrar compra" onClose={() => setPurchaseOpen(false)}>
           {providers.length === 0 && (
             <p className="muted" style={{ marginBottom: "0.75rem" }}>
-              Aún no tienes proveedores. <Link to="/contactos">Crea uno en Contactos</Link> para
+              Aún no tienes proveedores. <Link to="/app/contactos">Crea uno en Contactos</Link> para
               registrar la compra con su nombre y su cuenta por pagar.
             </p>
           )}

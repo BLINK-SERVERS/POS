@@ -1,12 +1,19 @@
 // Rutas de la aplicación.
+//
+// Estructura:
+//   /            → Landing comercial (pública, sin autenticación)
+//   /app/*       → Aplicación protegida (login, onboarding, módulos)
+//   /escaner     → Escáner remoto (deep link que abre el celular, sin sesión)
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
+import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Registro } from "./pages/Registro";
 import { Recuperar } from "./pages/Recuperar";
 import { Onboarding } from "./pages/Onboarding";
+import { Legal } from "./pages/Legal";
 
 // Carga diferida por ruta → el bundle inicial es más pequeño y cada página
 // se descarga solo cuando se visita (mejor caché y arranque más rápido).
@@ -32,8 +39,8 @@ function Protected({ children }: { children: ReactNode }) {
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
   // Con sesión pero sin equipo verificado se vuelve a /entrar para pedir el código.
-  if (!authed || !verified) return <Navigate to="/entrar" replace />;
-  if (!onboarded) return <Navigate to="/onboarding" replace />;
+  if (!authed || !verified) return <Navigate to="/app/entrar" replace />;
+  if (!onboarded) return <Navigate to="/app/onboarding" replace />;
   return (
     <Shell>
       <Suspense fallback={<PageLoader />}>{children}</Suspense>
@@ -48,7 +55,7 @@ function PublicOnly({ children }: { children: ReactNode }) {
   if (booting) return <PageLoader />;
   // Solo se entra si además el equipo ya está verificado; si no, /entrar
   // muestra el paso del código.
-  if (authed && verified) return <Navigate to="/inicio" replace />;
+  if (authed && verified) return <Navigate to="/app/inicio" replace />;
   return <>{children}</>;
 }
 
@@ -58,17 +65,23 @@ function OnboardingGate({ children }: { children: ReactNode }) {
   const booting = useBooting();
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
-  if (!authed || !verified) return <Navigate to="/entrar" replace />;
-  if (onboarded) return <Navigate to="/inicio" replace />;
+  if (!authed || !verified) return <Navigate to="/app/entrar" replace />;
+  if (onboarded) return <Navigate to="/app/inicio" replace />;
   return <>{children}</>;
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/inicio" replace />} />
+      {/* --- Landing comercial (pública) --- */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/app/terminos" element={<Legal kind="terminos" />} />
+      <Route path="/app/privacidad" element={<Legal kind="privacidad" />} />
+
+      {/* --- Aplicación protegida --- */}
+      <Route path="/app" element={<Navigate to="/app/inicio" replace />} />
       <Route
-        path="/entrar"
+        path="/app/entrar"
         element={
           <PublicOnly>
             <Login />
@@ -76,7 +89,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/registro"
+        path="/app/registro"
         element={
           <PublicOnly>
             <Registro />
@@ -85,25 +98,26 @@ function AppRoutes() {
       />
       {/* Recuperar contraseña: sin PublicOnly, porque el enlace del correo crea
           una sesión de recuperación y hay que poder fijar la nueva clave. */}
-      <Route path="/recuperar" element={<Recuperar />} />
+      <Route path="/app/recuperar" element={<Recuperar />} />
       <Route
-        path="/onboarding"
+        path="/app/onboarding"
         element={
           <OnboardingGate>
             <Onboarding />
           </OnboardingGate>
         }
       />
-      <Route path="/inicio" element={<Protected><Inicio /></Protected>} />
-      <Route path="/ventas" element={<Protected><Vender /></Protected>} />
-      <Route path="/ventas/historial" element={<Protected><Historial /></Protected>} />
-      <Route path="/catalogo" element={<Protected><Catalogo /></Protected>} />
-      <Route path="/inventario" element={<Protected><Inventario /></Protected>} />
-      <Route path="/contactos" element={<Protected><Contactos /></Protected>} />
-      <Route path="/finanzas" element={<Protected><Finanzas /></Protected>} />
-      <Route path="/informes" element={<Protected><Informes /></Protected>} />
-      <Route path="/ajustes" element={<Protected><Ajustes /></Protected>} />
-      {/* Escáner remoto: lo abre el celular desde el QR. Sin sesión ni Shell. */}
+      <Route path="/app/inicio" element={<Protected><Inicio /></Protected>} />
+      <Route path="/app/ventas" element={<Protected><Vender /></Protected>} />
+      <Route path="/app/ventas/historial" element={<Protected><Historial /></Protected>} />
+      <Route path="/app/catalogo" element={<Protected><Catalogo /></Protected>} />
+      <Route path="/app/inventario" element={<Protected><Inventario /></Protected>} />
+      <Route path="/app/contactos" element={<Protected><Contactos /></Protected>} />
+      <Route path="/app/finanzas" element={<Protected><Finanzas /></Protected>} />
+      <Route path="/app/informes" element={<Protected><Informes /></Protected>} />
+      <Route path="/app/ajustes" element={<Protected><Ajustes /></Protected>} />
+      {/* Escáner remoto: lo abre el celular desde el QR. Sin sesión ni Shell.
+          Vive en la raíz porque es un deep link que se comparte por QR. */}
       <Route
         path="/escaner"
         element={
@@ -112,7 +126,7 @@ function AppRoutes() {
           </Suspense>
         }
       />
-      <Route path="*" element={<Navigate to="/inicio" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

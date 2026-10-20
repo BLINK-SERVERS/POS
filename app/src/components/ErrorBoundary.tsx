@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private goHome = () => {
     // Navegación dura: limpia el estado roto y vuelve al inicio protegido.
-    window.location.assign("/inicio");
+    window.location.assign("/app/inicio");
   };
 
   render() {

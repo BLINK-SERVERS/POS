@@ -11,6 +11,32 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.4.0] · 2026-10-20
+
+**Landing page comercial en la raíz + reorganización de rutas bajo `/app`.**
+
+- **Landing pública en `/`** — la raíz del dominio deja de redirigir al login y muestra
+  una portada de conversión: header fijo con anclas y CTAs, hero con mockup del POS y del
+  celular escaneando, grid de 3 beneficios (escáner móvil por QR, multimoneda USD/EUR + BCV,
+  operación local-first), bloque de ecosistema con métricas, plan Pro Comercial a **$25/mes**
+  y footer con enlaces legales. Todo con iconos SVG propios y la paleta oficial Blink.
+- **App reorganizada bajo `/app/*`** — login, registro, recuperación, onboarding y los
+  módulos (inicio, ventas, historial, catálogo, inventario, contactos, finanzas, informes,
+  ajustes) viven ahora bajo el prefijo `/app`. Todos los enlaces internos actualizados.
+- **`/escaner` se mantiene en la raíz** — es el deep link que se comparte por QR; queda
+  estable e independiente de la reorganización de la app.
+- **Páginas legales reales** — `/app/terminos` y `/app/privacidad` con el texto completo
+  de los Términos y Condiciones de Uso de Blink (suscripción de $25 USD, pagos vía Pago
+  Móvil/Binance Pay, vigencia de 30 días, política de no reembolsos, servicio "tal cual",
+  uso adecuado, propiedad intelectual, privacidad, cambios y cancelaciones).
+- **SEO de la portada** — `index.html` actualiza `title`, `description`, Open Graph y
+  Twitter Card; `manifest.json` declara `id`, `start_url` y `scope` en la raíz.
+- **Tokens de marca** — `--blink-bg-main`, `--blink-primary`, `--blink-text-muted`,
+  `--blink-success`, `--blink-danger`, `--blink-warning` y `--blink-dark` en `tokens.css`.
+- **Icono `sm`** — nuevo tamaño en el componente `Icon` para usos compactos.
+
+---
+
 ## [1.3.5] · 2026-10-19
 
 **Fase B — Catálogo global colaborativo + normalización · Fase C — Ticket concatenado.**

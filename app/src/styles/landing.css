@@ -1,0 +1,754 @@
+/* ============================================================
+   BLINK — Landing Page comercial (ruta raíz "/")
+   Paleta oficial Blink · Jerarquía visual · Minimalismo operativo
+   ============================================================ */
+
+.landing {
+  --ld-max: 1160px;
+  --ld-gutter: clamp(1.25rem, 5vw, 3rem);
+  background: var(--blink-bg-main);
+  color: var(--blink-dark);
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------
+   Header fijo
+   --------------------------------------------------------- */
+.ld-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 254, 251, 0.86);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid rgba(66, 66, 66, 0.1);
+}
+.ld-header__inner {
+  max-width: var(--ld-max);
+  margin: 0 auto;
+  padding: 0.85rem var(--ld-gutter);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.ld-logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  font-family: "SF Pro Display", var(--font-primary);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-decoration: none;
+  flex: none;
+}
+.ld-logo__blink {
+  color: var(--blink-primary);
+  font-weight: 800;
+  font-style: italic;
+}
+.ld-logo__pos {
+  color: var(--blink-dark);
+  font-weight: 300;
+}
+
+/* Navegación central (desktop) */
+.ld-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  margin-left: auto;
+}
+.ld-nav__link {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--blink-text-muted);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-speed), border-color var(--transition-speed);
+  white-space: nowrap;
+}
+.ld-nav__link:hover {
+  color: var(--blink-dark);
+  border-bottom-color: var(--blink-primary);
+}
+.ld-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+}
+
+/* Botones de la landing */
+.ld-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-speed), color var(--transition-speed),
+    border-color var(--transition-speed), transform var(--transition-speed),
+    box-shadow var(--transition-speed);
+}
+.ld-btn--ghost {
+  background: transparent;
+  border-color: rgba(66, 66, 66, 0.24);
+  color: var(--blink-dark);
+}
+.ld-btn--ghost:hover {
+  border-color: var(--blink-dark);
+}
+.ld-btn--primary {
+  background: var(--blink-primary);
+  color: var(--blink-bg-main);
+  box-shadow: 0 6px 18px rgba(0, 122, 255, 0.28);
+}
+.ld-btn--primary:hover {
+  background: #0069d9;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 122, 255, 0.34);
+}
+.ld-btn--lg {
+  padding: 1rem 2.1rem;
+  font-size: var(--fs-base);
+  border-radius: 14px;
+}
+
+/* Botón hamburguesa (móvil) */
+.ld-burger {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(66, 66, 66, 0.24);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blink-dark);
+  cursor: pointer;
+  place-items: center;
+  flex: none;
+}
+
+/* ---------------------------------------------------------
+   Hero
+   --------------------------------------------------------- */
+.ld-hero {
+  padding: clamp(3rem, 8vw, 6rem) var(--ld-gutter) clamp(3.5rem, 9vw, 7rem);
+}
+.ld-hero__inner {
+  max-width: var(--ld-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(2rem, 6vw, 4.5rem);
+  align-items: center;
+}
+.ld-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 122, 255, 0.08);
+  color: var(--blink-primary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1.4rem;
+}
+.ld-hero h1 {
+  font-size: clamp(2.1rem, 5.4vw, 3.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--blink-dark);
+  margin: 0 0 1.35rem;
+}
+.ld-hero__sub {
+  font-size: clamp(1rem, 1.9vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--blink-text-muted);
+  max-width: 54ch;
+  margin: 0 0 2.4rem;
+}
+.ld-hero__cta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.ld-hero__note {
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ld-hero__note .icon {
+  color: var(--blink-success);
+}
+
+/* Mockup del POS + celular */
+.ld-mock {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0;
+  min-height: 380px;
+}
+.ld-mock__pc {
+  width: 100%;
+  max-width: 460px;
+  background: var(--blink-dark);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 30px 60px rgba(29, 29, 31, 0.22);
+}
+.ld-mock__screen {
+  background: var(--blink-bg-main);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 1.2rem;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.ld-mock__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid rgba(66, 66, 66, 0.12);
+}
+.ld-mock__search {
+  flex: 1;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: rgba(66, 66, 66, 0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  font-size: 0.7rem;
+  color: var(--blink-text-muted);
+  gap: 0.4rem;
+}
+.ld-mock__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: var(--blink-text-muted);
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed rgba(66, 66, 66, 0.12);
+}
+.ld-mock__line b {
+  color: var(--blink-dark);
+  font-weight: 600;
+}
+.ld-mock__total {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 2px solid var(--blink-dark);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.ld-mock__total span {
+  font-size: 0.75rem;
+  color: var(--blink-text-muted);
+}
+.ld-mock__total strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--blink-dark);
+  font-variant-numeric: tabular-nums;
+}
+.ld-mock__bs {
+  font-size: 0.72rem;
+  color: var(--blink-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ld-mock__phone {
+  position: absolute;
+  right: -1.5rem;
+  bottom: -1.75rem;
+  width: 168px;
+  background: var(--blink-dark);
+  border-radius: 22px;
+  padding: 8px;
+  box-shadow: 0 24px 48px rgba(29, 29, 31, 0.3);
+}
+.ld-mock__phone-screen {
+  background: var(--blink-bg-main);
+  border-radius: 16px;
+  aspect-ratio: 9 / 17;
+  padding: 0.7rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ld-mock__frame {
+  width: 100%;
+  flex: 1;
+  border: 2px solid var(--blink-primary);
+  border-radius: 10px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--blink-primary);
+}
+.ld-mock__barcode {
+  width: 62%;
+  height: 34%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--blink-dark) 0 2px,
+    transparent 2px 4px,
+    var(--blink-dark) 4px 5px,
+    transparent 5px 8px
+  );
+  opacity: 0.75;
+}
+.ld-mock__pill {
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: rgba(52, 168, 83, 0.12);
+  color: var(--blink-success);
+}
+
+/* ---------------------------------------------------------
+   Secciones genéricas
+   --------------------------------------------------------- */
+.ld-section {
+  padding: clamp(3.5rem, 9vw, 6.5rem) var(--ld-gutter);
+}
+.ld-section--dark {
+  background: var(--blink-dark);
+  color: var(--blink-bg-main);
+}
+.ld-section__inner {
+  max-width: var(--ld-max);
+  margin: 0 auto;
+}
+.ld-section__head {
+  max-width: 62ch;
+  margin: 0 auto clamp(2.5rem, 6vw, 4rem);
+  text-align: center;
+}
+.ld-section__head h2 {
+  font-size: clamp(1.7rem, 3.6vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  margin: 0 0 0.9rem;
+}
+.ld-section__head p {
+  font-size: var(--fs-lg);
+  line-height: 1.6;
+  color: var(--blink-text-muted);
+  margin: 0;
+}
+.ld-section--dark .ld-section__head p {
+  color: rgba(255, 254, 251, 0.72);
+}
+
+/* ---------------------------------------------------------
+   Beneficios (grid de 3)
+   --------------------------------------------------------- */
+.ld-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 1.75rem);
+}
+.ld-feature {
+  background: var(--blink-bg-main);
+  border: 1px solid rgba(66, 66, 66, 0.12);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 3vw, 2.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed),
+    border-color var(--transition-speed);
+}
+.ld-feature:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 122, 255, 0.4);
+  box-shadow: 0 16px 34px rgba(29, 29, 31, 0.08);
+}
+.ld-feature__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--blink-primary);
+}
+.ld-feature__icon .icon {
+  width: 26px;
+  height: 26px;
+}
+.ld-feature h3 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.ld-feature p {
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  color: var(--blink-text-muted);
+  margin: 0;
+}
+.ld-feature__tag {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--blink-success);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ---------------------------------------------------------
+   Ecosistema / prueba social
+   --------------------------------------------------------- */
+.ld-trust {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 6vw, 4.5rem);
+  align-items: center;
+}
+.ld-trust__quote {
+  font-size: clamp(1.35rem, 2.8vw, 1.95rem);
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.4rem;
+}
+.ld-trust__by {
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+}
+/* Sobre fondo oscuro el gris de marca no alcanza contraste: se usa un
+   blanco atenuado en su lugar. */
+.ld-section--dark .ld-trust__by {
+  color: rgba(255, 254, 251, 0.74);
+}
+.ld-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.ld-stat {
+  border: 1px solid rgba(255, 254, 251, 0.16);
+  border-radius: var(--radius-md);
+  padding: 1.35rem;
+}
+.ld-stat strong {
+  display: block;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ld-stat span {
+  font-size: var(--fs-sm);
+  color: rgba(255, 254, 251, 0.68);
+  line-height: 1.45;
+  display: block;
+  margin-top: 0.35rem;
+}
+
+/* ---------------------------------------------------------
+   Precios
+   --------------------------------------------------------- */
+.ld-pricing {
+  max-width: 620px;
+  margin: 0 auto;
+  background: var(--blink-bg-main);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(66, 66, 66, 0.12);
+  box-shadow: 0 24px 60px rgba(29, 29, 31, 0.1);
+  padding: clamp(2rem, 4.5vw, 3rem);
+  text-align: center;
+}
+.ld-pricing__badge {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: var(--radius-pill);
+  background: var(--blink-primary);
+  color: var(--blink-bg-main);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+.ld-pricing h3 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  margin: 0 0 0.9rem;
+  color: var(--blink-text-muted);
+}
+.ld-pricing__price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.ld-pricing__price strong {
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--blink-dark);
+}
+.ld-pricing__price span {
+  font-size: var(--fs-lg);
+  color: var(--blink-text-muted);
+  font-weight: 600;
+}
+.ld-pricing__hint {
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+  margin: 0 0 2rem;
+}
+.ld-pricing__list {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  text-align: left;
+  max-width: 400px;
+  margin-inline: auto;
+}
+.ld-pricing__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--fs-sm);
+  color: var(--blink-dark);
+}
+.ld-pricing__list .icon {
+  color: var(--blink-success);
+  flex: none;
+}
+
+/* ---------------------------------------------------------
+   Footer
+   --------------------------------------------------------- */
+.ld-footer {
+  border-top: 1px solid rgba(66, 66, 66, 0.12);
+  padding: clamp(2.5rem, 5vw, 3.5rem) var(--ld-gutter);
+}
+.ld-footer__inner {
+  max-width: var(--ld-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.ld-footer__legal {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+}
+.ld-footer__legal a {
+  color: var(--blink-text-muted);
+  text-decoration: none;
+}
+.ld-footer__legal a:hover {
+  color: var(--blink-primary);
+}
+.ld-footer__copy {
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+  margin: 0;
+}
+
+/* ---------------------------------------------------------
+   Páginas legales (públicas)
+   --------------------------------------------------------- */
+.ld-legal {
+  background: var(--blink-bg-main);
+  color: var(--blink-dark);
+  min-height: 100%;
+  padding-bottom: 4rem;
+}
+.ld-legal__bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem var(--ld-gutter);
+  background: rgba(255, 254, 251, 0.9);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid rgba(66, 66, 66, 0.1);
+}
+.ld-legal__main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 4rem) var(--ld-gutter) 0;
+}
+.ld-legal__main h1 {
+  font-size: clamp(1.9rem, 4.4vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+.ld-legal__sub {
+  font-size: var(--fs-lg);
+  color: var(--blink-text-muted);
+  margin: 0 0 2.75rem;
+}
+.ld-legal__main section {
+  margin-bottom: 2rem;
+}
+.ld-legal__main h2 {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+  color: var(--blink-dark);
+}
+.ld-legal__main section p {
+  font-size: var(--fs-sm);
+  line-height: 1.75;
+  color: var(--blink-text-muted);
+  margin: 0;
+}
+.ld-legal__intro {
+  font-size: var(--fs-base);
+  line-height: 1.75;
+  color: var(--blink-dark);
+  margin: 0 0 2.75rem;
+  padding: 1.15rem 1.35rem;
+  border-left: 3px solid var(--blink-primary);
+  background: rgba(0, 122, 255, 0.05);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.ld-legal__item {
+  margin-top: 1.1rem;
+}
+.ld-legal__item h3 {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--blink-dark);
+  margin: 0 0 0.3rem;
+}
+.ld-legal__foot {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(66, 66, 66, 0.12);
+  font-size: var(--fs-sm);
+  color: var(--blink-text-muted);
+}
+.ld-legal__foot a {
+  color: var(--blink-primary);
+}
+
+/* ---------------------------------------------------------
+   Responsive
+   --------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .ld-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ld-mock {
+    min-height: 340px;
+  }
+  .ld-mock__phone {
+    right: 0;
+  }
+  .ld-trust {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .ld-nav {
+    position: fixed;
+    inset: 64px 0 auto 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--blink-bg-main);
+    border-bottom: 1px solid rgba(66, 66, 66, 0.12);
+    padding: 0.5rem var(--ld-gutter) 1rem;
+    box-shadow: 0 18px 30px rgba(29, 29, 31, 0.1);
+    display: none;
+  }
+  .ld-nav--open {
+    display: flex;
+  }
+  .ld-nav__link {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(66, 66, 66, 0.08);
+  }
+  .ld-burger {
+    display: grid;
+    margin-left: auto;
+  }
+  .ld-header__actions .ld-btn--ghost {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .ld-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ld-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .ld-hero__cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ld-btn--lg {
+    width: 100%;
+  }
+  .ld-mock {
+    min-height: 290px;
+  }
+  .ld-mock__phone {
+    width: 132px;
+    bottom: -1.25rem;
+  }
+  .ld-footer__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

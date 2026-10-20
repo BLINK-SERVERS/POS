@@ -178,7 +178,7 @@ export function Registro() {
               </button>
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
-                ¿Ya tienes cuenta? <Link to="/entrar">Entrar</Link>
+                ¿Ya tienes cuenta? <Link to="/app/entrar">Entrar</Link>
               </p>
             </form>
           ) : (

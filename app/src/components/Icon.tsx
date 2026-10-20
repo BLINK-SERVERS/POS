@@ -235,7 +235,7 @@ export const Icon = memo(function Icon({
   name,
   size = "md",
   ...rest
-}: { name: IconName; size?: "md" | "lg" | "xl" } & SVGProps<SVGSVGElement>) {
+}: { name: IconName; size?: "sm" | "md" | "lg" | "xl" } & SVGProps<SVGSVGElement>) {
   const cls = size === "md" ? "icon" : `icon icon--${size}`;
   return (
     <svg

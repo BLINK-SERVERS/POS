@@ -138,7 +138,7 @@ export function Onboarding() {
 
   function finish() {
     actions.completeOnboarding();
-    nav("/inicio", { replace: true });
+    nav("/app/inicio", { replace: true });
   }
 
   // ---- acciones ----

@@ -8,7 +8,15 @@
    de texto con transparencia, para no salir de la paleta.
    ============================================================ */
 :root {
-  /* --- Marca --- */
+  /* --- Marca (paleta oficial Blink) --- */
+  --blink-bg-main: #fffefb;
+  --blink-primary: #007aff;
+  --blink-text-muted: #424242;
+  --blink-success: #34a853;
+  --blink-danger: #ea4335;
+  --blink-warning: #fbbc05;
+  --blink-dark: #1d1d1f;
+
   --color-bg-primary: #fffefb;
   --color-text-primary: #424242;
   --color-accent: #007aff;

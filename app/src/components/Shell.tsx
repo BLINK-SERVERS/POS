@@ -19,22 +19,22 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/inicio", label: "Inicio", icon: "home" },
+  { to: "/app/inicio", label: "Inicio", icon: "home" },
   {
-    to: "/ventas",
+    to: "/app/ventas",
     label: "Ventas",
     icon: "cart",
     sub: [
-      { to: "/ventas", label: "Vender" },
-      { to: "/ventas/historial", label: "Historial" },
+      { to: "/app/ventas", label: "Vender" },
+      { to: "/app/ventas/historial", label: "Historial" },
     ],
   },
-  { to: "/catalogo", label: "Catálogo", icon: "tag" },
-  { to: "/inventario", label: "Inventario", icon: "box", feature: "inventory" },
-  { to: "/contactos", label: "Contactos", icon: "users", feature: "providers" },
-  { to: "/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
-  { to: "/informes", label: "Informes", icon: "chart", feature: "reports" },
-  { to: "/ajustes", label: "Ajustes", icon: "settings" },
+  { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
+  { to: "/app/inventario", label: "Inventario", icon: "box", feature: "inventory" },
+  { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
+  { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
+  { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
+  { to: "/app/ajustes", label: "Ajustes", icon: "settings" },
 ];
 
 /** Botón del topbar: abre el modal del escáner y muestra si el celular está activo. */
@@ -91,7 +91,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className={"shell" + (navOpen ? " shell--nav-open" : "")}>
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
-          <Link to="/vender" className="brand brand--lg" aria-label="Ir a ventas">
+          <Link to="/app/ventas" className="brand brand--lg" aria-label="Ir a ventas">
             <span className="brand__blink">BLINK</span>
             <span className="brand__pos">POS</span>
           </Link>
@@ -135,7 +135,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); void logout(); nav("/entrar"); }}>
+        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); void logout(); nav("/app/entrar"); }}>
           <Icon name="logout" />
           Cerrar sesión
         </button>
