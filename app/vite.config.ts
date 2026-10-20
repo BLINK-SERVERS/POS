@@ -8,6 +8,7 @@ const pkg = JSON.parse(
 ) as { version: string };
 
 export default defineConfig({
+  base: "/",
   plugins: [react()],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: { port: 5173 },
