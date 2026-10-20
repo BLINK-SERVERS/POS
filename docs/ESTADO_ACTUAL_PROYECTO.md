@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-20 · **Versión:** 1.3.5 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-20 · **Versión:** 1.4.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -12,6 +12,7 @@
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
+| Landing `/` | Renderiza sin sesión, 0 errores de consola |
 
 ## Módulos
 
@@ -53,6 +54,15 @@
 - [x] Modelo híbrido: tabla compacta (PC) / tarjetas (móvil < 768px)
 - [x] Header con logo enlazado a `/vender`, sin redes sociales
 - [x] Dominio propio: `base: "/"`, `app/public/CNAME`
+
+### Landing comercial (v1.4.0)
+- [x] Portada pública en `/` (header, hero, beneficios, ecosistema, precios, footer)
+- [x] App reorganizada bajo `/app/*`; `/escaner` se mantiene en la raíz (deep link QR)
+- [x] Páginas legales con el texto real de Blink (`/app/terminos`, `/app/privacidad`)
+- [x] SEO: `title`, `description`, Open Graph y Twitter Card en `index.html`
+- [ ] Iconos sociales de Open Graph (imagen de preview 1200×630) — pendiente
+
+Detalle en [`LANDING_PAGE.md`](./LANDING_PAGE.md).
 
 ## Infraestructura
 
