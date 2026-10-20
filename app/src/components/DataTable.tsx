@@ -4,6 +4,7 @@
 // que siempre (sin cambios de UX). Al superar el umbral, las filas se recortan
 // a la ventana visible y se rellenan con "filas espaciadoras" que conservan la
 // altura real de scroll. Evita montar miles de nodos DOM de golpe.
+// Soporta modelo híbrido: tabla en PC / tarjetas en móvil
 import { Fragment, useCallback, useState, type ReactNode, type UIEvent } from "react";
 
 export type DataTableProps<T> = {

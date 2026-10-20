@@ -1,5 +1,5 @@
 // Inventario · Existencias.
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
@@ -8,49 +8,11 @@ import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { Icon } from "../components/Icon";
 import { Card, EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
 import { formatUsd, round2 } from "../lib/money";
-import type { Product } from "../lib/types";
+
 
 const TABS = ["Existencias", "Movimientos", "Compras"] as const;
 
-/** Fila memoizada: no se re-renderiza al escribir en los modales. */
-const StockRow = memo(function StockRow({
-  product,
-  onAdjust,
-}: {
-  product: Product;
-  onAdjust: (id: string, stock: number) => void;
-}) {
-  return (
-    <tr>
-      <td style={{ fontWeight: 600 }}>{product.name}</td>
-      <td className="mono">{product.sku}</td>
-      <td className="tabular" style={{ textAlign: "right" }}>
-        {product.stock}
-      </td>
-      <td className="tabular" style={{ textAlign: "right" }}>
-        {product.minStock}
-      </td>
-      <td className="tabular" style={{ textAlign: "right" }}>
-        {formatUsd(round2(product.cost * Math.max(0, product.stock)))}
-      </td>
-      <td>
-        {product.minStock > 0 && product.stock <= product.minStock ? (
-          <Badge tone="warning" icon="alert">Stock bajo</Badge>
-        ) : (
-          <Badge tone="success" icon="check">Disponible</Badge>
-        )}
-      </td>
-      <td>
-        <button
-          className="btn btn--soft btn--sm"
-          onClick={() => onAdjust(product.id, product.stock)}
-        >
-          Ajustar
-        </button>
-      </td>
-    </tr>
-  );
-});
+
 
 export function Inventario() {
   const products = useStoreSelector((s) => s.products);
@@ -218,7 +180,32 @@ export function Inventario() {
                   <th />
                 </tr>
               }
-              renderRow={(p) => <StockRow product={p} onAdjust={openAdjust} />}
+              renderRow={(p) => {
+                const low = p.trackStock && p.minStock > 0 && p.stock <= p.minStock;
+                const out = p.trackStock && p.stock <= 0;
+                return (
+                  <tr>
+                    <td data-label="Producto">
+                      <div style={{ fontWeight: 600 }}>{p.name}</div>
+                      <div className="dim" style={{ fontSize: "0.72rem" }}>
+                        {p.category} · {p.presentationQty} {p.unit}
+                      </div>
+                    </td>
+                    <td data-label="SKU">{p.sku || p.barcode || "—"}</td>
+                    <td data-label="Existencia" className="tabular" style={{ textAlign: "right" }}>
+                      {p.trackStock ? <span className={low || out ? "text-warning" : ""}>{p.stock}</span> : <span className="dim">—</span>}
+                    </td>
+                    <td data-label="Mínimo" className="tabular" style={{ textAlign: "right" }}>{p.trackStock ? p.minStock : "—"}</td>
+                    <td data-label="Valor (costo)" className="tabular" style={{ textAlign: "right" }}>{formatUsd(p.cost * (p.stock||0))}</td>
+                    <td data-label="Estado">
+                      {out ? <Badge tone="warning">Agotado</Badge> : low ? <Badge tone="warning">Bajo</Badge> : <Badge tone="accent">OK</Badge>}
+                    </td>
+                    <td data-label="Acciones" style={{ textAlign: "right" }}>
+                      <button className="btn btn--ghost btn--sm" onClick={() => openAdjust(p.id, p.stock)}>Ajustar</button>
+                    </td>
+                  </tr>
+                );
+              }}
             />
           )}
         </div>
@@ -248,22 +235,22 @@ export function Inventario() {
               }
               renderRow={(m) => (
                 <tr key={m.id}>
-                  <td className="dim" style={{ whiteSpace: "nowrap" }}>
+                  <td data-label="Fecha" className="dim" style={{ whiteSpace: "nowrap" }}>
                     {new Date(m.at).toLocaleString()}
                   </td>
-                  <td style={{ fontWeight: 600 }}>{m.productName}</td>
-                  <td>
+                  <td data-label="Producto" style={{ fontWeight: 600 }}>{m.productName}</td>
+                  <td data-label="Tipo">
                     <Badge tone={m.kind === "entrada" ? "accent" : "neutral"}>
-                      {m.kind === "entrada" ? "Entrada" : "Salida"}
+                      {((k) => k === "entrada" ? "Entrada" : k === "ajuste" ? "Ajuste" : k === "traslado" ? "Traslado" : "Salida")(m.kind as string)}
                     </Badge>
                   </td>
-                  <td className="tabular" style={{ textAlign: "right" }}>
+                  <td data-label="Cantidad" className="tabular" style={{ textAlign: "right" }}>
                     {m.qty}
                   </td>
-                  <td className="tabular" style={{ textAlign: "right" }}>
+                  <td data-label="Costo unit." className="tabular" style={{ textAlign: "right" }}>
                     {formatUsd(round2(m.costUnit))}
                   </td>
-                  <td>
+                  <td data-label="Origen">
                     {m.origin}
                     {m.ref ? <span className="dim"> · {m.ref}</span> : null}
                   </td>
@@ -297,22 +284,22 @@ export function Inventario() {
               }
               renderRow={(c) => (
                 <tr key={c.id}>
-                  <td className="dim" style={{ whiteSpace: "nowrap" }}>
+                  <td data-label="Fecha" className="dim" style={{ whiteSpace: "nowrap" }}>
                     {new Date(c.at).toLocaleString()}
                   </td>
-                  <td style={{ fontWeight: 600 }}>{c.supplierName}</td>
-                  <td className="dim">
+                  <td data-label="Proveedor" style={{ fontWeight: 600 }}>{c.supplierName}</td>
+                  <td data-label="Pago" className="dim">
                     {c.paymentMethod === "credito"
                       ? "Crédito (por pagar)"
                       : c.paymentMethod === "cuenta"
                         ? "Cuenta"
                         : "Efectivo"}
                   </td>
-                  <td className="mono">{c.invoiceNo || "—"}</td>
-                  <td className="tabular" style={{ textAlign: "right" }}>
+                  <td data-label="Factura" className="mono">{c.invoiceNo || "—"}</td>
+                  <td data-label="Líneas" className="tabular" style={{ textAlign: "right" }}>
                     {c.lines.length}
                   </td>
-                  <td className="tabular" style={{ textAlign: "right" }}>
+                  <td data-label="Total" className="tabular" style={{ textAlign: "right" }}>
                     {formatUsd(round2(c.totalUsd))}
                   </td>
                 </tr>

@@ -14,10 +14,10 @@ const ContactRow = memo(function ContactRow({
 }) {
   return (
     <tr>
-      <td style={{ fontWeight: 600 }}>{contact.name}</td>
-      <td className="mono">{contact.document}</td>
-      <td>{contact.phone}</td>
-      <td>
+      <td data-label="Nombre" style={{ fontWeight: 600 }}>{contact.name}</td>
+      <td data-label="Documento" className="mono">{contact.document}</td>
+      <td data-label="Teléfono">{contact.phone}</td>
+      <td data-label="Es">
         <Badge tone="accent">
           {contact.isClient && contact.isProvider
             ? "Ambos"
@@ -28,8 +28,8 @@ const ContactRow = memo(function ContactRow({
                 : "—"}
         </Badge>
       </td>
-      <td>{contact.creditDays ? `${contact.creditDays} días` : "—"}</td>
-      <td>
+      <td data-label="Crédito">{contact.creditDays ? `${contact.creditDays} días` : "—"}</td>
+      <td data-label="Acciones">
         <button className="btn btn--danger btn--sm" onClick={() => onRemove(contact.id)}>
           Eliminar
         </button>

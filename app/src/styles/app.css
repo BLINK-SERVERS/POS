@@ -1,7 +1,34 @@
 /* ============================================================
    BLINK POS — Estilos de la aplicación
-   Paleta de 3 colores: #FFFEFB (fondos) · #007AFF (acento) · #424242 (texto)
+   Paleta de colores oficial Blink
    ============================================================ */
+
+/* Design tokens - Paleta oficial Blink */
+:root {
+  --blink-bg-main: #FFFEFB;
+  --blink-primary: #007AFF;
+  --blink-text-muted: #424242;
+  --blink-success: #34A853;
+  --blink-danger: #EA4335;
+  --blink-warning: #FBBC05;
+  --blink-dark: #1D1D1F;
+  
+  /* Map to existing tokens for compatibility */
+  --color-bg-primary: #FFFEFB;
+  --color-bg-elevated: #FFFEFB;
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #424242;
+  --color-text-tertiary: #424242;
+  --color-text-inverse: #FFFEFB;
+  --color-accent: #007AFF;
+  --color-accent-hover: #0062cc;
+  --color-accent-soft: rgba(0, 122, 255, 0.08);
+  --color-accent-soft-strong: rgba(0, 122, 255, 0.16);
+  --color-accent-ring: rgba(0, 122, 255, 0.25);
+  --color-border: rgba(66, 66, 66, 0.16);
+  --color-border-strong: rgba(66, 66, 66, 0.28);
+  --color-neutral-soft: rgba(66, 66, 66, 0.06);
+}
 
 /* --- Reset / base --- */
 *,
@@ -498,7 +525,7 @@ svg {
 }
 
 /* ============================================================
-   Tablas
+   Tablas - Modelo Híbrido (PC: Tabla / Móvil: Tarjetas)
    ============================================================ */
 .table-wrap {
   overflow-x: auto;
@@ -540,6 +567,61 @@ table.data tbody tr:hover {
   top: 0;
   z-index: 1;
   background: var(--color-bg-primary);
+}
+
+/* Modelo híbrido: En móvil, convertir tabla a tarjetas */
+@media (max-width: 767px) {
+  .table-wrap {
+    border: none;
+    background: transparent;
+    overflow-x: visible;
+  }
+  table.data thead {
+    display: none;
+  }
+  table.data tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  table.data tbody tr {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-elevated);
+    padding: 0.75rem;
+    gap: 0.35rem;
+  }
+  table.data tbody tr:hover {
+    background: var(--color-bg-elevated);
+  }
+  table.data tbody tr td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.35rem 0;
+    border-bottom: 1px dashed var(--color-border);
+    text-align: right;
+  }
+  table.data tbody tr td:last-child {
+    border-bottom: none;
+    justify-content: flex-end;
+  }
+  table.data tbody tr td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-align: left;
+    margin-right: 1rem;
+  }
+  table.data tbody tr td:first-child {
+    font-weight: 700;
+    font-size: var(--fs-base);
+  }
+  table.data tbody tr td:first-child::before {
+    display: none;
+  }
 }
 
 /* ============================================================
@@ -698,6 +780,10 @@ table.data tbody tr:hover {
 
 .sidenav__brand {
   padding: 0.25rem 0.5rem 0.75rem;
+}
+.sidenav__brand .brand {
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .rate-chip {

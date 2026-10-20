@@ -1,6 +1,6 @@
 // Shell de la aplicación: topbar + sidebar + contenedor de página.
 import { useState, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
@@ -91,10 +91,10 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className={"shell" + (navOpen ? " shell--nav-open" : "")}>
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
-          <span className="brand brand--lg">
+          <Link to="/vender" className="brand brand--lg" aria-label="Ir a ventas">
             <span className="brand__blink">BLINK</span>
             <span className="brand__pos">POS</span>
-          </span>
+          </Link>
         </div>
 
         <div className="nav-group">Principal</div>
