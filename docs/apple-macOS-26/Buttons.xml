@@ -1,0 +1,202 @@
+<canvas id="207:14487" name="Buttons" x="0" y="0" width="0" height="0">
+  <section id="121:11922" name="Push Buttons" x="0" y="2.2737367544323206e-13" width="720" height="530">
+    <frame id="121:11923" name="Push Button" x="50" y="50" width="595" height="420">
+      <symbol id="502:7633" name="Style=Borderless, On=True, State=Disabled, Active Window=False" x="500" y="380" width="67" height="24" />
+      <symbol id="502:7635" name="Style=Borderless (Bezel shows On), On=True, State=Disabled, Active Window=False" x="420" y="380" width="67" height="24" />
+      <symbol id="502:7638" name="Style=Default / Preferred, On=True, State=Disabled, Active Window=False" x="340" y="380" width="67" height="24" />
+      <symbol id="502:7641" name="Style=Bordered Secondary, On=True, State=Disabled, Active Window=False" x="180" y="380" width="67" height="24" />
+      <symbol id="502:7644" name="Style=Bordered Colored, On=True, State=Disabled, Active Window=False" x="100" y="380" width="67" height="24" />
+      <symbol id="502:7647" name="Style=Bordered Neutral, On=True, State=Disabled, Active Window=False" x="20" y="380" width="67" height="24" />
+      <symbol id="502:7650" name="Style=Borderless, On=True, State=Clicked, Active Window=False" x="500" y="350" width="67" height="24" />
+      <symbol id="502:7652" name="Style=Borderless (Bezel shows On), On=True, State=Clicked, Active Window=False" x="420" y="350" width="67" height="24" />
+      <symbol id="502:7655" name="Style=Default / Preferred, On=True, State=Clicked, Active Window=False" x="340" y="350" width="67" height="24" />
+      <symbol id="502:7658" name="Style=Bordered Secondary, On=True, State=Clicked, Active Window=False" x="180" y="350" width="67" height="24" />
+      <symbol id="502:7661" name="Style=Bordered Colored, On=True, State=Clicked, Active Window=False" x="100" y="350" width="67" height="24" />
+      <symbol id="502:7664" name="Style=Bordered Neutral, On=True, State=Clicked, Active Window=False" x="20" y="350" width="67" height="24" />
+      <symbol id="502:7667" name="Style=Borderless, On=True, State=Idle, Active Window=False" x="500" y="320" width="67" height="24" />
+      <symbol id="502:7669" name="Style=Borderless (Bezel shows On), On=True, State=Idle, Active Window=False" x="420" y="320" width="67" height="24" />
+      <symbol id="502:7672" name="Style=Default / Preferred, On=True, State=Idle, Active Window=False" x="340" y="320" width="67" height="24" />
+      <symbol id="502:7675" name="Style=Bordered Secondary, On=True, State=Idle, Active Window=False" x="180" y="320" width="67" height="24" />
+      <symbol id="502:7678" name="Style=Bordered Colored, On=True, State=Idle, Active Window=False" x="100" y="320" width="67" height="24" />
+      <symbol id="502:7681" name="Style=Bordered Neutral, On=True, State=Idle, Active Window=False" x="20" y="320" width="67" height="24" />
+      <symbol id="502:7684" name="Style=Borderless, On=False, State=Disabled, Active Window=False" x="500" y="280" width="67" height="24" />
+      <symbol id="502:7686" name="Style=Borderless (Bezel shows On), On=False, State=Disabled, Active Window=False" x="420" y="280" width="67" height="24" />
+      <symbol id="502:7689" name="Style=Default / Preferred, On=False, State=Disabled, Active Window=False" x="340" y="280" width="67" height="24" />
+      <symbol id="502:7692" name="Style=Bordered Destructive, On=False, State=Disabled, Active Window=False" x="260" y="280" width="67" height="24" />
+      <symbol id="502:7695" name="Style=Bordered Destructive, On=True, State=Disabled, Active Window=False" x="260" y="380" width="67" height="24" />
+      <symbol id="502:7698" name="Style=Bordered Secondary, On=False, State=Disabled, Active Window=False" x="180" y="280" width="67" height="24" />
+      <symbol id="502:7701" name="Style=Bordered Colored, On=False, State=Disabled, Active Window=False" x="100" y="280" width="67" height="24" />
+      <symbol id="502:7704" name="Style=Bordered Neutral, On=False, State=Disabled, Active Window=False" x="20" y="280" width="67" height="24" />
+      <symbol id="502:7707" name="Style=Borderless, On=False, State=Clicked, Active Window=False" x="500" y="250" width="67" height="24" />
+      <symbol id="502:7709" name="Style=Borderless (Bezel shows On), On=False, State=Clicked, Active Window=False" x="420" y="250" width="67" height="24" />
+      <symbol id="502:7712" name="Style=Bordered Destructive, On=False, State=Clicked, Active Window=False" x="260" y="250" width="67" height="24" />
+      <symbol id="502:7715" name="Style=Default / Preferred, On=False, State=Clicked, Active Window=False" x="340" y="250" width="67" height="24" />
+      <symbol id="502:7718" name="Style=Bordered Destructive, On=True, State=Clicked, Active Window=False" x="260" y="350" width="67" height="24" />
+      <symbol id="502:7721" name="Style=Bordered Secondary, On=False, State=Clicked, Active Window=False" x="180" y="250" width="67" height="24" />
+      <symbol id="502:7724" name="Style=Bordered Colored, On=False, State=Clicked, Active Window=False" x="100" y="250" width="67" height="24" />
+      <symbol id="502:7727" name="Style=Bordered Neutral, On=False, State=Clicked, Active Window=False" x="20" y="250" width="67" height="24" />
+      <symbol id="502:7730" name="Style=Borderless, On=False, State=Idle, Active Window=False" x="500" y="220" width="67" height="24" />
+      <symbol id="502:7732" name="Style=Bordered Destructive, On=False, State=Idle, Active Window=False" x="260" y="220" width="67" height="24" />
+      <symbol id="502:7735" name="Style=Borderless (Bezel shows On), On=False, State=Idle, Active Window=False" x="420" y="220" width="67" height="24" />
+      <symbol id="502:7738" name="Style=Default / Preferred, On=False, State=Idle, Active Window=False" x="340" y="220" width="67" height="24" />
+      <symbol id="502:7741" name="Style=Bordered Destructive, On=True, State=Idle, Active Window=False" x="260" y="320" width="67" height="24" />
+      <symbol id="502:7744" name="Style=Bordered Secondary, On=False, State=Idle, Active Window=False" x="180" y="220" width="67" height="24" />
+      <symbol id="502:7747" name="Style=Bordered Colored, On=False, State=Idle, Active Window=False" x="100" y="220" width="67" height="24" />
+      <symbol id="502:7750" name="Style=Bordered Neutral, On=False, State=Idle, Active Window=False" x="20" y="220" width="67" height="24" />
+      <symbol id="502:6125" name="Style=Borderless, On=True, State=Disabled, Active Window=True" x="500" y="180" width="67" height="24" />
+      <symbol id="502:6122" name="Style=Borderless (Bezel shows On), On=True, State=Disabled, Active Window=True" x="420" y="180" width="67" height="24" />
+      <symbol id="502:6128" name="Style=Default / Preferred, On=True, State=Disabled, Active Window=True" x="340" y="180" width="67" height="24" />
+      <symbol id="502:6134" name="Style=Bordered Secondary, On=True, State=Disabled, Active Window=True" x="180" y="180" width="67" height="24" />
+      <symbol id="502:6137" name="Style=Bordered Colored, On=True, State=Disabled, Active Window=True" x="100" y="180" width="67" height="24" />
+      <symbol id="502:5939" name="Style=Bordered Neutral, On=True, State=Disabled, Active Window=True" x="20" y="180" width="67" height="24" />
+      <symbol id="502:6068" name="Style=Borderless, On=True, State=Clicked, Active Window=True" x="500" y="150" width="67" height="24" />
+      <symbol id="502:6062" name="Style=Borderless (Bezel shows On), On=True, State=Clicked, Active Window=True" x="420" y="150" width="67" height="24" />
+      <symbol id="502:6071" name="Style=Default / Preferred, On=True, State=Clicked, Active Window=True" x="340" y="150" width="67" height="24" />
+      <symbol id="502:6065" name="Style=Bordered Secondary, On=True, State=Clicked, Active Window=True" x="180" y="150" width="67" height="24" />
+      <symbol id="502:6077" name="Style=Bordered Colored, On=True, State=Clicked, Active Window=True" x="100" y="150" width="67" height="24" />
+      <symbol id="502:5936" name="Style=Bordered Neutral, On=True, State=Clicked, Active Window=True" x="20" y="150" width="67" height="24" />
+      <symbol id="502:6038" name="Style=Borderless, On=True, State=Idle, Active Window=True" x="500" y="120" width="67" height="24" />
+      <symbol id="502:6032" name="Style=Borderless (Bezel shows On), On=True, State=Idle, Active Window=True" x="420" y="120" width="67" height="24" />
+      <symbol id="502:6041" name="Style=Default / Preferred, On=True, State=Idle, Active Window=True" x="340" y="120" width="67" height="24" />
+      <symbol id="502:6035" name="Style=Bordered Secondary, On=True, State=Idle, Active Window=True" x="180" y="120" width="67" height="24" />
+      <symbol id="502:6047" name="Style=Bordered Colored, On=True, State=Idle, Active Window=True" x="100" y="120" width="67" height="24" />
+      <symbol id="502:5933" name="Style=Bordered Neutral, On=True, State=Idle, Active Window=True" x="20" y="120" width="67" height="24" />
+      <symbol id="502:6008" name="Style=Borderless, On=False, State=Disabled, Active Window=True" x="500" y="80" width="67" height="24" />
+      <symbol id="502:6005" name="Style=Borderless (Bezel shows On), On=False, State=Disabled, Active Window=True" x="420" y="80" width="67" height="24" />
+      <symbol id="502:6011" name="Style=Default / Preferred, On=False, State=Disabled, Active Window=True" x="340" y="80" width="67" height="24" />
+      <symbol id="502:6014" name="Style=Bordered Destructive, On=False, State=Disabled, Active Window=True" x="260" y="80" width="67" height="24" />
+      <symbol id="502:6256" name="Style=Bordered Destructive, On=True, State=Disabled, Active Window=True" x="260" y="180" width="67" height="24" />
+      <symbol id="502:6017" name="Style=Bordered Secondary, On=False, State=Disabled, Active Window=True" x="180" y="80" width="67" height="24" />
+      <symbol id="502:6002" name="Style=Bordered Colored, On=False, State=Disabled, Active Window=True" x="100" y="80" width="67" height="24" />
+      <symbol id="502:5921" name="Style=Bordered Neutral, On=False, State=Disabled, Active Window=True" x="20" y="80" width="67" height="24" />
+      <symbol id="502:5975" name="Style=Borderless, On=False, State=Clicked, Active Window=True" x="500" y="50" width="67" height="24" />
+      <symbol id="502:5972" name="Style=Borderless (Bezel shows On), On=False, State=Clicked, Active Window=True" x="420" y="50" width="67" height="24" />
+      <symbol id="502:5981" name="Style=Bordered Destructive, On=False, State=Clicked, Active Window=True" x="260" y="50" width="67" height="24" />
+      <symbol id="502:5978" name="Style=Default / Preferred, On=False, State=Clicked, Active Window=True" x="340" y="50" width="67" height="24" />
+      <symbol id="502:6259" name="Style=Bordered Destructive, On=True, State=Clicked, Active Window=True" x="260" y="150" width="67" height="24" />
+      <symbol id="502:5984" name="Style=Bordered Secondary, On=False, State=Clicked, Active Window=True" x="180" y="50" width="67" height="24" />
+      <symbol id="502:5987" name="Style=Bordered Colored, On=False, State=Clicked, Active Window=True" x="100" y="50" width="67" height="24" />
+      <symbol id="502:5915" name="Style=Bordered Neutral, On=False, State=Clicked, Active Window=True" x="20" y="50" width="67" height="24" />
+      <symbol id="502:5872" name="Style=Borderless, On=False, State=Idle, Active Window=True" x="500" y="20" width="67" height="24" />
+      <symbol id="502:5860" name="Style=Bordered Destructive, On=False, State=Idle, Active Window=True" x="260" y="20" width="67" height="24" />
+      <symbol id="502:5878" name="Style=Borderless (Bezel shows On), On=False, State=Idle, Active Window=True" x="420" y="20" width="67" height="24" />
+      <symbol id="502:5866" name="Style=Default / Preferred, On=False, State=Idle, Active Window=True" x="340" y="20" width="67" height="24" />
+      <symbol id="502:6262" name="Style=Bordered Destructive, On=True, State=Idle, Active Window=True" x="260" y="120" width="67" height="24" />
+      <symbol id="502:5854" name="Style=Bordered Secondary, On=False, State=Idle, Active Window=True" x="180" y="20" width="67" height="24" />
+      <symbol id="501:5842" name="Style=Bordered Colored, On=False, State=Idle, Active Window=True" x="100" y="20" width="67" height="24" />
+      <symbol id="121:11924" name="Style=Bordered Neutral, On=False, State=Idle, Active Window=True" x="20" y="20" width="67" height="24" />
+    </frame>
+  </section>
+  <instance id="453:3518" name="Header" x="0" y="-500" width="1400" height="208" />
+  <section id="483:5663" name="Arrow Buttons" x="0" y="670" width="170" height="240">
+    <frame id="483:5553" name="Arrow Buttons" x="50" y="50" width="70" height="150">
+      <symbol id="483:5563" name="State=Disabled" x="20" y="100" width="24" height="24" />
+      <symbol id="483:5566" name="State=Clicked" x="20" y="60" width="24" height="24" />
+      <symbol id="483:5569" name="State=Idle" x="20" y="20" width="24" height="24" />
+    </frame>
+  </section>
+  <section id="483:5664" name="Examples" x="790" y="670" width="280" height="230">
+    <instance id="483:5679" name="Arrow Buttons" x="120" y="150" width="24" height="24" />
+    <instance id="483:5681" name="Arrow Buttons" x="160" y="150" width="28" height="28" />
+    <instance id="483:5682" name="Arrow Buttons" x="50" y="150" width="16" height="16" />
+    <instance id="483:5683" name="Arrow Buttons" x="120" y="100" width="24" height="24" />
+    <instance id="483:5684" name="Arrow Buttons" x="80" y="150" width="20" height="20" />
+    <instance id="483:5685" name="Arrow Buttons" x="160" y="100" width="28" height="28" />
+    <instance id="483:5686" name="Arrow Buttons" x="200" y="150" width="36" height="36" />
+    <instance id="483:5687" name="Arrow Buttons" x="120" y="50" width="24" height="24" />
+    <instance id="483:5688" name="Arrow Buttons" x="160" y="50" width="28" height="28" />
+    <instance id="483:5689" name="Arrow Buttons" x="50" y="100" width="16" height="16" />
+    <instance id="483:5690" name="Arrow Buttons" x="80" y="100" width="20" height="20" />
+    <instance id="483:5691" name="Arrow Buttons" x="200" y="100" width="36" height="36" />
+    <instance id="483:5692" name="Arrow Buttons" x="50" y="50" width="16" height="16" />
+    <instance id="483:5693" name="Arrow Buttons" x="80" y="50" width="20" height="20" />
+    <instance id="483:5694" name="Arrow Buttons" x="200" y="50" width="36" height="36" />
+  </section>
+  <section id="502:7841" name="Examples" x="790" y="0" width="810" height="580">
+    <instance id="502:7887" name="Push Button" x="662" y="504" width="120" height="24" />
+    <instance id="502:7888" name="Push Button" x="532" y="504" width="120" height="24" />
+    <instance id="502:7889" name="Push Button" x="442" y="504" width="81" height="24" />
+    <instance id="502:7890" name="Push Button" x="222" y="504" width="100" height="24" />
+    <instance id="502:7891" name="Push Button" x="132" y="504" width="82" height="24" />
+    <instance id="502:7892" name="Push Button" x="42" y="504" width="78" height="24" />
+    <instance id="502:7893" name="Push Button" x="662" y="464" width="120" height="24" />
+    <instance id="502:7894" name="Push Button" x="532" y="464" width="120" height="24" />
+    <instance id="502:7895" name="Push Button" x="442" y="464" width="81" height="24" />
+    <instance id="502:7896" name="Push Button" x="222" y="464" width="100" height="24" />
+    <instance id="502:7897" name="Push Button" x="132" y="464" width="82" height="24" />
+    <instance id="502:7898" name="Push Button" x="42" y="464" width="78" height="24" />
+    <instance id="502:7899" name="Push Button" x="662" y="424" width="120" height="24" />
+    <instance id="502:7900" name="Push Button" x="532" y="424" width="120" height="24" />
+    <instance id="502:7901" name="Push Button" x="442" y="424" width="81" height="24" />
+    <instance id="502:7902" name="Push Button" x="222" y="424" width="100" height="24" />
+    <instance id="502:7903" name="Push Button" x="132" y="424" width="82" height="24" />
+    <instance id="502:7904" name="Push Button" x="42" y="424" width="78" height="24" />
+    <instance id="502:7905" name="Push Button" x="662" y="374" width="120" height="24" />
+    <instance id="502:7906" name="Push Button" x="532" y="374" width="120" height="24" />
+    <instance id="502:7907" name="Push Button" x="442" y="374" width="81" height="24" />
+    <instance id="502:7908" name="Push Button" x="332" y="374" width="105" height="24" />
+    <instance id="502:7909" name="Push Button" x="332" y="504" width="105" height="24" />
+    <instance id="502:7910" name="Push Button" x="222" y="374" width="100" height="24" />
+    <instance id="502:7911" name="Push Button" x="132" y="374" width="82" height="24" />
+    <instance id="502:7912" name="Push Button" x="42" y="374" width="78" height="24" />
+    <instance id="502:7913" name="Push Button" x="662" y="334" width="120" height="24" />
+    <instance id="502:7914" name="Push Button" x="532" y="334" width="120" height="24" />
+    <instance id="502:7915" name="Push Button" x="332" y="334" width="105" height="24" />
+    <instance id="502:7916" name="Push Button" x="442" y="334" width="81" height="24" />
+    <instance id="502:7917" name="Push Button" x="332" y="464" width="105" height="24" />
+    <instance id="502:7918" name="Push Button" x="222" y="334" width="100" height="24" />
+    <instance id="502:7919" name="Push Button" x="132" y="334" width="82" height="24" />
+    <instance id="502:7920" name="Push Button" x="42" y="334" width="78" height="24" />
+    <instance id="502:7921" name="Push Button" x="662" y="294" width="120" height="24" />
+    <instance id="502:7922" name="Push Button" x="332" y="294" width="105" height="24" />
+    <instance id="502:7923" name="Push Button" x="532" y="294" width="120" height="24" />
+    <instance id="502:7924" name="Push Button" x="442" y="294" width="81" height="24" />
+    <instance id="502:7925" name="Push Button" x="332" y="424" width="105" height="24" />
+    <instance id="502:7926" name="Push Button" x="222" y="294" width="100" height="24" />
+    <instance id="502:7927" name="Push Button" x="132" y="294" width="82" height="24" />
+    <instance id="502:7928" name="Push Button" x="42" y="294" width="78" height="24" />
+    <instance id="502:7929" name="Push Button" x="662" y="244" width="120" height="24" />
+    <instance id="502:7930" name="Push Button" x="532" y="244" width="120" height="24" />
+    <instance id="502:7931" name="Push Button" x="442" y="244" width="81" height="24" />
+    <instance id="502:7932" name="Push Button" x="222" y="244" width="100" height="24" />
+    <instance id="502:7933" name="Push Button" x="132" y="244" width="82" height="24" />
+    <instance id="502:7934" name="Push Button" x="42" y="244" width="78" height="24" />
+    <instance id="502:7935" name="Push Button" x="662" y="204" width="120" height="24" />
+    <instance id="502:7936" name="Push Button" x="532" y="204" width="120" height="24" />
+    <instance id="502:7937" name="Push Button" x="442" y="204" width="81" height="24" />
+    <instance id="502:7938" name="Push Button" x="222" y="204" width="100" height="24" />
+    <instance id="502:7939" name="Push Button" x="132" y="204" width="82" height="24" />
+    <instance id="502:7940" name="Push Button" x="42" y="204" width="78" height="24" />
+    <instance id="502:7941" name="Push Button" x="662" y="164" width="120" height="24" />
+    <instance id="502:7942" name="Push Button" x="532" y="164" width="120" height="24" />
+    <instance id="502:7943" name="Push Button" x="442" y="164" width="81" height="24" />
+    <instance id="502:7944" name="Push Button" x="222" y="164" width="100" height="24" />
+    <instance id="502:7945" name="Push Button" x="132" y="164" width="82" height="24" />
+    <instance id="502:7946" name="Push Button" x="42" y="164" width="78" height="24" />
+    <instance id="502:7947" name="Push Button" x="662" y="114" width="120" height="24" />
+    <instance id="502:7948" name="Push Button" x="532" y="114" width="120" height="24" />
+    <instance id="502:7949" name="Push Button" x="442" y="114" width="81" height="24" />
+    <instance id="502:7950" name="Push Button" x="332" y="114" width="105" height="24" />
+    <instance id="502:7951" name="Push Button" x="332" y="244" width="105" height="24" />
+    <instance id="502:7952" name="Push Button" x="222" y="114" width="100" height="24" />
+    <instance id="502:7953" name="Push Button" x="132" y="114" width="82" height="24" />
+    <instance id="502:7954" name="Push Button" x="42" y="114" width="78" height="24" />
+    <instance id="502:7955" name="Push Button" x="662" y="74" width="120" height="24" />
+    <instance id="502:7956" name="Push Button" x="532" y="74" width="120" height="24" />
+    <instance id="502:7957" name="Push Button" x="332" y="74" width="105" height="24" />
+    <instance id="502:7958" name="Push Button" x="442" y="74" width="81" height="24" />
+    <instance id="502:7959" name="Push Button" x="332" y="204" width="105" height="24" />
+    <instance id="502:7960" name="Push Button" x="222" y="74" width="100" height="24" />
+    <instance id="502:7961" name="Push Button" x="132" y="74" width="82" height="24" />
+    <instance id="502:7962" name="Push Button" x="42" y="74" width="78" height="24" />
+    <instance id="502:7963" name="Push Button" x="662" y="34" width="120" height="24" />
+    <instance id="502:7964" name="Push Button" x="332" y="34" width="105" height="24" />
+    <instance id="502:7965" name="Push Button" x="532" y="34" width="120" height="24" />
+    <instance id="502:7966" name="Push Button" x="442" y="34" width="81" height="24" />
+    <instance id="502:7967" name="Push Button" x="332" y="164" width="105" height="24" />
+    <instance id="502:7968" name="Push Button" x="222" y="34" width="100" height="24" />
+    <instance id="502:7969" name="Push Button" x="132" y="34" width="82" height="24" />
+    <instance id="502:7970" name="Push Button" x="42" y="34" width="78" height="24" />
+  </section>
+</canvas>
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.

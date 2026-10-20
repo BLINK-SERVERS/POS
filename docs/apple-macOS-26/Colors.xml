@@ -1,0 +1,74 @@
+<canvas id="0:687" name="Colors" x="0" y="0" width="0" height="0">
+  <symbol id="484:9569" name="_Swatch - Light and Dark" x="0" y="1300" width="160" height="160" />
+  <symbol id="485:9762" name="_Swatch - Light and Dark (Vibrant)" x="400" y="1300" width="160" height="160" />
+  <symbol id="486:10091" name="_Swatch - Text - Light and Dark (Vibrant)" x="600" y="1300" width="160" height="160" />
+  <symbol id="486:10153" name="_Swatch - Text - Light and Dark (Vibrant)" x="200" y="1300" width="160" height="160" />
+  <frame id="0:765" name="Colors" x="0" y="0" width="2480" height="1180">
+    <frame id="486:10164" name="Frame 1" x="1160" y="660" width="1110" height="160">
+      <instance id="486:10166" name="Primary" x="0" y="0" width="160" height="160" />
+      <instance id="486:10177" name="Secondary" x="190" y="0" width="160" height="160" />
+      <instance id="486:10187" name="Tertiary" x="380" y="0" width="160" height="160" />
+      <instance id="486:10197" name="Quaternary" x="570" y="0" width="160" height="160" />
+      <instance id="486:10207" name="Quinary" x="760" y="0" width="160" height="160" />
+      <instance id="486:10217" name="Seximal" x="950" y="0" width="160" height="160" />
+    </frame>
+    <frame id="486:10236" name="Frame 2" x="1160" y="950" width="920" height="160">
+      <instance id="486:10237" name="Primary" x="0" y="0" width="160" height="160" />
+      <instance id="486:10238" name="Secondary" x="190" y="0" width="160" height="160" />
+      <instance id="486:10239" name="Tertiary" x="380" y="0" width="160" height="160" />
+      <instance id="486:10240" name="Quaternary" x="570" y="0" width="160" height="160" />
+      <instance id="486:10241" name="Quinary" x="760" y="0" width="160" height="160" />
+    </frame>
+    <frame id="486:10038" name="Fills - Vibrant" x="20" y="950" width="920" height="160">
+      <instance id="486:10008" name="Swatch - Fills - Vibrant" x="0" y="0" width="160" height="160" />
+      <instance id="486:10009" name="Swatch - Fills - Vibrant" x="190" y="0" width="160" height="160" />
+      <instance id="486:10010" name="Swatch - Fills - Vibrant" x="380" y="0" width="160" height="160" />
+      <instance id="486:10011" name="Swatch - Fills - Vibrant" x="570" y="0" width="160" height="160" />
+      <instance id="486:10012" name="Swatch - Fills - Vibrant" x="760" y="0" width="160" height="160" />
+    </frame>
+    <frame id="486:10039" name="Fills" x="20" y="660" width="920" height="160">
+      <instance id="486:9977" name="Swatch - Fills" x="0" y="0" width="160" height="160" />
+      <instance id="486:9984" name="Swatch - Fills" x="190" y="0" width="160" height="160" />
+      <instance id="486:9990" name="Swatch - Fills" x="380" y="0" width="160" height="160" />
+      <instance id="486:9996" name="Swatch - Fills" x="570" y="0" width="160" height="160" />
+      <instance id="486:10002" name="Swatch - Fills" x="760" y="0" width="160" height="160" />
+    </frame>
+    <frame id="485:9770" name="Accents - Vibrant" x="18" y="370" width="2250" height="160">
+      <instance id="485:9763" name="Red" x="0" y="0" width="160" height="160" />
+      <instance id="485:9771" name="Orange" x="190" y="0" width="160" height="160" />
+      <instance id="485:9777" name="Yellow" x="380" y="0" width="160" height="160" />
+      <instance id="485:9783" name="Green" x="570" y="0" width="160" height="160" />
+      <instance id="485:9789" name="Mint" x="760" y="0" width="160" height="160" />
+      <instance id="485:9795" name="Teal" x="950" y="0" width="160" height="160" />
+      <instance id="485:9801" name="Cyan" x="1140" y="0" width="160" height="160" />
+      <instance id="485:9807" name="Blue" x="1330" y="0" width="160" height="160" />
+      <instance id="485:9813" name="Indigo" x="1520" y="0" width="160" height="160" />
+      <instance id="485:9819" name="Purple" x="1710" y="0" width="160" height="160" />
+      <instance id="485:9825" name="Pink" x="1900" y="0" width="160" height="160" />
+      <instance id="485:9831" name="Brown" x="2090" y="0" width="160" height="160" />
+    </frame>
+    <frame id="485:9769" name="Accents" x="18" y="100" width="2440" height="160">
+      <instance id="485:9671" name="Red" x="0" y="0" width="160" height="160" />
+      <instance id="485:9672" name="Orange" x="190" y="0" width="160" height="160" />
+      <instance id="485:9673" name="Yellow" x="380" y="0" width="160" height="160" />
+      <instance id="485:9674" name="Green" x="570" y="0" width="160" height="160" />
+      <instance id="485:9675" name="Mint" x="760" y="0" width="160" height="160" />
+      <instance id="485:9676" name="Teal" x="950" y="0" width="160" height="160" />
+      <instance id="485:9677" name="Cyan" x="1140" y="0" width="160" height="160" />
+      <instance id="485:9678" name="Blue" x="1330" y="0" width="160" height="160" />
+      <instance id="485:9679" name="Indigo" x="1520" y="0" width="160" height="160" />
+      <instance id="485:9680" name="Purple" x="1710" y="0" width="160" height="160" />
+      <instance id="485:9681" name="Pink" x="1900" y="0" width="160" height="160" />
+      <instance id="485:9682" name="Brown" x="2090" y="0" width="160" height="160" />
+      <instance id="485:9683" name="Gray" x="2280" y="0" width="160" height="160" />
+    </frame>
+    <text id="0:819" name="Text - Vibrant" x="1160" y="877" width="103" height="16" />
+    <text id="0:829" name="Text" x="1160" y="587" width="33" height="16" />
+    <text id="0:833" name="Opaque System Colors" x="20" y="587" width="31" height="16" />
+    <text id="486:10298" name="Opaque System Colors" x="20" y="877" width="102" height="16" />
+    <text id="0:846" name="Vibrant Tint Colors" x="20" y="307" width="132" height="16" />
+    <text id="0:858" name="Opaque Tint Colors" x="20" y="37" width="62" height="16" />
+  </frame>
+  <instance id="454:3530" name="Header" x="0" y="-500" width="1400" height="242" />
+</canvas>
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.

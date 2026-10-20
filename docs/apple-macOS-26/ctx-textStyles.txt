@@ -1,0 +1,2 @@
+You currently have nothing selected. You need to select a layer first before using this tool.
+Figma Debug UUID: 99fa40c0-473e-43aa-9ed2-1caed4bc0449

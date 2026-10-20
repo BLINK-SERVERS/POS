@@ -1,0 +1,71 @@
+<canvas id="207:14499" name="Lists and Tables" x="0" y="0" width="0" height="0">
+  <section id="121:12606" name="List" x="0" y="0" width="1450" height="500">
+    <symbol id="0:2566" name="Group Title" x="1150" y="316" width="200" height="53" />
+    <frame id="121:12779" name="List Item / Secondary Column" x="1150" y="50" width="260" height="183">
+      <symbol id="236:3867" name="BG=Selected, Last Column=False" x="20" y="20" width="100" height="20" />
+      <symbol id="568:2512" name="BG=Selected Inactive, Last Column=False" x="20" y="57" width="100" height="20" />
+      <symbol id="236:3886" name="BG=Selected, Last Column=True" x="140" y="20" width="100" height="20" />
+      <symbol id="568:2515" name="BG=Selected Inactive, Last Column=True" x="140" y="57" width="100" height="20" />
+      <symbol id="121:12780" name="BG=None, Last Column=False" x="20" y="94" width="100" height="20" />
+      <symbol id="236:3865" name="BG=Alternating Gray, Last Column=False" x="20" y="136" width="100" height="20" />
+      <symbol id="236:3881" name="BG=Alternating Gray, Last Column=True" x="140" y="136" width="100" height="20" />
+      <symbol id="567:3026" name="BG=None, Last Column=True" x="140" y="94" width="100" height="20" />
+    </frame>
+    <frame id="121:12646" name="List Item / Primary Column" x="420" y="50" width="710" height="400">
+      <symbol id="236:3586" name="Type=File, BG=Alternating Gray, Level=0, Expanded=False" x="530" y="360" width="160" height="20" />
+      <symbol id="233:4566" name="Type=File, BG=None, Level=0, Expanded=False" x="360" y="360" width="160" height="20" />
+      <symbol id="236:3578" name="Type=Folder, BG=Alternating Gray, Level=4, Expanded=True" x="530" y="310" width="160" height="20" />
+      <symbol id="236:3573" name="Type=Folder, BG=Alternating Gray, Level=3, Expanded=True" x="530" y="280" width="160" height="20" />
+      <symbol id="236:3568" name="Type=Folder, BG=Alternating Gray, Level=2, Expanded=True" x="530" y="250" width="160" height="20" />
+      <symbol id="236:3561" name="Type=Folder, BG=Alternating Gray, Level=1, Expanded=True" x="530" y="220" width="160" height="20" />
+      <symbol id="236:3556" name="Type=Folder, BG=Alternating Gray, Level=0, Expanded=True" x="530" y="190" width="160" height="20" />
+      <symbol id="236:3551" name="Type=Folder, BG=Alternating Gray, Level=4, Expanded=False" x="530" y="140" width="160" height="20" />
+      <symbol id="236:3546" name="Type=Folder, BG=Alternating Gray, Level=3, Expanded=False" x="530" y="110" width="160" height="20" />
+      <symbol id="236:3541" name="Type=Folder, BG=Alternating Gray, Level=2, Expanded=False" x="530" y="80" width="160" height="20" />
+      <symbol id="236:3536" name="Type=Folder, BG=Alternating Gray, Level=1, Expanded=False" x="530" y="50" width="160" height="20" />
+      <symbol id="236:3526" name="Type=Folder, BG=Alternating Gray, Level=0, Expanded=False" x="530" y="20" width="160" height="20" />
+      <symbol id="233:4481" name="Type=Folder, BG=None, Level=4, Expanded=True" x="360" y="310" width="160" height="20" />
+      <symbol id="233:4477" name="Type=Folder, BG=None, Level=3, Expanded=True" x="360" y="280" width="160" height="20" />
+      <symbol id="233:4473" name="Type=Folder, BG=None, Level=2, Expanded=True" x="360" y="250" width="160" height="20" />
+      <symbol id="233:4469" name="Type=Folder, BG=None, Level=1, Expanded=True" x="360" y="220" width="160" height="20" />
+      <symbol id="233:4462" name="Type=Folder, BG=None, Level=0, Expanded=True" x="360" y="190" width="160" height="20" />
+      <symbol id="233:4458" name="Type=Folder, BG=None, Level=4, Expanded=False" x="360" y="140" width="160" height="20" />
+      <symbol id="233:4454" name="Type=Folder, BG=None, Level=3, Expanded=False" x="360" y="110" width="160" height="20" />
+      <symbol id="233:4436" name="Type=Folder, BG=None, Level=2, Expanded=False" x="360" y="80" width="160" height="20" />
+      <symbol id="233:4409" name="Type=Folder, BG=None, Level=1, Expanded=False" x="360" y="50" width="160" height="20" />
+      <symbol id="121:12647" name="Type=Folder, BG=None, Level=0, Expanded=False" x="360" y="20" width="160" height="20" />
+      <symbol id="568:2573" name="Type=File, BG=Selected Inactive, Level=0, Expanded=False" x="190" y="359" width="160" height="20" />
+      <symbol id="568:2578" name="Type=Folder, BG=Selected Inactive, Level=4, Expanded=True" x="190" y="310" width="160" height="20" />
+      <symbol id="568:2583" name="Type=Folder, BG=Selected Inactive, Level=3, Expanded=True" x="190" y="280" width="160" height="20" />
+      <symbol id="568:2588" name="Type=Folder, BG=Selected Inactive, Level=2, Expanded=True" x="190" y="250" width="160" height="20" />
+      <symbol id="568:2593" name="Type=Folder, BG=Selected Inactive, Level=1, Expanded=True" x="190" y="220" width="160" height="20" />
+      <symbol id="568:2598" name="Type=Folder, BG=Selected Inactive, Level=0, Expanded=True" x="190" y="190" width="160" height="20" />
+      <symbol id="568:2603" name="Type=Folder, BG=Selected Inactive, Level=4, Expanded=False" x="190" y="140" width="160" height="20" />
+      <symbol id="568:2608" name="Type=Folder, BG=Selected Inactive, Level=3, Expanded=False" x="190" y="110" width="160" height="20" />
+      <symbol id="568:2613" name="Type=Folder, BG=Selected Inactive, Level=2, Expanded=False" x="190" y="80" width="160" height="20" />
+      <symbol id="568:2618" name="Type=Folder, BG=Selected Inactive, Level=1, Expanded=False" x="190" y="50" width="160" height="20" />
+      <symbol id="568:2623" name="Type=Folder, BG=Selected Inactive, Level=0, Expanded=False" x="190" y="20" width="160" height="20" />
+      <symbol id="236:3515" name="Type=File, BG=Selected, Level=0, Expanded=False" x="20" y="359" width="160" height="20" />
+      <symbol id="236:3510" name="Type=Folder, BG=Selected, Level=4, Expanded=True" x="20" y="310" width="160" height="20" />
+      <symbol id="236:3505" name="Type=Folder, BG=Selected, Level=3, Expanded=True" x="20" y="280" width="160" height="20" />
+      <symbol id="236:3500" name="Type=Folder, BG=Selected, Level=2, Expanded=True" x="20" y="250" width="160" height="20" />
+      <symbol id="236:3495" name="Type=Folder, BG=Selected, Level=1, Expanded=True" x="20" y="220" width="160" height="20" />
+      <symbol id="236:3476" name="Type=Folder, BG=Selected, Level=0, Expanded=True" x="20" y="190" width="160" height="20" />
+      <symbol id="236:3471" name="Type=Folder, BG=Selected, Level=4, Expanded=False" x="20" y="140" width="160" height="20" />
+      <symbol id="236:3460" name="Type=Folder, BG=Selected, Level=3, Expanded=False" x="20" y="110" width="160" height="20" />
+      <symbol id="236:3455" name="Type=Folder, BG=Selected, Level=2, Expanded=False" x="20" y="80" width="160" height="20" />
+      <symbol id="236:3450" name="Type=Folder, BG=Selected, Level=1, Expanded=False" x="20" y="50" width="160" height="20" />
+      <symbol id="233:4587" name="Type=Folder, BG=Selected, Level=0, Expanded=False" x="20" y="20" width="160" height="20" />
+    </frame>
+    <frame id="121:12610" name="Column Header" x="50" y="50" width="350" height="155">
+      <symbol id="121:12611" name="Column=First, Selected=True, Sort=Descending" x="20" y="20" width="150" height="28" />
+      <symbol id="236:3656" name="Column=First, Selected=True, Sort=Ascending" x="20" y="63" width="150" height="28" />
+      <symbol id="233:3774" name="Column=First, Selected=False, Sort=Ascending" x="20" y="106" width="150" height="28" />
+      <symbol id="236:3668" name="Column=Middle, Selected=True, Sort=Descending" x="186" y="20" width="150" height="28" />
+      <symbol id="236:3682" name="Column=Middle, Selected=True, Sort=Ascending" x="186" y="63" width="150" height="28" />
+      <symbol id="233:3891" name="Column=Middle, Selected=False, Sort=Ascending" x="186" y="106" width="150" height="28" />
+    </frame>
+  </section>
+  <instance id="453:3609" name="Header" x="0" y="-500" width="1400" height="208" />
+</canvas>
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.

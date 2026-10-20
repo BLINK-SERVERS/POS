@@ -1,0 +1,157 @@
+<canvas id="483:8848" name="Materials" x="0" y="0" width="0" height="0">
+  <frame id="483:8849" name="Materials - Light" x="0" y="1160" width="1080" height="560">
+    <instance id="483:8854" name="Wallpaper" x="0" y="0" width="1512" height="982" />
+    <rounded-rectangle id="483:8905" name="Ultra Thin" x="850" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8906" name="Thin" x="650" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8907" name="Medium" x="450" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8908" name="Thick" x="250" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8909" name="UltraThick" x="50" y="90" width="160" height="410" />
+    <text id="483:8872" name="UltraThin" x="850" y="50" width="61" height="16" />
+    <text id="483:8873" name="Thin" x="650" y="50" width="29" height="16" />
+    <text id="483:8874" name="Medium" x="450" y="50" width="53" height="16" />
+    <text id="483:8875" name="Thick" x="250" y="50" width="37" height="16" />
+    <text id="483:8876" name="UltraThick" x="50" y="50" width="68" height="16" />
+  </frame>
+  <frame id="536:11067" name="Materials - Dark" x="1720" y="1160" width="1080" height="560">
+    <instance id="483:8852" name="Wallpaper" x="0" y="0" width="1512" height="982" />
+    <rounded-rectangle id="483:8888" name="Ultra Thin" x="850" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8889" name="Thin" x="650" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8890" name="Medium" x="450" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8891" name="Thick" x="250" y="90" width="160" height="410" />
+    <rounded-rectangle id="483:8892" name="UltraThick" x="50" y="90" width="160" height="410" />
+    <text id="483:8855" name="UltraThin" x="850" y="50" width="61" height="16" />
+    <text id="483:8856" name="Thin" x="650" y="50" width="29" height="16" />
+    <text id="483:8857" name="Medium" x="450" y="50" width="53" height="16" />
+    <text id="483:8858" name="Thick" x="250" y="50" width="37" height="16" />
+    <text id="483:8859" name="UltraThick" x="50" y="50" width="68" height="16" />
+  </frame>
+  <instance id="483:9203" name="Header" x="0" y="-500" width="1400" height="242" />
+  <symbol id="483:9219" name="_Colors/Light" x="600" y="930" width="600" height="20" />
+  <symbol id="483:9226" name="_Colors/Dark" x="1720" y="930" width="600" height="20" />
+  <frame id="483:9237" name="Liquid Glass - Large" x="0" y="460" width="400" height="200">
+    <symbol id="483:9238" name="Mode=Dark" x="210" y="20" width="160" height="160" />
+    <symbol id="483:9244" name="Mode=Light" x="20" y="20" width="160" height="160" />
+  </frame>
+  <frame id="483:9250" name="Liquid Glass - Medium" x="0" y="210" width="400" height="200">
+    <symbol id="483:9251" name="Mode=Dark" x="210" y="20" width="160" height="160" />
+    <symbol id="483:9257" name="Mode=Light" x="20" y="20" width="160" height="160" />
+  </frame>
+  <frame id="483:9263" name="Liquid Glass - Small" x="0" y="0" width="170" height="170">
+    <symbol id="483:9276" name="Mode=Dark, State=Primary" x="100" y="100" width="48" height="48" />
+    <symbol id="483:9264" name="Mode=Light, State=Primary" x="20" y="100" width="48" height="48" />
+    <symbol id="483:9282" name="Mode=Dark, State=Default" x="100" y="20" width="48" height="48" />
+    <symbol id="483:9270" name="Mode=Light, State=Default" x="20" y="20" width="48" height="48" />
+  </frame>
+  <frame id="483:9288" name="Dark" x="1720" y="0" width="1000" height="860">
+    <instance id="483:9289" name="_Colors/Dark" x="0" y="0" width="600" height="860" />
+    <frame id="483:9290" name="Frame" x="10" y="30" width="980" height="60">
+      <frame id="483:9291" name="Frame" x="0" y="6" width="645" height="48">
+        <instance id="483:9292" name="BG - Small UI" x="30" y="0" width="80" height="48" />
+        <instance id="483:9293" name="BG - Small UI" x="130" y="0" width="80" height="48" />
+        <instance id="483:9294" name="BG - Small UI" x="230" y="0" width="80" height="48" />
+        <instance id="483:9295" name="BG - Small UI" x="330" y="0" width="80" height="48" />
+        <instance id="483:9296" name="BG - Small UI" x="430" y="0" width="80" height="48" />
+        <instance id="483:9297" name="BG - Small UI" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="483:9298" name="Small UI Dynamic (Over dark background)" x="670" y="0" width="270" height="60" />
+    </frame>
+    <frame id="483:9299" name="Frame" x="10" y="140" width="980" height="60">
+      <frame id="483:9300" name="Frame" x="0" y="6" width="645" height="48">
+        <instance id="483:9301" name="BG - Small UI - Tinted" x="30" y="0" width="80" height="48" />
+        <instance id="483:9302" name="BG - Small UI - Tinted" x="130" y="0" width="80" height="48" />
+        <instance id="483:9303" name="BG - Small UI - Tinted" x="230" y="0" width="80" height="48" />
+        <instance id="483:9304" name="BG - Small UI - Tinted" x="330" y="0" width="80" height="48" />
+        <instance id="483:9305" name="BG - Small UI - Tinted" x="430" y="0" width="80" height="48" />
+        <instance id="483:9306" name="BG - Small UI - Tinted" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="483:9307" name="Small UI Dynamic (Over dark background)" x="670" y="0" width="270" height="60" />
+    </frame>
+    <frame id="483:9308" name="Frame" x="10" y="250" width="980" height="180">
+      <frame id="483:9309" name="Frame" x="0" y="0" width="645" height="180">
+        <instance id="483:9310" name="BG - Medium UI" x="30" y="0" width="585" height="180" />
+      </frame>
+      <text id="483:9311" name="Medium UI Dark Mode" x="670" y="70" width="270" height="40" />
+    </frame>
+    <frame id="483:9312" name="Frame" x="10" y="480" width="980" height="300">
+      <frame id="483:9313" name="Frame" x="0" y="0" width="645" height="300">
+        <instance id="483:9314" name="Liquid Glass - Large" x="30" y="0" width="585" height="300" />
+      </frame>
+      <text id="483:9315" name="Large UI Dark Mode" x="670" y="130" width="270" height="40" />
+    </frame>
+  </frame>
+  <frame id="483:9316" name="Light" x="600" y="0" width="1000" height="860">
+    <instance id="483:9317" name="_Colors/Light" x="0" y="0" width="600" height="860" />
+    <frame id="483:9318" name="Frame" x="10" y="30" width="980" height="60">
+      <frame id="483:9319" name="Frame" x="0" y="6" width="640" height="48">
+        <instance id="483:9320" name="BG - Small UI" x="30" y="0" width="80" height="48" />
+        <instance id="483:9321" name="BG - Small UI" x="130" y="0" width="80" height="48" />
+        <instance id="483:9322" name="BG - Small UI" x="230" y="0" width="80" height="48" />
+        <instance id="483:9323" name="BG - Small UI" x="330" y="0" width="80" height="48" />
+        <instance id="483:9324" name="BG - Small UI" x="430" y="0" width="80" height="48" />
+        <instance id="483:9325" name="BG - Small UI" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="483:9326" name="Small UI Dynamic (Over light background)" x="665" y="0" width="270" height="60" />
+    </frame>
+    <frame id="483:9327" name="Frame" x="10" y="140" width="980" height="60">
+      <frame id="483:9328" name="Frame" x="0" y="6" width="645" height="48">
+        <instance id="483:9329" name="BG - Small UI - Tinted" x="30" y="0" width="80" height="48" />
+        <instance id="483:9330" name="BG - Small UI - Tinted" x="130" y="0" width="80" height="48" />
+        <instance id="483:9331" name="BG - Small UI - Tinted" x="230" y="0" width="80" height="48" />
+        <instance id="483:9332" name="BG - Small UI - Tinted" x="330" y="0" width="80" height="48" />
+        <instance id="483:9333" name="BG - Small UI - Tinted" x="430" y="0" width="80" height="48" />
+        <instance id="483:9334" name="BG - Small UI - Tinted" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="483:9335" name="Small UI Dynamic (Over light background)" x="670" y="0" width="270" height="60" />
+    </frame>
+    <frame id="483:9336" name="Frame" x="10" y="250" width="980" height="180">
+      <frame id="483:9337" name="Frame" x="0" y="0" width="645" height="180">
+        <instance id="483:9338" name="BG - Medium UI" x="30" y="0" width="585" height="180" />
+      </frame>
+      <text id="483:9339" name="Medium UI Light Mode" x="670" y="70" width="270" height="40" />
+    </frame>
+    <frame id="483:9340" name="Frame" x="10" y="480" width="980" height="300">
+      <frame id="483:9341" name="Frame" x="0" y="0" width="645" height="300">
+        <instance id="483:9342" name="BG - Large UI" x="30" y="0" width="585" height="300" />
+      </frame>
+      <text id="483:9343" name="Large UI Light Mode" x="670" y="130" width="270" height="40" />
+    </frame>
+  </frame>
+  <frame id="488:17448" name="Dark" x="1720" y="0" width="1000" height="860">
+    <instance id="488:17449" name="_Colors/Dark" x="0" y="0" width="600" height="860" />
+    <frame id="488:17450" name="Frame" x="10" y="30" width="980" height="60">
+      <frame id="488:17451" name="Frame" x="0" y="6" width="640" height="48">
+        <instance id="488:17452" name="BG - Small UI" x="30" y="0" width="80" height="48" />
+        <instance id="488:17453" name="BG - Small UI" x="130" y="0" width="80" height="48" />
+        <instance id="488:17454" name="BG - Small UI" x="230" y="0" width="80" height="48" />
+        <instance id="488:17455" name="BG - Small UI" x="330" y="0" width="80" height="48" />
+        <instance id="488:17456" name="BG - Small UI" x="430" y="0" width="80" height="48" />
+        <instance id="488:17457" name="BG - Small UI" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="488:17458" name="Small UI Dynamic (Over light background)" x="665" y="0" width="270" height="60" />
+    </frame>
+    <frame id="488:17459" name="Frame" x="10" y="140" width="980" height="60">
+      <frame id="488:17460" name="Frame" x="0" y="6" width="645" height="48">
+        <instance id="488:17461" name="BG - Small UI - Tinted" x="30" y="0" width="80" height="48" />
+        <instance id="488:17462" name="BG - Small UI - Tinted" x="130" y="0" width="80" height="48" />
+        <instance id="488:17463" name="BG - Small UI - Tinted" x="230" y="0" width="80" height="48" />
+        <instance id="488:17464" name="BG - Small UI - Tinted" x="330" y="0" width="80" height="48" />
+        <instance id="488:17465" name="BG - Small UI - Tinted" x="430" y="0" width="80" height="48" />
+        <instance id="488:17466" name="BG - Small UI - Tinted" x="530" y="0" width="80" height="48" />
+      </frame>
+      <text id="488:17467" name="Small UI Dynamic (Over light background)" x="670" y="0" width="270" height="60" />
+    </frame>
+    <frame id="488:17468" name="Frame" x="10" y="250" width="980" height="180">
+      <frame id="488:17469" name="Frame" x="0" y="0" width="645" height="180">
+        <instance id="488:17470" name="BG - Medium UI" x="30" y="0" width="585" height="180" />
+      </frame>
+      <text id="488:17471" name="Medium UI Light Mode" x="670" y="70" width="270" height="40" />
+    </frame>
+    <frame id="488:17472" name="Frame" x="10" y="480" width="980" height="300">
+      <frame id="488:17473" name="Frame" x="0" y="0" width="645" height="300">
+        <instance id="488:17474" name="BG - Large UI" x="30" y="0" width="585" height="300" />
+      </frame>
+      <text id="488:17475" name="Large UI Light Mode" x="670" y="130" width="270" height="40" />
+    </frame>
+  </frame>
+</canvas>
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.

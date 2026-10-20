@@ -1,0 +1,73 @@
+const imgDark = "https://www.figma.com/api/mcp/asset/fc6e3b37-715b-4da3-8fa1-7695153602b6.png";
+
+export default function Fills() {
+  return (
+    <div className="content-stretch flex gap-[30px] items-center relative size-full" data-node-id="486:10039" data-name="Fills">
+      <div className="border-0 border-[var(--component-stroke,#6155f5)] border-solid relative shrink-0 size-[160px]" data-node-id="486:9977" data-name="Swatch - Fills">
+        <div className="absolute bg-size-[auto_auto,20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-[80px] w-[160px]" data-node-id="I486:9977;484:9570" style={{ backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%), url("${imgDark}")` }} data-name="Dark">
+          <div className="absolute bg-[var(--fills---opaque\/primary,rgba(255,255,255,0.1))] h-[60px] left-[20px] rounded-bl-[60px] rounded-br-[60px] top-0 w-[120px]" data-node-id="I486:9977;484:9571" data-name="Swatch" />
+        </div>
+        <div className="absolute bg-size-[20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-0 w-[160px]" data-node-id="I486:9977;484:9572" style={{ backgroundImage: `url("${imgDark}")` }} data-name="Light">
+          <div className="absolute bg-[var(--fills---opaque\/primary,rgba(0,0,0,0.1))] h-[60px] left-[20px] rounded-tl-[60px] rounded-tr-[60px] top-[20px] w-[120px]" data-node-id="I486:9977;484:9573" data-name="Swatch" />
+        </div>
+        <p className="[word-break:break-word] absolute bottom-[110.63%] font-['SF_Pro:Regular'] font-normal leading-[13px] left-0 text-[10px] text-black top-[-18.75%] whitespace-nowrap" data-node-id="I486:9977;484:9574" style={{ fontVariationSettings: '"wdth" 100' }}>
+          Primary
+        </p>
+      </div>
+      <div className="border-0 border-[var(--component-stroke,#6155f5)] border-solid relative shrink-0 size-[160px]" data-node-id="486:9984" data-name="Swatch - Fills">
+        <div className="absolute bg-size-[auto_auto,20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-[80px] w-[160px]" data-node-id="I486:9984;484:9570" style={{ backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%), url("${imgDark}")` }} data-name="Dark">
+          <div className="absolute bg-[var(--fills---opaque\/secondary,rgba(255,255,255,0.08))] h-[60px] left-[20px] rounded-bl-[60px] rounded-br-[60px] top-0 w-[120px]" data-node-id="I486:9984;484:9571" data-name="Swatch" />
+        </div>
+        <div className="absolute bg-size-[20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-0 w-[160px]" data-node-id="I486:9984;484:9572" style={{ backgroundImage: `url("${imgDark}")` }} data-name="Light">
+          <div className="absolute bg-[var(--fills---opaque\/secondary,rgba(0,0,0,0.08))] h-[60px] left-[20px] rounded-tl-[60px] rounded-tr-[60px] top-[20px] w-[120px]" data-node-id="I486:9984;484:9573" data-name="Swatch" />
+        </div>
+        <p className="[word-break:break-word] absolute bottom-[110.63%] font-['SF_Pro:Regular'] font-normal leading-[13px] left-0 text-[10px] text-black top-[-18.75%] whitespace-nowrap" data-node-id="I486:9984;484:9574" style={{ fontVariationSettings: '"wdth" 100' }}>
+          Secondary
+        </p>
+      </div>
+      <div className="border-0 border-[var(--component-stroke,#6155f5)] border-solid relative shrink-0 size-[160px]" data-node-id="486:9990" data-name="Swatch - Fills">
+        <div className="absolute bg-size-[auto_auto,20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-[80px] w-[160px]" data-node-id="I486:9990;484:9570" style={{ backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%), url("${imgDark}")` }} data-name="Dark">
+          <div className="absolute bg-[var(--fills---opaque\/tertiary,rgba(255,255,255,0.05))] h-[60px] left-[20px] rounded-bl-[60px] rounded-br-[60px] top-0 w-[120px]" data-node-id="I486:9990;484:9571" data-name="Swatch" />
+        </div>
+        <div className="absolute bg-size-[20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-0 w-[160px]" data-node-id="I486:9990;484:9572" style={{ backgroundImage: `url("${imgDark}")` }} data-name="Light">
+          <div className="absolute bg-[var(--fills---opaque\/tertiary,rgba(0,0,0,0.05))] h-[60px] left-[20px] rounded-tl-[60px] rounded-tr-[60px] top-[20px] w-[120px]" data-node-id="I486:9990;484:9573" data-name="Swatch" />
+        </div>
+        <p className="[word-break:break-word] absolute bottom-[110.63%] font-['SF_Pro:Regular'] font-normal leading-[13px] left-0 text-[10px] text-black top-[-18.75%] whitespace-nowrap" data-node-id="I486:9990;484:9574" style={{ fontVariationSettings: '"wdth" 100' }}>
+          Tertiary
+        </p>
+      </div>
+      <div className="border-0 border-[var(--component-stroke,#6155f5)] border-solid relative shrink-0 size-[160px]" data-node-id="486:9996" data-name="Swatch - Fills">
+        <div className="absolute bg-size-[auto_auto,20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-[80px] w-[160px]" data-node-id="I486:9996;484:9570" style={{ backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%), url("${imgDark}")` }} data-name="Dark">
+          <div className="absolute bg-[var(--fills---opaque\/quaternary,rgba(255,255,255,0.03))] h-[60px] left-[20px] rounded-bl-[60px] rounded-br-[60px] top-0 w-[120px]" data-node-id="I486:9996;484:9571" data-name="Swatch" />
+        </div>
+        <div className="absolute bg-size-[20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-0 w-[160px]" data-node-id="I486:9996;484:9572" style={{ backgroundImage: `url("${imgDark}")` }} data-name="Light">
+          <div className="absolute bg-[var(--fills---opaque\/quaternary,rgba(0,0,0,0.03))] h-[60px] left-[20px] rounded-tl-[60px] rounded-tr-[60px] top-[20px] w-[120px]" data-node-id="I486:9996;484:9573" data-name="Swatch" />
+        </div>
+        <p className="[word-break:break-word] absolute bottom-[110.63%] font-['SF_Pro:Regular'] font-normal leading-[13px] left-0 text-[10px] text-black top-[-18.75%] whitespace-nowrap" data-node-id="I486:9996;484:9574" style={{ fontVariationSettings: '"wdth" 100' }}>
+          Quaternary
+        </p>
+      </div>
+      <div className="border-0 border-[var(--component-stroke,#6155f5)] border-solid relative shrink-0 size-[160px]" data-node-id="486:10002" data-name="Swatch - Fills">
+        <div className="absolute bg-size-[auto_auto,20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-[80px] w-[160px]" data-node-id="I486:10002;484:9570" style={{ backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%), url("${imgDark}")` }} data-name="Dark">
+          <div className="absolute bg-[var(--fills---opaque\/quinary,rgba(255,255,255,0.02))] h-[60px] left-[20px] rounded-bl-[60px] rounded-br-[60px] top-0 w-[120px]" data-node-id="I486:10002;484:9571" data-name="Swatch" />
+        </div>
+        <div className="absolute bg-size-[20px_20px] bg-top-left h-[80px] left-0 overflow-clip top-0 w-[160px]" data-node-id="I486:10002;484:9572" style={{ backgroundImage: `url("${imgDark}")` }} data-name="Light">
+          <div className="absolute bg-[var(--fills---opaque\/quinary,rgba(0,0,0,0.02))] h-[60px] left-[20px] rounded-tl-[60px] rounded-tr-[60px] top-[20px] w-[120px]" data-node-id="I486:10002;484:9573" data-name="Swatch" />
+        </div>
+        <p className="[word-break:break-word] absolute bottom-[110.63%] font-['SF_Pro:Regular'] font-normal leading-[13px] left-0 text-[10px] text-black top-[-18.75%] whitespace-nowrap" data-node-id="I486:10002;484:9574" style={{ fontVariationSettings: '"wdth" 100' }}>
+          Quinary
+        </p>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: Footnote/Regular: Font(family: "SF Pro", style: Regular, size: 10, weight: 400, lineHeight: 13, letterSpacing: 0).
+The generated code contains image and SVG URL constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These URLs are temporary download sources and expire after 7 days. Download each asset into the project with curl -L, then replace its URL in the generated code with a reference to the downloaded asset. Never use the temporary URLs as runtime image sources.

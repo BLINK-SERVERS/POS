@@ -1,0 +1,58 @@
+<canvas id="207:14500" name="Text Fields" x="0" y="0" width="0" height="0">
+  <frame id="121:12220" name="Text Field" x="0" y="0" width="160" height="290">
+    <symbol id="479:5650" name="Text=True, State=Disabled" x="20" y="240" width="120" height="24" />
+    <symbol id="479:5652" name="Text=True, State=Focused" x="20" y="200" width="120" height="24" />
+    <symbol id="196:8361" name="Text=True, State=Idle" x="20" y="160" width="120" height="24" />
+    <symbol id="196:8358" name="Text=False,State=Disabled" x="20" y="100" width="120" height="24" />
+    <symbol id="121:12243" name="Text=False,State=Focused" x="20" y="60" width="120" height="24" />
+    <symbol id="121:12221" name="Text=False,State=Idle" x="20" y="20" width="120" height="24" />
+  </frame>
+  <instance id="453:3623" name="Header" x="5.684341886080802e-14" y="-500" width="1400" height="208" />
+  <frame id="479:5336" name="_Input Fields" x="0" y="340" width="120" height="150">
+    <symbol id="479:5369" name="State=Disabled, Context=Over-glass Form" x="80" y="110" width="20" height="20" />
+    <symbol id="479:5370" name="State=Focused, Context=Over-glass Form" x="50" y="110" width="20" height="20" />
+    <symbol id="479:5373" name="State=Idle, Context=Over-glass Form" x="20" y="110" width="20" height="20" />
+    <symbol id="479:5405" name="State=Disabled, Context=Over-glass" x="80" y="80" width="20" height="20" />
+    <symbol id="479:5406" name="State=Focused, Context=Over-glass" x="50" y="80" width="20" height="20" />
+    <symbol id="479:5409" name="State=Idle, Context=Over-glass" x="20" y="80" width="20" height="20" />
+    <symbol id="479:5441" name="State=Disabled, Context=Content Area Form" x="80" y="50" width="20" height="20" />
+    <symbol id="479:5442" name="State=Focused, Context=Content Area Form" x="50" y="50" width="20" height="20" />
+    <symbol id="479:5445" name="State=Idle, Context=Content Area Form" x="20" y="50" width="20" height="20" />
+    <symbol id="479:5477" name="State=Disabled, Context=Content Area" x="80" y="20" width="20" height="20" />
+    <symbol id="479:5478" name="State=Focused, Context=Content Area" x="50" y="20" width="20" height="20" />
+    <symbol id="479:5481" name="State=Idle, Context=Content Area" x="20" y="20" width="20" height="20" />
+  </frame>
+  <section id="480:340" name="Examples" x="260" y="0" width="770" height="380">
+    <instance id="480:716" name="Text Field" x="600" y="300" width="120" height="36" />
+    <instance id="480:680" name="Text Field" x="460" y="300" width="120" height="28" />
+    <instance id="480:644" name="Text Field" x="320" y="300" width="120" height="24" />
+    <instance id="480:608" name="Text Field" x="180" y="300" width="120" height="20" />
+    <instance id="480:572" name="Text Field" x="40" y="300" width="120" height="16" />
+    <instance id="480:717" name="Text Field" x="600" y="250" width="120" height="36" />
+    <instance id="480:681" name="Text Field" x="460" y="250" width="120" height="28" />
+    <instance id="480:645" name="Text Field" x="320" y="250" width="120" height="24" />
+    <instance id="480:609" name="Text Field" x="180" y="250" width="120" height="20" />
+    <instance id="480:573" name="Text Field" x="40" y="250" width="120" height="16" />
+    <instance id="480:718" name="Text Field" x="600" y="200" width="120" height="36" />
+    <instance id="480:682" name="Text Field" x="460" y="200" width="120" height="28" />
+    <instance id="480:646" name="Text Field" x="320" y="200" width="120" height="24" />
+    <instance id="480:610" name="Text Field" x="180" y="200" width="120" height="20" />
+    <instance id="480:574" name="Text Field" x="40" y="200" width="120" height="16" />
+    <instance id="480:719" name="Text Field" x="600" y="140" width="120" height="36" />
+    <instance id="480:683" name="Text Field" x="460" y="140" width="120" height="28" />
+    <instance id="480:647" name="Text Field" x="320" y="140" width="120" height="24" />
+    <instance id="480:611" name="Text Field" x="180" y="140" width="120" height="20" />
+    <instance id="480:575" name="Text Field" x="40" y="140" width="120" height="16" />
+    <instance id="480:720" name="Text Field" x="600" y="90" width="120" height="36" />
+    <instance id="480:684" name="Text Field" x="460" y="90" width="120" height="28" />
+    <instance id="480:648" name="Text Field" x="320" y="90" width="120" height="24" />
+    <instance id="480:612" name="Text Field" x="180" y="90" width="120" height="20" />
+    <instance id="480:576" name="Text Field" x="40" y="90" width="120" height="16" />
+    <instance id="480:721" name="Text Field" x="600" y="40" width="120" height="36" />
+    <instance id="480:685" name="Text Field" x="460" y="40" width="120" height="28" />
+    <instance id="480:649" name="Text Field" x="320" y="40" width="120" height="24" />
+    <instance id="480:613" name="Text Field" x="180" y="40" width="120" height="20" />
+    <instance id="480:577" name="Text Field" x="40" y="40" width="120" height="16" />
+  </section>
+</canvas>
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.
