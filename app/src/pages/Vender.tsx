@@ -1,5 +1,5 @@
 // Vender — punto de venta (POS).
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { uid, useStoreActions, useStoreSelector } from "../lib/store";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
@@ -78,44 +78,7 @@ function isDiscountValid(d: Discount, now = Date.now()): boolean {
   return true;
 }
 
-/** Tarjeta de producto memoizada: no se re-renderiza al cambiar el ticket. */
-const ProductCard = memo(function ProductCard({
-  product,
-  rate,
-  onAdd,
-}: {
-  product: Product;
-  rate: number;
-  onAdd: (id: string) => void;
-}) {
-  const soldOut = product.trackStock && product.stock <= 0;
-  const low =
-    product.trackStock && product.minStock > 0 && product.stock > 0 && product.stock <= product.minStock;
-  return (
-    <button type="button" className="prod" onClick={() => onAdd(product.id)} disabled={soldOut}>
-      <div className="prod__name">{product.name}</div>
-      <div className="prod__cat">{product.category}</div>
-      <div className="prod__price">
-        {formatUsd(product.price)}
-        {rate > 0 && (
-          <span className="dim" style={{ fontWeight: 400, fontSize: "0.72rem" }}>
-            {" "}
-            · {formatBs(product.price, rate)}
-          </span>
-        )}
-      </div>
-      {soldOut ? (
-        <div style={{ marginTop: "0.4rem" }}>
-          <Badge tone="warning" icon="alert">Agotado</Badge>
-        </div>
-      ) : low ? (
-        <div style={{ marginTop: "0.4rem" }}>
-          <Badge tone="warning" icon="alert">Stock bajo</Badge>
-        </div>
-      ) : null}
-    </button>
-  );
-});
+
 
 export function Vender() {
   const catalog = useStoreSelector((s) => s.products);
@@ -170,11 +133,19 @@ export function Vender() {
 
   // Búsqueda diferida: la UI sigue fluida aunque el catálogo crezca.
   const deferredQuery = useDeferredValue(query);
-  const products = useMemo(() => {
+  const matches = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
-    return catalog.filter(
-      (p) => p.active && !p.archived && (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase() === q || p.barcode === q)
-    );
+    if (!q) return [];
+    return catalog.filter((p) => {
+      if (!p.active || p.archived) return false;
+      const byName = p.name.toLowerCase().includes(q);
+      const byBarcode = (p.barcode || "").toLowerCase().includes(q);
+      const bySku = (p.sku || "").toLowerCase().includes(q);
+      const byMeasure = String(p.presentationQty || "").toLowerCase().includes(q);
+      const byUnit = (p.unit || "").toLowerCase().includes(q);
+      const byBrand = (p.brand || "").toLowerCase().includes(q);
+      return byName || byBarcode || bySku || byMeasure || byUnit || byBrand;
+    });
   }, [catalog, deferredQuery]);
 
   const addLine = useCallback(
@@ -543,8 +514,9 @@ export function Vender() {
               className="input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar o escanear…"
+              placeholder="Buscar por nombre, código, medida, unidad o marca..."
               aria-label="Buscar o escanear"
+              autoFocus
             />
             <button
               type="button"
@@ -569,19 +541,45 @@ export function Vender() {
               </Link>
             </div>
           )}
-          <div className="pos__grid">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} rate={rate} onAdd={addLine} />
-            ))}
-          </div>
-          {!products.length && (
+          {deferredQuery && matches.length > 0 && (
+            <div className="search-results" style={{ marginTop: "0.5rem" }}>
+              {matches.slice(0, 20).map((p: Product) => (
+                <button
+                  key={p.id}
+                  className="btn btn--soft btn--sm"
+                  style={{ justifyContent: "flex-start" }}
+                  onClick={() => addLine(p.id)}
+                >
+                  <span style={{ flex: 1, textAlign: "left" }}>
+                    {p.name}
+                    {p.presentationQty > 0 && p.unit ? ` ${p.presentationQty} ${p.unit}` : ""}
+                    {p.brand ? ` · ${p.brand}` : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {!deferredQuery && (
             <div style={{ paddingTop: "1rem" }}>
               <EmptyState
-                title="Sin productos"
-                hint="Añade productos en el Catálogo para empezar a vender."
+                title="Escanea o busca"
+                hint="Escanea con el lector USB, celular vinculado o usa la búsqueda predictiva."
                 action={
                   <Link className="btn btn--soft btn--sm" to="/catalogo">
                     Ir al Catálogo
+                  </Link>
+                }
+              />
+            </div>
+          )}
+          {deferredQuery && matches.length === 0 && (
+            <div style={{ paddingTop: "1rem" }}>
+              <EmptyState
+                title="Sin coincidencias"
+                hint="Prueba con otra combinación: 'MAVESA 500g' o el código de barras."
+                action={
+                  <Link className="btn btn--soft btn--sm" to={`/catalogo?barcode=${encodeURIComponent(query.trim())}`}>
+                    Crear producto
                   </Link>
                 }
               />
@@ -603,7 +601,10 @@ export function Vender() {
             ) : (
               lines.map((l) => (
                 <div key={l.productId} className="ticket__line">
-                  <div style={{ fontWeight: 600 }}>{l.name}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    {l.name}
+                    {l.presentation && l.qty === 1 ? <> {l.presentation}</> : ""}
+                  </div>
                   <div className="tabular" style={{ textAlign: "right" }}>
                     {formatUsd(round2(l.price * l.qty))}
                   </div>
@@ -653,7 +654,8 @@ export function Vender() {
               <span className="tabular">{formatUsd(totalPreIgtf)}</span>
             </div>
             <div className="dim tabular" style={{ textAlign: "right" }}>
-              {formatBsDirect(totalPreIgtf * rate)}
+              {rate > 0 ? formatBsDirect(totalPreIgtf * rate) : "—"} Bs
+              {business.baseCurrency ? ` · Base: ${business.baseCurrency}` : ""}
             </div>
 
             <div className="row gap-8" style={{ marginTop: "0.75rem", flexWrap: "wrap" }}>

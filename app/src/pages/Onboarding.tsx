@@ -68,6 +68,7 @@ export function Onboarding() {
   const [phone, setPhone] = useState(state.business.phone);
   const [address, setAddress] = useState(state.business.address);
   const [currency, setCurrency] = useState<"USD" | "VES">(state.business.currency);
+  const [baseCurrency, setBaseCurrency] = useState<"USD" | "EUR">(state.business.baseCurrency ?? "USD");
   const [features, setFeatures] = useState<BusinessFeatures>(state.business.features);
   const [error, setError] = useState("");
 
@@ -120,6 +121,9 @@ export function Onboarding() {
         address: address.trim(),
         currency,
       });
+      if (!state.business.baseCurrencyLocked) {
+        actions.setBaseCurrency(baseCurrency);
+      }
     }
     if (step === 1) {
       actions.updateBusiness({ features });
@@ -307,6 +311,21 @@ export function Onboarding() {
                 >
                   <option value="USD">Dólares (USD)</option>
                   <option value="VES">Bolívares (VES)</option>
+                </select>
+              </Field>
+              <Field
+                label="Moneda base de operaciones"
+                hint="USD o EUR (inmutable tras guardar). Determina la tasa oficial."
+                required
+              >
+                <select
+                  className="select"
+                  value={baseCurrency}
+                  onChange={(e) => setBaseCurrency(e.target.value as "USD" | "EUR")}
+                  disabled={state.business.baseCurrencyLocked}
+                >
+                  <option value="USD">Dólares (USD)</option>
+                  <option value="EUR">Euro (€)</option>
                 </select>
               </Field>
             </Card>

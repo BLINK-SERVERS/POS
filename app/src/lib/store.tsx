@@ -685,6 +685,8 @@ type StoreActions = {
    * Nunca lanza: devuelve el resultado para que la UI informe sin romper nada.
    */
   syncRate: () => Promise<"ok" | "cached" | "error">;
+  /** Fija la moneda base (USD/EUR). Inmutable tras el primer guardado. */
+  setBaseCurrency: (baseCurrency: "USD" | "EUR") => void;
   /** Marca el alta guiada como terminada. */
   completeOnboarding: () => void;
   /** Borra todos los datos del comercio y vuelve al alta. */
@@ -2046,23 +2048,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAppState((s) => ({ ...s, rate, rateUpdatedAt: new Date().toISOString() }));
   }, []);
 
+  const setBaseCurrency = useCallback(
+    (baseCurrency: "USD" | "EUR") => {
+      setAppState((s) => {
+        if (s.business.baseCurrencyLocked && s.business.baseCurrency) return s;
+        return {
+          ...s,
+          business: {
+            ...s.business,
+            baseCurrency,
+            baseCurrencyLocked: true,
+            currency: baseCurrency === "EUR" ? "USD" : s.business.currency,
+          },
+        };
+      });
+    },
+    [],
+  );
+
   const syncRate = useCallback(async (): Promise<"ok" | "cached" | "error"> => {
+    const base = useStoreState().state.business.baseCurrency ?? "USD";
     // Dentro de la ventana de caché no se golpea la API.
-    if (isCacheFresh()) {
-      const c = cachedRate();
+    if (isCacheFresh(Date.now(), base)) {
+      const c = cachedRate(base);
       if (c) {
         setRate(c.rate);
         return "cached";
       }
     }
-    const fresh = await fetchOfficialRate();
+    const fresh = await fetchOfficialRate(base);
     if (fresh) {
       setRate(fresh.rate);
       return "ok";
     }
     // Sin red o API caída: si hay caché previa, se usa; si no, se respeta la
     // tasa que el comercio ya tenía y se reporta el fallo.
-    const c = cachedRate();
+    const c = cachedRate(base);
     if (c) {
       setRate(c.rate);
       return "cached";
@@ -2131,6 +2152,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBusiness,
       setRate,
       syncRate,
+      setBaseCurrency,
       signUp,
       verifyEmail,
       resendCode,

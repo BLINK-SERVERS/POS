@@ -11,6 +11,35 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.3.5] · 2026-10-19
+
+**Fase B — Catálogo global colaborativo + normalización · Fase C — Ticket concatenado.**
+
+- **Catálogo global (`catalogo_global`)** — migración `0004`: tabla compartida entre todas
+  las tiendas, clave = código de barras. Guarda solo datos descriptivos universales
+  (nombre en MAYÚSCULAS, cantidad de medida, unidad, categoría, fabricante). No contiene
+  costos, precios, stock ni IVA.
+- **RLS del catálogo global**: cualquier usuario autenticado lee; owner/manager insertan;
+  nadie modifica ni borra fichas ajenas (administración central con `service_role`).
+- **`products` sigue siendo privado** por comercio (precios, costo, IVA, stock) y ahora
+  incluye `brand` y `presentation_qty`.
+- **Formulario de producto rediseñado** por secciones: Producto · Presentación ·
+  Precios e impuesto · Inventario. El nombre se guarda siempre en **MAYÚSCULAS**.
+- **Presentación normalizada**: campo numérico + selector cerrado de unidades
+  (`unidad, kg, g, mg, L, ml, pack`); sin texto libre.
+- **Se elimina `Product.type = "servicio"`**: todo producto es tangible; los heredados
+  pasan a `simple` con `trackStock: false` al normalizar.
+- **Autocompletado por escaneo**: al leer un código no registrado en la tienda se consulta
+  `catalogo_global` y se precargan nombre, medida, unidad, categoría y fabricante.
+- **Ticket concatenado (Fase C)**: cada línea imprime `NOMBRE 500 g` cuando la cantidad
+  es 1 unidad.
+- **`catalogoLookup` / `catalogoUpsert`** en `lib/cloud.ts`: nunca lanzan; si no hay red o
+  sesión, el producto igual se guarda localmente.
+- **Verificado**: typecheck limpio, 43 pruebas Vitest en verde, 27 comprobaciones de
+  migración (PG embebido) y build de Pages limpio.
+
+---
+
 ## [1.3.4] · 2026-10-19
 
 **Fase A — Tasa oficial automática (`ve.dolarapi.com`).** Detalle en `docs/23-plan-nuevas-especificaciones.md`.

@@ -16,6 +16,10 @@ export interface Business {
   phone: string;
   address: string;
   currency: "USD" | "VES";
+  /** Moneda base de operaciones (inmutable tras guardado). */
+  baseCurrency?: "USD" | "EUR";
+  /** Indica si la moneda base ya fue fijada e inmutabilizada. */
+  baseCurrencyLocked?: boolean;
   /** Giro del comercio: define qué módulos se muestran. */
   type: string;
   features: BusinessFeatures;
@@ -414,9 +418,28 @@ export interface CashClosure {
   note: string;
 }
 
+export type UserRole = "dueño" | "administrador" | "cajero";
+
+export interface UserMembership {
+  id: string;
+  businessId: string;
+  userId: string;
+  role: UserRole;
+  active: boolean;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  businessId: string;
+  userId: string;
+  action: string;
+  details?: string;
+  at: string;
+}
+
 export interface AppState {
   business: Business;
-  rate: number; // Bs por USD (tasa de referencia)
+  rate: number; // Bs por moneda base (tasa de referencia)
   rateUpdatedAt: string;
   taxes: Tax[];
   categories: Category[];
@@ -443,4 +466,7 @@ export interface AppState {
   cashClosures: CashClosure[];
   openTabs: Sale[]; // cuentas abiertas del POS
   onboarding: Onboarding;
+  memberships?: UserMembership[];
+  auditLogs?: AuditLogEntry[];
+  currentUserRole?: UserRole;
 }
