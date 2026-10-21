@@ -1,3 +1,0 @@
-# watchos
-
-HTTP 404

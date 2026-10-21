@@ -1,171 +1,225 @@
-# 02 · Design System
+# 02 · Design System · BLINK POS
 
-Extraído directamente del CSS público. Fuente de verdad:
-`docs/tokens.json` (clasificado) y `docs/tokens.css` (listo para `@import`).
+**Fecha:** 2026-10-21 · **Versión:** 1.8.3
 
-**Total: 252 tokens.** Grupos: `color` (67), `tw` (74, runtime de Tailwind),
-`brand` (12), `neutral` (13), `text` (27), `radius` (9), `shadow` (6), `container` (9),
-`font` (8), `pos` (4), `sidebar` (2), `violet` (2), `ease` (3), `animate` (2), `spacing`, `topbar`, `shell`, `motion`, `rail`.
+Fuente de verdad: `app/src/styles/tokens.css` (tokens) y
+`app/src/styles/app.css` (componentes). El bloque `--ios-*` procede del
+**UI Kit oficial de iOS 27** de Apple.
 
----
-
-## 1. Paleta de marca
-
-### Azul de marca (escala)
-| Token | Hex | Uso típico |
-|---|---|---|
-| `--brand-blue-25` | `#dae4fc` | fondos hover suaves |
-| `--brand-blue-50` | `#eef0fb` | superficies muy claras |
-| `--brand-blue-100` | `#d5d9f5` | |
-| `--brand-blue-200` | `#aab3eb` | bordes de marca sutiles |
-| `--brand-blue-300` | `#7f8de0` | |
-| `--brand-blue-400` | `#5567d6` | |
-| **`--brand-blue-500`** | **`#3347dd`** | **Color primario / `theme-color`** |
-| `--brand-blue-600` | `#243baf` | hover de marca |
-| `--brand-blue-700` | `#18278c` | pressed |
-| `--brand-blue-800` | `#0f1a73` | deep |
-
-### Acentos y neutros
-| Token | Hex | Nota |
-|---|---|---|
-| `--brand-orange` | `#fe9300` | `--color-accent` |
-| `--brand-deep-ink` | `#322961` | superficie inversa |
-| `--violet-50` | `#f3ecfb` | |
-| `--violet-700` | `#5b21b6` | |
-
-Neutros (`--neutral-0` → `--neutral-100`):
-`#ffffff, #fafafc, #f4f4fa, #f1f1f9, #e7e7f5, #cfcfe5, #9c9cc2, #64648f, #48486b, #32325c, #26264e, #1f1f47, #080812`
-(en pasos 0,10,15,20,30,40,50,60,70,80,90,95,100).
+> El design system de **WINK** (proyecto previo) está en
+> [`wink/02b-design-system-wink.md`](./wink/02b-design-system-wink.md) como
+> referencia histórica. No se usa en BLINK.
 
 ---
 
-## 2. Tokens semánticos
+## 1. Principio rector
 
-### Superficies (`--color-surface-*`)
-`default`(blanco) · `subtle` · `muted` `#eceef8` · `elevated` `#f9f9ff` · `inverse`(deep-ink) ·
-`app` · `brand` `#3347dd` · `brand-hover` · `brand-pressed` · `brand-deep` · `brand-subtle` `#eef3ff` ·
-`success`/`error`/`warning`/`info` (+ variantes `-subtle`) · `neutral-subtle` `#f4f5fd` ·
-`disabled` · `tooltip`.
+BLINK usa una **paleta estricta de 3 colores**; cualquier variación se deriva
+de esos tres con transparencia, para no introducir un cuarto color:
 
-### Texto (`--color-text-*`)
-`primary` `#1f1f47` · `secondary` `#48486b` · `tertiary` `#6b688e` · `disabled` ·
-`inverse` `#fafafa` · `on-brand` (blanco) · `brand` `#243baf` · `success` `#008765` ·
-`error` `#dc2626` · `warning` `#92400e` · `neutral` `#4b4869`.
+| Rol | Token | Hex | Uso |
+|---|---|---|---|
+| Fondo | `--blink-bg-main` | `#FFFEFB` | **Todos** los fondos |
+| Acento | `--blink-primary` | `#007AFF` | Solo CTA, enlaces activos y foco |
+| Texto | `--blink-text-muted` | `#424242` | Textos, bordes, iconos |
 
-### Bordes (`--color-border-*`)
-`default` `#dddbe8` · `subtle` `#eeecf6` · `strong` `#b0aec8` · `brand` · `brand-subtle` ·
-`focus` `#3347dd` · `success`/`error`/`warning`/`disabled`.
+Derivados (transparencia, sin color nuevo):
 
-### Iconos (`--color-icon-*`)
-`default` `#4b4869` · `secondary`/`neutral` `#7b78a0` · `brand` `#3347dd` ·
-`success`/`error`/`warning`/`on-brand`/`disabled`.
+```css
+--color-text-secondary: rgba(66, 66, 66, 0.78);   /* contraste AA sobre #FFFEFB */
+--color-text-tertiary:  rgba(66, 66, 66, 0.74);
+--color-border:         rgba(66, 66, 66, 0.14);
+--color-border-strong:  rgba(66, 66, 66, 0.26);
+--color-accent-soft:    rgba(0, 122, 255, 0.10);
+--color-accent-ring:    rgba(0, 122, 255, 0.35);
+--color-neutral-soft:   rgba(66, 66, 66, 0.07);
+```
 
 ### Estados semánticos
-| Familia | Color base |
-|---|---|
-| success | `#16a34a` (texto `#008765`) |
-| error | `#dc2626` / borde `#ef4444` |
-| warning | `#f5b800` (texto `#92400e`) |
-| info | `#2f5fb3` |
 
----
+Excepcionalmente, cuatro colores más para estado (nunca para decoración):
 
-## 3. Tipografía
-- **Sans:** `Montserrat, "Avenir Next", "Segoe UI", system-ui, sans-serif`
-  (pesos **400, 500, 600, 700**, servidas por Google Fonts v31).
-- **Mono:** `JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace`.
-
-Escala (`--text-*` con line-height asociada):
-| Token | size | line-height |
+| Estado | Token | Hex |
 |---|---|---|
-| xs | .75rem | 1/.75 |
-| sm | .875rem | 1.25/.875 |
-| base | 1rem | 1.5 |
-| lg | 1.125rem | 1.75/1.125 |
-| xl | 1.25rem | 1.75/1.25 |
-| 2xl | 1.5rem | 2/1.5 |
-| 3xl | 1.875rem | 1.2 |
-| 4xl | 2.25rem | 2.5/2.25 |
-| 5xl | 3rem | 1 |
+| Éxito | `--blink-success` | `#34A853` |
+| Error | `--blink-danger` | `#EA4335` |
+| Aviso | `--blink-warning` | `#FBBC05` |
+| Texto principal | `--blink-dark` | `#1D1D1F` |
 
-Tokens de label: `--text-label-button` (1rem/1, 500), `--text-label-input` (.875rem/1.4, 400),
-`--text-label-caption` (.75rem/1rem, 500). Base global: `--font-size-base` .875rem.
+> El acento `#007AFF` **no** se usa para decorar. Si algo no es un CTA, un
+> enlace activo o el foco, no lleva azul.
 
----
+### Modo oscuro
 
-## 4. Radios, sombras, espaciado
-
-**Radios:** `xs .125rem` · `sm .25rem` · `md .5rem` · `lg .75rem` · `xl 1rem` · `2xl 1.5rem` ·
-`3xl 2rem` · `full 9999px` · `none 0`.
-
-**Sombras:**
-| Token | Valor |
-|---|---|
-| `--shadow-xs` | `0 1px 1px rgba(16,24,40,.06)` |
-| `--shadow-sm` | `0 1px 2px rgba(16,24,40,.07)` |
-| `--shadow-card` | `0 4px 8px rgba(16,24,40,.08), 0 12px 24px rgba(16,24,40,.1)` |
-| `--shadow-floating` | `0 8px 24px -8px rgba(16,24,40,.18), 0 2px 6px rgba(16,24,40,.08)` |
-| `--shadow-tooltip` | `0 3px 5px rgba(50,50,92,.2)` |
-| `--shadow-container` | `0 0 0 1px #dddbe8, 0 1px 2px rgba(16,24,40,.05)` |
-
-**Espaciado:** base `--spacing: .25rem` (grid de Tailwind, escala 4px).
-
-**Contenedores:** xs 20rem · sm 24rem · md 28rem · lg 32rem · xl 36rem · 3xl 48rem ·
-4xl 56rem · 6xl 72rem · 7xl 80rem.
-
-**Overlays:** `--color-overlay rgba(50,41,97,.45)` · `-subtle` .32 · `-strong rgba(22,18,48,.72)`.
+La app es de un solo tema (claro). El bloque `--ios-*-dark` del UI Kit está
+disponible en `tokens.css` para un futuro modo oscuro, pero **no se activa**.
 
 ---
 
-## 5. Tokens de layout (específicos de la app)
-| Token | Valor | Significado |
+## 2. Tipografía
+
+```css
+--font-primary: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, system-ui, "Helvetica Neue", Arial, sans-serif;
+--font-mono:   "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+```
+
+- **No se distribuye ninguna fuente.** `"SF Pro Display"` solo se usa si el
+  dispositivo ya la tiene (Apple). En Windows cae en Segoe UI.
+- El archivo `app/public/fonts/` se eliminó en la v1.5.0: servía SF Pro
+  públicamente, con su licencia. Verificado en 404 tras el despliegue.
+
+### Escala propia
+
+| Token | Tamaño | Uso típico |
 |---|---|---|
-| `--topbar-height` | 3.85rem | altura de barra superior |
-| `--shell-gutter` | .75rem | margen del shell |
-| `--sidebar-width` | 13rem | sidebar expandida |
-| `--sidebar-width-compact` | 11rem | sidebar compacta |
-| `--sidebar-width-collapsed` | 4.5rem | sidebar colapsada |
-| `--pos-ticket-w` | 27.5rem | ancho del ticket de venta (POS) |
-| `--pos-ticket-w-md` | 23.75rem | variante md |
-| `--pos-ticket-w-sm` | 23rem | variante sm |
-| `--pos-ticket-narrow` | `min(40%, 23rem)` | ticket angosto |
+| `--fs-xs` | 0.75rem | pies, metadatos |
+| `--fs-sm` | 0.8125rem | valores secundarios, tablas |
+| `--fs-base` | 1rem | cuerpo |
+| `--fs-lg` | 1.125rem | subtítulos |
+| `--fs-xl` | 1.375rem | títulos de tarjeta |
+| `--fs-2xl` | 1.75rem | `h1` de página (verificado por `verify:ui`) |
 
-> Estos tokens revelan la **topología del POS**: sidebar de navegación + área de contenido +
-> **ticket/recibo lateral** de ~27.5rem. Es la "distribución" (layout) del producto.
+### Escala oficial de iOS 27 (del UI Kit)
+
+Existe como referencia en `docs/DESIGN_IOS27_KIT.md` y en
+`app/src/lib/ios-design-tokens.ts`:
+
+| Estilo | Tamaño | Interlineado |
+|---|---|---|
+| Large Title | 34 | 41 |
+| Title 1 | 28 | 34 |
+| Title 2 | 22 | 28 |
+| Title 3 | 20 | 25 |
+| Headline | 17 | 22 |
+| Body | 17 | 22 |
+| Callout | 16 | 21 |
+| Subheadline | 15 | 20 |
+| Footnote | 13 | 18 |
+| Caption 1 | 12 | 16 |
+| Caption 2 | 11 | 13 |
 
 ---
 
-## 6. Movimiento / animación
-- `--ease-out`: `cubic-bezier(0,0,.2,1)` · `--ease-in-out`: `cubic-bezier(.4,0,.2,1)`
-- `--ease-out-quart`: `cubic-bezier(.25,1,.5,1)` · `--ease-out-expo`: `cubic-bezier(.16,1,.3,1)`
-- `--ease-in-quick`: `cubic-bezier(.4,0,1,1)`
-- `--default-transition-duration`: `.15s`
-- `--animate-spin`: `spin 1s linear infinite` · `--animate-pulse`: `pulse 2s ...`
-- Respeta `@media (prefers-reduced-motion: reduce)` (anula duración de animaciones/transiciones).
-- Animación propia del login: `.auth-wink-eye` (el "guiño" del logo) y `.auth-shop`.
+## 3. Formas, sombras y movimiento
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--radius-sm` | 8px | inputs, chips |
+| `--radius-md` | 12px | tarjetas, listas |
+| `--radius-lg` | 18px | superficies grandes |
+| `--radius-pill` | 50px | píldoras |
+| `--shadow-card` | `0 1px 2px rgba(66,66,66,.04)` | elevación mínima |
+| `--shadow-pop` | `0 12px 32px rgba(66,66,66,.18)` | popovers, modales |
+| `--transition-speed` | `0.2s ease-in-out` | transiciones |
 
 ---
 
-## 7. Convenciones de componentes observadas
+## 4. Métricas de componentes (medidas reales de iOS 27)
 
-**Botón primario** (`bentobutton`):
-`bg-surface-brand text-text-on-brand h-9 px-4 rounded-md text-sm font-medium`,
-hover `bg-surface-brand-hover`, `active:scale-[0.97]`, focus `outline-2 outline-border-focus outline-offset-2`,
-disabled `opacity-50 cursor-not-allowed pointer-events-none`. En punteros gruesos (`pointer-coarse`) sube a `h-11`.
+Extraídas del UI Kit oficial (1.657 símbolos). Tabla completa en
+[`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md).
 
-**Botón secundario** (`intent="secondary"`):
-`bg-surface-default border border-border-brand-subtle text-text-brand`,
-hover `bg-surface-brand-subtle hover:border-border-brand`.
+| Componente | Medida oficial | Aplicado en BLINK |
+|---|---|---|
+| Control segmentado | 80 × 28 | `Tabs` (Konsta `<Segmented>`) |
+| Fila de lista | 402 × 52 | `table.data tbody tr` → 52 px |
+| Campo de texto | 288 × 52 | `.input` / `.select` → 52 px |
+| Toggle | 64 × 28 | `.toggle` |
+| Stepper | 46 × 32 | `.stepper button` |
+| Item de tab bar | 48 × 48 | `.shell__tabbar a` (área táctil) |
+| Botón grande | 50 × 50 | `.btn` (44 px mínimo táctil) |
 
-**Input de texto**:
-`h-9 px-4 rounded-md text-sm border border-border-default font-medium`,
-hover `border-border-strong`, focus `outline-2 outline-border-focus`,
-placeholder `text-text-tertiary`, en `pointer-coarse` → `h-11`.
+---
 
-**Label de campo**: `text-sm font-bold leading-5 text-text-primary` + asterisco `text-text-error` para requeridos,
-con `helper` en `text-xs text-text-tertiary` y `aria-live="polite"`.
+## 5. Listas *inset grouped* (HIG · Lists)
 
-**Superficie de tarjeta / contenedor**: `rounded-md/2xl/3xl` + `--shadow-card` / `--shadow-container`.
+El patrón de lista de iOS, no el de tabla de macOS:
 
-**Botones de texto/enlace**: `font-semibold text-text-brand hover:underline`, con área táctil ampliada en móvil
-(`pointer-coarse:py-3`).
+- Contenedor **sin borde**, con sombra suave: la separación la hace el fondo.
+- Separadores **hairline sólidos** (`--ios-separator`), **inset** por el padding.
+- Etiqueta a la izquierda en color primario, valor a la derecha en secundario.
+- En escritorio las tablas **no** llevan divisores verticales.
+
+Implementado en `app.css` con el bloque `table.data tbody tr`.
+
+---
+
+## 6. Liquid Glass
+
+Materiales con desenfoque real, disponibles en `tokens.css` y en
+`app/src/lib/ios-design-tokens.ts`:
+
+| Material | Fondo | Blur |
+|---|---|---|
+| Light/Regular - Small | `#f8f8f8` | 6 |
+| Light/Regular - Medium | `#cccccc` | 15 |
+| Light/Regular - Large | `#ffffff` | 30 |
+| Dark/Regular - Small | `#000000` | 6 |
+| Dark/Regular - Large | `#1a1a1a` | 30 |
+| Clear | `#f8f8f8` | 3 |
+
+### Regla de uso
+
+> **Liquid Glass solo en la landing.** En el POS (tablas, precios, stock) todo
+> es **100 % opaco**: un precio o una cantidad no puede quedar legibles a
+> través de un desenfoque.
+
+Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
+
+---
+
+## 7. Iconografía
+
+- **SVG únicamente.** Sin emoji en ninguna pantalla.
+- Set: **86 SF Symbols** de Apple, normalizados a `currentColor`
+  (`app/src/lib/sf-symbols.ts`, generado con `npm run icons:sf`).
+- API pública estable: `<Icon name="…" size={…} />`, con `IconName` como
+  unión de tipos. Ningún *call site* cambia al migrar.
+- **Licencia:** los SF Symbols son material de Apple con uso restringido a
+  software de plataformas Apple. Está documentado, junto con las alternativas
+  libres (Phosphor MIT, Lucide ISC, Tabler MIT), en
+  [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md).
+
+---
+
+## 8. Componentes
+
+| Componente | Origen | Notas |
+|---|---|---|
+| `Card`, `PageHead`, `Field`, `EmptyState` | propios | envuelven los estilos de iOS |
+| `Tabs` | Konsta `<Segmented>` | control segmentado de iOS |
+| `Searchbar` | Konsta | búsqueda en la barra |
+| `Glass` | Konsta | tab bar flotante y landing |
+| `DataTable` | propio | tabla en escritorio, tarjetas en móvil |
+| `Receipt` | propio | ticket en vivo, siempre visible |
+| `Icon` | SF Symbols | `currentColor`, sin emoji |
+
+Konsta UI es MIT. Se usa como **capa de componentes iOS**, no como fuente de
+la paleta: los tokens de BLINK mandan.
+
+---
+
+## 9. Verificación
+
+`npm run verify:ui` comprueba automáticamente en las 15 vistas:
+
+- render sin errores de consola;
+- `h1` a 22 px;
+- iconos no vacíos;
+- ausencia de desbordamiento horizontal.
+
+Sale con código 1 si algo falla, así que sirve como **regresión visual** en CI.
+
+---
+
+## 10. Referencias
+
+| Documento | Contenido |
+|---|---|
+| [`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md) | Medidas reales de cada componente de iOS 27 |
+| [`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) | Tokens, tipografía y materiales del UI Kit |
+| [`REDISENO_KONSTA_HIG.md`](./REDISENO_KONSTA_HIG.md) | Reglas del HIG aplicadas una a una |
+| [`DESIGN_APPLE_HIG_REFERENCE.md`](./DESIGN_APPLE_HIG_REFERENCE.md) | Patrón de lista/tabla de Apple |
+| [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md) | Iconos, favicon, PWA y licencias |
+| [`HIG/`](./HIG) | 85 páginas del Human Interface Guidelines de Apple |

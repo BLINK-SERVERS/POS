@@ -1,64 +1,135 @@
-# 03 · Rutas y arquitectura de navegación
+# 03 · Rutas y arquitectura de navegación · BLINK POS
 
-## Flujo de arranque observado (usuario anónimo)
+**Fecha:** 2026-10-21 · **Versión:** 1.8.3
+
+> El mapa de rutas de **WINK** está en
+> [`wink/03-rutas-arquitectura.md`](./wink/03-rutas-arquitectura.md), como
+> referencia histórica.
+
+---
+
+## 1. Mapa de rutas
+
+Definido en `app/src/App.tsx`.
+
+| Ruta | Componente | Acceso | Propósito |
+|---|---|---|---|
+| `/` | `Landing` | Público | Portada comercial e instalación como PWA |
+| `/app/terminos` | `Legal` | Público | Términos y condiciones |
+| `/app/privacidad` | `Legal` | Público | Aviso de privacidad |
+| `/app` | — | — | Redirige a `/app/inicio` |
+| `/app/entrar` | `Login` | `PublicOnly` | Acceso con correo + contraseña, o enlace mágico |
+| `/app/registro` | `Registro` | `PublicOnly` | Alta del comercio |
+| `/app/recuperar` | `Recuperar` | **Libre** | Restablecer contraseña |
+| `/app/onboarding` | `Onboarding` | `OnboardingGate` | Alta guiada (moneda base, datos) |
+| `/app/inicio` | `Inicio` | `Protected` | Resumen del negocio |
+| `/app/ventas` | `Vender` | `Protected` | El POS: buscar, escanear, cobrar |
+| `/app/ventas/historial` | `Historial` | `Protected` | Ventas realizadas |
+| `/app/catalogo` | `Catalogo` | `Protected` | Catálogo global + catálogo propio |
+| `/app/inventario` | `Inventario` | `Protected` | Existencias, ajustes, traslados, compras |
+| `/app/contactos` | `Contactos` | `Protected` | Clientes y proveedores |
+| `/app/finanzas` | `Finanzas` | `Protected` | Cuentas, movimientos, gastos, cierres de caja |
+| `/app/informes` | `Informes` | `Protected` | Ventas, márgenes, más vendidos |
+| `/app/ajustes` | `Ajustes` | `Protected` | Negocio, perfil, moneda, recibo, exportar, dispositivos, cuenta |
+| `/escaner` | `Escaner` | **Libre** | Escáner remoto enlazado por QR |
+| `*` | — | — | Redirige a `/` |
+
+### Por qué `/escaner` vive en la raíz
+
+El escáner se abre en el **celular** mediante un deep link con QR. La URL se
+comparte por WhatsApp o se imprime en el mostrador, así que:
+
+- no puede depender de una sesión iniciada en ese dispositivo;
+- no debe verse arrastrada al prefijo `/app` cuando cambia la ruta base.
+
+---
+
+## 2. Guardas de ruta
+
+| Guarda | Condición | Redirección |
+|---|---|---|
+| `Protected` | hay sesión **y** equipo verificado **y** onboarding completado | → `/app/entrar` o `/app/onboarding` |
+| `PublicOnly` | **no** hay sesión verificada | → `/app/inicio` |
+| `OnboardingGate` | hay sesión, pero el onboarding no está completo | → `/app/entrar` o `/app/inicio` |
+
+```tsx
+function Protected({ children }) {
+  const authed = useAuth();
+  const verified = useDeviceVerified();
+  const booting = useBooting();
+  const onboarded = useStoreState().state.onboarding.completed;
+  if (booting) return <PageLoader />;
+  if (!authed || !verified) return <Navigate to="/app/entrar" replace />;
+  if (!onboarded) return <Navigate to="/app/onboarding" replace />;
+  return <Shell><Suspense fallback={<PageLoader />}>{children}</Suspense></Shell>;
+}
+```
+
+`booting` evita el "parpadeo" de la pantalla de acceso mientras Supabase
+resuelve la sesión: mientras `booting` es `true` se muestra el cargador.
+
+> `/app/recuperar` **no** usa `PublicOnly` a propósito: el enlace del correo
+> crea una sesión de recuperación y hay que poder fijar la contraseña nueva.
+
+---
+
+## 3. Estructura del layout
 
 ```
-GET https://app.wink-pos.com/
-   └─ 200  index.html  (shell de Angular + critical CSS inline + main-*.js)
-        └─ Angular arranca (<bento-root ng-version="22.1.4">)
-             ├─ <router-outlet> resuelve la ruta
-             ├─ Auth guard: no hay sesión
-             ├─ POST https://api.wink-pos.com/auth/refresh   (intenta refrescar)
-             ├─ GET  https://api.wink-pos.com/auth/google/enabled
-             ├─ GET  https://api.wink-pos.com/auth/turnstile
-             └─ Redirect a: /entrar?volver=%2Finicio
-                            └─ renderiza <bento-login>
+Shell
+├── Sidebar (escritorio ≥ 768px)
+│   └── Logo + navegación + acciones
+├── Topbar
+│   └── Título, buscador, acciones
+├── Contenido
+│   └── PageHead + Card/Table/Tabs
+└── TabBar flotante (móvil < 768px)   ← con Liquid Glass (Konsta <Glass>)
 ```
 
-## Rutas conocidas
-| Ruta | Descripción | Estado |
-|---|---|---|
-| `/` (`/inicio`) | Inicio / dashboard | 🔒 requiere sesión |
-| `/entrar` | Login (`?volver=` guarda el destino) | ✅ pública |
-| `/crear-comercio` | Registro de comercio nuevo ("Vamos a crear tu comercio") | ✅ pública |
-| `/recuperar-contrasena` | Recuperar contraseña ("¿Olvidaste tu contraseña?") | ✅ pública |
+- En **escritorio** hay barra lateral fija y tablas compactas.
+- En **móvil** la barra lateral se sustituye por una **tab bar flotante** con
+  material translúcido, y las tablas se convierten en tarjetas.
+- El `POS` (`/app/ventas`) mantiene el **ticket siempre visible** en un
+  panel lateral (`--ticket-w: 360px`).
 
-> El parámetro `volver=%2Finicio` confirma que **`/inicio` es la pantalla post-login**
-> y que el guard restaura el destino tras autenticarse.
+Detalle en [`09-pantallas-internas.md`](./09-pantallas-internas.md).
 
-> **Rutas de BLINK (implementación propia, 2026-10-17).** BLINK usa las mismas bases pero con
-> registro real: `/entrar` (login), `/registro` (datos personales + código de 6 dígitos),
-> `/onboarding` (alta guiada) y, ya dentro del shell, `/inicio`, `/ventas`, `/ventas/historial`,
-> `/catalogo`, `/inventario`, `/contactos`, `/finanzas`, `/informes`, `/ajustes`. Las rutas
-> internas exigen sesión y alta completada (ver `docs/18` y `docs/20`).
+---
 
-## Patrón de routing
-- **SPA con cliente-side routing** por hash de assets; **todas** las rutas desconocidas
-  devuelven `200 index.html` (fallback del servidor → `index.html`).
-  - Comprobado: `/login`, `/api`, `/api/health`, `/sw.js` → todos 200 + mismo HTML (22611 bytes).
-- Rutas en **español**, kebab-case (`crear-comercio`, `recuperar-contrasena`).
-- Atributo `routerlink` en anchors internos (p. ej. `routerlink="/crear-comercio"`).
+## 4. Carga diferida
 
-## Carga diferida (code splitting)
-- `ngsw.json` (assetGroup `app`) lista **~90 chunks JS** + `main-*.js` + `styles-*.css` con
-  `installMode: prefetch` → el service worker **precarga toda la app** tras la primera visita.
-- `assetGroup assets` (lazy) contiene marca e iconos.
-- Nombre de chunks por hash de contenido → cada feature es un módulo lazy.
+Todas las páginas internas se importan con `lazy()`:
 
-## Service worker (PWA)
-- Registro: `ngsw-worker.js` (registrado por `@angular/service-worker`).
-- Config: `ngsw.json` (versión `timestamp: 1791923249405`).
-- `dataGroups`: **vacío** → **no** se cachean respuestas de API (correcto para datos sensibles).
-- `manifest.webmanifest`: `display: standalone`, `start_url: "/"`, `theme_color: #3347dd`,
-  `background_color: #f4f5fd`, iconos 192/512 + maskable.
+```tsx
+const Vender = lazy(() => import("./pages/Vender").then((m) => ({ default: m.Vender })));
+```
 
-## Analítica / terceros observados
-| Host | Recurso | Uso |
-|---|---|---|
-| `static.cloudflareinsights.com` | `beacon.min.js` | RUM de Cloudflare (Web Analytics) |
-| `app.wink-pos.com/cdn-cgi/rum` | XHR | reporte de RUM |
-| `fonts.gstatic.com` | `.woff2` | Montserrat |
-| `api.wink-pos.com` | fetch | backend |
+El bundle inicial trae solo el shell y la landing; cada módulo se descarga
+cuando se visita por primera vez. Combinado con `manualChunks` (vendor
+separado), esto mantiene el delta entre despliegues muy pequeño.
 
-> El beacon de Cloudflare Insights se usa para métricas de rendimiento reales (Core Web Vitals)
-> y no requiere cookies; token público `6a9e0dbd09224ecaadcc369cfb08f618`.
+---
+
+## 5. `basename`
+
+```tsx
+<BrowserRouter basename={import.meta.env.BASE_URL}>
+```
+
+- En local: `BASE_URL` = `/`.
+- En producción: también `/` (el dominio propio sirve desde la raíz).
+
+Funciona igual en ambos casos sin código condicional. Si en el futuro se
+volvera a publicar bajo un subdirectorio, basta con cambiar `base` en
+`vite.config.ts`.
+
+---
+
+## 6. Emparejamiento del escáner
+
+Flujo completo en [`21-escaner.md`](./21-escaner.md):
+
+1. El POS muestra un QR con un **código de emparejamiento** (6 dígitos).
+2. El celular abre `/escaner`, que captura la cámara o acepta el código.
+3. Ambos lados se vinculan con un token y una vigencia (`PAIRING_DAYS`).
+4. El celular escanea y el POS recibe las líneas; el ticket se actualiza solo.

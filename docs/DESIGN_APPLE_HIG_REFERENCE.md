@@ -4,7 +4,7 @@
 **FileKey:** `o3yuG6lyAokRrfI4Xijgb3` · **Leído vía:** MCP de Figma + puente propio
 
 Los extractos XML y las capturas de pantalla de cada página están en
-[`apple-macOS-26/`](./apple-macOS-26/).
+[`apple-macOS-26/`](./wink/apple-macOS-26/).
 
 ---
 

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WINK POS · Style Guide (reconstruido)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body{font-family:var(--font-sans);background:var(--color-surface-app);color:var(--color-text-primary);margin:0;padding:2rem}
+  h1{font-size:var(--text-3xl);font-weight:700;margin:0 0 .25rem}
+  h2{font-size:var(--text-xl);font-weight:600;margin:2rem 0 .75rem;border-bottom:1px solid var(--color-border-subtle);padding-bottom:.5rem}
+  .sub{color:var(--color-text-secondary);margin:0 0 1rem}
+  .row{display:flex;flex-wrap:wrap;gap:.75rem}
+  .sw{width:120px;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-container);background:var(--color-surface-default)}
+  .sw .chip{height:64px}
+  .sw .lbl{padding:.4rem .5rem;font-size:var(--text-label-caption);color:var(--color-text-secondary)}
+  .sw code{font-family:var(--font-mono);font-size:11px;display:block;color:var(--color-text-tertiary)}
+  .card{background:var(--color-surface-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:1.25rem;max-width:420px}
+  .btn{font-family:inherit;font-weight:500;font-size:var(--text-sm);height:2.25rem;padding:0 1rem;border-radius:var(--radius-md);display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;transition:background-color .15s,border-color .15s;border:1px solid transparent}
+  .btn-primary{background:var(--color-surface-brand);color:var(--color-text-on-brand)}
+  .btn-primary:hover{background:var(--color-surface-brand-hover)}
+  .btn-primary:active{transform:scale(.97)}
+  .btn-secondary{background:var(--color-surface-default);color:var(--color-text-brand);border-color:var(--color-border-brand-subtle)}
+  .btn-secondary:hover{background:var(--color-surface-brand-subtle);border-color:var(--color-border-brand)}
+  .field label{display:block;font-size:var(--text-sm);font-weight:700;margin-bottom:.25rem}
+  .field .req{color:var(--color-text-error)}
+  .field input{width:100%;height:2.25rem;padding:0 1rem;border-radius:var(--radius-md);border:1px solid var(--color-border-default);font-family:inherit;font-size:var(--text-sm);font-weight:500;color:var(--color-text-primary);background:var(--color-surface-default);box-sizing:border-box}
+  .field input::placeholder{color:var(--color-text-tertiary);font-weight:500}
+  .field input:hover{border-color:var(--color-border-strong)}
+  .field input:focus{outline:2px solid var(--color-border-focus);outline-offset:0}
+  .sh{width:160px;height:80px;background:var(--color-surface-default);border-radius:var(--radius-lg);display:flex;align-items:flex-end;padding:.5rem;font-size:11px;color:var(--color-text-tertiary)}
+  .type div{margin:.5rem 0}
+  table{border-collapse:collapse;font-size:var(--text-sm)}
+  td,th{border:1px solid var(--color-border-subtle);padding:.4rem .6rem;text-align:left}
+  .radiusbox{width:80px;height:80px;background:var(--color-surface-brand-subtle);border:2px solid var(--color-border-brand)}
+</style>
+</head>
+<body>
+  <h1>WINK POS · Style Guide</h1>
+  <p class="sub">Reconstruido desde los design tokens públicos de <code>app.wink-pos.com</code> (<code>docs/tokens.css</code>).</p>
+
+  <h2>Azul de marca</h2>
+  <div class="row" id="blue"></div>
+
+  <h2>Neutros</h2>
+  <div class="row" id="neutral"></div>
+
+  <h2>Semánticos y acentos</h2>
+  <div class="row" id="sem"></div>
+
+  <h2>Tipografía (Montserrat)</h2>
+  <div class="type">
+    <div style="font-size:var(--text-5xl);font-weight:700">3rem / 5xl</div>
+    <div style="font-size:var(--text-3xl);font-weight:700">1.875rem / 3xl</div>
+    <div style="font-size:var(--text-xl);font-weight:600">1.25rem / xl</div>
+    <div style="font-size:var(--text-base)">1rem / base</div>
+    <div style="font-size:var(--text-sm);color:var(--color-text-secondary)">0.875rem / sm · texto secundario</div>
+    <div style="font-size:var(--text-xs);color:var(--color-text-tertiary)">0.75rem / xs · caption/terciario</div>
+  </div>
+
+  <h2>Radios</h2>
+  <div class="row">
+    <div class="radiusbox" style="border-radius:var(--radius-sm)">sm</div>
+    <div class="radiusbox" style="border-radius:var(--radius-md)">md</div>
+    <div class="radiusbox" style="border-radius:var(--radius-lg)">lg</div>
+    <div class="radiusbox" style="border-radius:var(--radius-2xl)">2xl</div>
+    <div class="radiusbox" style="border-radius:var(--radius-3xl)">3xl</div>
+    <div class="radiusbox" style="border-radius:var(--radius-full)">full</div>
+  </div>
+
+  <h2>Sombras</h2>
+  <div class="row">
+    <div class="sh" style="box-shadow:var(--shadow-xs)">xs</div>
+    <div class="sh" style="box-shadow:var(--shadow-sm)">sm</div>
+    <div class="sh" style="box-shadow:var(--shadow-container)">container</div>
+    <div class="sh" style="box-shadow:var(--shadow-card)">card</div>
+    <div class="sh" style="box-shadow:var(--shadow-floating)">floating</div>
+  </div>
+
+  <h2>Componentes (login)</h2>
+  <div class="card" style="display:flex;flex-direction:column;gap:1rem">
+    <div class="field">
+      <label>Correo <span class="req">*</span></label>
+      <input type="email" placeholder="tu@correo.com">
+    </div>
+    <div class="field">
+      <label>Contraseña <span class="req">*</span></label>
+      <input type="password" placeholder="Tu contraseña">
+    </div>
+    <button class="btn btn-primary">Entrar →</button>
+    <button class="btn btn-secondary">Continuar con Google</button>
+  </div>
+
+  <h2>Tokens de layout</h2>
+  <table>
+    <tr><th>Token</th><th>Valor</th><th>Uso</th></tr>
+    <tr><td>--topbar-height</td><td>3.85rem</td><td>barra superior</td></tr>
+    <tr><td>--sidebar-width</td><td>13rem</td><td>sidebar expandida</td></tr>
+    <tr><td>--pos-ticket-w</td><td>27.5rem</td><td>ticket de venta</td></tr>
+    <tr><td>--shell-gutter</td><td>.75rem</td><td>margen del shell</td></tr>
+  </table>
+
+  <script>
+    const blue = [25,50,100,200,300,400,500,600,700,800];
+    const neutral = [0,10,15,20,30,40,50,60,70,80,90,95,100];
+    const sem = {
+      "surface-brand":"--color-surface-brand",
+      "surface-success":"--color-surface-success",
+      "surface-error":"--color-surface-error",
+      "surface-warning":"--color-surface-warning",
+      "surface-info":"--color-surface-info",
+      "accent (orange)":"--color-accent",
+      "deep-ink":"--brand-deep-ink",
+      "violet-700":"--violet-700",
+    };
+    const mk = (name, cssvar) => `<div class="sw"><div class="chip" style="background:var(${cssvar})"></div><div class="lbl">${name}<code>var(${cssvar})</code></div></div>`;
+    document.getElementById("blue").innerHTML = blue.map(n=>mk("blue-"+n,"--brand-blue-"+n)).join("");
+    document.getElementById("neutral").innerHTML = neutral.map(n=>mk("neutral-"+n,"--neutral-"+n)).join("");
+    document.getElementById("sem").innerHTML = Object.entries(sem).map(([n,v])=>mk(n,v)).join("");
+  </script>
+</body>
+</html>

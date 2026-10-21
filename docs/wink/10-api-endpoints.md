@@ -1,5 +1,17 @@
 # 10 · API observada (`api.wink-pos.com`)
 
+> ⚠️ **Documento de referencia de WINK POS — no describe BLINK.**
+>
+> Este archivo forma parte del **reconocimiento pasivo de `app.wink-pos.com`**
+> (proyecto previo del que BLINK nació como alternativa). Describe la
+> arquitectura, el diseño y el comportamiento de **WINK**, no los de BLINK.
+>
+> Se conserva como **material de estudio**: fue la fuente del comparativo
+> funcional y de buena parte de las decisiones de BLINK. Para el estado real
+> de BLINK, ver el [índice](../INDEX.md).
+>
+> **No tomar como referencia de la implementación actual.**
+
 Endpoints registrados durante la navegación autenticada (394 llamadas en total,
 muchas repetidas). Las peticiones **GET** de lectura se registraron explícitamente;
 las mutaciones (POST/PUT/PATCH/DELETE) se infieren por el recurso y por las acciones de UI.

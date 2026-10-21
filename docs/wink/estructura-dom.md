@@ -1,0 +1,954 @@
+# 12 · Estructura del DOM (área autenticada)
+
+> ⚠️ **Documento de referencia de WINK POS — no describe BLINK.**
+>
+> Este archivo forma parte del **reconocimiento pasivo de `app.wink-pos.com`**
+> (proyecto previo del que BLINK nació como alternativa). Describe la
+> arquitectura, el diseño y el comportamiento de **WINK**, no los de BLINK.
+>
+> Se conserva como **material de estudio**: fue la fuente del comparativo
+> funcional y de buena parte de las decisiones de BLINK. Para el estado real
+> de BLINK, ver el [índice](../INDEX.md).
+>
+> **No tomar como referencia de la implementación actual.**
+
+Generado automáticamente desde `captures/*.html` por `scripts/analyze-structure.mjs`.
+
+Describe cómo está **organizado** el HTML/componentes; no es una reproducción del código.
+
+## 12.1 Árbol de componentes — `/inicio`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-home>
+                    <bento-page-header.block.[&amp;_h1]:text-xl.[&amp;_p]:text-sm>
+                      <bento-card.bg-surface-default.block.lg:p-5>
+                                <bento-icon>
+                                <bento-icon>
+                    <bento-home-kpis.block.space-y-6.order-2>
+                        <bento-card.overflow-hidden.bg-surface-default.block>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                        <bento-card.overflow-hidden.bg-surface-default.block>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                    <bento-dialog>
+                            <bento-icon>
+                        <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-date-input #close-date.block.ng-untouched.ng-pristine>
+                                <bento-field-shell.block>
+                                <bento-icon>
+                      <bento-card.overflow-hidden.bg-surface-default.block>
+                                <bento-icon>
+                              <bento-icon.transition-transform.group-open:rotate-180>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                    <bento-home-inbox.block.order-3>
+                          <bento-card.sm:p-5.bg-surface-default.block>
+                                <bento-icon.mr-2.inline-flex.align-middle>
+                              <bento-badge.bg-surface-warning-subtle.font-medium.gap-1.5>
+                    <bento-wink-tienda-promo.block.order-4>
+                            <bento-icon>
+                              <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-icon>
+        <bento-my-profile>
+          <bento-dialog>
+                  <bento-icon>
+              <bento-scroll.flex.min-h-0.min-w-0>
+                              <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-icon>
+                                <bento-select #profile-location.block.ng-untouched.ng-pristine>
+                                <bento-field-shell.block>
+                                <bento-icon.shrink-0.transition-transform.text-icon-default>
+                                <bento-switch.flex.items-start>
+                                <bento-icon>
+                                <bento-switch.flex.items-start>
+                          <bento-form-error>
+                              <bento-icon>
+                            <bento-icon.text-icon-default.transition-transform.group-hover:translate-x-0.5>
+                              <bento-icon>
+                            <bento-icon.text-icon-default.transition-transform.group-hover:translate-x-0.5>
+        <bento-cash-register-panel.contents>
+          <bento-dialog>
+                  <bento-icon>
+              <bento-scroll.flex.min-h-0.min-w-0>
+                          <bento-field.block>
+                            <bento-field-shell.block>
+                              <bento-money-input.block>
+                                <bento-input-unit.block.min-w-0.flex-1>
+                          <bento-field #open-note.block>
+                            <bento-field-shell.block>
+      <bento-toasts>
+      <bento-confirm-host>
+```
+
+## 12.2 Etiquetas HTML más usadas en `/inicio`
+
+| Etiqueta | Apariciones |
+|---|---|
+| `span` | 134 |
+| `div` | 94 |
+| `svg` | 56 |
+| `path` | 56 |
+| `bento-icon` | 55 |
+| `p` | 39 |
+| `a` | 27 |
+| `button` | 23 |
+| `li` | 17 |
+| `bento-animated-number` | 12 |
+| `link` | 10 |
+| `section` | 8 |
+| `h2` | 8 |
+| `label` | 7 |
+| `h3` | 7 |
+| `bento-money` | 6 |
+| `bento-card` | 5 |
+| `bento-field-shell` | 5 |
+| `meta` | 4 |
+| `header` | 4 |
+| `footer` | 4 |
+| `input` | 4 |
+| `ul` | 3 |
+| `bento-wink-tienda-promo` | 3 |
+| `bento-dialog` | 3 |
+
+## 12.3 Árbol resumido por pantalla
+
+### `ajustes`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-settings-shell>
+                          <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                            <bento-business-page>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-radio-group>
+                                <bento-field.block>
+                                <bento-field-shell.block>
+                                <bento-icon.transition-transform.group-open:rotate-180>
+                                <bento-checkbox.inline-flex.cursor-pointer.items-start>
+                                <bento-checkbox.inline-flex.cursor-pointer.items-start>
+                                <bento-checkbox.inline-flex.cursor-pointer.items-start>
+                                <bento-checkbox.inline-flex.cursor-pointer.items-start>
+```
+
+### `catalogo`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-catalog-shell.block.min-w-0>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-products-page>
+                      <bento-card.bg-surface-default.block.p-4>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-dialog>
+                                <bento-icon>
+                                <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-alert.bg-surface-info-subtle.border.border-border-info/30>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                        <bento-query-bar.block.w-full.mt-4>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                                <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                                <bento-icon>
+                                <bento-column-toggle.inline-flex>
+                                <bento-icon>
+                            <bento-query-suggestions.block>
+                            <bento-pill-tabs.block.min-w-0>
+                            <bento-multiselect.block.w-full.sm:w-72>
+                          <bento-table.block>
+                                <bento-badge.bg-surface-muted.font-medium.gap-1.5>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+```
+
+### `contactos`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-contacts-page>
+                  <bento-card.bg-surface-default.block.p-4>
+                        <bento-import-actions.flex.flex-wrap.items-center>
+                          <bento-tooltip.inline-flex>
+                                <bento-icon>
+                              <bento-icon>
+                          <bento-dialog>
+                                <bento-icon>
+                              <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-alert.bg-surface-info-subtle.border.border-border-info/30>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                    <bento-query-bar.block.w-full.mt-4>
+                            <bento-icon.shrink-0.text-icon-secondary>
+                            <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                        <bento-query-suggestions.block>
+                        <bento-pill-tabs.block.min-w-0>
+                      <bento-table.block>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-badge.bg-surface-info-subtle.font-medium.gap-1.5>
+                        <bento-pagination.mt-3.block>
+                              <bento-select.block.w-36>
+                                <bento-field-shell.block>
+                                <bento-icon.shrink-0.transition-transform.text-icon-default>
+                  <bento-contact-detail>
+```
+
+### `finanzas`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-finance-shell.block.min-w-0>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-accounts-page>
+                      <bento-card.bg-surface-default.block.p-4>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                            <bento-money.inline-block.[&amp;&gt;span]:whitespace-nowrap>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                        <bento-account-exposure-card>
+                        <bento-query-bar.block.w-full.mt-4>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                                <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                            <bento-query-suggestions.block>
+                            <bento-pill-tabs.block.min-w-0>
+                          <bento-table.block>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-money.inline-block.whitespace-nowrap>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-badge.bg-surface-success-subtle.font-medium.gap-1.5>
+                          <bento-pagination.mt-3.block>
+```
+
+### `informes`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-reports-shell.block.min-w-0.[&amp;_bento-money&gt;span+span]:text-text-secondary>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-results-page>
+                          <bento-date-range-filter.block>
+                              <bento-icon.shrink-0.text-icon-default.transition-transform>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                          <bento-report-metric.bg-surface-brand-subtle.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                              <bento-line-chart #results-monthly-chart-description.block.min-w-0.[&amp;_.text-icon-warning]:text-text-warning>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+```
+
+### `informes_resultados`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-reports-shell.block.min-w-0.[&amp;_bento-money&gt;span+span]:text-text-secondary>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-results-page>
+                          <bento-date-range-filter.block>
+                              <bento-icon.shrink-0.text-icon-default.transition-transform>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                          <bento-report-metric.bg-surface-brand-subtle.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                              <bento-line-chart #results-monthly-chart-description.block.min-w-0.[&amp;_.text-icon-warning]:text-text-warning>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+```
+
+### `informes_ventas`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-reports-shell.block.min-w-0.[&amp;_bento-money&gt;span+span]:text-text-secondary>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-sales-report-page>
+                          <bento-date-range-filter.block>
+                              <bento-icon.shrink-0.text-icon-default.transition-transform>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                          <bento-report-metric.bg-surface-brand-subtle.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                          <bento-report-metric.bg-surface-default.block.min-w-0>
+                            <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                            <bento-bar-chart #sales-channel-chart.block.min-w-0>
+                            <bento-bar-chart #sales-category-chart.block.min-w-0>
+                        <bento-report-disclosure.block.min-w-0>
+                                <bento-icon.transition-transform.duration-200.group-open:rotate-180>
+                              <bento-table.block.mt-2>
+                                <bento-icon>
+                        <bento-report-disclosure.block.min-w-0>
+                                <bento-icon.transition-transform.duration-200.group-open:rotate-180>
+                              <bento-table.block.mt-2>
+                                <bento-icon>
+                        <bento-report-disclosure.block.min-w-0>
+                                <bento-icon.transition-transform.duration-200.group-open:rotate-180>
+```
+
+### `inicio`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-home>
+                    <bento-page-header.block.[&amp;_h1]:text-xl.[&amp;_p]:text-sm>
+                      <bento-card.bg-surface-default.block.lg:p-5>
+                                <bento-icon>
+                                <bento-icon>
+                    <bento-home-kpis.block.space-y-6.order-2>
+                        <bento-card.overflow-hidden.bg-surface-default.block>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                        <bento-card.overflow-hidden.bg-surface-default.block>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                                <bento-icon.shrink-0.text-icon-secondary.transition-colors>
+                              <bento-money.inline-block.mt-3.block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+```
+
+### `inventario`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-inventory-shell.block.min-w-0>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-stock-page>
+                      <bento-card.bg-surface-default.block.p-4>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-dialog>
+                                <bento-icon>
+                                <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-alert.bg-surface-info-subtle.border.border-border-info/30>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                              <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                        <bento-query-bar.block.w-full.mt-4>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                                <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                                <bento-icon>
+                            <bento-query-suggestions.block>
+                            <bento-pill-tabs.block.min-w-0>
+                            <bento-multiselect.block.w-full.sm:w-64>
+                            <bento-multiselect.block.w-full.sm:w-64>
+```
+
+### `inventario_existencias`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-inventory-shell.block.min-w-0>
+                      <bento-module-navigation.block.min-w-0.flex-1>
+                    <bento-stock-page>
+                      <bento-card.bg-surface-default.block.p-4>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-dialog>
+                                <bento-icon>
+                                <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-alert.bg-surface-info-subtle.border.border-border-info/30>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                              <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                        <bento-query-bar.block.w-full.mt-4>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                                <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                                <bento-icon>
+                            <bento-query-suggestions.block>
+                            <bento-pill-tabs.block.min-w-0>
+                            <bento-multiselect.block.w-full.sm:w-64>
+                            <bento-multiselect.block.w-full.sm:w-64>
+```
+
+### `ventas`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-sales-layout.flex.min-h-0.flex-1>
+                  <bento-pos-page.relative.flex.min-h-0>
+                        <bento-pos-catalog.flex.min-h-0.min-w-0>
+                                <bento-icon.pointer-events-none.absolute.top-1/2>
+                                <bento-tooltip.inline-flex>
+                                <bento-icon>
+                              <bento-pos-mode-toggle>
+                                <bento-tooltip.inline-flex>
+                      <bento-pos-ticket-panel.flex.min-h-0.flex-col>
+                        <bento-pos-ticket-empty.flex.min-h-0.flex-1>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                        <bento-pos-quote-dialog>
+                          <bento-dialog>
+                                <bento-icon>
+                              <bento-scroll.flex.min-h-0.min-w-0>
+                        <bento-dialog>
+                                <bento-icon>
+                            <bento-scroll.flex.min-h-0.min-w-0>
+                    <bento-pos-product-sheet>
+                      <bento-dialog>
+                              <bento-icon>
+                          <bento-scroll.flex.min-h-0.min-w-0>
+                              <bento-stepper.inline-flex.items-center.gap-1>
+                                <bento-icon>
+                                <bento-icon>
+        <bento-my-profile>
+          <bento-dialog>
+                  <bento-icon>
+```
+
+### `ventas_historial`
+
+```
+    <bento-root>
+      <bento-shell>
+              <bento-icon>
+              <bento-logo.shrink-0.border-r.border-border-subtle>
+              <bento-rate-calculator.inline-block>
+                  <bento-rate-chip.inline-block.transition-transform.duration-150>
+                        <bento-icon>
+              <bento-tooltip.inline-flex>
+                  <bento-icon>
+              <bento-sidebar-nav.block.h-full>
+                    <bento-cash-register-card.block.w-full.md:max-lg:w-auto>
+                          <bento-icon>
+                          <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                            <bento-icon>
+                      <bento-wink-tienda-promo.block.md:max-[899px]:hidden>
+                            <bento-icon>
+                            <bento-icon>
+                              <bento-icon>
+                      <bento-wink-tienda-promo.block.hidden.md:max-[899px]:block>
+                        <bento-tooltip.inline-flex>
+                            <bento-icon>
+                        <bento-icon>
+                        <bento-icon>
+                <bento-sales-layout.flex.min-h-0.flex-1>
+                      <bento-sales-page.relative.block.h-full>
+                        <bento-card.bg-surface-default.block.p-4>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                                <bento-animated-number.tabular-nums>
+                                <bento-money.inline-block>
+                                <bento-animated-number.tabular-nums>
+                            <bento-import-actions.flex.flex-wrap.items-center>
+                              <bento-tooltip.inline-flex>
+                                <bento-icon>
+                                <bento-icon>
+                                <bento-icon>
+                              <bento-dialog>
+                                <bento-icon>
+                                <bento-scroll.flex.min-h-0.min-w-0>
+                                <bento-icon>
+                                <bento-icon>
+                          <bento-query-bar.block.w-full.mt-4>
+                                <bento-icon.shrink-0.text-icon-secondary>
+                                <bento-icon.mx-1.shrink-0.text-icon-secondary>
+                                <bento-icon>
+                              <bento-query-suggestions.block>
+                              <bento-date-range-filter.block>
+                                <bento-icon.shrink-0.text-icon-default.transition-transform>
+                              <bento-pill-tabs.block.min-w-0>
+                              <bento-multiselect.block>
+                              <bento-multiselect.block>
+                              <bento-multiselect.block>
+                              <bento-multiselect.block>
+```

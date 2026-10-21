@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-20 · **Versión:** 1.4.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.8.3 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -10,6 +10,7 @@
 | Tests (`npx vitest run`) | 50/50 en 5 archivos |
 | Build (`npm run build:pages`) | Exitoso |
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
+| Verificación de UI (`npm run verify:ui`) | 15/15 vistas, 0 errores de consola, 0 iconos vacíos, 0 desbordes |
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
@@ -17,7 +18,7 @@
 ## Módulos
 
 ### Core
-- [x] React 19 + Vite 8 + TypeScript
+- [x] React 19 + Vite 8 + TypeScript 5.9
 - [x] Store global con `useSyncExternalStore`
 - [x] Persistencia localStorage con manejo de cuota
 - [x] Migración de esquema de productos (`migrate.ts`, testeada)
@@ -29,6 +30,7 @@
 - [x] Onboarding guiado (wizard)
 - [x] Moneda base USD/EUR inmutable tras guardar
 - [x] Verificación de dispositivo
+- [x] Versión declarada en un solo sitio (`app/package.json`) y **no mostrada en la UI** (BUG-12)
 
 ### POS / Ventas
 - [x] Sin grilla de productos (búsqueda multicriterio + ticket en vivo)
@@ -49,11 +51,23 @@
 - [x] Cierres de caja
 - [x] Informes imprimibles (PDF)
 
-### UI/UX
-- [x] Paleta oficial Blink (7 tokens)
-- [x] Modelo híbrido: tabla compacta (PC) / tarjetas (móvil < 768px)
-- [x] Header con logo enlazado a `/vender`, sin redes sociales
-- [x] Dominio propio: `base: "/"`, `app/public/CNAME`
+### UI/UX — sistema de diseño iOS 27 (v1.6.0 → v1.8.3)
+- [x] Paleta oficial Blink: `#FFFEFB` fondo, `#007AFF` acento, `#424242` secundario, `#1D1D1F` primario
+- [x] Konsta UI 5 (MIT) como capa de componentes iOS
+- [x] Tailwind v4 con preflight activado, sin alterar el diseño de BLINK
+- [x] Control segmentado de iOS (`<Segmented>`) en Inventario, Finanzas, Catálogo y Contactos
+- [x] Tab bar flotante con Liquid Glass en móvil (`<Glass>`)
+- [x] Listas *inset grouped* de iOS (contenedor sin borde, hairline inset, etiqueta/valor)
+- [x] Liquid Glass **solo** en la landing; el POS es 100 % opaco
+- [x] Tokens oficiales del UI Kit de iOS 27 (107 colores, 105 estilos de texto, 42 materiales)
+- [x] Geometría real de 1.657 componentes del kit (`docs/ios27-geometry.json`)
+- [x] Métricas aplicadas: fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab 48×48
+- [x] 86 SF Symbols normalizados a `currentColor`
+- [x] Verificación visual automatizada (`npm run verify:ui`)
+
+Detalle en [`REDISENO_KONSTA_HIG.md`](./REDISENO_KONSTA_HIG.md),
+[`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) y
+[`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md).
 
 ### Landing comercial (v1.4.0)
 - [x] Portada pública en `/` (header, hero, beneficios, ecosistema, precios, footer)
@@ -80,6 +94,8 @@ Detalle completo en [`DNS_CLOUDFLARE_GITHUB_PAGES.md`](./DNS_CLOUDFLARE_GITHUB_P
 ## Pendientes
 
 ### Desarrollo
+- [ ] Sidebar flotante con Liquid Glass en tablet (iPadOS 27)
+- [ ] Buscador como pestaña de búsqueda dedicada (Search tab)
 - [ ] Aplicar permisos RBAC en la UI (ocultar costos/márgenes por rol)
 - [ ] Enganchar `addAuditLog` en acciones críticas (caja, anulaciones, stock)
 - [ ] Migrar comercios existentes a `baseCurrencyLocked`
@@ -91,14 +107,23 @@ Detalle completo en [`DNS_CLOUDFLARE_GITHUB_PAGES.md`](./DNS_CLOUDFLARE_GITHUB_P
 - [x] Redirección apex → www
 - [x] Dominio personalizado en GitHub Pages
 - [ ] Verificar `Enforce HTTPS` en el panel de GitHub (opcional: Cloudflare ya fuerza HTTPS)
+- [ ] Renovar el token de la API de Cloudflare (expiró; `refresh` devuelve `invalid_scope`)
+
+### Legales / licencias
+- [ ] Decidir el set de iconos definitivo: SF Symbols es material de Apple con uso
+      restringido a plataformas Apple. Alternativas libres documentadas en
+      [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md) (Phosphor MIT, Lucide ISC, Tabler MIT).
 
 ## Comandos
 
 ```bash
 cd app
-npm run dev          # Desarrollo en :5173
-npm run typecheck    # Verificar tipos
-npx vitest run       # Tests
-npm run build:pages  # Build estático
-npm run deploy       # Publicar en gh-pages
+npm run dev            # Desarrollo en :5173
+npm run typecheck      # Verificar tipos
+npx vitest run         # Tests
+npm run build:pages    # Build estático
+npm run deploy         # Publicar en gh-pages
+npm run verify:ui      # Regresión visual de las 15 vistas
+npm run tokens:ios     # Regenerar tokens del UI Kit de iOS 27
+npm run icons:sf       # Regenerar el set de SF Symbols
 ```

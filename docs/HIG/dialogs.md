@@ -1,3 +1,0 @@
-# dialogs
-
-HTTP 404

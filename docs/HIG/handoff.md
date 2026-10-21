@@ -1,3 +1,0 @@
-# handoff
-
-HTTP 404

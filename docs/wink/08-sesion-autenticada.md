@@ -1,5 +1,17 @@
 # 08 · Flujo de sesión autenticada (staging)
 
+> ⚠️ **Documento de referencia de WINK POS — no describe BLINK.**
+>
+> Este archivo forma parte del **reconocimiento pasivo de `app.wink-pos.com`**
+> (proyecto previo del que BLINK nació como alternativa). Describe la
+> arquitectura, el diseño y el comportamiento de **WINK**, no los de BLINK.
+>
+> Se conserva como **material de estudio**: fue la fuente del comparativo
+> funcional y de buena parte de las decisiones de BLINK. Para el estado real
+> de BLINK, ver el [índice](../INDEX.md).
+>
+> **No tomar como referencia de la implementación actual.**
+
 Estos scripts permiten entrar al POS con **tu propia cuenta** para documentar las
 pantallas internas. **Tu contraseña nunca pasa por el código.**
 

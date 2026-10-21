@@ -1,7 +1,7 @@
 {
   "name": "blink-pos-app",
   "private": true,
-  "version": "1.8.0",
+  "version": "1.8.3",
   "type": "module",
   "description": "BLINK POS — Punto de venta (aplicación propia, diseño y código originales).",
   "scripts": {
@@ -17,7 +17,8 @@
     "og": "node scripts/build-og-image.mjs",
     "icons:sf": "node scripts/build-sf-symbols.mjs",
     "tokens:ios": "node scripts/build-ios-tokens.mjs",
-    "verify:ui": "node scripts/verify-ui.mjs"
+    "verify:ui": "node scripts/verify-ui.mjs",
+    "docs:check": "node scripts/check-docs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

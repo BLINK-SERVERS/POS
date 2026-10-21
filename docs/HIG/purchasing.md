@@ -1,3 +1,0 @@
-# purchasing
-
-HTTP 404

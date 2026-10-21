@@ -1,6 +1,14 @@
-# Iconos de marca · Favicon y PWA
+# Iconos de marca · Favicon y PWA · Set de iconos de la interfaz
 
-**Fecha:** 2026-10-20 · **Versión:** 1.4.0
+**Fecha:** 2026-10-21 · **Versión:** 1.8.3
+
+> Hay **dos juegos de iconos** distintos en el proyecto y conviene no
+> confundirlos:
+>
+> | Juego | Qué es | Dónde |
+> |---|---|---|
+> | **Iconos de marca** | favicon, iconos del PWA, Open Graph | `app/public/` — material propio de Blink |
+> | **Iconos de interfaz** | los que se usan dentro de la app | `app/src/lib/sf-symbols.ts` — **SF Symbols de Apple** (ver la nota de licencia más abajo) |
 
 ## Origen de los assets
 
@@ -118,6 +126,75 @@ npm run og      # node scripts/build-og-image.mjs
 
 ---
 
+## Set de iconos de la interfaz · SF Symbols
+
+### Qué es
+
+La app usa **86 SF Symbols** de Apple como set de iconos de interfaz. Son SVG
+embebidos en `app/src/lib/sf-symbols.ts`, generados por:
+
+```bash
+cd app
+npm run icons:sf    # node scripts/build-sf-symbols.mjs
+```
+
+El script los descarga de `github.com/brendanballon/sfsymbols-svg`, les aplica
+su propio `viewBox` y **normaliza el relleno a `currentColor`**, para que
+hereden el color del texto y funcionen en modo claro y oscuro.
+
+### Cómo se usan
+
+```tsx
+import { Icon } from "../components/Icon";
+
+<Icon name="cart" />              {/* tamaño por defecto */}
+<Icon name="cart" size={20} />    {/* explícito */}
+```
+
+La API pública (`IconName`, `size`) es estable: **ningún *call site* cambia**
+al migrar de los iconos de trazo propios a SF Symbols. `IconName` es una unión
+de tipos generada, así que un nombre mal escrito no compila.
+
+Reglas:
+
+- **Solo SVG.** No hay emoji en ninguna pantalla.
+- Solo tres colores base (`#FFFEFB` fondo, `#007AFF` acento, `#424242` texto)
+  más los semánticos (`#34A853`, `#EA4335`, `#FBBC05`).
+- El icono **no** se usa como decoración: acompaña a una acción o a un dato.
+
+### ⚠️ Nota de licencia
+
+> Los **SF Symbols son material de Apple**. Su licencia restringe su uso a
+> software que se ejecute **únicamente** en plataformas de Apple (iOS, iPadOS,
+> macOS, tvOS, watchOS, visionOS). Usarlos en una aplicación web como BLINK
+> —que corre en cualquier navegador— **no está cubierto por esa licencia**.
+>
+> El repositorio de terceros del que se obtuvo el arte
+> (`brendanballon/sfsymbols-svg`) **no incluye un archivo `LICENSE`**, así que
+> tampoco hay una licencia alternativa que lo cubra.
+>
+> **Decisión tomada:** se asume el riesgo y se documenta, tal como se pidió
+> explícitamente al elegir este set. Los **tokens de diseño** del UI Kit
+> (colores, tipografía, medidas, materiales) sí son datos objetivos y se usan
+> sin problema; lo restringido es el **arte de los iconos**.
+
+### Alternativas libres
+
+Si en el futuro hay que sustituir el set, estas son las opciones con licencia
+permisiva:
+
+| Set | Licencia | Formato | Nota |
+|---|---|---|---|
+| [Phosphor Icons](https://phosphoricons.com/) | **MIT** | SVG con `currentColor` | Gran variedad; incluye pesos *thin/light/bold/fill* |
+| [Lucide](https://lucide.dev/) | **ISC** | SVG con `currentColor` | Trazo de 24×24, muy consistente |
+| [Tabler Icons](https://tabler.io/icons) | **MIT** | SVG con `currentColor` | ~5.000 iconos, excelente cobertura de acciones de negocio |
+
+Los tres se integran igual: basta con regenerar `app/src/lib/sf-symbols.ts`
+apuntando al repositorio correspondiente y adjusting la API de `Icon` si
+cambia el `viewBox`. **No hay que tocar ningún *call site*.**
+
+---
+
 ## Antes vs después
 
 | Antes | Ahora |
@@ -129,6 +206,7 @@ npm run og      # node scripts/build-og-image.mjs
 | Manifest con 1 icono SVG | Manifest con 5 iconos (any + maskable) |
 | Sin script de generación | `npm run icons` regenera los PNG |
 | Sin imagen para compartir | `og-image.png` 1200×630 con favicon + marca |
+| Iconos de trazo propios | **86 SF Symbols** rellenos, `currentColor` |
 
 ## Verificación en producción
 

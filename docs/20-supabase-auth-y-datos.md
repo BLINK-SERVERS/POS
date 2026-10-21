@@ -108,11 +108,15 @@ está bloqueada, ver 2.2).
 - **Authentication → Providers → Email**: activado; «Confirm email» **activado** (así el código
   es obligatorio).
 - **Providers → Google / Phone**: **desactivados** (BLINK no usa Google).
-- **URL Configuration** (ya aplicado en producción): *Site URL* =
-  `https://blink-servers.github.io/POS/` y *Redirect URLs* = `https://blink-servers.github.io/POS/`
-  y `https://blink-servers.github.io/POS/**` (más `http://localhost:5173/**` para desarrollo).
+- **URL Configuration**: *Site URL* = `https://www.blink.com.ve` y *Redirect URLs* =
+  `https://www.blink.com.ve/**`, `https://www.blink.com.ve/app/**` y
+  `https://blink.com.ve/**` (más `http://localhost:5173/**` para desarrollo).
   Antes el *Site URL* seguía en `http://localhost:3000`, y por eso los enlaces de los correos
-  apuntaban a **localhost**.
+  apuntaban a **localhost**; y durante un tiempo apuntaron a
+  `https://blink-servers.github.io/POS/`, que ya no es la URL pública.
+  > Si los correos de verificación siguen llegando con la URL antigua, actualiza
+  > *Site URL* y *Redirect URLs* en el panel de Supabase y añade la nueva URL;
+  > no hace falta regenerar las claves.
 
 ### 2.5 Variables de entorno del cliente
 

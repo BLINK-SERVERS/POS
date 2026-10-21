@@ -1,6 +1,11 @@
 # Rediseño con Konsta UI + Human Interface Guidelines
 
-**Fecha:** 2026-10-20 · **Versión:** 1.6.0
+**Fecha:** 2026-10-21 · **Versión:** 1.8.3
+
+> Este documento describe el rediseño de la **v1.6.0**. Las correcciones
+> posteriores están en el CHANGELOG; en particular, el **preflight de Tailwind
+> v4 se activó en la v1.7.0** (ver la sección 1.1, que reemplaza la decisión
+> original de importarlo sin preflight).
 
 ---
 
@@ -13,22 +18,39 @@
 | Tailwind | `tailwindcss@4.3.3` + `@tailwindcss/vite` |
 | Licencia | MIT — uso comercial libre |
 
-### Tailwind v4 **sin preflight** (decisión deliberada)
+### 1.1 Tailwind v4 con preflight (decisión vigente desde la v1.7.0)
 
 ```css
 /* app/src/styles/konsta.css */
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss";            /* COMPLETO: theme + preflight + utilities */
 @import "konsta/react/theme.css";
 ```
 
-El preflight de Tailwind reescribe botones, inputs y tablas (reset por defecto). El proyecto
-ya tenía su propio reset en `app.css`; aplicarlo habría roto el diseño actual de forma
-silenciosa. Importando solo `theme` + `utilities` se obtiene todo lo que Konsta necesita
-(sus utilidades y variables) sin tocar el reset propio.
+La decisión original de la v1.6.0 era importar Tailwind **sin preflight**
+(``@import "tailwindcss/theme.css" layer(theme)`` +
+`@import "tailwindcss/utilities.css" layer(utilities)`) para no romper el reset
+propio de `app.css`. Se **revirtió** en la v1.7.0: sin preflight, los
+componentes de Konsta no recibían el reset base que necesitan (botones sin
+borde del navegador, tablas, inputs, listas).
 
-**Verificado tras la instalación:** fondo `#FFFEFB`, botón primario `#007AFF`, tipografía
-`SF Pro Display` intactos, **0 errores de consola**.
+**Por qué no rompe el diseño de BLINK:** la prioridad de cascada lo resuelve.
+
+- El preflight de Tailwind vive en `layer(base)`.
+- `app.css` se importa **después** y **sin capa**.
+- En CSS, las reglas **sin capa ganan a las de cualquier capa**.
+
+Por tanto, los resets propios de BLINK siguen mandando y el preflight solo
+rellena los huecos que Konsta necesita.
+
+**Verificado tras el cambio:** fondo `#FFFEFB`, botón primario `#007AFF`,
+tipografía `SF Pro Display` intactos, **0 errores de consola** y las 15 vistas
+en verde (`npm run verify:ui`).
+
+### 1.2 Nota sobre el orden de importación
+
+El orden importa: `konsta.css` (Tailwind + Konsta) se importa **antes** que
+`app.css` en el punto de entrada. Si se invirtiera, `app.css` seguiría
+ganando (está sin capa), pero el orden explícito evita sorpresas.
 
 ### Configuración
 
@@ -187,22 +209,45 @@ Detectable con `page.on("pageerror")` en Playwright: el error aparecía al naveg
 
 ---
 
-## 5. Lo que sigue pendiente (propuesto)
+## 5. Estado de lo propuesto
 
-| # | Tarea | Origen HIG | Riesgo |
+| # | Tarea | Origen HIG | Estado |
 |---|---|---|---|
-| 1 | Sidebar de escritorio como `Panel` de Konsta (colapsable) | Sidebars | Bajo |
-| 2 | `Segmented` en los tabs de Catálogo/Inventario/Finanzas | Segmented controls | Bajo |
-| 3 | Modales de cobro y ajustes como `Sheet` (tarea modal) | Sheets / Modality | Medio |
-| 4 | Importes de tabla como **píldora** en la columna derecha | Lists and tables (macOS 26) | Bajo |
-| 5 | Tema oscuro con `useTheme` + `dark` de Konsta | Dark mode | Medio |
-| 6 | Fila seleccionada persistida en tablas | Lists and tables | Bajo |
+| 1 | Sidebar de escritorio como `Panel` de Konsta (colapsable) | Sidebars | ⏳ Pendiente — **siguiente paso** (v1.9.0) |
+| 2 | `Segmented` en los tabs de Catálogo/Inventario/Finanzas | Segmented controls | ✅ Hecho en la **v1.7.0** (también en Contactos) |
+| 3 | Modales de cobro y ajustes como `Sheet` (tarea modal) | Sheets / Modality | ⏳ Pendiente |
+| 4 | Importes de tabla como **píldora** en la columna derecha | Lists and tables (macOS 26) | ❌ **Descartado** — es un patrón de **macOS 26** (Finder), no de iOS. El usuario lo corrigió explícitamente: *"debe ser de iOS 27 no macos"*. |
+| 5 | Tema oscuro con `useTheme` + `dark` de Konsta | Dark mode | ⏳ Pendiente |
+| 6 | Fila seleccionada persistida en tablas | Lists and tables | ⏳ Pendiente |
+
+### Lo que sí se hizo, con el HIG de fondo
+
+| Regla del HIG | Dónde se aplicó |
+|---|---|
+| Listas *inset grouped* (contenedor sin borde, hairline inset, etiqueta/valor) | `app.css`, bloque `table.data tbody tr` |
+| Control segmentado de iOS | `components/ui.tsx` → `Tabs` con `<Segmented>` de Konsta |
+| Tab bar flotante con material translúcido | `components/Shell.tsx` → `<Glass>` de Konsta |
+| Medidas oficiales de los componentes (52 px de fila, 64×28 de toggle, 46×32 de stepper, 48×48 de tab bar) | `app.css`, bloque de métricas iOS 27 |
+| Superficies opacas en el POS; material translúcido solo en la landing | `styles/landing.css` vs `styles/app.css` |
+
+Las medidas exactas están en
+[`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md) y los datos
+crudos en [`ios27-geometry.json`](./ios27-geometry.json).
 
 ---
 
-## 6. Nota de licencias (sin cambios)
+## 6. Nota de licencias (actualizada en la v1.8.0)
 
 - **Konsta UI**: MIT → uso comercial libre. ✅
-- **SF Symbols / SF Pro**: **no** se usan. La licencia de Apple los restringe a
-  plataformas Apple (ver [`DESIGN_IOS27.md`](./DESIGN_IOS27.md)).
-- Los iconos del POS siguen siendo SVG propios de BLINK.
+- **SF Symbols**: **sí se usan** desde la v1.8.0 (86 iconos). La licencia de
+  Apple los restringe a plataformas Apple, y el repo de terceros del que se
+  obtuvo el arte no trae `LICENSE`. **Riesgo asumido y documentado** en
+  [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md), junto con las alternativas libres
+  (Phosphor MIT, Lucide ISC, Tabler MIT).
+- **SF Pro**: **no** se distribuye. La app usa la pila del sistema
+  (`-apple-system`, Segoe UI…). Los archivos de la fuente se eliminaron del
+  repo en la v1.5.0.
+- **Tokens y medidas del UI Kit de iOS 27**: son datos objetivos (colores,
+  tipografía, medidas, materiales). Se usan sin restricción y están
+> documentados en [`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) y
+  [`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md).

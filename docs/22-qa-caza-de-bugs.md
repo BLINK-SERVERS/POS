@@ -93,6 +93,14 @@ Además se reforzaron varios puntos de UI para el caso "tasa sin configurar" (ve
 - **Síntoma:** Ajustes mostraba "BLINK POS · versión 1.3.1" al pie.
 - **Requisito:** la versión se declara una sola vez en `app/package.json` y **no** debe verse en
   la UI. Se eliminó el render.
+- **Estado (v1.8.3):** el requisito **sigue vigente**. No se ha vuelto a introducir la versión
+  en ninguna pantalla. `__APP_VERSION__` existe en el bundle (lo inyecta `vite.config.ts`),
+  pero nada lo renderiza.
+  > Si alguna vez se quiere mostrar la versión (por ejemplo, para pedir soporte), hay que
+  > **revisar esta decisión con el dueño del producto** antes de añadir el render: el
+  > CHANGELOG de la v1.3.x llegó a afirmar que la versión se mostraba, y era falso.
+  > Ver también [`RBAC_AUDIT_IMPLEMENTADO.md`](./RBAC_AUDIT_IMPLEMENTADO.md) sobre cómo
+  > documentar el estado real en lugar del esperado.
 
 ### BUG-13 · Etiqueta "Método de pago" robaba el nombre del primer botón (accesibilidad)
 - **Síntoma:** el grupo de cuentas de pago quedaba con nombre accesible

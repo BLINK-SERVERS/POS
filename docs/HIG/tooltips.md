@@ -1,3 +1,0 @@
-# tooltips
-
-HTTP 404

@@ -1,7 +1,19 @@
 # Diseño iOS 27 / iPadOS 27 — Extracción y guía de aplicación
 
-**Fecha:** 2026-10-20 · **Versión:** 1.5.0
+**Fecha:** 2026-10-21 · **Versión:** 1.5.0 (extracción) · vigente en 1.8.3
 **Fuentes:** `SF-Symbols-27.dmg` (oficial de Apple) · kit Figma *iOS and iPadOS 27* · Apple HIG
+
+> **Este documento cubre la primera extracción (v1.5.0), basada en el `.dmg` de
+> SF Symbols y en el índice de páginas del kit de Figma.** Para los valores
+> definitivos ver:
+>
+> - [`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) — tokens oficiales extraídos
+>   del **UI Kit de iOS 27 en `.sketch`** (107 colores, 105 estilos de texto,
+>   42 materiales).
+> - [`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md) — las
+>   **medidas reales** de 1.657 componentes del kit y su comparación con BLINK.
+> - [`ICONOS_Y_PWA.md`](./ICONOS_Y_PWA.md) — el set de SF Symbols que sí está
+>   en producción y su nota de licencia.
 
 ---
 
@@ -23,6 +35,13 @@
 > Tier 1 (`GET file`, `GET nodes`, `GET images`) permiten **20 llamadas por mes** — el
 > PAT no cambia ese techo (`retry-after: 398482` s ≈ 4,6 días). Los specs a nivel de
 > nodo (radios, alturas, padding) se completarán cuando se reinicie la cuota.
+>
+> **Cómo se resolvió sin la API:** el kit oficial viene también como archivo
+> `.sketch` (`Apple iOS 27 UI Kit.sketch`, 160 MB), que es un bundle y se lee
+> con 7-Zip. Procesándolo en local se obtuvieron **los tokens y la geometría
+> exactos** sin gastar una sola llamada. Ver
+> [`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) y
+> [`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md).
 
 ---
 

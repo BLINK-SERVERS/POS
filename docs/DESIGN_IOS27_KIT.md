@@ -123,8 +123,11 @@ grandes, y las variantes se nombran con el PostScriptName (`SFPro-Regular`,
 |---|---|
 | `app/src/lib/ios-design-tokens.ts` | **Nuevo** (generado). Tokens oficiales del kit. |
 | `app/src/styles/tokens.css` | Bloque `--ios-*` con los valores **exactos** del kit (colores, etiquetas, rellenos, escala tipográfica, blur del glass). |
-| `app/src/lib/sf-symbols.ts` | **Nuevo** (generado). 70 SF Symbols normalizados a `currentColor`. |
+| `app/src/lib/sf-symbols.ts` | **Nuevo** (generado). **86 SF Symbols** normalizados a `currentColor`. |
 | `app/src/components/Icon.tsx` | Migrado de iconos de trazo propios a SF Symbols rellenos. La API pública (`IconName`, `size`) se mantiene: **ningún call site cambia**. |
+| `app/src/styles/app.css` | Métricas reales de los componentes iOS 27 aplicadas (fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab bar 48×48). |
+| `docs/ios27-geometry.json` | **Nuevo**. Geometría de **1.657 símbolos** de 21 páginas del kit (tamaño, estilos y textos de cada componente). |
+| `docs/IOS27_METRICAS_COMPONENTES.md` | **Nuevo**. Las medidas oficiales y su comparación con BLINK. |
 
 ### Scripts
 
@@ -132,6 +135,7 @@ grandes, y las variantes se nombran con el PostScriptName (`SFPro-Regular`,
 npm run tokens:ios   # extrae los tokens del .sketch -> ios-design-tokens.ts
 npm run icons:sf     # descarga y normaliza los SF Symbols -> sf-symbols.ts
 npm run verify:ui    # verifica las 15 vistas (render, iconos, overflow, consola)
+npm run docs:check   # verifica que no haya enlaces rotos en la documentación
 ```
 
 `verify:ui` deja capturas en `verify-shots/` y sale con código 1 si algo falla:

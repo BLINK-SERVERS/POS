@@ -1,5 +1,17 @@
 # 16 · Wink POS — Inventario funcional (sesión en vivo)
 
+> ⚠️ **Documento de referencia de WINK POS — no describe BLINK.**
+>
+> Este archivo forma parte del **reconocimiento pasivo de `app.wink-pos.com`**
+> (proyecto previo del que BLINK nació como alternativa). Describe la
+> arquitectura, el diseño y el comportamiento de **WINK**, no los de BLINK.
+>
+> Se conserva como **material de estudio**: fue la fuente del comparativo
+> funcional y de buena parte de las decisiones de BLINK. Para el estado real
+> de BLINK, ver el [índice](../INDEX.md).
+>
+> **No tomar como referencia de la implementación actual.**
+
 Documento elaborado a partir de una **sesión real en vivo** en la app de Wink
 (`https://app.wink-pos.com`, API `https://api.wink-pos.com`), navegando e interactuando
 con todos los módulos. Complementa a `09-pantallas-internas.md` (catálogo de pantallas),

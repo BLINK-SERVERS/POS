@@ -1,3 +1,0 @@
-# visionos
-
-HTTP 404

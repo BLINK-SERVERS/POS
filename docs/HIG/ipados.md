@@ -1,3 +1,0 @@
-# ipados
-
-HTTP 404

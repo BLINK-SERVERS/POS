@@ -1,3 +1,0 @@
-# cards
-
-HTTP 404

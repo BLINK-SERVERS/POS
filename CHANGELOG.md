@@ -7,9 +7,86 @@ Esquema de versiones (SemVer adaptado):
 - **PATCH** (`1.0.0` → `1.0.1`): cambios menores y correcciones de bugs.
 
 La versión se declara **una sola vez** en `app/package.json` y Vite la inyecta en el
-bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantalla de acceso.
+bundle (`__APP_VERSION__`). **No se muestra en la interfaz**: es un requisito
+del producto, no una omisión (ver BUG-12 en
+[`docs/22-qa-caza-de-bugs.md`](docs/22-qa-caza-de-bugs.md)).
 
 ---
+
+## [1.8.3] · 2026-10-21
+
+**Documentación completa del proyecto + métricas reales de iOS 27.**
+
+- **Geometría oficial de iOS 27 extraída del UI Kit** — se procesó el bundle
+  `.sketch` con 7-Zip y se leyeron los `symbolMaster` de 21 páginas: **1.657
+  componentes** con su tamaño, estilos de capa y textos.
+  - La clase correcta en Sketch es `symbolMaster` (no `artboard`), y `7z e`
+    aplana la ruta: el JSON de página cae en la raíz del destino, no en `pages/`.
+  - Resultado en [`docs/ios27-geometry.json`](docs/ios27-geometry.json) y
+    sintetizado en [`docs/IOS27_METRICAS_COMPONENTES.md`](docs/IOS27_METRICAS_COMPONENTES.md).
+- **Métricas aplicadas al CSS** (`app/src/styles/app.css`): fila de lista
+  **52 px** (medida oficial), campo de texto **52 px**, toggle **64 × 28**,
+  stepper **46 × 32** y área táctil de la tab bar **48 × 48**.
+- **Versión de la aplicación actualizada a `1.8.3`** en `app/package.json`
+  (fuente única; Vite la inyecta como `__APP_VERSION__`). **No se muestra en la
+  interfaz**, por requisito del producto (BUG-12).
+- **Documentación reorganizada:**
+  - Nuevo índice maestro [`docs/INDEX.md`](docs/INDEX.md).
+  - `README.md` reescrito por completo (antes describía la v1.1.2, 26 pruebas,
+    la URL `blink-servers.github.io/POS/` y `base: /POS/`, todo obsoleto).
+  - `docs/ESTADO_ACTUAL_PROYECTO.md` actualizado a la v1.8.3.
+  - `docs/RBAC_AUDIT_IMPLEMENTADO.md` rellenado (era un archivo de 0 bytes).
+    Documenta el estado **real**: la tabla `business_members` y el RLS por rol
+    ya están en Supabase, pero `permissions.ts` y `audit.ts` están definidos
+    y **sin usar** en la UI, y no existe tabla de auditoría en el servidor.
+  - **Documentación de WINK aislada en `docs/wink/`.** Once documentos
+    numerados (`01`, `03`, `04`, `05`, `06`, `07`, `08`, `10`, `14`) describían
+    **WINK POS** (Angular 22, `bento-*`, `api.wink-pos.com`, Montserrat), no
+    BLINK. Ahora están en [`docs/wink/`](docs/wink/README.md), con un aviso en
+    cada archivo, y sus equivalentes reales de BLINK están **reescritos**
+    (`01-tech-stack.md`, `03-rutas-arquitectura.md`, `14-estructura-general.md`).
+  - `docs/02-design-system.md` reescrito: documentaba el design system de
+    WINK (252 tokens, `#3347DD`). El de BLINK (3 colores base + tokens `--ios-*`
+    + métricas de componentes) está ahora en su lugar; el de WINK quedó como
+    `docs/wink/02b-design-system-wink.md`.
+  - `docs/19-despliegue-gh-pages.md` corregido: apuntaba a
+    `blink-servers.github.io/POS/` y a `vite build --base=/POS/`. El sitio
+    vivo es `https://www.blink.com.ve` con `base: "/"`.
+  - `docs/20-supabase-auth-y-datos.md`: *Redirect URLs* de Supabase
+    actualizadas al dominio propio.
+  - `docs/REDISENO_KONSTA_HIG.md` corregido: decía que Tailwind se importaba
+    **sin preflight** (decisión de la v1.6.0, revertida en la v1.7.0) y que
+    los SF Symbols no se usaban. Actualizado, con el estado real de cada tarea
+    propuesta.
+  - `docs/ICONOS_Y_PWA.md`: añadida la sección del set de SF Symbols con la
+    **nota de licencia** y las alternativas libres (Phosphor MIT, Lucide ISC,
+    Tabler MIT).
+  - Eliminadas **20 páginas del HIG que devolvían `HTTP 404`** (slugs
+    inexistentes en la documentación de Apple). Quedan **85 páginas** del HIG
+    más el índice.
+- **Nuevo `npm run docs:check`**: recorre los 318 Markdown del repositorio,
+  valida los **2.674 enlaces relativos** y detecta páginas del HIG con
+  contenido `HTTP 404`. Sale con código 1 si algo falla.
+- **`app/package.json`** → `1.8.3`.
+
+## [1.8.2] · 2026-10-21
+
+**Métricas reales de los componentes de iOS 27 aplicadas al CSS.**
+
+- Se extrajo la geometría de los artboards del UI Kit oficial y se comparó con
+  las medidas de BLINK (ver [`docs/IOS27_METRICAS_COMPONENTES.md`](docs/IOS27_METRICAS_COMPONENTES.md)).
+- Alturas corregidas: fila de tabla, campo de texto, toggle, stepper y área
+  táctil de los items de la tab bar.
+- `docs/ios27-geometry.json` (datos crudos) y
+  `docs/IOS27_METRICAS_COMPONENTES.md` (síntesis + tabla de comparación).
+
+## [1.8.1] · 2026-10-21
+
+**Set de iconos ampliado de 70 a 86 SF Symbols.**
+
+- Iconos añadidos para la tab bar flotante, split view, panel *inspector* y los
+  controles de iOS 27 (segmented control, toggle, stepper, slider, page control).
+- `app/src/lib/sf-symbols.ts` regenerado; `npm run icons:sf` mantiene el flujo.
 
 ## [1.8.0] · 2026-10-21
 
