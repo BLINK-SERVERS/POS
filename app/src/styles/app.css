@@ -1167,6 +1167,54 @@ table.data tbody tr:hover {
 }
 
 /* ============================================================
+   Metricas de componentes iOS 27
+   ------------------------------------------------------------
+   Medidas reales del UI Kit oficial de Apple (ver
+   docs/IOS27_METRICAS_COMPONENTES.md):
+     · Fila de lista        402 x 52
+     · Campo de texto       288 x 52
+     · Toggle                64 x 28
+     · Stepper               46 x 32
+     · Item de tab bar       48 x 48
+     · Boton grande          50 x 50
+   ============================================================ */
+
+/* Fila de tabla: 52 px de alto (alto de fila de lista de iOS) */
+table.data td {
+  padding: 0.9rem 0.9rem;
+}
+
+/* Campo de texto: 52 px de alto */
+.input,
+.select,
+.textarea {
+  min-height: 52px;
+}
+.textarea {
+  min-height: 84px;
+}
+
+/* Toggle de iOS: 64 x 28 */
+.toggle {
+  width: 64px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+}
+
+/* Stepper de iOS: 46 x 32 */
+.stepper button {
+  width: 46px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+/* Area tactil de los items de la tab bar: 48 x 48 */
+.shell__tabbar a {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* ============================================================
    Barra de pestañas flotante (Konsta UI, tema iOS 27)
    ------------------------------------------------------------
    HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
