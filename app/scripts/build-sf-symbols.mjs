@@ -31,7 +31,7 @@ const API = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=
  * necesita el rediseño de iOS 27 (tab bar, split view, inspector...).
  */
 export const ICON_MAP = {
-  // --- Iconos actuales de BLINK ---
+  // --- Iconos actuales de BLINK (32) ---
   home: "house.fill",
   cart: "cart.fill",
   tag: "tag.fill",
@@ -65,7 +65,7 @@ export const ICON_MAP = {
   filter: "line.3.horizontal.decrease.circle",
   share: "square.and.arrow.up",
 
-  // --- Extras para el rediseño de iOS 27 ---
+  // --- Rediseño iOS 27: barra de pestañas, split view, inspector ---
   tabHome: "house",
   tabVentas: "cart",
   tabCatalogo: "tag",
@@ -73,17 +73,23 @@ export const ICON_MAP = {
   tabContactos: "person.2",
   tabFinanzas: "wallet.bifold",
   sidebar: "sidebar.left",
+  sidebarSquares: "sidebar.squares.left",
   inspector: "sidebar.right",
-  splitView: "rectangle.split.3x1",
+  splitView: "rectangle.split.2x1",
+  splitView3: "rectangle.split.3x1",
+  groupPanel: "rectangle.3.group",
+  grid: "square.grid.2x2.fill",
+  layers: "square.3.layers.3d.down.forward",
+  squareStack: "square.2.layers.3d.fill",
   camera: "camera.viewfinder",
   pencil: "pencil",
   archive: "archivebox.fill",
   clock: "clock",
   location: "location.fill",
   note: "note.text",
-  layers: "square.3.layers.3d.down.right.fill",
   chevronRight: "chevron.right",
   chevronLeft: "chevron.left",
+  chevronUpDown: "chevron.up.chevron.down",
   creditcard: "creditcard.fill",
   qr: "qrcode.viewfinder",
   checkmarkCircle: "checkmark.circle.fill",
@@ -91,8 +97,10 @@ export const ICON_MAP = {
   info: "info.circle.fill",
   bolt: "bolt.fill",
   wifi: "wifi",
+  cellular: "cellularbars",
   person: "person.fill",
   bell: "bell.fill",
+  bellBadge: "bell.badge.fill",
   ellipsis: "ellipsis",
   plusCircle: "plus.circle.fill",
   minusCircle: "minus.circle.fill",
@@ -100,14 +108,18 @@ export const ICON_MAP = {
   cartBadge: "cart.badge.plus",
   boxBadge: "shippingbox.and.arrow.backward.fill",
   percent: "percent",
-  dollar: "dollar",
+  dollarsign: "dollarsign",
   chartLine: "chart.xyaxis.line",
   listBullets: "list.bullet",
   checkmarkSquare: "checkmark.square.fill",
-  squareGrid: "square.grid.2x2.fill",
   calendarBadge: "calendar.badge.clock",
-  banknote: "banknote",
-  creditcardFill: "creditcard",
+  lockShield: "lock.shield.fill",
+  shield: "shield.fill",
+  eye: "eye.fill",
+  star: "star.fill",
+  exclamation: "exclamationmark",
+  questionmark: "questionmark",
+  arrowLeft: "arrow.left",
 };
 
 /** Normaliza un SVG del repo a un fragmento con `currentColor`. */
