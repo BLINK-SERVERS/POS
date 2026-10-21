@@ -9,6 +9,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { KonstaProvider } from "konsta/react";
 import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
+import { ConfirmProvider } from "./components/ui";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Registro } from "./pages/Registro";
@@ -139,7 +140,11 @@ export function App() {
           El tema "ios" + la clase "k-ios" en <html> activan sus variantes. */}
       <KonstaProvider theme="ios" iosHoverHighlight>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <AppRoutes />
+          {/* Confirmaciones con alerta nativa de iOS (reemplaza a
+              `window.confirm`, que es un dialogo del navegador). */}
+          <ConfirmProvider>
+            <AppRoutes />
+          </ConfirmProvider>
         </BrowserRouter>
       </KonstaProvider>
     </StoreProvider>

@@ -1,9 +1,9 @@
 // Catálogo · Productos, descuentos, recargos y categorías.
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
-import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge } from "../components/ui";
+import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
@@ -65,14 +65,29 @@ const ProductRow = memo(function ProductRow({
         )}
       </td>
       <td className="row-actions">
-        <button className="btn btn--soft btn--sm" onClick={() => onEdit(product)}>
-          Editar
+        <button
+          className="row-action"
+          onClick={() => onEdit(product)}
+          title="Editar"
+          aria-label={`Editar ${product.name}`}
+        >
+          <Icon name="pencil" />
         </button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onArchive(product.id, !product.archived)}>
-          {product.archived ? "Reactivar" : "Archivar"}
+        <button
+          className="row-action"
+          onClick={() => onArchive(product.id, !product.archived)}
+          title={product.archived ? "Reactivar" : "Archivar"}
+          aria-label={`${product.archived ? "Reactivar" : "Archivar"} ${product.name}`}
+        >
+          <Icon name="archive" />
         </button>
-        <button className="btn btn--danger btn--sm" onClick={() => onRemove(product.id)}>
-          Eliminar
+        <button
+          className="row-action row-action--danger"
+          onClick={() => onRemove(product.id)}
+          title="Eliminar"
+          aria-label={`Eliminar ${product.name}`}
+        >
+          <Icon name="trash" />
         </button>
       </td>
     </tr>
@@ -112,12 +127,8 @@ const DiscountRow = memo(function DiscountRow({
         </label>
       </td>
       <td className="row-actions">
-        <button className="btn btn--soft btn--sm" onClick={() => onEdit(discount)}>
-          Editar
-        </button>
-        <button className="btn btn--danger btn--sm" onClick={() => onRemove(discount.id)}>
-          Eliminar
-        </button>
+        <button className="row-action" onClick={() => onEdit(discount)} title="Editar" aria-label="Editar"><Icon name="pencil" /></button>
+        <button className="row-action row-action--danger" onClick={() => onRemove(discount.id)} title="Eliminar" aria-label="Eliminar"><Icon name="trash" /></button>
       </td>
     </tr>
   );
@@ -146,12 +157,8 @@ const SurchargeRow = memo(function SurchargeRow({
         </label>
       </td>
       <td className="row-actions">
-        <button className="btn btn--soft btn--sm" onClick={() => onEdit(surcharge)}>
-          Editar
-        </button>
-        <button className="btn btn--danger btn--sm" onClick={() => onRemove(surcharge.id)}>
-          Eliminar
-        </button>
+        <button className="row-action" onClick={() => onEdit(surcharge)} title="Editar" aria-label="Editar"><Icon name="pencil" /></button>
+        <button className="row-action row-action--danger" onClick={() => onRemove(surcharge.id)} title="Eliminar" aria-label="Eliminar"><Icon name="trash" /></button>
       </td>
     </tr>
   );
@@ -209,9 +216,7 @@ const CategoryRow = memo(function CategoryRow({
       </td>
       <td className="dim">{count} producto(s)</td>
       <td className="row-actions">
-        <button className="btn btn--danger btn--sm" onClick={() => onRemove(category.id)}>
-          Eliminar
-        </button>
+        <button className="row-action row-action--danger" onClick={() => onRemove(category.id)} title="Eliminar" aria-label="Eliminar"><Icon name="trash" /></button>
       </td>
     </tr>
   );
@@ -287,6 +292,55 @@ export function Catalogo() {
     setChannelPrice,
     bulkPrice,
   } = useStoreActions();
+  const confirm = useConfirm();
+  const removeCategoryConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar la categoria?",
+        message: "Los productos que la usan no se borran.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeCategory(id);
+    },
+    [confirm, removeCategory]
+  );
+  const removeSurchargeConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar el recargo?",
+        message: "Dejara de aplicarse a las ventas nuevas.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeSurcharge(id);
+    },
+    [confirm, removeSurcharge]
+  );
+  const removeDiscountConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar el descuento?",
+        message: "Dejara de aplicarse a las ventas nuevas.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeDiscount(id);
+    },
+    [confirm, removeDiscount]
+  );
+  const removeProductConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar el producto?",
+        message: "Se borrara del catalogo y de tu inventario. Esta accion no se puede deshacer.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeProduct(id);
+    },
+    [confirm, removeProduct]
+  );
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Productos");
   const [params, setParams] = useSearchParams();
@@ -545,19 +599,19 @@ export function Catalogo() {
 
   const headAction =
     tab === "Productos" ? (
-      <button className="btn btn--primary" onClick={openCreate}>
+      <button className="btn btn--primary" onClick={openCreate}><Icon name="plus" /> 
         Nuevo producto
       </button>
     ) : tab === "Descuentos" ? (
-      <button className="btn btn--primary" onClick={openCreateDisc}>
+      <button className="btn btn--primary" onClick={openCreateDisc}><Icon name="percent" /> 
         Nuevo descuento
       </button>
     ) : tab === "Recargos" ? (
-      <button className="btn btn--primary" onClick={openCreateSur}>
+      <button className="btn btn--primary" onClick={openCreateSur}><Icon name="percent" /> 
         Nuevo recargo
       </button>
     ) : tab === "Categorías" ? (
-      <button className="btn btn--primary" onClick={openCreateCat}>
+      <button className="btn btn--primary" onClick={openCreateCat}><Icon name="folder" /> 
         Nueva categoría
       </button>
     ) : undefined;
@@ -580,7 +634,7 @@ export function Catalogo() {
             title="Sin productos"
             hint="Añade productos en el Catálogo para empezar a vender."
             action={
-              <button className="btn btn--soft btn--sm" onClick={openCreate}>
+              <button className="btn btn--soft btn--sm" onClick={openCreate}><Icon name="plus" /> 
                 Nuevo producto
               </button>
             }
@@ -609,7 +663,7 @@ export function Catalogo() {
                 rate={rate}
                 onEdit={openEdit}
                 onArchive={(id, archived) => updateProduct(id, { archived })}
-                onRemove={removeProduct}
+                onRemove={removeProductConfirmado}
               />
             )}
           />
@@ -648,7 +702,7 @@ export function Catalogo() {
                 className="btn btn--soft btn--sm"
                 disabled={!bulkChannel || !(Number(bulkPct) || 0)}
                 onClick={() => bulkPrice(Number(bulkPct) || 0, bulkChannel)}
-              >
+              ><Icon name="percent" /> 
                 Aplicar % al canal
               </button>
             </div>
@@ -705,7 +759,7 @@ export function Catalogo() {
             title="Sin descuentos"
             hint="Crea códigos de descuento para aplicarlos en el POS."
             action={
-              <button className="btn btn--soft btn--sm" onClick={openCreateDisc}>
+              <button className="btn btn--soft btn--sm" onClick={openCreateDisc}><Icon name="percent" /> 
                 Nuevo descuento
               </button>
             }
@@ -730,7 +784,7 @@ export function Catalogo() {
                     key={d.id}
                     discount={d}
                     onEdit={openEditDisc}
-                    onRemove={removeDiscount}
+                    onRemove={removeDiscountConfirmado}
                     onToggle={(id, active) => updateDiscount(id, { active })}
                   />
                 ))}
@@ -747,7 +801,7 @@ export function Catalogo() {
             title="Sin recargos"
             hint="Crea recargos (delivery, servicio) para sumarlos en el POS."
             action={
-              <button className="btn btn--soft btn--sm" onClick={openCreateSur}>
+              <button className="btn btn--soft btn--sm" onClick={openCreateSur}><Icon name="percent" /> 
                 Nuevo recargo
               </button>
             }
@@ -769,7 +823,7 @@ export function Catalogo() {
                     key={s.id}
                     surcharge={s}
                     onEdit={openEditSur}
-                    onRemove={removeSurcharge}
+                    onRemove={removeSurchargeConfirmado}
                     onToggle={(id, active) => updateSurcharge(id, { active })}
                   />
                 ))}
@@ -786,7 +840,7 @@ export function Catalogo() {
             title="Sin categorías"
             hint="Crea categorías para organizar tu catálogo."
             action={
-              <button className="btn btn--soft btn--sm" onClick={openCreateCat}>
+              <button className="btn btn--soft btn--sm" onClick={openCreateCat}><Icon name="folder" /> 
                 Nueva categoría
               </button>
             }
@@ -812,7 +866,7 @@ export function Catalogo() {
                     onToggle={(id, active) => updateCategory(id, { active })}
                     onOrder={(id, order) => updateCategory(id, { order })}
                     onRename={(id, name) => updateCategory(id, { name })}
-                    onRemove={removeCategory}
+                    onRemove={removeCategoryConfirmado}
                   />
                 ))}
               </tbody>
@@ -827,62 +881,74 @@ export function Catalogo() {
           {/* 1 · Qué es: identificación del producto */}
           <div className="form-section">
             <span className="form-section__title">Producto</span>
-            <Field label="Nombre" required hint="Se guarda en MAYÚSCULAS en el catálogo.">
-              <input
-                className="input"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ej.: Harina de maíz"
-              />
-            </Field>
-            <Field label="Código de barras" hint="Escanea o genera un código interno.">
-              <div className="row gap-8" style={{ alignItems: "center" }}>
-                <input
-                  className="input"
-                  value={form.barcode}
-                  onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                  placeholder="Ej.: 7591234567890"
-                />
-                <button
-                  type="button"
-                  className="btn btn--soft btn--sm"
-                  title="Escanear con la cámara"
-                  onClick={() => setCamOpen(true)}
-                >
-                  <Icon name="scan" />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--soft btn--sm"
-                  title="Generar código interno"
-                  onClick={() => setForm({ ...form, barcode: internalCode() })}
-                >
-                  <Icon name="tag" />
-                </button>
-              </div>
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Nombre" required hint="Se guarda en MAYÚSCULAS en el catálogo.">
+                                                                    <input
+                                                                      className="input"
+                                                                      value={form.name}
+                                                                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                                                      placeholder="Ej.: Harina de maíz"
+                                                                    />
+                                                                  </Field>
+                                                                  <Field label="Código de barras" hint="Escanea o genera un código interno.">
+                                                                    <div className="row gap-8" style={{ alignItems: "center" }}>
+                                                                      <input
+                                                                        className="input"
+                                                                        value={form.barcode}
+                                                                        onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                                                                        placeholder="Ej.: 7591234567890"
+                                                                      />
+                                                                      <button
+                                                                        type="button"
+                                                                        className="btn btn--soft btn--sm"
+                                                                        title="Escanear con la cámara"
+                                                                        onClick={() => setCamOpen(true)}
+                                                                      >
+                                                                        <Icon name="scan" />
+                                                                      </button>
+                                                                      <button
+                                                                        type="button"
+                                                                        className="btn btn--soft btn--sm"
+                                                                        title="Generar código interno"
+                                                                        onClick={() => setForm({ ...form, barcode: internalCode() })}
+                                                                      >
+                                                                        <Icon name="tag" />
+                                                                      </button>
+                                                                    </div>
+                                                                  </Field>
+                </div>
+              
+            
             <div className="row gap-12">
-              <Field label="SKU" hint="Opcional.">
-                <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
-              </Field>
-              <Field label="Categoría">
-                <select
-                  className="select"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                >
-                  <option value="">Sin categoría</option>
-                  {activeCategories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                  {form.category &&
-                    !activeCategories.some((c) => c.name === form.category) && (
-                      <option value={form.category}>{form.category}</option>
-                    )}
-                </select>
-              </Field>
+              
+                
+                  <div className="form-group">
+                    <Field label="SKU" hint="Opcional.">
+                                                                            <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                                                                          </Field>
+                                                                          <Field label="Categoría">
+                                                                            <select
+                                                                              className="select"
+                                                                              value={form.category}
+                                                                              onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                                                            >
+                                                                              <option value="">Sin categoría</option>
+                                                                              {activeCategories.map((c) => (
+                                                                                <option key={c.id} value={c.name}>
+                                                                                  {c.name}
+                                                                                </option>
+                                                                              ))}
+                                                                              {form.category &&
+                                                                                !activeCategories.some((c) => c.name === form.category) && (
+                                                                                  <option value={form.category}>{form.category}</option>
+                                                                                )}
+                                                                            </select>
+                                                                          </Field>
+                  </div>
+                
+              
             </div>
           </div>
 
@@ -890,28 +956,34 @@ export function Catalogo() {
           <div className="form-section">
             <span className="form-section__title">Presentación</span>
             <div className="row gap-12">
-              <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  value={form.presentationQty}
-                  onChange={(e) => setForm({ ...form, presentationQty: e.target.value })}
-                />
-              </Field>
-              <Field label="Unidad">
-                <select
-                  className="select"
-                  value={form.unit}
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                >
-                  {UNIT_OPTIONS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              
+                
+                  <div className="form-group">
+                    <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
+                                                                            <input
+                                                                              className="input"
+                                                                              type="number"
+                                                                              min={0}
+                                                                              value={form.presentationQty}
+                                                                              onChange={(e) => setForm({ ...form, presentationQty: e.target.value })}
+                                                                            />
+                                                                          </Field>
+                                                                          <Field label="Unidad">
+                                                                            <select
+                                                                              className="select"
+                                                                              value={form.unit}
+                                                                              onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                                                                            >
+                                                                              {UNIT_OPTIONS.map((u) => (
+                                                                                <option key={u} value={u}>
+                                                                                  {u}
+                                                                                </option>
+                                                                              ))}
+                                                                            </select>
+                                                                          </Field>
+                  </div>
+                
+              
             </div>
             <Field label="Fabricante / marca" hint="Uso interno. No aparece en el recibo.">
               <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
@@ -922,19 +994,25 @@ export function Catalogo() {
           <div className="form-section">
             <span className="form-section__title">Precios e impuesto</span>
             <div className="row gap-12">
-              <Field label="Costo (USD)">
-                <input className="input" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
-              </Field>
-              <Field label="Precio (USD)">
-                <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-              </Field>
-              <Field label="IVA">
-                <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
-                  <option value="0.16">16%</option>
-                  <option value="0.08">8%</option>
-                  <option value="0">Exento</option>
-                </select>
-              </Field>
+              
+                
+                  <div className="form-group">
+                    <Field label="Costo (USD)">
+                                                                            <input className="input" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+                                                                          </Field>
+                                                                          <Field label="Precio (USD)">
+                                                                            <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                                                                          </Field>
+                                                                          <Field label="IVA">
+                                                                            <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
+                                                                              <option value="0.16">16%</option>
+                                                                              <option value="0.08">8%</option>
+                                                                              <option value="0">Exento</option>
+                                                                            </select>
+                                                                          </Field>
+                  </div>
+                
+              
             </div>
             {channels.length > 0 && (
               <div className="field">
@@ -979,12 +1057,18 @@ export function Catalogo() {
             </label>
             {form.trackStock && (
               <div className="row gap-12">
-                <Field label="Stock">
-                  <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
-                </Field>
-                <Field label="Stock mínimo">
-                  <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
-                </Field>
+                
+                  
+                    <div className="form-group">
+                      <Field label="Stock">
+                                                                                    <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                                                                                  </Field>
+                                                                                  <Field label="Stock mínimo">
+                                                                                    <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
+                                                                                  </Field>
+                    </div>
+                  
+                
               </div>
             )}
             <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
@@ -993,7 +1077,7 @@ export function Catalogo() {
             </label>
           </div>
 
-          <button className="btn btn--primary btn--block" onClick={saveProduct}>
+          <button className="btn btn--primary btn--block" onClick={saveProduct}><Icon name="check" /> 
             {editId ? "Guardar cambios" : "Guardar producto"}
           </button>
         </Modal>
@@ -1008,30 +1092,42 @@ export function Catalogo() {
 
       {discOpen && (
         <Modal title={discEditId ? "Editar descuento" : "Nuevo descuento"} onClose={() => setDiscOpen(false)}>
-          <Field label="Nombre" required>
-            <input className="input" value={discForm.name} onChange={(e) => setDiscForm({ ...discForm, name: e.target.value })} />
-          </Field>
-          <Field label="Código" required hint="Se guarda en MAYÚSCULAS; se aplica en el POS.">
-            <input
-              className="input mono"
-              value={discForm.code}
-              onChange={(e) => setDiscForm({ ...discForm, code: e.target.value })}
-            />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Nombre" required>
+                                                            <input className="input" value={discForm.name} onChange={(e) => setDiscForm({ ...discForm, name: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Código" required hint="Se guarda en MAYÚSCULAS; se aplica en el POS.">
+                                                            <input
+                                                              className="input mono"
+                                                              value={discForm.code}
+                                                              onChange={(e) => setDiscForm({ ...discForm, code: e.target.value })}
+                                                            />
+                                                          </Field>
+              </div>
+            
+          
           <div className="row gap-12">
-            <Field label="Tipo">
-              <select
-                className="select"
-                value={discForm.type}
-                onChange={(e) => setDiscForm({ ...discForm, type: e.target.value as typeof discForm.type })}
-              >
-                <option value="porcentaje">Porcentaje (%)</option>
-                <option value="monto">Monto (USD)</option>
-              </select>
-            </Field>
-            <Field label={discForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
-              <input className="input" type="number" value={discForm.value} onChange={(e) => setDiscForm({ ...discForm, value: e.target.value })} />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Tipo">
+                                                                    <select
+                                                                      className="select"
+                                                                      value={discForm.type}
+                                                                      onChange={(e) => setDiscForm({ ...discForm, type: e.target.value as typeof discForm.type })}
+                                                                    >
+                                                                      <option value="porcentaje">Porcentaje (%)</option>
+                                                                      <option value="monto">Monto (USD)</option>
+                                                                    </select>
+                                                                  </Field>
+                                                                  <Field label={discForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
+                                                                    <input className="input" type="number" value={discForm.value} onChange={(e) => setDiscForm({ ...discForm, value: e.target.value })} />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <Field label="Usos máximos" hint="Vacío = ilimitado">
             <input
@@ -1042,18 +1138,24 @@ export function Catalogo() {
             />
           </Field>
           <div className="row gap-12">
-            <Field label="Vigente desde" hint="Opcional">
-              <input className="input" type="date" value={discForm.from} onChange={(e) => setDiscForm({ ...discForm, from: e.target.value })} />
-            </Field>
-            <Field label="Vigente hasta" hint="Opcional">
-              <input className="input" type="date" value={discForm.to} onChange={(e) => setDiscForm({ ...discForm, to: e.target.value })} />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Vigente desde" hint="Opcional">
+                                                                    <input className="input" type="date" value={discForm.from} onChange={(e) => setDiscForm({ ...discForm, from: e.target.value })} />
+                                                                  </Field>
+                                                                  <Field label="Vigente hasta" hint="Opcional">
+                                                                    <input className="input" type="date" value={discForm.to} onChange={(e) => setDiscForm({ ...discForm, to: e.target.value })} />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
             <input type="checkbox" checked={discForm.active} onChange={(e) => setDiscForm({ ...discForm, active: e.target.checked })} />
             Activo
           </label>
-          <button className="btn btn--primary btn--block" onClick={saveDiscount}>
+          <button className="btn btn--primary btn--block" onClick={saveDiscount}><Icon name="check" /> 
             {discEditId ? "Guardar cambios" : "Guardar descuento"}
           </button>
         </Modal>
@@ -1065,25 +1167,31 @@ export function Catalogo() {
             <input className="input" value={surForm.name} onChange={(e) => setSurForm({ ...surForm, name: e.target.value })} />
           </Field>
           <div className="row gap-12">
-            <Field label="Tipo">
-              <select
-                className="select"
-                value={surForm.type}
-                onChange={(e) => setSurForm({ ...surForm, type: e.target.value as typeof surForm.type })}
-              >
-                <option value="porcentaje">Porcentaje (%)</option>
-                <option value="monto">Monto (USD)</option>
-              </select>
-            </Field>
-            <Field label={surForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
-              <input className="input" type="number" value={surForm.value} onChange={(e) => setSurForm({ ...surForm, value: e.target.value })} />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Tipo">
+                                                                    <select
+                                                                      className="select"
+                                                                      value={surForm.type}
+                                                                      onChange={(e) => setSurForm({ ...surForm, type: e.target.value as typeof surForm.type })}
+                                                                    >
+                                                                      <option value="porcentaje">Porcentaje (%)</option>
+                                                                      <option value="monto">Monto (USD)</option>
+                                                                    </select>
+                                                                  </Field>
+                                                                  <Field label={surForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
+                                                                    <input className="input" type="number" value={surForm.value} onChange={(e) => setSurForm({ ...surForm, value: e.target.value })} />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
             <input type="checkbox" checked={surForm.active} onChange={(e) => setSurForm({ ...surForm, active: e.target.checked })} />
             Activo
           </label>
-          <button className="btn btn--primary btn--block" onClick={saveSurcharge}>
+          <button className="btn btn--primary btn--block" onClick={saveSurcharge}><Icon name="check" /> 
             {surEditId ? "Guardar cambios" : "Guardar recargo"}
           </button>
         </Modal>
@@ -1091,21 +1199,27 @@ export function Catalogo() {
 
       {catOpen && (
         <Modal title="Nueva categoría" onClose={() => setCatOpen(false)}>
-          <Field label="Nombre" required hint="Ej.: Alimentos, Bebidas, Servicios">
-            <input
-              className="input"
-              value={catForm.name}
-              onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
-            />
-          </Field>
-          <Field label="Orden" hint="Menor número primero.">
-            <input
-              className="input"
-              type="number"
-              value={catForm.order}
-              onChange={(e) => setCatForm({ ...catForm, order: e.target.value })}
-            />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Nombre" required hint="Ej.: Alimentos, Bebidas, Servicios">
+                                                            <input
+                                                              className="input"
+                                                              value={catForm.name}
+                                                              onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Orden" hint="Menor número primero.">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={catForm.order}
+                                                              onChange={(e) => setCatForm({ ...catForm, order: e.target.value })}
+                                                            />
+                                                          </Field>
+              </div>
+            
+          
           <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
             <input
               type="checkbox"
@@ -1114,7 +1228,7 @@ export function Catalogo() {
             />
             Activa (disponible en el formulario de producto)
           </label>
-          <button className="btn btn--primary btn--block" onClick={saveCategory}>
+          <button className="btn btn--primary btn--block" onClick={saveCategory}><Icon name="check" /> 
             Guardar categoría
           </button>
         </Modal>

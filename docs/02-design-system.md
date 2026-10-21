@@ -59,15 +59,29 @@ disponible en `tokens.css` para un futuro modo oscuro, pero **no se activa**.
 ## 2. Tipografía
 
 ```css
---font-primary: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
-                Roboto, system-ui, "Helvetica Neue", Arial, sans-serif;
---font-mono:   "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+--font-display: "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", …;
+--font-text:    "SF Pro Text",    "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", …;
+--font-primary: "SF Pro",         -apple-system, BlinkMacSystemFont, "Segoe UI", …;
+--font-mono:    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 ```
 
-- **No se distribuye ninguna fuente.** `"SF Pro Display"` solo se usa si el
-  dispositivo ya la tiene (Apple). En Windows cae en Segoe UI.
-- El archivo `app/public/fonts/` se eliminó en la v1.5.0: servía SF Pro
-  públicamente, con su licencia. Verificado en 404 tras el despliegue.
+- **SF Pro se pide al sistema con `local()`** (`app/src/styles/fonts.css`): en
+  iPhone, iPad y Mac viene de serie; en Windows y Linux se usa si el usuario
+  la instala (gratis, en `developer.apple.com/fonts`).
+- Se declara la variante **variable**, con su eje óptico (`opsz`): el
+  navegador interpola entre los tamaños ópticos Display y Text. La HIG lo
+  explica: *"the system fonts support dynamic optical sizes, which merge
+  discrete optical sizes (like Text and Display) and weights into a single,
+  continuous design"*.
+- `--font-display` para los títulos (≥ 20 px) y `--font-text` para el cuerpo.
+- **No se distribuye ninguna fuente.** El archivo `app/public/fonts/` se
+  eliminó en la v1.5.0 (servía SF Pro públicamente, con su licencia) y se
+  verificó en 404 tras el despliegue. Los ficheros de la v1.10.0 viven solo en
+  `app/.fonts-sf-local/` (ignorado por git) y **solo se sirven en
+  desarrollo**, mediante un middleware propio de Vite (`apply: "serve"`) y un
+  `fonts-dev.css` que se carga únicamente si `import.meta.env.DEV`.
+- Los **nombres de familia son los reales** de los ficheros oficiales de
+  Apple: `.SF NS Text` y `.SF NS Display` (leídos de su tabla `name`).
 
 ### Escala propia
 
@@ -164,17 +178,92 @@ Extraídas del UI Kit oficial (1.657 símbolos). Tabla completa en
 
 | Componente | Medida oficial | Aplicado en BLINK |
 |---|---|---|
+| **Botón Large** | **50** de alto | `.btn` (50 px) |
+| **Botón Medium** | **34** de alto | `.btn--sm` (34 px) |
+| **Botón Small** | **28** de alto | `.btn--xs` (28 px) |
+| Botón con símbolo (Large) | 50 × 50 | botón de icono |
+| Botón con texto (Large) | 72 × 50 | `.btn` |
+| Botón con símbolo + texto (Large) | 91 × 50 | `.btn` con icono |
 | Control segmentado | 80 × 28 | `Tabs` (Konsta `<Segmented>`) |
 | Fila de lista | 402 × 52 | `table.data tbody tr` → 52 px |
 | Campo de texto | 288 × 52 | `.input` / `.select` → 52 px |
 | Toggle | 64 × 28 | `.toggle` |
 | Stepper | 46 × 32 | `.stepper button` |
 | Item de tab bar | 48 × 48 | `.shell__tabbar a` (área táctil) |
-| Botón grande | 50 × 50 | `.btn` (44 px mínimo táctil) |
+| Fila de sidebar | 260 × 44 | `.nav__link` (44 px) |
+| Alerta | 300 × 184 | `<Dialog>` de Konsta (300 px) |
+| Botón de alerta | 120 × 48 | `<DialogButton>` de Konsta |
+| Hoja inferior | borde inferior | `<Sheet>` de Konsta |
+| Lista agrupada | 370 de ancho | `.form-group` |
+| Cabecera de lista (Prominent) | 370 × 45 | `.page-head h1` (Title 1/34 px) |
+| Diámetro de página (iPhone 17 Pro) | 402 pt de ancho | referencia del ancho de pantalla |
+
+> Los botones de 34 y 28 px usan un **área táctil de 44 pt** en punteros
+> gruesos (HIG · Buttons: *"a button needs a hit region of at least 44x44
+> pt"*).
 
 ---
 
-## 5. Listas, tablas y acciones de fila (HIG · Lists)
+## 6. Botones con material Liquid Glass (HIG · Buttons / Materials)
+
+### Medidas del kit
+
+| Variante del kit | Alto | Símbolo | Texto | Símbolo + texto |
+|---|---|---|---|---|
+| Large | 50 | 50 | 72 | 91 |
+| Medium | 34 | 34 | 56 | 75 |
+| Small | 28 | 28 | 49 | 66 |
+
+### Roles (HIG · Buttons)
+
+| Rol | Clase | Aspecto |
+|---|---|---|
+| **Primary** | `.btn--primary` | relleno de acento + material |
+| Normal | `.btn--ghost` / `.btn--soft` | relleno gris o tintado de acento |
+| Cancel | `.btn--plain` | solo texto |
+| Destructive | `.btn--danger` | relleno rojo suave |
+
+La HIG es explícita: *"Don't assign the primary role to a button that performs
+a destructive action"*. Por eso una acción destructiva **nunca** es el botón
+Primary: en las alertas es un botón rojo aparte.
+
+### El material
+
+- **Variante "regular"** de Liquid Glass: desenfoque de **6 px** (el valor
+  real del kit para *Light/Regular - Small*).
+- **Brillo especular** en el borde superior (`inset 0 1px 0`) y sombra en el
+  inferior: es lo que le da el aspecto de vidrio.
+- **Degradado vertical** del material: más luz arriba, translúcido abajo.
+
+### Forma
+
+La HIG pide explícitamente una forma según la disposición:
+
+- **Fila horizontal** → **cápsula** (`border-radius: 999px`): todos los arcos
+  son circulares, es decir, **curvatura continua**.
+- **Pila vertical** (botón a todo el ancho, `.btn--block`) → **rectángulo
+  redondeado** de 12 px.
+
+### Estado de pulsación
+
+HIG: *"Always include a press state for a custom button"*. El botón se hunde
+(`scale(.97)`) y el especular se apaga.
+
+### Accesibilidad
+
+- Área táctil de **44 pt** garantizada en punteros gruesos.
+- Con `prefers-reduced-transparency` el material se desactiva y el botón
+  pasa a relleno plano.
+
+### Dónde **no** se aplica
+
+> Los **datos** —tablas, precios, stock, ticket— siguen siendo **100 %
+> opacos**. La HIG lo dice sin rodeos: *"Don't use Liquid Glass in the content
+> layer"*. El material se reserva para los **controles**.
+
+---
+
+## 7. Listas, tablas y acciones de fila (HIG · Lists)
 
 El patrón de lista de iOS, no el de tabla de macOS:
 
@@ -203,7 +292,66 @@ tarjeta se usa la variante `.kpis--inline` (solo las celdas).
 
 ---
 
-## 6. Liquid Glass
+## 8. Diálogos y formularios nativos (HIG · Alerts / Sheets / Modality)
+
+### Qué componente se usa y cuándo
+
+| Contexto | Componente | Presentación |
+|---|---|---|
+| Formulario con campos | `<Sheet>` de Konsta (móvil) / panel centrado (escritorio) | hoja inferior con tirador en móvil |
+| Confirmación | `<Dialog>` de Konsta | alerta con el material de Apple |
+| Aviso no bloqueante | `Toast` / `Messagebar` de Konsta | — |
+
+En móvil, un formulario se presenta **siempre como hoja inferior**: sube
+desde el borde, lleva tirador y esquineras redondeadas arriba. En escritorio
+se presenta centrado, como en iPadOS.
+
+### Alertas
+
+HIG (Alerts): título corto, mensaje y hasta tres botones con rol. El
+`<Dialog>` de Konsta ya trae el material y la medida del kit (**300 px** de
+ancho, botones de **48 px** de alto).
+
+- El botón de **rol Primary** lleva el acento.
+- El de **rol Destructive** va en rojo y **nunca** es el Primary.
+- El de **rol Cancel** es el que responde a la tecla Escape.
+
+En BLINK, la confirmación es asíncrona:
+
+```tsx
+const confirm = useConfirm();
+if (await confirm({
+  title: "¿Eliminar el producto?",
+  message: "Se borrará del catálogo y de tu inventario.",
+  confirmText: "Eliminar",
+  destructive: true,
+})) {
+  eliminar();
+}
+```
+
+Ya **no queda ningún `window.confirm`** en la app: era un diálogo del
+navegador, no de iOS.
+
+### Formularios: listas agrupadas
+
+Los campos **consecutivos** de un formulario forman una **lista agrupada**
+(HIG · Lists): un contenedor redondeado con separadores hairline entre filas
+(clase `.form-group`). Hay **44 grupos** en 11 ficheros.
+
+Cuando el grupo cae dentro de una fila, sus campos siguen siendo los
+elementos de la fila (`display: contents`), para que no se apilen.
+
+### Controles
+
+Los formularios usan los **controles nativos del navegador** (`input`,
+`select`, `textarea`): son los que dan el comportamiento de teclado,
+accesibilidad y selección de texto del sistema, y son los que iOS usa
+detrás de sus propios componentes.
+
+---
+
+## 9. Liquid Glass
 
 Materiales con desenfoque real, disponibles en `tokens.css` y en
 `app/src/lib/ios-design-tokens.ts`:
@@ -228,7 +376,7 @@ Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
 
 ---
 
-## 7. Iconografía
+## 10. Iconografía
 
 - **SVG únicamente.** Sin emoji en ninguna pantalla.
 - Set: **86 SF Symbols** de Apple, normalizados a `currentColor`
@@ -242,11 +390,13 @@ Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
 
 ---
 
-## 8. Componentes
+## 11. Componentes
 
 | Componente | Origen | Notas |
 |---|---|---|
 | `Card`, `PageHead`, `Field`, `EmptyState` | propios | envuelven los estilos de iOS |
+| `Modal` | `<Sheet>` / panel propio | hoja inferior en móvil, panel centrado en escritorio |
+| `Alert`, `useConfirm` | `<Dialog>` de Konsta | alerta nativa para confirmaciones |
 | `Tabs` | Konsta `<Segmented>` | control segmentado de iOS, desplazable si hay muchas pestañas |
 | `Searchbar` | Konsta | búsqueda en la barra |
 | `Glass` | Konsta | tab bar flotante y landing |
@@ -264,10 +414,12 @@ la paleta: los tokens de BLINK mandan.
 
 ---
 
-## 9. Verificación
+## 12. Verificación
 
 `npm run verify:ui` recorre la app en **dos tamaños** (escritorio 1280×860 y
-móvil 390×844) y comprueba, en cada vista:
+móvil 390×844) y hace **38 comprobaciones**: las 15 rutas en cada tamaño, el
+onboarding, el acceso sin sesión y la presentación del modal (hoja inferior en
+móvil / panel centrado en escritorio). En cada vista comprueba:
 
 - render sin errores de consola;
 - `h1` presente y con el tamaño esperado;
@@ -275,7 +427,8 @@ móvil 390×844) y comprueba, en cada vista:
 - ausencia de desbordamiento horizontal;
 - elementos que se salen por la derecha;
 - elementos con **poco texto pero mucha altura** (síntoma de un choque de
-  clases).
+  clases);
+- la presencia del **grupo de campos** y del **tirador de la hoja**.
 
 Además renderiza el **onboarding** y las **pantallas de acceso sin sesión** en
 contexto aparte (con sesión el gate de ruta devuelve al Inicio y nunca se
@@ -285,7 +438,7 @@ Sale con código 1 si algo falla, así que sirve como **regresión visual** en C
 
 ---
 
-## 10. Referencias
+## 13. Referencias
 
 | Documento | Contenido |
 |---|---|

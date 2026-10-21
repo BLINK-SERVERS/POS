@@ -196,11 +196,11 @@ export function Shell({ children }: { children: ReactNode }) {
                 setCloseOpen(true);
               }}
               title={`Abierta ${new Date(session.openedAt).toLocaleTimeString()}`}
-            >
+            ><Icon name="cash" /> 
               Cerrar caja
             </button>
           ) : (
-            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}>
+            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}><Icon name="cash" /> 
               Abrir caja
             </button>
           )}
@@ -247,29 +247,33 @@ export function Shell({ children }: { children: ReactNode }) {
 
       {cashOpen && (
         <Modal title="Abrir caja" onClose={() => setCashOpen(false)}>
-          <Field label="Fondo inicial (USD)" hint="Efectivo con el que abre la caja.">
-            <input
-              className="input"
-              type="number"
-              value={usd}
-              onChange={(e) => setUsd(e.target.value)}
-            />
-          </Field>
-          <Field label="Fondo inicial (Bs)">
-            <input
-              className="input"
-              type="number"
-              value={bs}
-              onChange={(e) => setBs(e.target.value)}
-            />
-          </Field>
+          
+            <div className="form-group">
+                <Field label="Fondo inicial (USD)" hint="Efectivo con el que abre la caja.">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={usd}
+                                                              onChange={(e) => setUsd(e.target.value)}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Fondo inicial (Bs)">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={bs}
+                                                              onChange={(e) => setBs(e.target.value)}
+                                                            />
+                                                          </Field>
+              </div>
+          
           <button
             className="btn btn--primary btn--block"
             onClick={() => {
               openCash(Number(usd) || 0, Number(bs) || 0);
               setCashOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Confirmar apertura
           </button>
           <p className="field__hint" style={{ marginTop: "0.6rem" }}>
@@ -284,22 +288,26 @@ export function Shell({ children }: { children: ReactNode }) {
             Cuenta el efectivo y las bolívares contados para registrar el arqueo y la
             diferencia.
           </p>
-          <Field label="Contado (USD)">
-            <input
-              className="input"
-              type="number"
-              value={cUsd}
-              onChange={(e) => setCUsd(e.target.value)}
-            />
-          </Field>
-          <Field label="Contado (Bs)">
-            <input
-              className="input"
-              type="number"
-              value={cBs}
-              onChange={(e) => setCBs(e.target.value)}
-            />
-          </Field>
+          
+            <div className="form-group">
+                <Field label="Contado (USD)">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={cUsd}
+                                                              onChange={(e) => setCUsd(e.target.value)}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Contado (Bs)">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={cBs}
+                                                              onChange={(e) => setCBs(e.target.value)}
+                                                            />
+                                                          </Field>
+              </div>
+
           <div className="breakdown" style={{ marginTop: "0.75rem" }}>
             <div className="breakdown__row">
               <span>Esperado (USD)</span>
@@ -349,7 +357,7 @@ export function Shell({ children }: { children: ReactNode }) {
               );
               setCloseOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Confirmar cierre
           </button>
         </Modal>

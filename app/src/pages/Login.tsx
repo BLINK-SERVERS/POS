@@ -139,26 +139,34 @@ export function Login() {
                 Entra para abrir tu punto de venta.
               </p>
 
-              <Field label="Correo electrónico" required>
-                <input
-                  className="input"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tucorreo@dominio.com"
-                />
-              </Field>
-              <Field label="Contraseña" required>
-                <input
-                  className="input"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Tu contraseña"
-                />
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Correo electrónico" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      type="email"
+                                                                                                      autoComplete="email"
+                                                                                                      value={email}
+                                                                                                      onChange={(e) => setEmail(e.target.value)}
+                                                                                                      placeholder="tucorreo@dominio.com"
+                                                                                                    />
+                                                                                                  </Field>
+                                                                                                  <Field label="Contraseña" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      type="password"
+                                                                                                      autoComplete="current-password"
+                                                                                                      value={password}
+                                                                                                      onChange={(e) => setPassword(e.target.value)}
+                                                                                                      placeholder="Tu contraseña"
+                                                                                                    />
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
 
               {error && <p className="field__error">{error}</p>}
 

@@ -1,0 +1,53 @@
+/* ============================================================
+   SF Pro real — SOLO EN DESARROLLO.
+
+   Este fichero lo carga `main.tsx` únicamente cuando
+   `import.meta.env.DEV` es true, y el servidor de desarrollo de
+   Vite sirve los ficheros desde `app/.fonts-sf-local/`.
+
+   En PRODUCCIÓN no se carga y no se sirve nada: los ficheros de
+   Apple no se distribuyen. Ver `styles/fonts.css`.
+   ============================================================ */
+
+/* Regular — peso 400 y 500 */
+@font-face {
+  font-family: "SF Pro";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/.fonts-sf-local/sf-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SF Pro";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/.fonts-sf-local/sf-semibold.woff2") format("woff2");
+}
+
+/* Semibold — peso 600 */
+@font-face {
+  font-family: "SF Pro";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/.fonts-sf-local/sf-semibold.woff2") format("woff2");
+}
+
+/* Bold — peso 700 */
+@font-face {
+  font-family: "SF Pro";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/.fonts-sf-local/sf-bold.woff2") format("woff2");
+}
+
+/* Italic */
+@font-face {
+  font-family: "SF Pro";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/.fonts-sf-local/sf-italic.woff2") format("woff2");
+}

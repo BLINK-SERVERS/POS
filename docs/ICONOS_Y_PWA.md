@@ -130,7 +130,7 @@ npm run og      # node scripts/build-og-image.mjs
 
 ### Qué es
 
-La app usa **86 SF Symbols** de Apple como set de iconos de interfaz. Son SVG
+La app usa **100 SF Symbols** de Apple como set de iconos de interfaz. Son SVG
 embebidos en `app/src/lib/sf-symbols.ts`, generados por:
 
 ```bash
@@ -141,6 +141,36 @@ npm run icons:sf    # node scripts/build-sf-symbols.mjs
 El script los descarga de `github.com/brendanballon/sfsymbols-svg`, les aplica
 su propio `viewBox` y **normaliza el relleno a `currentColor`**, para que
 hereden el color del texto y funcionen en modo claro y oscuro.
+
+### Los 100 iconos
+
+El set se amplía con el generador: `app/scripts/build-sf-symbols.mjs`
+mantiene el mapa `ICON_MAP` (nombre interno de BLINK → fichero del símbolo en
+el repo de origen) y regenera `app/src/lib/sf-symbols.ts`.
+
+Los **14 últimos** se añadieron en la v1.10.0, tras la auditoría de los 137
+botones de la app (86 sin icono, 51 con icono):
+
+| Nombre interno | Fichero | Para qué |
+|---|---|---|
+| `refresh` | `arrow.clockwise` | actualizar la tasa, sincronizar |
+| `transfer` | `arrow.left.arrow.right` | transferencias entre cuentas |
+| `importData` | `tray.and.arrow.down` | importar datos |
+| `exportData` | `square.and.arrow.up` | exportar datos |
+| `copy` | `plus.square.on.square` | duplicar |
+| `folder` | `folder` | categorías |
+| `adjust` | `slider.horizontal.3` | ajustar existencias |
+| `listView` | `list.bullet.rectangle` | vista de listado |
+| `more` | `ellipsis.circle` | más acciones |
+| `dollars` | `dollarsign.circle` | importes |
+| `tray` | `tray` |_archivo_ |
+| `grid2x2` | `square.grid.2x2` | cuadrícula |
+| `userPlus` | `person.crop.circle.badge.plus` | añadir persona |
+| `seal` | `checkmark.seal` | verificado |
+
+> Para añadir uno nuevo: se comprueba que el fichero exista en el repo de
+> origen (`https://api.github.com/repos/brendanballon/sfsymbols-svg/git/trees/master?recursive=1`),
+> se añade al `ICON_MAP` y se ejecuta `npm run icons:sf`.
 
 ### Cómo se usan
 
@@ -206,7 +236,7 @@ cambia el `viewBox`. **No hay que tocar ningún *call site*.**
 | Manifest con 1 icono SVG | Manifest con 5 iconos (any + maskable) |
 | Sin script de generación | `npm run icons` regenera los PNG |
 | Sin imagen para compartir | `og-image.png` 1200×630 con favicon + marca |
-| Iconos de trazo propios | **86 SF Symbols** rellenos, `currentColor` |
+| Iconos de trazo propios | **100 SF Symbols** rellenos, `currentColor` |
 
 ## Verificación en producción
 

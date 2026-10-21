@@ -1,7 +1,7 @@
 // Ajustes · Negocio, perfil, moneda, recibo, exportación y cuenta.
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useStoreState, useStoreActions } from "../lib/store";
-import { Card, Field, PageHead, Tabs } from "../components/ui";
+import { Card, Field, PageHead, Tabs, useConfirm } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
@@ -15,6 +15,7 @@ const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Exportar", "
 export function Ajustes() {
   const { state, user } = useStoreState();
   const { updateBusiness, setRate, syncRate, updateProfile, clearAll, logout } = useStoreActions();
+  const confirm = useConfirm();
   const { pairing, remoteActive, rotatePairing } = useScanner();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
   const [qrOpen, setQrOpen] = useState(false);
@@ -141,27 +142,43 @@ export function Ajustes() {
       {tab === "Negocio" && (
         <form className="form-grid" onSubmit={onSubmitNegocio}>
           <Card title="Datos del comercio" hint="Identificación y contacto de tu negocio.">
-            <Field label="Nombre del comercio" required hint="Así lo verá tu equipo en BLINK POS.">
-              <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </Field>
-            <Field label="Razón social" hint="Nombre legal, si es distinto al comercial.">
-              <input className="input" value={form.legalName} onChange={(e) => setForm({ ...form, legalName: e.target.value })} />
-            </Field>
-            <Field label="RIF" hint="Identificación tributaria.">
-              <input className="input" value={form.rif} onChange={(e) => setForm({ ...form, rif: e.target.value })} />
-            </Field>
+            
+              
+                
+                  <div className="form-group">
+                    <Field label="Nombre del comercio" required hint="Así lo verá tu equipo en BLINK POS.">
+                                                                                          <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                                                                        </Field>
+                                                                                        <Field label="Razón social" hint="Nombre legal, si es distinto al comercial.">
+                                                                                          <input className="input" value={form.legalName} onChange={(e) => setForm({ ...form, legalName: e.target.value })} />
+                                                                                        </Field>
+                                                                                        <Field label="RIF" hint="Identificación tributaria.">
+                                                                                          <input className="input" value={form.rif} onChange={(e) => setForm({ ...form, rif: e.target.value })} />
+                                                                                        </Field>
+                  </div>
+                
+              
+            
             <div className="row gap-12">
-              <Field label="Teléfono">
-                <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </Field>
-              <Field label="Dirección">
-                <input className="input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Teléfono">
+                                                                                                    <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                                                                                                  </Field>
+                                                                                                  <Field label="Dirección">
+                                                                                                    <input className="input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
             </div>
-            <button className="btn btn--primary" type="submit">
+            <button className="btn btn--primary" type="submit"><Icon name="check" /> 
               {saved ? (
                 <>
-                  <Icon name="check" /> Guardado
+                  Guardado
                 </>
               ) : (
                 "Guardar"
@@ -210,36 +227,52 @@ export function Ajustes() {
         <Card title="Tu perfil" hint="Tus datos personales de la cuenta.">
           <form onSubmit={onSubmitPerfil}>
             <div className="row gap-12">
-              <Field label="Nombre" required>
-                <input
-                  className="input"
-                  value={profile.firstName}
-                  onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-                />
-              </Field>
-              <Field label="Apellido" required>
-                <input
-                  className="input"
-                  value={profile.lastName}
-                  onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-                />
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Nombre" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      value={profile.firstName}
+                                                                                                      onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                                                                                                    />
+                                                                                                  </Field>
+                                                                                                  <Field label="Apellido" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      value={profile.lastName}
+                                                                                                      onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                                                                                                    />
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
             </div>
-            <Field label="Teléfono">
-              <input
-                className="input"
-                value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              />
-            </Field>
-            <Field label="Correo electrónico" hint="Tu correo de acceso no se cambia desde aquí.">
-              <input className="input" value={user?.email ?? ""} disabled />
-            </Field>
+            
+              
+                
+                  <div className="form-group">
+                    <Field label="Teléfono">
+                                                                                          <input
+                                                                                            className="input"
+                                                                                            value={profile.phone}
+                                                                                            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                                                                                          />
+                                                                                        </Field>
+                                                                                        <Field label="Correo electrónico" hint="Tu correo de acceso no se cambia desde aquí.">
+                                                                                          <input className="input" value={user?.email ?? ""} disabled />
+                                                                                        </Field>
+                  </div>
+                
+              
+            
             {profileError && <p className="field__error">{profileError}</p>}
-            <button className="btn btn--primary" type="submit">
+            <button className="btn btn--primary" type="submit"><Icon name="check" /> 
               {profileSaved ? (
                 <>
-                  <Icon name="check" /> Guardado
+                  Guardado
                 </>
               ) : (
                 "Guardar perfil"
@@ -263,7 +296,7 @@ export function Ajustes() {
             <button
               className="btn btn--primary"
               onClick={() => setRate(Number(rate.replace(",", ".")) || 0)}
-            >
+            ><Icon name="refresh" /> 
               Guardar tasa
             </button>
             <button className="btn btn--soft" onClick={onSyncRate} disabled={rateBusy}>
@@ -288,34 +321,42 @@ export function Ajustes() {
 
       {tab === "Recibo" && (
         <Card title="Formato del recibo" hint="Cómo se ve el comprobante que entregas.">
-          <Field label="Título del recibo">
-            <input
-              className="input"
-              value={form.receiptTitle}
-              onChange={(e) => setForm({ ...form, receiptTitle: e.target.value })}
-              placeholder="Comprobante de venta"
-            />
-          </Field>
-          <Field label="Formato">
-            <select
-              className="select"
-              value={form.printFormat}
-              onChange={(e) => setForm({ ...form, printFormat: e.target.value as typeof form.printFormat })}
-            >
-              <option value="58mm">Ticket 58 mm</option>
-              <option value="80mm">Ticket 80 mm</option>
-              <option value="carta">Carta</option>
-            </select>
-          </Field>
-          <Field label="Pie del recibo" hint="Máximo 300 caracteres.">
-            <textarea
-              className="textarea"
-              maxLength={300}
-              value={form.receiptFooter}
-              onChange={(e) => setForm({ ...form, receiptFooter: e.target.value })}
-            />
-          </Field>
-          <button className="btn btn--primary" onClick={() => updateBusiness(form)}>
+          
+            
+              
+                <div className="form-group">
+                  <Field label="Título del recibo">
+                                                                                <input
+                                                                                  className="input"
+                                                                                  value={form.receiptTitle}
+                                                                                  onChange={(e) => setForm({ ...form, receiptTitle: e.target.value })}
+                                                                                  placeholder="Comprobante de venta"
+                                                                                />
+                                                                              </Field>
+                                                                              <Field label="Formato">
+                                                                                <select
+                                                                                  className="select"
+                                                                                  value={form.printFormat}
+                                                                                  onChange={(e) => setForm({ ...form, printFormat: e.target.value as typeof form.printFormat })}
+                                                                                >
+                                                                                  <option value="58mm">Ticket 58 mm</option>
+                                                                                  <option value="80mm">Ticket 80 mm</option>
+                                                                                  <option value="carta">Carta</option>
+                                                                                </select>
+                                                                              </Field>
+                                                                              <Field label="Pie del recibo" hint="Máximo 300 caracteres.">
+                                                                                <textarea
+                                                                                  className="textarea"
+                                                                                  maxLength={300}
+                                                                                  value={form.receiptFooter}
+                                                                                  onChange={(e) => setForm({ ...form, receiptFooter: e.target.value })}
+                                                                                />
+                                                                              </Field>
+                </div>
+              
+            
+          
+          <button className="btn btn--primary" onClick={() => updateBusiness(form)}><Icon name="check" /> 
             Guardar
           </button>
         </Card>
@@ -338,7 +379,7 @@ export function Ajustes() {
               <button className="btn btn--ghost" onClick={exportAllCsv}>
                 <Icon name="table" /> Todos los reportes (CSV)
               </button>
-              <button className="btn btn--soft" onClick={exportBackupJson}>
+              <button className="btn btn--soft" onClick={exportBackupJson}><Icon name="fileText" /> 
                 <Icon name="fileText" /> Copia de seguridad (JSON)
               </button>
             </div>
@@ -357,7 +398,7 @@ export function Ajustes() {
                   }}
                 >
                   <span className="row gap-8">
-                    <Icon name="fileText" />
+                    
                     <span>{ds.label}</span>
                     <span className="dim" style={{ fontSize: "0.78rem" }}>
                       {ds.rows.length} reg.
@@ -404,14 +445,13 @@ export function Ajustes() {
             {pairing && (
               <button
                 className="btn btn--soft"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "¿Generar un código nuevo? Los teléfonos vinculados antes quedarán desvinculados."
-                    )
-                  ) {
-                    rotatePairing();
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Generar un codigo nuevo",
+                    message: "¿Generar un código nuevo? Los teléfonos vinculados antes quedarán desvinculados.",
+                    confirmText: "Generar codigo nuevo",
+                  });
+                  if (ok) rotatePairing();
                 }}
               >
                 <Icon name="close" /> Desvincular teléfonos
@@ -446,14 +486,14 @@ export function Ajustes() {
           </p>
           <button
             className="btn btn--soft"
-            onClick={() => {
-              if (
-                window.confirm(
-                  "¿Borrar todos los datos del comercio? Se eliminarán productos, ventas, cuentas y ajustes."
-                )
-              ) {
-                clearAll();
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Borrar todos los datos",
+                message: "¿Borrar todos los datos del comercio? Se eliminarán productos, ventas, cuentas y ajustes.",
+                confirmText: "Borrar todo",
+                destructive: true,
+              });
+              if (ok) clearAll();
             }}
           >
             <Icon name="trash" /> Borrar todos los datos

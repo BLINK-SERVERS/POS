@@ -1,7 +1,8 @@
 // Contactos · Clientes y proveedores.
-import { memo, useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { useStoreActions, useStoreState } from "../lib/store";
-import { EmptyState, Field, Modal, PageHead, Badge } from "../components/ui";
+import { Icon } from "../components/Icon";
+import { EmptyState, Field, Modal, PageHead, Badge, useConfirm } from "../components/ui";
 import type { Contact } from "../lib/types";
 
 /** Fila memoizada: escribir en el formulario no re-renderiza la tabla. */
@@ -30,7 +31,7 @@ const ContactRow = memo(function ContactRow({
       </td>
       <td data-label="Crédito">{contact.creditDays ? `${contact.creditDays} días` : "—"}</td>
       <td data-label="Acciones">
-        <button className="btn btn--danger btn--sm" onClick={() => onRemove(contact.id)}>
+        <button className="btn btn--danger btn--sm" onClick={() => onRemove(contact.id)}><Icon name="trash" /> 
           Eliminar
         </button>
       </td>
@@ -41,6 +42,19 @@ const ContactRow = memo(function ContactRow({
 export function Contactos() {
   const { state } = useStoreState();
   const { addContact, removeContact } = useStoreActions();
+  const confirm = useConfirm();
+  const removeContactConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar el contacto?",
+        message: "Se borraran sus cuentas y movimientos asociados.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeContact(id);
+    },
+    [confirm, removeContact]
+  );
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -82,7 +96,7 @@ export function Contactos() {
         title="Contactos"
         subtitle="Clientes y proveedores en un solo lugar."
         actions={
-          <button className="btn btn--primary" onClick={() => setOpen(true)}>
+          <button className="btn btn--primary" onClick={() => setOpen(true)}><Icon name="plus" /> 
             Nuevo contacto
           </button>
         }
@@ -94,7 +108,7 @@ export function Contactos() {
             title="Sin contactos"
           hint="Añade clientes y proveedores para llevar sus cuentas."
           action={
-            <button className="btn btn--soft btn--sm" onClick={() => setOpen(true)}>
+            <button className="btn btn--soft btn--sm" onClick={() => setOpen(true)}><Icon name="plus" /> 
               Nuevo contacto
             </button>
           }
@@ -114,7 +128,7 @@ export function Contactos() {
             </thead>
             <tbody>
               {state.contacts.map((c) => (
-                <ContactRow key={c.id} contact={c} onRemove={removeContact} />
+                <ContactRow key={c.id} contact={c} onRemove={removeContactConfirmado} />
               ))}
             </tbody>
           </table>
@@ -127,65 +141,89 @@ export function Contactos() {
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
           <div className="row gap-12">
-            <Field label="Tipo doc.">
-              <select
-                className="select"
-                value={form.docType}
-                onChange={(e) => setForm({ ...form, docType: e.target.value as typeof form.docType })}
-              >
-                <option value="">—</option>
-                <option value="V">V</option>
-                <option value="E">E</option>
-                <option value="J">J</option>
-                <option value="RIF">RIF</option>
-              </select>
-            </Field>
-            <Field label="Documento (cédula o RIF)">
-              <input className="input" value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Tipo doc.">
+                                                                    <select
+                                                                      className="select"
+                                                                      value={form.docType}
+                                                                      onChange={(e) => setForm({ ...form, docType: e.target.value as typeof form.docType })}
+                                                                    >
+                                                                      <option value="">—</option>
+                                                                      <option value="V">V</option>
+                                                                      <option value="E">E</option>
+                                                                      <option value="J">J</option>
+                                                                      <option value="RIF">RIF</option>
+                                                                    </select>
+                                                                  </Field>
+                                                                  <Field label="Documento (cédula o RIF)">
+                                                                    <input className="input" value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <div className="row gap-12">
-            <Field label="Teléfono">
-              <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </Field>
-            <Field label="Correo">
-              <input className="input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Teléfono">
+                                                                    <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                                                                  </Field>
+                                                                  <Field label="Correo">
+                                                                    <input className="input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
-          <Field label="Dirección">
-            <input className="input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          </Field>
-          <Field label="Notas">
-            <textarea
-              className="input"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Dirección">
+                                                            <input className="input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Notas">
+                                                            <textarea
+                                                              className="input"
+                                                              rows={2}
+                                                              value={form.notes}
+                                                              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                                                            />
+                                                          </Field>
+              </div>
+            
+          
           <div className="row gap-12">
-            <Field label="Tipo">
-              <select
-                className="select"
-                value={form.kind}
-                onChange={(e) => setForm({ ...form, kind: e.target.value as typeof form.kind })}
-              >
-                <option value="cliente">Cliente</option>
-                <option value="proveedor">Proveedor</option>
-                <option value="ambos">Ambos</option>
-              </select>
-            </Field>
-            <Field label="Días de crédito">
-              <input
-                className="input"
-                type="number"
-                min="0"
-                value={form.creditDays}
-                onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
-              />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Tipo">
+                                                                    <select
+                                                                      className="select"
+                                                                      value={form.kind}
+                                                                      onChange={(e) => setForm({ ...form, kind: e.target.value as typeof form.kind })}
+                                                                    >
+                                                                      <option value="cliente">Cliente</option>
+                                                                      <option value="proveedor">Proveedor</option>
+                                                                      <option value="ambos">Ambos</option>
+                                                                    </select>
+                                                                  </Field>
+                                                                  <Field label="Días de crédito">
+                                                                    <input
+                                                                      className="input"
+                                                                      type="number"
+                                                                      min="0"
+                                                                      value={form.creditDays}
+                                                                      onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
+                                                                    />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
-          <button className="btn btn--primary btn--block" onClick={save}>
+          <button className="btn btn--primary btn--block" onClick={save}><Icon name="check" /> 
             Guardar contacto
           </button>
         </Modal>

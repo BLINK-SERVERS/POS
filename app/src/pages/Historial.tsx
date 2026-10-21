@@ -147,7 +147,7 @@ export function Historial() {
                         setVoidReason("");
                         setVoidId(s.id);
                       }}
-                    >
+                    ><Icon name="xmarkCircle" /> 
                       Anular
                     </button>
                   )}
@@ -213,7 +213,7 @@ export function Historial() {
               setVoidId(null);
               setVoidReason("");
             }}
-          >
+          ><Icon name="xmarkCircle" /> 
             Anular venta
           </button>
         </Modal>

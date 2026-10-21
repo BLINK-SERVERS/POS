@@ -1,7 +1,8 @@
 // Finanzas · Cuentas, movimientos, transferencias, pendientes, gastos y cierres.
 import { memo, useCallback, useMemo, useState } from "react";
 import { useStoreActions, useStoreState } from "../lib/store";
-import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
+import { Icon } from "../components/Icon";
+import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import type {
   Account,
@@ -76,12 +77,8 @@ const AccountRow = memo(function AccountRow({
         {account.active ? <Badge tone="success" icon="check">Activa</Badge> : <Badge>Inactiva</Badge>}
       </td>
       <td className="row-actions">
-        <button className="btn btn--soft btn--sm" onClick={() => onMove(account.id, 1)}>
-          Ingresar
-        </button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onMove(account.id, -1)}>
-          Retirar
-        </button>
+        <button className="row-action" onClick={() => onMove(account.id, 1)} title="Ingresar" aria-label="Ingresar"><Icon name="plus" /></button>
+        <button className="row-action" onClick={() => onMove(account.id, -1)} title="Retirar" aria-label="Retirar"><Icon name="minus" /></button>
       </td>
     </tr>
   );
@@ -204,14 +201,10 @@ const PendingRow = memo(function PendingRow({
       </td>
       <td className="row-actions">
         {!closed && (
-          <button className="btn btn--soft btn--sm" onClick={() => onAbono(pending.id)}>
-            Abonar
-          </button>
+          <button className="row-action" onClick={() => onAbono(pending.id)} title="Abonar" aria-label="Abonar"><Icon name="creditcard" /></button>
         )}
         {!closed && (
-          <button className="btn btn--ghost btn--sm" onClick={() => onVoid(pending.id)}>
-            Anular
-          </button>
+          <button className="row-action" onClick={() => onVoid(pending.id)} title="Anular" aria-label="Anular"><Icon name="xmarkCircle" /></button>
         )}
       </td>
     </tr>
@@ -249,14 +242,10 @@ const ExpenseRow = memo(function ExpenseRow({
       </td>
       <td className="row-actions">
         {!expense.paid && !expense.anulado && (
-          <button className="btn btn--soft btn--sm" onClick={() => onPay(expense.id)}>
-            Pagar
-          </button>
+          <button className="row-action" onClick={() => onPay(expense.id)} title="Pagar" aria-label="Pagar"><Icon name="cash" /></button>
         )}
         {!expense.anulado && (
-          <button className="btn btn--ghost btn--sm" onClick={() => onVoid(expense.id)}>
-            Anular
-          </button>
+          <button className="row-action" onClick={() => onVoid(expense.id)} title="Anular" aria-label="Anular"><Icon name="xmarkCircle" /></button>
         )}
       </td>
     </tr>
@@ -287,7 +276,7 @@ const RecurringRow = memo(function RecurringRow({
         )}
       </td>
       <td>
-        <button className="btn btn--ghost btn--sm" onClick={() => onRemove(recurring.id)}>
+        <button className="btn btn--ghost btn--sm" onClick={() => onRemove(recurring.id)}><Icon name="trash" /> 
           Quitar
         </button>
       </td>
@@ -344,6 +333,19 @@ export function Finanzas() {
     removeRecurringExpense,
     runRecurring,
   } = useStoreActions();
+  const confirm = useConfirm();
+  const removeRecurringExpenseConfirmado = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: "¿Eliminar el gasto recurrente?",
+        message: "Dejara de registrarse automaticamente.",
+        confirmText: "Eliminar",
+        destructive: true,
+      });
+      if (ok) removeRecurringExpense(id);
+    },
+    [confirm, removeRecurringExpense]
+  );
 
   const rate = state.rate;
   const [tab, setTab] = useState<Tab>("Cuentas");
@@ -501,7 +503,10 @@ export function Finanzas() {
 
   const handleVoidPending = useCallback((id: string) => voidPending(id), [voidPending]);
   const handleVoidExpense = useCallback((id: string) => voidExpense(id), [voidExpense]);
-  const handleRemoveRecurring = useCallback((id: string) => removeRecurringExpense(id), [removeRecurringExpense]);
+  const handleRemoveRecurring = useCallback(
+    (id: string) => removeRecurringExpenseConfirmado(id),
+    [removeRecurringExpenseConfirmado]
+  );
 
   const activeCategories = useMemo(
     () => state.expenseCategories.filter((c) => c.active),
@@ -518,10 +523,10 @@ export function Finanzas() {
         subtitle="Dónde entra y sale tu dinero: efectivo, bancos, pagos móviles y créditos."
         actions={
           <>
-            <button className="btn btn--ghost" onClick={openExpense}>
+            <button className="btn btn--ghost" onClick={openExpense}><Icon name="note" /> 
               Nuevo gasto
             </button>
-            <button className="btn btn--primary" onClick={() => setAccOpen(true)}>
+            <button className="btn btn--primary" onClick={() => setAccOpen(true)}><Icon name="wallet" /> 
               Nueva cuenta
             </button>
           </>
@@ -569,7 +574,7 @@ export function Finanzas() {
             title="Sin cuentas"
               hint="Crea una cuenta para registrar entradas y salidas de dinero."
               action={
-                <button className="btn btn--soft btn--sm" onClick={() => setAccOpen(true)}>
+                <button className="btn btn--soft btn--sm" onClick={() => setAccOpen(true)}><Icon name="wallet" /> 
                   Nueva cuenta
                 </button>
               }
@@ -651,7 +656,7 @@ export function Finanzas() {
               className="btn btn--primary btn--sm"
               onClick={openTransfer}
               disabled={state.accounts.length < 2}
-            >
+            ><Icon name="transfer" /> 
               Nueva transferencia
             </button>
           </div>
@@ -705,7 +710,7 @@ export function Finanzas() {
       {tab === "Pendientes" && (
         <>
           <div className="row" style={{ justifyContent: "flex-end" }}>
-            <button className="btn btn--primary btn--sm" onClick={openPending}>
+            <button className="btn btn--primary btn--sm" onClick={openPending}><Icon name="creditcard" /> 
               Nuevo pendiente
             </button>
           </div>
@@ -752,7 +757,7 @@ export function Finanzas() {
       {tab === "Gastos" && (
         <>
           <div className="row" style={{ justifyContent: "flex-end" }}>
-            <button className="btn btn--primary btn--sm" onClick={openExpense}>
+            <button className="btn btn--primary btn--sm" onClick={openExpense}><Icon name="note" /> 
               Nuevo gasto
             </button>
           </div>
@@ -763,7 +768,7 @@ export function Finanzas() {
             title="Sin gastos"
               hint="Registra tus gastos para conocer tu utilidad real."
               action={
-                <button className="btn btn--soft btn--sm" onClick={openExpense}>
+                <button className="btn btn--soft btn--sm" onClick={openExpense}><Icon name="note" /> 
                   Nuevo gasto
                 </button>
               }
@@ -804,7 +809,7 @@ export function Finanzas() {
       {tab === "Gastos recurrentes" && (
         <>
           <div className="row gap-8" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-            <button className="btn btn--ghost btn--sm" onClick={runRecurring}>
+            <button className="btn btn--ghost btn--sm" onClick={runRecurring}><Icon name="clock" /> 
               Generar vencidos
             </button>
             <button
@@ -818,7 +823,7 @@ export function Finanzas() {
                 });
                 setRecurOpen(true);
               }}
-            >
+            ><Icon name="clock" /> 
               Nuevo recurrente
             </button>
           </div>
@@ -878,7 +883,7 @@ export function Finanzas() {
                 addExpenseCategory(catName.trim());
                 setCatName("");
               }}
-            >
+            ><Icon name="plus" /> 
               Agregar
             </button>
           </div>
@@ -946,47 +951,59 @@ export function Finanzas() {
 
       {accOpen && (
         <Modal title="Nueva cuenta" onClose={() => setAccOpen(false)}>
-          <Field label="Nombre" required>
-            <input className="input" value={accForm.name} onChange={(e) => setAccForm({ ...accForm, name: e.target.value })} />
-          </Field>
-          <Field label="Tipo">
-            <select
-              className="select"
-              value={accForm.type}
-              onChange={(e) => setAccForm({ ...accForm, type: e.target.value as typeof accForm.type })}
-            >
-              <option value="efectivo">Efectivo</option>
-              <option value="banco">Banco</option>
-              <option value="pago_movil">Pago móvil</option>
-            </select>
-          </Field>
-          <Field label="Moneda">
-            <select
-              className="select"
-              value={accForm.currency}
-              onChange={(e) => setAccForm({ ...accForm, currency: e.target.value as typeof accForm.currency })}
-            >
-              <option value="USD">USD</option>
-              <option value="VES">VES (Bs)</option>
-            </select>
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Nombre" required>
+                                                            <input className="input" value={accForm.name} onChange={(e) => setAccForm({ ...accForm, name: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Tipo">
+                                                            <select
+                                                              className="select"
+                                                              value={accForm.type}
+                                                              onChange={(e) => setAccForm({ ...accForm, type: e.target.value as typeof accForm.type })}
+                                                            >
+                                                              <option value="efectivo">Efectivo</option>
+                                                              <option value="banco">Banco</option>
+                                                              <option value="pago_movil">Pago móvil</option>
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Moneda">
+                                                            <select
+                                                              className="select"
+                                                              value={accForm.currency}
+                                                              onChange={(e) => setAccForm({ ...accForm, currency: e.target.value as typeof accForm.currency })}
+                                                            >
+                                                              <option value="USD">USD</option>
+                                                              <option value="VES">VES (Bs)</option>
+                                                            </select>
+                                                          </Field>
+              </div>
+            
+          
           <div className="row gap-8">
-            <Field label="Comisión al recibir (%)" hint="0 si no aplica">
-              <input
-                className="input"
-                type="number"
-                value={accForm.commissionIn}
-                onChange={(e) => setAccForm({ ...accForm, commissionIn: e.target.value })}
-              />
-            </Field>
-            <Field label="Comisión al enviar (%)" hint="0 si no aplica">
-              <input
-                className="input"
-                type="number"
-                value={accForm.commissionOut}
-                onChange={(e) => setAccForm({ ...accForm, commissionOut: e.target.value })}
-              />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Comisión al recibir (%)" hint="0 si no aplica">
+                                                                    <input
+                                                                      className="input"
+                                                                      type="number"
+                                                                      value={accForm.commissionIn}
+                                                                      onChange={(e) => setAccForm({ ...accForm, commissionIn: e.target.value })}
+                                                                    />
+                                                                  </Field>
+                                                                  <Field label="Comisión al enviar (%)" hint="0 si no aplica">
+                                                                    <input
+                                                                      className="input"
+                                                                      type="number"
+                                                                      value={accForm.commissionOut}
+                                                                      onChange={(e) => setAccForm({ ...accForm, commissionOut: e.target.value })}
+                                                                    />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <button
             className="btn btn--primary btn--block"
@@ -1003,7 +1020,7 @@ export function Finanzas() {
               });
               setAccOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Crear cuenta
           </button>
         </Modal>
@@ -1037,7 +1054,7 @@ export function Finanzas() {
               );
               setMoveOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Confirmar
           </button>
         </Modal>
@@ -1045,29 +1062,35 @@ export function Finanzas() {
 
       {expOpen && (
         <Modal title="Nuevo gasto" onClose={() => setExpOpen(false)}>
-          <Field label="Nombre" required hint="Ej.: alquiler de octubre">
-            <input className="input" value={expForm.name} onChange={(e) => setExpForm({ ...expForm, name: e.target.value })} />
-          </Field>
-          <Field label="Categoría">
-            <select
-              className="select"
-              value={expForm.category}
-              onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
-            >
-              {activeCategories.map((c) => (
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
-              {!activeCategories.some((c) => c.name === expForm.category) && expForm.category && (
-                <option value={expForm.category}>{expForm.category}</option>
-              )}
-            </select>
-          </Field>
-          <Field label="Nota">
-            <input className="input" value={expForm.note} onChange={(e) => setExpForm({ ...expForm, note: e.target.value })} />
-          </Field>
-          <Field label="Monto (USD)">
-            <input className="input" type="number" value={expForm.amountUsd} onChange={(e) => setExpForm({ ...expForm, amountUsd: e.target.value })} />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Nombre" required hint="Ej.: alquiler de octubre">
+                                                            <input className="input" value={expForm.name} onChange={(e) => setExpForm({ ...expForm, name: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Categoría">
+                                                            <select
+                                                              className="select"
+                                                              value={expForm.category}
+                                                              onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
+                                                            >
+                                                              {activeCategories.map((c) => (
+                                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                                              ))}
+                                                              {!activeCategories.some((c) => c.name === expForm.category) && expForm.category && (
+                                                                <option value={expForm.category}>{expForm.category}</option>
+                                                              )}
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Nota">
+                                                            <input className="input" value={expForm.note} onChange={(e) => setExpForm({ ...expForm, note: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Monto (USD)">
+                                                            <input className="input" type="number" value={expForm.amountUsd} onChange={(e) => setExpForm({ ...expForm, amountUsd: e.target.value })} />
+                                                          </Field>
+              </div>
+            
+          
           <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
             <input
               type="checkbox"
@@ -1104,7 +1127,7 @@ export function Finanzas() {
               });
               setExpOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Guardar gasto
           </button>
         </Modal>
@@ -1136,7 +1159,7 @@ export function Finanzas() {
               if (payId) payExpense(payId, payAccount, "");
               setPayId(null);
             }}
-          >
+          ><Icon name="cash" /> 
             Pagar desde la cuenta
           </button>
         </Modal>
@@ -1144,45 +1167,57 @@ export function Finanzas() {
 
       {trfOpen && (
         <Modal title="Nueva transferencia" onClose={() => setTrfOpen(false)}>
-          <Field label="Desde" required>
-            <select
-              className="select"
-              value={trfForm.fromId}
-              onChange={(e) => setTrfForm({ ...trfForm, fromId: e.target.value })}
-            >
-              {state.accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Hacia" required>
-            <select
-              className="select"
-              value={trfForm.toId}
-              onChange={(e) => setTrfForm({ ...trfForm, toId: e.target.value })}
-            >
-              {state.accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
-              ))}
-            </select>
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Desde" required>
+                                                            <select
+                                                              className="select"
+                                                              value={trfForm.fromId}
+                                                              onChange={(e) => setTrfForm({ ...trfForm, fromId: e.target.value })}
+                                                            >
+                                                              {state.accounts.map((a) => (
+                                                                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
+                                                              ))}
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Hacia" required>
+                                                            <select
+                                                              className="select"
+                                                              value={trfForm.toId}
+                                                              onChange={(e) => setTrfForm({ ...trfForm, toId: e.target.value })}
+                                                            >
+                                                              {state.accounts.map((a) => (
+                                                                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
+                                                              ))}
+                                                            </select>
+                                                          </Field>
+              </div>
+            
+          
           <div className="row gap-8">
-            <Field label="Monto (USD)">
-              <input
-                className="input"
-                type="number"
-                value={trfForm.amountUsd}
-                onChange={(e) => setTrfForm({ ...trfForm, amountUsd: e.target.value })}
-              />
-            </Field>
-            <Field label="Comisión (USD)">
-              <input
-                className="input"
-                type="number"
-                value={trfForm.commission}
-                onChange={(e) => setTrfForm({ ...trfForm, commission: e.target.value })}
-              />
-            </Field>
+            
+              
+                <div className="form-group">
+                  <Field label="Monto (USD)">
+                                                                    <input
+                                                                      className="input"
+                                                                      type="number"
+                                                                      value={trfForm.amountUsd}
+                                                                      onChange={(e) => setTrfForm({ ...trfForm, amountUsd: e.target.value })}
+                                                                    />
+                                                                  </Field>
+                                                                  <Field label="Comisión (USD)">
+                                                                    <input
+                                                                      className="input"
+                                                                      type="number"
+                                                                      value={trfForm.commission}
+                                                                      onChange={(e) => setTrfForm({ ...trfForm, commission: e.target.value })}
+                                                                    />
+                                                                  </Field>
+                </div>
+              
+            
           </div>
           <Field label="Nota">
             <input
@@ -1212,7 +1247,7 @@ export function Finanzas() {
               );
               setTrfOpen(false);
             }}
-          >
+          ><Icon name="transfer" /> 
             Transferir
           </button>
         </Modal>
@@ -1220,58 +1255,64 @@ export function Finanzas() {
 
       {pendOpen && (
         <Modal title="Nuevo pendiente" onClose={() => setPendOpen(false)}>
-          <Field label="Dirección">
-            <select
-              className="select"
-              value={pendForm.direction}
-              onChange={(e) => setPendForm({ ...pendForm, direction: e.target.value as typeof pendForm.direction })}
-            >
-              <option value="cobrar">Por cobrar (me deben)</option>
-              <option value="pagar">Por pagar (yo debo)</option>
-            </select>
-          </Field>
-          <Field label="Contacto">
-            <select
-              className="select"
-              value={pendForm.contactId}
-              onChange={(e) => setPendForm({ ...pendForm, contactId: e.target.value })}
-            >
-              <option value="">Sin contacto</option>
-              {state.contacts.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Concepto" required hint="Ej.: Préstamo, mercancía, servicio">
-            <input
-              className="input"
-              value={pendForm.subject}
-              onChange={(e) => setPendForm({ ...pendForm, subject: e.target.value })}
-            />
-          </Field>
-          <Field label="Monto (USD)">
-            <input
-              className="input"
-              type="number"
-              value={pendForm.amountUsd}
-              onChange={(e) => setPendForm({ ...pendForm, amountUsd: e.target.value })}
-            />
-          </Field>
-          <Field label="Vence">
-            <input
-              className="input"
-              type="date"
-              value={pendForm.dueAt}
-              onChange={(e) => setPendForm({ ...pendForm, dueAt: e.target.value })}
-            />
-          </Field>
-          <Field label="Nota">
-            <input
-              className="input"
-              value={pendForm.note}
-              onChange={(e) => setPendForm({ ...pendForm, note: e.target.value })}
-            />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Dirección">
+                                                            <select
+                                                              className="select"
+                                                              value={pendForm.direction}
+                                                              onChange={(e) => setPendForm({ ...pendForm, direction: e.target.value as typeof pendForm.direction })}
+                                                            >
+                                                              <option value="cobrar">Por cobrar (me deben)</option>
+                                                              <option value="pagar">Por pagar (yo debo)</option>
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Contacto">
+                                                            <select
+                                                              className="select"
+                                                              value={pendForm.contactId}
+                                                              onChange={(e) => setPendForm({ ...pendForm, contactId: e.target.value })}
+                                                            >
+                                                              <option value="">Sin contacto</option>
+                                                              {state.contacts.map((c) => (
+                                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                                              ))}
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Concepto" required hint="Ej.: Préstamo, mercancía, servicio">
+                                                            <input
+                                                              className="input"
+                                                              value={pendForm.subject}
+                                                              onChange={(e) => setPendForm({ ...pendForm, subject: e.target.value })}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Monto (USD)">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={pendForm.amountUsd}
+                                                              onChange={(e) => setPendForm({ ...pendForm, amountUsd: e.target.value })}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Vence">
+                                                            <input
+                                                              className="input"
+                                                              type="date"
+                                                              value={pendForm.dueAt}
+                                                              onChange={(e) => setPendForm({ ...pendForm, dueAt: e.target.value })}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Nota">
+                                                            <input
+                                                              className="input"
+                                                              value={pendForm.note}
+                                                              onChange={(e) => setPendForm({ ...pendForm, note: e.target.value })}
+                                                            />
+                                                          </Field>
+              </div>
+            
+          
           <button
             className="btn btn--primary btn--block"
             disabled={!pendForm.subject.trim() || (Number(pendForm.amountUsd) || 0) <= 0}
@@ -1290,7 +1331,7 @@ export function Finanzas() {
               });
               setPendOpen(false);
             }}
-          >
+          ><Icon name="creditcard" /> 
             Guardar pendiente
           </button>
         </Modal>
@@ -1312,29 +1353,35 @@ export function Finanzas() {
               </span>
             </div>
           </div>
-          <Field
-            label={abonoPendingObj.direction === "cobrar" ? "Monto a recibir (USD)" : "Monto a pagar (USD)"}
-            hint={`Máximo ${formatUsd(round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd))}`}
-          >
-            <input
-              className="input"
-              type="number"
-              min="0"
-              max={round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd)}
-              value={abonoAmount}
-              onChange={(e) => setAbonoAmount(e.target.value)}
-            />
-          </Field>
-          <Field
-            label={abonoPendingObj.direction === "cobrar" ? "Cuenta que recibe" : "Cuenta que paga"}
-            required
-          >
-            <select className="select" value={abonoAccount} onChange={(e) => setAbonoAccount(e.target.value)}>
-              {state.accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
-              ))}
-            </select>
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field
+                                                            label={abonoPendingObj.direction === "cobrar" ? "Monto a recibir (USD)" : "Monto a pagar (USD)"}
+                                                            hint={`Máximo ${formatUsd(round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd))}`}
+                                                          >
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              min="0"
+                                                              max={round2(abonoPendingObj.amountUsd - abonoPendingObj.paidUsd)}
+                                                              value={abonoAmount}
+                                                              onChange={(e) => setAbonoAmount(e.target.value)}
+                                                            />
+                                                          </Field>
+                                                          <Field
+                                                            label={abonoPendingObj.direction === "cobrar" ? "Cuenta que recibe" : "Cuenta que paga"}
+                                                            required
+                                                          >
+                                                            <select className="select" value={abonoAccount} onChange={(e) => setAbonoAccount(e.target.value)}>
+                                                              {state.accounts.map((a) => (
+                                                                <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
+                                                              ))}
+                                                            </select>
+                                                          </Field>
+              </div>
+            
+          
           <button
             className="btn btn--primary btn--block"
             disabled={!abonoAccount || (Number(abonoAmount) || 0) <= 0}
@@ -1342,7 +1389,7 @@ export function Finanzas() {
               if (abonoId) abonoPending(abonoId, abonoAccount, Number(abonoAmount) || 0, "");
               setAbonoId(null);
             }}
-          >
+          ><Icon name="cash" /> 
             Registrar abono
           </button>
         </Modal>
@@ -1350,36 +1397,42 @@ export function Finanzas() {
 
       {recurOpen && (
         <Modal title="Nuevo gasto recurrente" onClose={() => setRecurOpen(false)}>
-          <Field label="Nombre" required hint="Ej.: Alquiler local">
-            <input className="input" value={recurForm.name} onChange={(e) => setRecurForm({ ...recurForm, name: e.target.value })} />
-          </Field>
-          <Field label="Categoría">
-            <select
-              className="select"
-              value={recurForm.categoryId}
-              onChange={(e) => setRecurForm({ ...recurForm, categoryId: e.target.value })}
-            >
-              {activeCategories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Monto (USD)">
-            <input
-              className="input"
-              type="number"
-              value={recurForm.amountUsd}
-              onChange={(e) => setRecurForm({ ...recurForm, amountUsd: e.target.value })}
-            />
-          </Field>
-          <Field label="Primer vencimiento" hint="El gasto se generará cada mes en este día">
-            <input
-              className="input"
-              type="date"
-              value={recurForm.firstDue}
-              onChange={(e) => setRecurForm({ ...recurForm, firstDue: e.target.value })}
-            />
-          </Field>
+          
+            
+              <div className="form-group">
+                <Field label="Nombre" required hint="Ej.: Alquiler local">
+                                                            <input className="input" value={recurForm.name} onChange={(e) => setRecurForm({ ...recurForm, name: e.target.value })} />
+                                                          </Field>
+                                                          <Field label="Categoría">
+                                                            <select
+                                                              className="select"
+                                                              value={recurForm.categoryId}
+                                                              onChange={(e) => setRecurForm({ ...recurForm, categoryId: e.target.value })}
+                                                            >
+                                                              {activeCategories.map((c) => (
+                                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                                              ))}
+                                                            </select>
+                                                          </Field>
+                                                          <Field label="Monto (USD)">
+                                                            <input
+                                                              className="input"
+                                                              type="number"
+                                                              value={recurForm.amountUsd}
+                                                              onChange={(e) => setRecurForm({ ...recurForm, amountUsd: e.target.value })}
+                                                            />
+                                                          </Field>
+                                                          <Field label="Primer vencimiento" hint="El gasto se generará cada mes en este día">
+                                                            <input
+                                                              className="input"
+                                                              type="date"
+                                                              value={recurForm.firstDue}
+                                                              onChange={(e) => setRecurForm({ ...recurForm, firstDue: e.target.value })}
+                                                            />
+                                                          </Field>
+              </div>
+            
+          
           <button
             className="btn btn--primary btn--block"
             disabled={!recurForm.name.trim() || (Number(recurForm.amountUsd) || 0) <= 0}
@@ -1394,7 +1447,7 @@ export function Finanzas() {
               });
               setRecurOpen(false);
             }}
-          >
+          ><Icon name="check" /> 
             Guardar recurrente
           </button>
         </Modal>

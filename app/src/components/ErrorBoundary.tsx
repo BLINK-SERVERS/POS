@@ -1,3 +1,4 @@
+import { Icon } from "../components/Icon";
 // Límite de errores global: si un fallo de render se escapa, en vez de dejar la
 // pantalla en blanco muestra un mensaje claro con opción de recargar. Sin él,
 // cualquier throw desmonta todo React y el comerciante queda sin punto de venta.
@@ -62,14 +63,14 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             {error.message || String(error)}
           </pre>
-          <button className="btn btn--primary btn--block" onClick={this.reload}>
+          <button className="btn btn--primary btn--block" onClick={this.reload}><Icon name="refresh" /> 
             Recargar y continuar
           </button>
           <button
             className="btn btn--ghost btn--block"
             style={{ marginTop: "0.5rem" }}
             onClick={this.goHome}
-          >
+          ><Icon name="home" /> 
             Volver al inicio
           </button>
         </div>

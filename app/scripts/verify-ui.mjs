@@ -254,6 +254,83 @@ for (const vista of VISTAS) {
   }
   erroresTotales += erroresPub.length;
   await ctxPub.close();
+
+  // --- Dialogos nativos ---
+  // En movil un formulario se presenta como HOJA INFERIOR (Sheet de Konsta);
+  // en escritorio, como panel centrado. Ademas, una accion destructiva
+  // debe pedir confirmacion con una ALERTA (Dialog de Konsta).
+  const ctxDlg = await browser.newContext({
+    viewport: { width: vista.width, height: vista.height },
+    colorScheme: "light",
+    isMobile: vista.id === "movil",
+    hasTouch: vista.id === "movil",
+  });
+  const pageDlg = await ctxDlg.newPage();
+  const erroresDlg = [];
+  pageDlg.on("pageerror", (e) => erroresDlg.push("PAGEERROR " + String(e.message).slice(0, 130)));
+  pageDlg.on("console", (m) => { if (m.type() === "error") erroresDlg.push("CONSOLE " + m.text().slice(0, 130)); });
+
+  await pageDlg.addInitScript((productos) => {
+    const KEY = "blink-pos-state-v3";
+    const patch = () => {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return;
+        const st = JSON.parse(raw);
+        st.onboarding = { ...(st.onboarding || {}), completed: true };
+        if (!st.products || st.products.length === 0) st.products = productos;
+        localStorage.setItem(KEY, JSON.stringify(st));
+      } catch {}
+    };
+    patch();
+    window.addEventListener("DOMContentLoaded", patch);
+  }, PRODUCTOS);
+
+  await pageDlg.goto(BASE + "/app/entrar?bypass=1", { waitUntil: "domcontentloaded" });
+  await pageDlg.waitForTimeout(1400);
+  await pageDlg.goto(BASE + "/app/catalogo", { waitUntil: "networkidle" });
+  await pageDlg.waitForTimeout(1200);
+
+  // Abrir el formulario de producto nuevo (boton de la cabecera).
+  const abierto = await pageDlg.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find((x) =>
+      (x.textContent || "").includes("Nuevo producto")
+    );
+    if (!b) return false;
+    b.click();
+    return true;
+  });
+  await pageDlg.waitForTimeout(900);
+
+  const infoDlg = await pageDlg.evaluate(() => {
+    const hoja = document.querySelector(".k-sheet");
+    const panel = document.querySelector(".modal");
+    const titulo = document.querySelector(".sheet__title, .modal__title");
+    return {
+      hoja: !!hoja,
+      panel: !!panel,
+      titulo: titulo ? titulo.textContent.trim() : null,
+      // La hoja inferior debe tener el tirador y pegar al borde inferior.
+      tirador: !!document.querySelector(".sheet__grabber"),
+      bottomHoja: hoja ? Math.round(hoja.getBoundingClientRect().bottom) : null,
+      alto: window.innerHeight,
+      grupos: document.querySelectorAll(".form-group").length,
+    };
+  });
+
+  const esperaHoja = vista.id === "movil";
+  const okDlg =
+    abierto &&
+    !erroresDlg.length &&
+    (esperaHoja ? infoDlg.hoja && infoDlg.tirador : infoDlg.panel) &&
+    infoDlg.titulo !== null;
+  if (!okDlg) problemas++;
+  console.log(
+    `${okDlg ? "OK " : "!! "} ${"modal".padEnd(12)} ${esperaHoja ? "hoja inferior" : "panel centrado"} · hoja=${infoDlg.hoja} panel=${infoDlg.panel} tirador=${infoDlg.tirador} grupos=${infoDlg.grupos} titulo="${infoDlg.titulo}" errores=${erroresDlg.length}`
+  );
+  await pageDlg.screenshot({ path: path.join(OUT, "modal" + vista.sufijo + ".png") });
+  erroresTotales += erroresDlg.length;
+  await ctxDlg.close();
 }
 
 console.log("\nvistas con problemas:", problemas);

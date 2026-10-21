@@ -273,61 +273,85 @@ export function Onboarding() {
 
           {step === 0 && (
             <Card title="Datos de tu comercio" hint="Así aparecerá en BLINK POS y en tus recibos.">
-              <Field label="Nombre del comercio" required>
-                <input
-                  className="input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej.: Abastos La Esquina"
-                  autoFocus
-                />
-              </Field>
-              <Field label="Giro del comercio" required hint="Define qué módulos te mostramos.">
-                <select className="select" value={tipo} onChange={(e) => pickTipo(e.target.value)}>
-                  <option value="">Elige una opción…</option>
-                  {TIPOS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Nombre del comercio" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      value={name}
+                                                                                                      onChange={(e) => setName(e.target.value)}
+                                                                                                      placeholder="Ej.: Abastos La Esquina"
+                                                                                                      autoFocus
+                                                                                                    />
+                                                                                                  </Field>
+                                                                                                  <Field label="Giro del comercio" required hint="Define qué módulos te mostramos.">
+                                                                                                    <select className="select" value={tipo} onChange={(e) => pickTipo(e.target.value)}>
+                                                                                                      <option value="">Elige una opción…</option>
+                                                                                                      {TIPOS.map((t) => (
+                                                                                                        <option key={t} value={t}>
+                                                                                                          {t}
+                                                                                                        </option>
+                                                                                                      ))}
+                                                                                                    </select>
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
               <div className="row gap-12">
-                <Field label="RIF">
-                  <input className="input" value={rif} onChange={(e) => setRif(e.target.value)} placeholder="J-000000000" />
-                </Field>
-                <Field label="Teléfono">
-                  <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                </Field>
+                
+                  
+                    
+                      <div className="form-group">
+                        <Field label="RIF">
+                                                                                                              <input className="input" value={rif} onChange={(e) => setRif(e.target.value)} placeholder="J-000000000" />
+                                                                                                            </Field>
+                                                                                                            <Field label="Teléfono">
+                                                                                                              <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                                                                                            </Field>
+                      </div>
+                    
+                  
+                
               </div>
-              <Field label="Dirección">
-                <input className="input" value={address} onChange={(e) => setAddress(e.target.value)} />
-              </Field>
-              <Field label="Moneda principal" hint="En la que registras tus precios de venta.">
-                <select
-                  className="select"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value as "USD" | "VES")}
-                >
-                  <option value="USD">Dólares (USD)</option>
-                  <option value="VES">Bolívares (VES)</option>
-                </select>
-              </Field>
-              <Field
-                label="Moneda base de operaciones"
-                hint="USD o EUR (inmutable tras guardar). Determina la tasa oficial."
-                required
-              >
-                <select
-                  className="select"
-                  value={baseCurrency}
-                  onChange={(e) => setBaseCurrency(e.target.value as "USD" | "EUR")}
-                  disabled={state.business.baseCurrencyLocked}
-                >
-                  <option value="USD">Dólares (USD)</option>
-                  <option value="EUR">Euro (€)</option>
-                </select>
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Dirección">
+                                                                                                    <input className="input" value={address} onChange={(e) => setAddress(e.target.value)} />
+                                                                                                  </Field>
+                                                                                                  <Field label="Moneda principal" hint="En la que registras tus precios de venta.">
+                                                                                                    <select
+                                                                                                      className="select"
+                                                                                                      value={currency}
+                                                                                                      onChange={(e) => setCurrency(e.target.value as "USD" | "VES")}
+                                                                                                    >
+                                                                                                      <option value="USD">Dólares (USD)</option>
+                                                                                                      <option value="VES">Bolívares (VES)</option>
+                                                                                                    </select>
+                                                                                                  </Field>
+                                                                                                  <Field
+                                                                                                    label="Moneda base de operaciones"
+                                                                                                    hint="USD o EUR (inmutable tras guardar). Determina la tasa oficial."
+                                                                                                    required
+                                                                                                  >
+                                                                                                    <select
+                                                                                                      className="select"
+                                                                                                      value={baseCurrency}
+                                                                                                      onChange={(e) => setBaseCurrency(e.target.value as "USD" | "EUR")}
+                                                                                                      disabled={state.business.baseCurrencyLocked}
+                                                                                                    >
+                                                                                                      <option value="USD">Dólares (USD)</option>
+                                                                                                      <option value="EUR">Euro (€)</option>
+                                                                                                    </select>
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
             </Card>
           )}
 
@@ -388,27 +412,35 @@ export function Onboarding() {
                 />
               </Field>
               <div className="row gap-12">
-                <Field label="Tipo">
-                  <select
-                    className="select"
-                    value={accType}
-                    onChange={(e) => setAccType(e.target.value as typeof accType)}
-                  >
-                    <option value="efectivo">Efectivo</option>
-                    <option value="banco">Banco</option>
-                    <option value="pago_movil">Pago móvil</option>
-                  </select>
-                </Field>
-                <Field label="Divisa">
-                  <select
-                    className="select"
-                    value={accCurrency}
-                    onChange={(e) => setAccCurrency(e.target.value as "USD" | "VES")}
-                  >
-                    <option value="USD">Dólares (USD)</option>
-                    <option value="VES">Bolívares (VES)</option>
-                  </select>
-                </Field>
+                
+                  
+                    
+                      <div className="form-group">
+                        <Field label="Tipo">
+                                                                                                              <select
+                                                                                                                className="select"
+                                                                                                                value={accType}
+                                                                                                                onChange={(e) => setAccType(e.target.value as typeof accType)}
+                                                                                                              >
+                                                                                                                <option value="efectivo">Efectivo</option>
+                                                                                                                <option value="banco">Banco</option>
+                                                                                                                <option value="pago_movil">Pago móvil</option>
+                                                                                                              </select>
+                                                                                                            </Field>
+                                                                                                            <Field label="Divisa">
+                                                                                                              <select
+                                                                                                                className="select"
+                                                                                                                value={accCurrency}
+                                                                                                                onChange={(e) => setAccCurrency(e.target.value as "USD" | "VES")}
+                                                                                                              >
+                                                                                                                <option value="USD">Dólares (USD)</option>
+                                                                                                                <option value="VES">Bolívares (VES)</option>
+                                                                                                              </select>
+                                                                                                            </Field>
+                      </div>
+                    
+                  
+                
               </div>
               <label className="feature">
                 <input type="checkbox" checked={accClose} onChange={(e) => setAccClose(e.target.checked)} />
@@ -419,7 +451,7 @@ export function Onboarding() {
                   </span>
                 </span>
               </label>
-              <button className="btn btn--soft" type="button" onClick={addAccountStep}>
+              <button className="btn btn--soft" type="button" onClick={addAccountStep}><Icon name="tag" /> 
                 <Icon name="plus" /> Agregar cuenta
               </button>
             </Card>
@@ -430,7 +462,7 @@ export function Onboarding() {
               <div className="mini-list">
                 {state.categories.map((c) => (
                   <div key={c.id} className="mini-list__row">
-                    <Icon name="tag" />
+                    
                     <span>{c.name}</span>
                     <button
                       className="icon-btn"
@@ -450,7 +482,7 @@ export function Onboarding() {
                   onChange={(e) => setCatName(e.target.value)}
                   placeholder="Ej.: Bebidas"
                 />
-                <button className="btn btn--soft" type="submit">
+                <button className="btn btn--soft" type="submit"><Icon name="box" /> 
                   <Icon name="plus" /> Añadir
                 </button>
               </form>
@@ -462,7 +494,7 @@ export function Onboarding() {
               <div className="mini-list">
                 {state.products.map((p) => (
                   <div key={p.id} className="mini-list__row">
-                    <Icon name="box" />
+                    
                     <span>
                       {p.name} · ${p.price.toFixed(2)}
                       {p.category ? ` · ${p.category}` : ""}
@@ -483,29 +515,45 @@ export function Onboarding() {
                   <input className="input" value={prodName} onChange={(e) => setProdName(e.target.value)} />
                 </Field>
                 <div className="row gap-12">
-                  <Field label="Precio de venta (USD)" required>
-                    <input className="input" inputMode="decimal" value={prodPrice} onChange={(e) => setProdPrice(e.target.value)} />
-                  </Field>
-                  <Field label="Costo (USD)">
-                    <input className="input" inputMode="decimal" value={prodCost} onChange={(e) => setProdCost(e.target.value)} />
-                  </Field>
+                  
+                    
+                      
+                        <div className="form-group">
+                          <Field label="Precio de venta (USD)" required>
+                                                                                                                        <input className="input" inputMode="decimal" value={prodPrice} onChange={(e) => setProdPrice(e.target.value)} />
+                                                                                                                      </Field>
+                                                                                                                      <Field label="Costo (USD)">
+                                                                                                                        <input className="input" inputMode="decimal" value={prodCost} onChange={(e) => setProdCost(e.target.value)} />
+                                                                                                                      </Field>
+                        </div>
+                      
+                    
+                  
                 </div>
                 <div className="row gap-12">
-                  <Field label="Existencia inicial">
-                    <input className="input" inputMode="decimal" value={prodStock} onChange={(e) => setProdStock(e.target.value)} />
-                  </Field>
-                  <Field label="Categoría">
-                    <select className="select" value={prodCat} onChange={(e) => setProdCat(e.target.value)}>
-                      <option value="">Sin categoría</option>
-                      {state.categories.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
+                  
+                    
+                      
+                        <div className="form-group">
+                          <Field label="Existencia inicial">
+                                                                                                                        <input className="input" inputMode="decimal" value={prodStock} onChange={(e) => setProdStock(e.target.value)} />
+                                                                                                                      </Field>
+                                                                                                                      <Field label="Categoría">
+                                                                                                                        <select className="select" value={prodCat} onChange={(e) => setProdCat(e.target.value)}>
+                                                                                                                          <option value="">Sin categoría</option>
+                                                                                                                          {state.categories.map((c) => (
+                                                                                                                            <option key={c.id} value={c.name}>
+                                                                                                                              {c.name}
+                                                                                                                            </option>
+                                                                                                                          ))}
+                                                                                                                        </select>
+                                                                                                                      </Field>
+                        </div>
+                      
+                    
+                  
                 </div>
-                <button className="btn btn--soft" type="submit">
+                <button className="btn btn--soft" type="submit"><Icon name="users" /> 
                   <Icon name="plus" /> Agregar producto
                 </button>
               </form>
@@ -519,7 +567,7 @@ export function Onboarding() {
                   .filter((c) => c.isProvider)
                   .map((c) => (
                     <div key={c.id} className="mini-list__row">
-                      <Icon name="users" />
+                      
                       <span>
                         {c.name}
                         {c.phone ? ` · ${c.phone}` : ""}
@@ -542,12 +590,20 @@ export function Onboarding() {
                   <input className="input" value={provName} onChange={(e) => setProvName(e.target.value)} />
                 </Field>
                 <div className="row gap-12">
-                  <Field label="RIF / documento">
-                    <input className="input" value={provDoc} onChange={(e) => setProvDoc(e.target.value)} placeholder="J-000000000" />
-                  </Field>
-                  <Field label="Teléfono">
-                    <input className="input" value={provPhone} onChange={(e) => setProvPhone(e.target.value)} />
-                  </Field>
+                  
+                    
+                      
+                        <div className="form-group">
+                          <Field label="RIF / documento">
+                                                                                                                        <input className="input" value={provDoc} onChange={(e) => setProvDoc(e.target.value)} placeholder="J-000000000" />
+                                                                                                                      </Field>
+                                                                                                                      <Field label="Teléfono">
+                                                                                                                        <input className="input" value={provPhone} onChange={(e) => setProvPhone(e.target.value)} />
+                                                                                                                      </Field>
+                        </div>
+                      
+                    
+                  
                 </div>
                 <Field label="Correo">
                   <input className="input" type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} />
@@ -560,7 +616,7 @@ export function Onboarding() {
           )}
 
           <div className="wizard__nav">
-            <button className="btn btn--ghost" onClick={back} disabled={step === 0}>
+            <button className="btn btn--ghost" onClick={back} disabled={step === 0}><Icon name="arrowLeft" /> 
               Atrás
             </button>
             {step < STEPS.length - 1 ? (

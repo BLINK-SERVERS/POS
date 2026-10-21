@@ -13,6 +13,101 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.10.0] · 2026-10-21
+
+**Estandarización visual y funcional: SF Pro, Liquid Glass en los botones, iconografía, armonización móvil y diálogos nativos de Apple.**
+
+Todo lo que sigue sale de la **HIG alojada en el repo** (`docs/HIG/`, 85 páginas)
+y del **UI Kit oficial de iOS 27** (`docs/ios27-geometry.json`, 1.657
+componentes). No se ha inventado ningún valor: las medidas vienen del kit.
+
+### 1 · SF Pro en todos los dispositivos
+
+- `app/src/styles/fonts.css` pasa de ser un comentario a ser la
+  implementación real: **`@font-face` con `local()`** para SF Pro (Regular,
+  Semibold, Bold e Italic) y SF Mono. Se le pide la fuente **al sistema**: en
+  iPhone, iPad y Mac sale de serie; en Windows y Linux se usa si el usuario la
+  instala (gratis, en `developer.apple.com/fonts`, el mismo enlace que da la
+  HIG).
+- Se declara la variante **variable** con su eje óptico (`opsz`), de modo que
+  el navegador interpola entre los tamaños ópticos Display y Text
+  (HIG · Typography: *"the system fonts support dynamic optical sizes"*).
+- Tres tokens de familia: `--font-display` (≥ 20 px, títulos), `--font-text`
+  (cuerpo) y `--font-mono` (cifras monoespaciadas). SF Pro y SF Mono son
+  **nombres de familia reales**: se han leído de la tabla `name` de los
+  ficheros oficiales (`.SF NS Text`, `.SF NS Display`).
+- Cifras tabulares (`font-variant-numeric: tabular-nums`) en importes, KPIs y
+  totales, para que las columnas queden alineadas.
+- **Los ficheros de la fuente NO se distribuyen** (la licencia de Apple no lo
+  permite en un sitio público: en la v1.5.0 se retiraron del repo). Para
+  trabajar con la tipografía definitiva, en **desarrollo** sí se sirven desde
+  `app/.fonts-sf-local/` (un middleware propio de Vite, `apply: "serve"`) y
+  `fonts-dev.css` se carga solo si `import.meta.env.DEV`. En producción no se
+  sirven.
+
+### 2 · Botones con la estética Liquid Glass
+
+- Se adopta el **material "regular" de Liquid Glass** del kit (blur 6 px) con
+  el **brillo especular** del borde superior (`inset 0 1px 0`) y el degradado
+  vertical del material.
+- **Medidas reales del kit**: Large **50 px**, Medium **34 px**, Small
+  **28 px** (antes 44 / 36 / —).
+- **Forma según la HIG**: cápsula en fila horizontal (curvatura continua) y
+  rectángulo redondeado de 12 px en pila vertical.
+- **Roles de la HIG** respetados: Normal, Primary (acento), Cancel y
+  Destructive (rojo). El estado de pulsación hunde el botón y apaga el
+  especular.
+- **Área táctil de 44 pt** garantizada en punteros gruesos, aunque el botón
+  visualmente mida 28 o 34 px.
+- `prefers-reduced-transparency` desactiva el material y deja rellenos planos.
+- Los **datos** (tablas, precios, stock) siguen siendo **100 % opacos**: el
+  material se aplica solo a controles, nunca a la capa de contenido
+  (HIG · Materials: *"Don't use Liquid Glass in the content layer"*).
+
+### 3 · Auditoría de iconografía
+
+- Se recorrieron los **137 botones** de la app: 86 sin icono, 51 con icono.
+- El set de SF Symbols pasa de **86 a 100** iconos (14 nuevos verificados en
+  el repo de origen): `refresh`, `transfer`, `importData`, `exportData`,
+  `copy`, `folder`, `adjust`, `listView`, `more`, `dollars`, `tray`, `grid2x2`,
+  `userPlus`, `seal`.
+- **76 botones** reciben icono, siguiendo la HIG (*"Try to associate familiar
+  actions with familiar icons"*). Donde el rótulo ya lo dice (Entrar, Crear
+  mi comercio) se deja solo el texto, como hace iOS.
+- Las **acciones de fila** pasan a botón de solo icono (HIG · Buttons,
+  *"Square buttons"*), con `title` y `aria-label`: la columna de acciones deja
+  de empujar la tabla y los datos ya no se cortan.
+
+### 4 · Armonización móvil
+
+- Respeto de las **safe areas** en la barra de navegación y al final del
+  scroll.
+- Títulos a **Title 1 (28 px)**; KPIs en una sola columna con separadores
+  hairline; celda de acciones de fila a su propia línea.
+- Área táctil de 44 pt en botones medianos, pequeños y de acción de fila.
+
+### 5 · Diálogos y formularios nativos
+
+- Los formularios modales se presentan como **hoja inferior** en móvil
+  (`<Sheet>` de Konsta, con tirador) y como **panel centrado** en escritorio.
+- Las confirmaciones usan la **alerta nativa** (`<Dialog>` de Konsta, con el
+  material de Apple): título corto, mensaje y botones con rol Primary,
+  Cancel y Destructive. Ya **no queda ningún `window.confirm`**.
+- Nueva `useConfirm()` con alerta nativa para las **acciones destructivas**
+  (eliminar producto, descuento, recargo, categoría, contacto, gasto
+  recurrente, y borrar todos los datos).
+- Los **campos consecutivos** de un formulario se agrupan en una **lista
+  agrupada** de iOS (contenedor redondeado + separadores hairline): 44 grupos
+  en 11 ficheros.
+
+### 6 · Verificación
+
+- `npm run verify:ui` comprueba ahora, en escritorio **y** móvil, las 15
+  rutas, el **onboarding**, el **acceso sin sesión** y la **presentación del
+  modal** (hoja inferior en móvil / panel centrado en escritorio):
+  **38 comprobaciones**, 0 errores de consola, 0 iconos vacíos, 0 desbordes.
+- `app/package.json` → `1.10.0`.
+
 ## [1.9.0] · 2026-10-21
 
 **Rediseño completo de la aplicación al lenguaje visual de iOS 27.**

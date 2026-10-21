@@ -4,7 +4,7 @@ Punto de venta web para el comercio venezolano. Vende, cobra en **dólares y
 bolívares a tasa BCV**, controla inventario, caja, contactos y finanzas desde un
 solo lugar — con la cámara del teléfono como escáner de códigos de barras.
 
-**Estado:** v1.9.0 · en vivo en **<https://www.blink.com.ve>** ·
+**Estado:** v1.10.0 · en vivo en **<https://www.blink.com.ve>** ·
 typecheck / build / **50 pruebas** en verde · Supabase (auth + datos) en producción.
 
 - Landmarks del diseño: [`docs/INDEX.md`](docs/INDEX.md)
@@ -68,7 +68,7 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Pruebas unitarias (Vitest) |
 | `npm run test:migrations` | Integración de migraciones (PostgreSQL embebido) |
-| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding y acceso sin sesión (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/` |
+| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/` |
 | `npm run docs:check` | Verifica que no haya enlaces rotos en la documentación |
 | `npm run tokens:ios` | Extrae los tokens del UI Kit de iOS 27 → `src/lib/ios-design-tokens.ts` |
 | `npm run icons:sf` | Descarga y normaliza los SF Symbols → `src/lib/sf-symbols.ts` |
@@ -105,11 +105,19 @@ Configuración de DNS y SSL en
 
 ## Notas importantes
 
-- **Tipografía:** pila del sistema. `-apple-system` da San Francisco en Apple y
-  Segoe UI en Windows. **No se distribuye ninguna fuente propietaria.**
+- **Tipografía:** **SF Pro**, pedida al sistema con `local()` (`local("SF Pro")`,
+  `local("SF Pro Text")`, `local(".SF NS Text")`…). En iPhone, iPad y Mac
+  viene de serie; en Windows y Linux se usa **si el usuario la instala**
+  (gratis, en `developer.apple.com/fonts`). La variante es **variable**, con
+  su eje óptico (`font-optical-sizing: auto`), así que los títulos usan el
+  tamaño óptico *Display* y el cuerpo el *Text*.
+  **No se distribuye ninguna fuente propietaria**: en desarrollo sí se usan los
+  ficheros de `app/.fonts-sf-local/` (ignorados por git, servidos solo por el
+  servidor de Vite), y en producción nunca.
+  Detalle en [`docs/02-design-system.md`](docs/02-design-system.md).
 - **Supabase:** el cliente solo usa la clave **pública** (publishable/anon). La
   secret key y `service_role` nunca llegan al navegador.
-- **SF Symbols:** los iconos provienen de Apple y su licencia restringe su uso a
+- **SF Symbols (100 iconos):** los iconos provienen de Apple y su licencia restringe su uso a
   software de plataformas Apple (iOS, iPadOS, macOS, tvOS, watchOS). Está
   documentado en [`docs/ICONOS_Y_PWA.md`](docs/ICONOS_Y_PWA.md), junto con las
   alternativas libres (Phosphor MIT, Lucide ISC, Tabler MIT).

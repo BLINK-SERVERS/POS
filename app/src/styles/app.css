@@ -45,7 +45,10 @@ body {
   margin: 0;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: var(--font-primary);
+  font-family: var(--font-text);
+  /* El eje óptico (opsz) de SF Pro interpola entre los tamaños
+     Display y Text: la misma familia se adapta a cada cuerpo. */
+  font-optical-sizing: auto;
   font-size: var(--fs-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -114,7 +117,7 @@ svg {
    `.blink-pos-title` = grande (pantallas de acceso);
    `.brand` = compacta (barra lateral y pantalla de error). */
 .blink-pos-title {
-  font-family: "SF Pro Display", var(--font-primary);
+  font-family: var(--font-display);
   font-size: clamp(2.25rem, 7vw, 4rem); /* hasta 64px en escritorio */
   line-height: 1;
   margin: 0;
@@ -141,7 +144,7 @@ svg {
   display: inline-flex;
   align-items: baseline;
   gap: 0.3em;
-  font-family: "SF Pro Display", var(--font-primary);
+  font-family: var(--font-display);
   font-weight: 400;
   font-style: normal;
   text-transform: uppercase;
@@ -191,6 +194,14 @@ svg {
 }
 .mono {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* Cifras tabulares: la misma anchura para que las columnas de
+   importes queden alineadas (SF Pro / SF Mono lo traicion). */
+.tabular,
+.kpi__value,
+.total-row,
+.breakdown__row {
   font-variant-numeric: tabular-nums;
 }
 .tabular {
@@ -278,6 +289,7 @@ svg {
 }
 .auth__pitch h2 {
   position: relative;
+  font-family: var(--font-display);
   color: var(--color-text-primary);
   font-size: var(--ios-fs-title1);
   line-height: var(--ios-lh-title1);
@@ -299,6 +311,7 @@ svg {
   padding: 2rem 1.75rem;
 }
 .auth__card h1 {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-title1);
   line-height: var(--ios-lh-title1);
   letter-spacing: -0.02em;
@@ -336,85 +349,172 @@ svg {
 }
 
 /* ============================================================
-   Botones
+   Botones — Liquid Glass de iOS 27
    ------------------------------------------------------------
-   iOS 27: boton relleno (accent), boton tintado (gris o acento),
-   boton de texto plano. Radio de 12 px, no pildora.
+   Medidas reales del UI Kit (docs/ios27-geometry.json):
+     · Large  → 50 px de alto
+     · Medium → 34 px
+     · Small  → 28 px
+
+   Variantes del kit: "Bordered" (normal) y "Bordered Prominent"
+   (primario). Solo se usan estas dos.
+
+   Material: el "regular" de Liquid Glass (blur 6 del kit) con el
+   brillo especular del borde superior. Los datos (tablas, precios,
+   stock) siguen siendo 100 % opacos: aqui solo hay controles.
+
+   Forma: HIG (Buttons) — "prefer the capsule shape in a horizontal
+   row" y "the rounded-rectangle shape in a vertical stack". En una
+   fila horizontal el boton es capsula (curvatura continua: todos
+   los arcos son circulares); apilado a lo ancho, rectángulo.
+
+   Roles (HIG · Buttons): Normal, Primary, Cancel, Destructive.
    ============================================================ */
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  padding: 0.6rem 1.1rem;
-  min-height: 44px; /* objetivo táctil cómodo (iOS/Android) */
+  padding: 0.6rem 1.15rem;
+  min-height: 50px; /* Large del UI Kit */
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 999px; /* capsula: curvatura continua */
+  font-family: var(--font-text);
   font-weight: 600;
   font-size: var(--fs-base);
   letter-spacing: -0.01em;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  background: var(--ios-veil), var(--color-neutral-soft);
+  color: var(--color-text-primary);
+  box-shadow: var(--ios-specular), var(--ios-specular-dark),
+    0 1px 2px rgba(29, 29, 31, 0.1);
   transition: background-color var(--transition-speed),
     transform var(--transition-speed), border-color var(--transition-speed),
-    color var(--transition-speed), box-shadow var(--transition-speed);
+    color var(--transition-speed), box-shadow var(--transition-speed),
+    -webkit-backdrop-filter var(--transition-speed),
+    backdrop-filter var(--transition-speed);
   white-space: nowrap;
 }
+/* Estado de pulsacion (HIG: "Always include a press state"):
+   el boton se hunde y el brillo especular se apaga. */
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97); /* respuesta táctil suave */
+  transform: translateY(0) scale(0.97);
+  box-shadow: inset 0 1px 2px rgba(66, 66, 66, 0.18);
 }
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+/* Rol Primary: acento de marca con el material por encima. */
 .btn--primary {
-  background: var(--color-accent);
+  background: var(--ios-veil), var(--color-accent);
   color: var(--color-text-inverse);
+  box-shadow: var(--ios-specular-soft), inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 2px 10px rgba(0, 122, 255, 0.28);
 }
 .btn--primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
+  background: var(--ios-veil), var(--color-accent-hover);
   transform: translateY(-1px);
 }
-/* Boton gris de iOS: relleno suave, sin marco. */
+.btn--primary:active:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.08)),
+    var(--color-accent-hover);
+  transform: translateY(0) scale(0.97);
+}
+/* Boton gris de iOS: relleno suave con material. */
 .btn--ghost {
-  background: var(--color-neutral-soft);
+  background: var(--ios-veil), var(--color-neutral-soft);
   color: var(--color-text-primary);
 }
 .btn--ghost:hover:not(:disabled) {
-  background: var(--color-border);
+  background: var(--ios-veil), var(--color-border);
 }
 /* Boton tintado de acento. */
 .btn--soft {
-  background: var(--color-accent-soft);
+  background: var(--ios-veil), var(--color-accent-soft);
   color: var(--color-accent);
 }
 .btn--soft:hover:not(:disabled) {
-  background: var(--color-accent-soft-strong);
+  background: var(--ios-veil), var(--color-accent-soft-strong);
 }
+/* Boton de texto plano: sin material, solo el color. */
 .btn--plain {
   background: transparent;
   color: var(--color-text-secondary);
   border-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 .btn--plain:hover:not(:disabled) {
   color: var(--color-text-primary);
   background: var(--color-neutral-soft);
 }
-/* Boton de accion destructiva: relleno rojo suave. */
+/* Rol Destructive: relleno rojo suave con material. */
 .btn--danger {
-  background: rgba(234, 67, 53, 0.1);
+  background: var(--ios-veil), rgba(234, 67, 53, 0.12);
   color: var(--blink-danger);
 }
 .btn--danger:hover:not(:disabled) {
-  background: rgba(234, 67, 53, 0.18);
+  background: var(--ios-veil), rgba(234, 67, 53, 0.2);
 }
+/* Medium del UI Kit (34 px). */
 .btn--sm {
-  padding: 0.4rem 0.8rem;
-  min-height: 36px;
+  padding: 0.35rem 0.8rem;
+  min-height: 34px;
   font-size: var(--fs-sm);
-  border-radius: 10px;
+  border-radius: 999px;
 }
+/* Small del UI Kit (28 px). */
+.btn--xs {
+  padding: 0.25rem 0.65rem;
+  min-height: 28px;
+  font-size: var(--fs-xs);
+  border-radius: 999px;
+}
+/* Apilado a lo ancho: rectangulo redondeado (HIG · Buttons). */
 .btn--block {
   width: 100%;
+  border-radius: 12px;
+}
+
+/* Area tactil de 44 pt (HIG · Buttons) aunque el boton sea mas pequeno.
+   En raton no hace falta: el puntero ya es preciso. */
+@media (pointer: coarse) {
+  .btn--sm::before,
+  .btn--xs::before,
+  .row-action::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+}
+
+/* Accesibilidad: sin transparencia no hay material (HIG · Materials). */
+@media (prefers-reduced-transparency: reduce) {
+  .btn {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: var(--color-neutral-soft);
+    box-shadow: none;
+  }
+  .btn--primary {
+    background: var(--color-accent);
+  }
+  .btn--soft {
+    background: var(--color-accent-soft);
+  }
+  .btn--danger {
+    background: rgba(234, 67, 53, 0.12);
+  }
 }
 
 /* ============================================================
@@ -445,6 +545,7 @@ svg {
   margin-bottom: 1rem;
 }
 .card__title {
+  font-family: var(--font-text);
   font-size: var(--ios-fs-headline);
   line-height: var(--ios-lh-headline);
   font-weight: 600;
@@ -467,6 +568,7 @@ svg {
   margin-bottom: 1rem;
 }
 .field__label {
+  font-family: var(--font-text);
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
@@ -757,6 +859,7 @@ table.data tbody tr:hover {
   height: 26px;
 }
 .empty__title {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-title3);
   line-height: var(--ios-lh-title3);
   font-weight: 600;
@@ -823,6 +926,7 @@ table.data tbody tr:hover {
   border-bottom: 1px solid var(--ios-separator);
 }
 .topbar__name {
+  font-family: var(--font-text);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -1037,6 +1141,7 @@ table.data tbody tr:hover {
   margin-bottom: 1.5rem;
 }
 .page-head h1 {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-largeTitle);
   line-height: var(--ios-lh-largeTitle);
   font-weight: 700;
@@ -1114,12 +1219,14 @@ table.data tbody tr:hover {
   align-items: start;
 }
 .kpi__label {
+  font-family: var(--font-text);
   font-size: var(--ios-fs-footnote);
   line-height: var(--ios-lh-footnote);
   color: var(--color-text-secondary);
   font-weight: 500;
 }
 .kpi__value {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-title2);
   line-height: var(--ios-lh-title2);
   font-weight: 700;
@@ -1258,20 +1365,28 @@ table.data tbody tr:hover {
   gap: 0.4rem;
 }
 .stepper button {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-bg-elevated);
+  width: 46px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--ios-veil), var(--color-neutral-soft);
+  -webkit-backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  box-shadow: var(--ios-specular), var(--ios-specular-dark);
   cursor: pointer;
   line-height: 1;
   color: var(--color-text-primary);
   display: grid;
   place-items: center;
+  transition: background-color var(--transition-speed), color var(--transition-speed),
+    transform var(--transition-speed);
 }
 .stepper button:hover {
-  border-color: var(--color-accent);
   color: var(--color-accent);
+  background: var(--ios-veil), var(--color-accent-soft);
+}
+.stepper button:active {
+  transform: scale(0.94);
 }
 .ticket__foot {
   border-top: 1px solid var(--ios-separator);
@@ -1284,11 +1399,65 @@ table.data tbody tr:hover {
   margin-bottom: 0.3rem;
 }
 .total-row--grand {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-title3);
   line-height: var(--ios-lh-title3);
   font-weight: 700;
   letter-spacing: -0.014em;
   margin-top: 0.5rem;
+}
+
+/* Velos de los componentes nativos de Konsta (hoja inferior y
+   alerta): suben por encima de la tab bar flotante (z 60). */
+.bg-black\/50:has(+ .k-sheet),
+.bg-black\/50:has(+ .k-dialog) {
+  z-index: 70;
+}
+.k-dialog {
+  z-index: 71;
+}
+
+/* Accion de fila: boton de SOLO icono (HIG · Buttons, "Square buttons":
+   en una tabla el icono basta, la accion se explica sola y la columna
+   no se ensancha. El tooltip y el aria-label cubren la accesibilidad. */
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background-color var(--transition-speed), color var(--transition-speed),
+    transform var(--transition-speed);
+}
+.row-action:hover {
+  background: var(--color-accent-soft);
+}
+.row-action:active {
+  transform: scale(0.92);
+}
+.row-action--danger {
+  color: var(--blink-danger);
+}
+.row-action--danger:hover {
+  background: rgba(234, 67, 53, 0.1);
+}
+@media (pointer: coarse) {
+  .row-action::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
 }
 
 /* ============================================================
@@ -1348,23 +1517,91 @@ table.data tbody tr:hover {
 }
 
 /* ============================================================
-   Modal
+   Modales, hojas y alertas
+   ------------------------------------------------------------
+   · Hoja inferior (movil): sube desde el borde, con tirador y
+     esquineras redondeadas arriba. Es el <Sheet> de Konsta.
+   · Panel centrado (escritorio): en iPadOS los formularios modales
+     se presentan centrados.
+   · Alerta: el <Dialog> de Konsta, con el material de Apple
+     (HIG · Alerts: 300 px de ancho, botones de 48 px de alto).
    ============================================================ */
+/* Velo del panel centrado (escritorio). Va por encima de la tab bar
+   flotante (z 60) para que el formulario tape la navegacion. */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(66, 66, 66, 0.42);
+  background: rgba(29, 29, 31, 0.42);
   display: grid;
   place-items: center;
   padding: 1rem;
-  z-index: 50;
+  z-index: 70;
   animation: fade-in var(--transition-speed) ease-out;
 }
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  /* Por encima de la tab bar flotante (z 60). */
+  z-index: 71;
+  max-height: 92dvh;
+  background: var(--color-bg-elevated);
+  box-shadow: 0 -8px 40px rgba(29, 29, 31, 0.18);
+}
+.sheet__grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border-strong);
+  margin: 8px auto 0;
+  flex: none;
+}
+.sheet__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem 0.35rem;
+  flex: none;
+}
+.sheet__title {
+  font-family: var(--font-display);
+  font-size: var(--ios-fs-title3);
+  line-height: var(--ios-lh-title3);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  flex: 1;
+  min-width: 0;
+}
+.sheet__close {
+  border: none;
+  background: var(--color-neutral-soft);
+  color: var(--color-text-secondary);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+}
+.sheet__close:hover {
+  color: var(--color-text-primary);
+}
+.sheet__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0.35rem 1.25rem 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
 .modal {
   width: 100%;
   max-width: 460px;
   max-height: 88vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--color-bg-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
@@ -1396,25 +1633,91 @@ table.data tbody tr:hover {
   gap: 1rem;
   margin-bottom: 1rem;
 }
-.modal__head h3 {
+.modal__close {
+  border: none;
+  background: var(--color-neutral-soft);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+}
+.modal__close:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.modal__title {
+  font-family: var(--font-display);
   font-size: var(--ios-fs-title3);
   line-height: var(--ios-lh-title3);
   font-weight: 600;
   letter-spacing: -0.014em;
 }
-.modal__close {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--color-text-tertiary);
-  display: grid;
-  place-items: center;
-  padding: 0.25rem;
-  border-radius: var(--radius-pill);
+.modal__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
-.modal__close:hover {
-  background: var(--color-neutral-soft);
-  color: var(--color-text-primary);
+
+/* Boton de rol Destructive en las alertas de iOS. */
+.dialog-btn--destructive {
+  color: var(--blink-danger) !important;
+}
+
+/* ============================================================
+   Lista agrupada de campos (HIG · Lists)
+   ------------------------------------------------------------
+   Los campos consecutivos de un formulario forman un grupo: un
+   contenedor redondeado con separadores hairline entre filas, en
+   vez de campos sueltos apilados.
+   ============================================================ */
+.form-group {
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-card);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.form-group > .field {
+  margin-bottom: 0;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.form-group > .field:last-child {
+  border-bottom: none;
+}
+.form-group > .row {
+  margin-bottom: 0;
+  padding: 0.85rem 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.form-group > .row > .field {
+  margin-bottom: 0;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+/* Los inputs tienen un ancho por defecto (size=20) que impedia que dos
+   campos cabieran en una fila: se les anula el ancho minimo. */
+.form-group .input,
+.form-group .select,
+.form-group .textarea {
+  min-width: 0;
+}
+/* Un grupo DENTRO de una fila: sus campos son los propios elementos de la
+   fila (display: contents), de modo que no se apilan y conservan su
+   aspecto de campo suelto. */
+.row > .form-group {
+  display: contents;
+}
+.row > .form-group > .field {
+  padding: 0;
+  border-bottom: none;
 }
 
 /* ============================================================
@@ -1660,6 +1963,67 @@ table.data td {
 }
 
 /* ============================================================
+   Armonización móvil (HIG · iPhone)
+   ------------------------------------------------------------
+   Medidas del UI Kit para iPhone 17 Pro (402 pt de ancho):
+   · status bar 62 · tab bar 72 x 54 · fila de lista 52
+   · campo de texto 52 · control segmentado 80 x 28
+   · area tactil minima 44 pt
+   ============================================================ */
+@media (max-width: 860px) {
+  /* Respeto del notch y del indicador de inicio (safe areas). */
+  .shell__topbar {
+    padding-top: env(safe-area-inset-top, 0px);
+    min-height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+  }
+  .shell__main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    /* Deja respirar la tab bar flotante al final del scroll. */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+  /* Titulo de pantalla: Title 1 (28 px) con el subtitudo debajo. */
+  .page-head {
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+  }
+  .page-head h1 {
+    font-size: var(--ios-fs-title1);
+    line-height: var(--ios-lh-title1);
+  }
+  /* Los grupos de KPIs en una sola columna, como en iOS. */
+  .kpis--group,
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .kpis--group .kpi {
+    border-right: none;
+    border-bottom: 1px solid var(--ios-separator);
+  }
+  .kpis--group .kpi:last-child {
+    border-bottom: none;
+  }
+  /* La celda de acciones de fila va a su propia linea. */
+  table.data tbody tr td:last-child {
+    justify-content: flex-start;
+    text-align: left;
+    padding-top: 0.6rem;
+  }
+  /* Hoja inferior y cuerpo del modal a pantalla completa. */
+  .sheet {
+    max-height: 94dvh;
+  }
+  .sheet__body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  /* Los botones de bloque ocupan todo el ancho (HIG · Buttons). */
+  .btn--block {
+    min-height: 50px;
+  }
+}
+
+/* ============================================================
    Aviso de persistencia (localStorage no disponible / cuota llena)
    ============================================================ */
 .storage-alert {
@@ -1855,20 +2219,22 @@ table.data td {
   align-items: center;
   justify-content: center;
   border: none;
-  background: transparent;
+  background: var(--ios-veil), var(--color-neutral-soft);
+  -webkit-backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  box-shadow: var(--ios-specular), var(--ios-specular-dark);
   color: var(--color-text-secondary);
   cursor: pointer;
   padding: 0.5rem;
   min-width: 40px;
-  min-height: 40px; /* separa bien los iconos entre sí y da área táctil */
-  border-radius: var(--radius-sm);
-  transition: color var(--transition-speed),
-    background-color var(--transition-speed),
+  min-height: 40px;
+  border-radius: 10px;
+  transition: background-color var(--transition-speed), color var(--transition-speed),
     transform var(--transition-speed);
 }
 .icon-btn:hover {
   color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--ios-veil), var(--color-accent-soft);
 }
 .icon-btn:active {
   transform: scale(0.92);
@@ -1876,7 +2242,7 @@ table.data td {
 /* Boton de icono con relleno de acento (junto a un buscador, p. ej.). */
 .icon-btn--accent {
   color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--ios-veil), var(--color-accent-soft);
   border-radius: 12px;
   min-width: 44px;
   min-height: 44px;

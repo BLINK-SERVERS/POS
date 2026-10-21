@@ -111,64 +111,88 @@ export function Registro() {
 
 
               <div className="row gap-12">
-                <Field label="Nombre" required>
-                  <input
-                    className="input"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    autoComplete="given-name"
-                  />
-                </Field>
-                <Field label="Apellido" required>
-                  <input
-                    className="input"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    autoComplete="family-name"
-                  />
-                </Field>
+                
+                  
+                    
+                      <div className="form-group">
+                        <Field label="Nombre" required>
+                                                                                                              <input
+                                                                                                                className="input"
+                                                                                                                value={firstName}
+                                                                                                                onChange={(e) => setFirstName(e.target.value)}
+                                                                                                                autoComplete="given-name"
+                                                                                                              />
+                                                                                                            </Field>
+                                                                                                            <Field label="Apellido" required>
+                                                                                                              <input
+                                                                                                                className="input"
+                                                                                                                value={lastName}
+                                                                                                                onChange={(e) => setLastName(e.target.value)}
+                                                                                                                autoComplete="family-name"
+                                                                                                              />
+                                                                                                            </Field>
+                      </div>
+                    
+                  
+                
               </div>
 
-              <Field label="Teléfono" required>
-                <input
-                  className="input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  autoComplete="tel"
-                  placeholder="+58 412 000 0000"
-                />
-              </Field>
-
-              <Field label="Correo electrónico" required hint="Cada comercio debe usar un correo único. Aquí llegará el enlace de verificación.">
-                <input
-                  className="input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  placeholder="tucorreo@dominio.com"
-                />
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Teléfono" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      value={phone}
+                                                                                                      onChange={(e) => setPhone(e.target.value)}
+                                                                                                      autoComplete="tel"
+                                                                                                      placeholder="+58 412 000 0000"
+                                                                                                    />
+                                                                                                  </Field>
+                                                                                    
+                                                                                                  <Field label="Correo electrónico" required hint="Cada comercio debe usar un correo único. Aquí llegará el enlace de verificación.">
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      type="email"
+                                                                                                      value={email}
+                                                                                                      onChange={(e) => setEmail(e.target.value)}
+                                                                                                      autoComplete="email"
+                                                                                                      placeholder="tucorreo@dominio.com"
+                                                                                                    />
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
 
               <div className="row gap-12">
-                <Field label="Contraseña" required>
-                  <input
-                    className="input"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </Field>
-                <Field label="Confirmar contraseña" required>
-                  <input
-                    className="input"
-                    type="password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </Field>
+                
+                  
+                    
+                      <div className="form-group">
+                        <Field label="Contraseña" required>
+                                                                                                              <input
+                                                                                                                className="input"
+                                                                                                                type="password"
+                                                                                                                value={password}
+                                                                                                                onChange={(e) => setPassword(e.target.value)}
+                                                                                                                autoComplete="new-password"
+                                                                                                              />
+                                                                                                            </Field>
+                                                                                                            <Field label="Confirmar contraseña" required>
+                                                                                                              <input
+                                                                                                                className="input"
+                                                                                                                type="password"
+                                                                                                                value={confirm}
+                                                                                                                onChange={(e) => setConfirm(e.target.value)}
+                                                                                                                autoComplete="new-password"
+                                                                                                              />
+                                                                                                            </Field>
+                      </div>
+                    
+                  
+                
               </div>
 
               {error && <p className="field__error">{error}</p>}

@@ -130,26 +130,34 @@ export function Recuperar() {
                 Elige una clave que recuerdes. Al guardar, entrarás con ella.
               </p>
 
-              <Field label="Nueva contraseña" required>
-                <input
-                  className="input"
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </Field>
-              <Field label="Confirmar contraseña" required>
-                <input
-                  className="input"
-                  type="password"
-                  autoComplete="new-password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Repítela"
-                />
-              </Field>
+              
+                
+                  
+                    <div className="form-group">
+                      <Field label="Nueva contraseña" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      type="password"
+                                                                                                      autoComplete="new-password"
+                                                                                                      value={password}
+                                                                                                      onChange={(e) => setPassword(e.target.value)}
+                                                                                                      placeholder="Mínimo 6 caracteres"
+                                                                                                    />
+                                                                                                  </Field>
+                                                                                                  <Field label="Confirmar contraseña" required>
+                                                                                                    <input
+                                                                                                      className="input"
+                                                                                                      type="password"
+                                                                                                      autoComplete="new-password"
+                                                                                                      value={confirm}
+                                                                                                      onChange={(e) => setConfirm(e.target.value)}
+                                                                                                      placeholder="Repítela"
+                                                                                                    />
+                                                                                                  </Field>
+                    </div>
+                  
+                
+              
 
               {error && <p className="field__error">{error}</p>}
 

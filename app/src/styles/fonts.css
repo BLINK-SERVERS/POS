@@ -1,12 +1,75 @@
 /* ============================================================
-   Tipografía del sistema (sin fuentes empaquetadas).
+   Tipografía: SF Pro (Apple) sin distribuir ningún fichero.
 
-   Antes se servía San Francisco (SF NS) desde /fonts, pero SF es una
-   tipografía de Apple y **no está licenciada para web pública**, así que
-   no se puede distribuir en un sitio de internet.
+   ------------------------------------------------------------
+   Por qué NO se sirve la fuente
+   San Francisco es material de Apple: su licencia no permite
+   distribuirla en un sitio público. En la v1.5.0 se retiraron los
+   ficheros de `app/public/fonts/` (verificado en 404 tras el
+   despliegue) y la app pasó a usar la pila de fuentes del sistema.
 
-   Ahora usamos la pila de fuentes del sistema: en dispositivos Apple se
-   ve San Francisco (`-apple-system`), en Windows Segoe UI, etcétera.
-   Así el aspecto se mantiene y no se distribuye ninguna fuente
-   propietaria. Ver `--font-primary` en `tokens.css`.
+   ------------------------------------------------------------
+   Cómo se fuerza SF Pro entonces
+   Con `@font-face` + `local()`: se le pide al SISTEMA la fuente y,
+   si el dispositivo la tiene instalada, se usa. Es la forma
+   legítima de "forzar" SF Pro:
+
+   · iPhone, iPad y Mac  →  SF Pro viene de serie.
+   · Windows y Linux     →  SF Pro se usa si el usuario la instala
+     (gratis, developer.apple.com/fonts, el mismo enlace que da la
+     HIG). Sin instalarla, cae en la fuente de interfaz del sistema.
+
+   Se declara además la variante *variable* con su eje óptico
+   (`opsz`), de modo que el navegador interpola entre los tamaños
+   ópticos Display y Text sin que haya que elegir a mano.
+
+   Los ficheros de `app/.fonts-sf-local/` (ignorados por git) se usan
+   SOLO en desarrollo, para ver la app tal como se vera con SF Pro
+   instalada. En producción no se sirven nunca.
    ============================================================ */
+
+/* SF Pro — variable, con tamaño óptico.
+   Se prueban los nombres reales de la familia en cada plataforma:
+   · macOS   → "SF Pro" (variable), ".SF NS Text" / ".SF NS Display"
+   · iOS     → "SF Pro"
+   · SF Pro descargada de Apple → "SF Pro Text" / "SF Pro Display" */
+@font-face {
+  font-family: "SF Pro";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    local("SF Pro"),
+    local("SFPro-Regular"),
+    local("SF Pro Text"),
+    local("SFProText-Regular"),
+    local(".SF NS Text"),
+    local("SF NS Text");
+}
+
+/* SF Pro en cursiva (la usan los campos con formato). */
+@font-face {
+  font-family: "SF Pro";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    local("SF Pro"),
+    local("SFPro-Italic"),
+    local("SF Pro Text Italic"),
+    local("SFProText-Italic"),
+    local(".SF NS Text Italic"),
+    local("SF NS Italic");
+}
+
+/* SF Mono — cifras monoespaciadas (importes, códigos, SKU). */
+@font-face {
+  font-family: "SF Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    local("SF Mono"),
+    local("SFMono-Regular"),
+    local("SF Mono Regular");
+}

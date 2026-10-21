@@ -527,7 +527,7 @@ export function Vender() {
               className="icon-btn icon-btn--accent"
               title="Escanear con la cámara"
               onClick={() => setCamOpen(true)}
-            >
+            ><Icon name="plus" /> 
               <Icon name="scan" />
             </button>
           </div>
@@ -541,7 +541,7 @@ export function Vender() {
                 to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
                 onClick={() => setScanCode("")}
               >
-                <Icon name="plus" /> Crear producto
+                Crear producto
               </Link>
             </div>
           )}
@@ -665,16 +665,16 @@ export function Vender() {
             </div>
 
             <div className="row gap-8" style={{ marginTop: "0.75rem", flexWrap: "wrap" }}>
-              <button className="btn btn--soft btn--sm" onClick={() => setDiscOpen(true)}>
+              <button className="btn btn--soft btn--sm" onClick={() => setDiscOpen(true)}><Icon name="percent" /> 
                 Descuento
               </button>
-              <button className="btn btn--soft btn--sm" onClick={() => setSurOpen(true)}>
+              <button className="btn btn--soft btn--sm" onClick={() => setSurOpen(true)}><Icon name="percent" /> 
                 Recargos
               </button>
-              <button className="btn btn--soft btn--sm" onClick={() => setNoteOpen(true)}>
+              <button className="btn btn--soft btn--sm" onClick={() => setNoteOpen(true)}><Icon name="note" /> 
                 Nota
               </button>
-              <button className="btn btn--ghost btn--sm" onClick={saveQuote} disabled={!lines.length}>
+              <button className="btn btn--ghost btn--sm" onClick={saveQuote} disabled={!lines.length}><Icon name="receipt" /> 
                 Generar cotización
               </button>
             </div>
@@ -692,7 +692,7 @@ export function Vender() {
                 setPayOpen(true);
               }}
               style={{ marginTop: "0.5rem" }}
-            >
+            ><Icon name="cash" /> 
               {cashSession ? "Cobrar" : "Abrir caja y cobrar"}
             </button>
           </div>
@@ -723,7 +723,7 @@ export function Vender() {
                   key={d.id}
                   className="btn btn--soft"
                   onClick={() => patchDraft({ discountId: d.id === draft.discountId ? "" : d.id })}
-                >
+                ><Icon name="check" /> 
                   <Icon name="tag" />
                   <span style={{ flex: 1, textAlign: "left" }}>{d.name}</span>
                   <span className="tabular">
@@ -739,7 +739,7 @@ export function Vender() {
               className="btn btn--ghost btn--block"
               style={{ marginTop: "0.75rem" }}
               onClick={() => patchDraft({ discountId: "" })}
-            >
+            ><Icon name="close" /> 
               Quitar descuento
             </button>
           )}
@@ -772,7 +772,7 @@ export function Vender() {
                         : [...draft.surchargeIds, s.id],
                     })
                   }
-                >
+                ><Icon name="check" /> 
                   <span style={{ flex: 1, textAlign: "left" }}>{s.name}</span>
                   <span className="tabular">
                     {s.type === "porcentaje" ? `${s.value}%` : formatUsd(s.value)}
@@ -930,7 +930,7 @@ export function Vender() {
                   type="button"
                   className="btn btn--ghost btn--sm"
                   onClick={() => setPayAmount(String(exactAmount))}
-                >
+                ><Icon name="cash" /> 
                   Monto exacto
                 </button>
               </div>
@@ -1008,7 +1008,7 @@ export function Vender() {
             className="btn btn--primary btn--block"
             onClick={finish}
             disabled={!lines.length || (!credit && !settled) || needsCustomer}
-          >
+          ><Icon name="check" /> 
             Confirmar venta
           </button>
         </Modal>
@@ -1021,26 +1021,34 @@ export function Vender() {
             Debes registrar el fondo inicial con el que abre la caja para garantizar que el arqueo de tu
             turno sea exacto.
           </p>
-          <Field label="Fondo inicial (USD)" hint="Efectivo en dólares con el que inicia la caja.">
-            <input
-              className="input"
-              type="number"
-              min={0}
-              step="0.01"
-              value={openUsd}
-              onChange={(e) => setOpenUsd(e.target.value)}
-            />
-          </Field>
-          <Field label="Fondo inicial (Bs)" hint="Efectivo en bolívares.">
-            <input
-              className="input"
-              type="number"
-              min={0}
-              step="0.01"
-              value={openBs}
-              onChange={(e) => setOpenBs(e.target.value)}
-            />
-          </Field>
+          
+            
+              
+                <div className="form-group">
+                  <Field label="Fondo inicial (USD)" hint="Efectivo en dólares con el que inicia la caja.">
+                                                                                <input
+                                                                                  className="input"
+                                                                                  type="number"
+                                                                                  min={0}
+                                                                                  step="0.01"
+                                                                                  value={openUsd}
+                                                                                  onChange={(e) => setOpenUsd(e.target.value)}
+                                                                                />
+                                                                              </Field>
+                                                                              <Field label="Fondo inicial (Bs)" hint="Efectivo en bolívares.">
+                                                                                <input
+                                                                                  className="input"
+                                                                                  type="number"
+                                                                                  min={0}
+                                                                                  step="0.01"
+                                                                                  value={openBs}
+                                                                                  onChange={(e) => setOpenBs(e.target.value)}
+                                                                                />
+                                                                              </Field>
+                </div>
+              
+            
+          
           <button
             className="btn btn--primary btn--block"
             onClick={() => {
@@ -1050,7 +1058,7 @@ export function Vender() {
               setCredit(false);
               setPayOpen(true);
             }}
-          >
+          ><Icon name="plus" /> <Icon name="check" /> 
             Confirmar apertura y continuar
           </button>
         </Modal>
@@ -1091,7 +1099,7 @@ export function Vender() {
                   to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
                   onClick={() => setCamOpen(false)}
                 >
-                  <Icon name="plus" /> Crear producto
+                  Crear producto
                 </Link>
               </div>
             ) : undefined

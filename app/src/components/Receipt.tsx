@@ -52,7 +52,7 @@ export function Receipt({
             Imprimir ticket
           </button>
           {onClose && (
-            <button className="btn btn--ghost" type="button" onClick={onClose}>
+            <button className="btn btn--ghost" type="button" onClick={onClose}><Icon name="close" /> 
               Cerrar
             </button>
           )}

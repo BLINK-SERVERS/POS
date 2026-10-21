@@ -128,7 +128,7 @@ export function Inventario() {
             <button className="btn btn--soft" onClick={() => setCamOpen(true)}>
               <Icon name="scan" /> Escanear
             </button>
-            <button className="btn btn--primary" onClick={() => setPurchaseOpen(true)}>
+            <button className="btn btn--primary" onClick={() => setPurchaseOpen(true)}><Icon name="cart" /> 
               Registrar compra
             </button>
           </div>
@@ -202,7 +202,7 @@ export function Inventario() {
                       {out ? <Badge tone="warning">Agotado</Badge> : low ? <Badge tone="warning">Bajo</Badge> : <Badge tone="accent">OK</Badge>}
                     </td>
                     <td data-label="Acciones" className="row-actions">
-                      <button className="btn btn--ghost btn--sm" onClick={() => openAdjust(p.id, p.stock)}>Ajustar</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => openAdjust(p.id, p.stock)}><Icon name="adjust" /> Ajustar</button>
                     </td>
                   </tr>
                 );
@@ -314,20 +314,28 @@ export function Inventario() {
 
       {open && (
         <Modal title="Ajustar existencia" onClose={() => setOpen(false)}>
-          <Field label="Producto">
-            <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">Selecciona…</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Nueva existencia">
-            <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
-          </Field>
-          <button className="btn btn--primary btn--block" onClick={applyAdjust}>
+          
+            
+              
+                <div className="form-group">
+                  <Field label="Producto">
+                                                                                <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
+                                                                                  <option value="">Selecciona…</option>
+                                                                                  {products.map((p) => (
+                                                                                    <option key={p.id} value={p.id}>
+                                                                                      {p.name}
+                                                                                    </option>
+                                                                                  ))}
+                                                                                </select>
+                                                                              </Field>
+                                                                              <Field label="Nueva existencia">
+                                                                                <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+                                                                              </Field>
+                </div>
+              
+            
+          
+          <button className="btn btn--primary btn--block" onClick={applyAdjust}><Icon name="check" /> 
             Guardar ajuste
           </button>
         </Modal>
@@ -364,22 +372,30 @@ export function Inventario() {
             </select>
           </Field>
           <div className="row gap-12">
-            <Field label="Cantidad" required>
-              <input
-                className="input"
-                type="number"
-                value={purchase.qty}
-                onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
-              />
-            </Field>
-            <Field label="Costo unitario (USD)" required>
-              <input
-                className="input"
-                type="number"
-                value={purchase.costUnit}
-                onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
-              />
-            </Field>
+            
+              
+                
+                  <div className="form-group">
+                    <Field label="Cantidad" required>
+                                                                                          <input
+                                                                                            className="input"
+                                                                                            type="number"
+                                                                                            value={purchase.qty}
+                                                                                            onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
+                                                                                          />
+                                                                                        </Field>
+                                                                                        <Field label="Costo unitario (USD)" required>
+                                                                                          <input
+                                                                                            className="input"
+                                                                                            type="number"
+                                                                                            value={purchase.costUnit}
+                                                                                            onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
+                                                                                          />
+                                                                                        </Field>
+                  </div>
+                
+              
+            
           </div>
           <Field label="Proveedor" required>
             <select
@@ -439,7 +455,7 @@ export function Inventario() {
 
           {purchaseError && <p className="field__error">{purchaseError}</p>}
 
-          <button className="btn btn--primary btn--block" onClick={registrarCompra}>
+          <button className="btn btn--primary btn--block" onClick={registrarCompra}><Icon name="check" /> 
             Registrar compra
           </button>
         </Modal>

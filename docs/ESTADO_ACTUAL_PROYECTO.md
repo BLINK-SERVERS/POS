@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.9.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.10.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -11,7 +11,7 @@
 | Migraciones (`npm run test:migrations`) | Todas las comprobaciones pasan |
 | Build (`npm run build:pages`) | Exitoso |
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
-| Verificación de UI (`npm run verify:ui`) | 34 comprobaciones (escritorio + móvil), 0 errores de consola, 0 iconos vacíos, 0 desbordes |
+| Verificación de UI (`npm run verify:ui`) | 38 comprobaciones (escritorio + móvil + diálogos), 0 errores de consola, 0 iconos vacíos, 0 desbordes |
 | Documentación (`npm run docs:check`) | 318 Markdown, 2.676 enlaces relativos, 0 rotos |
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
@@ -64,7 +64,12 @@
 - [x] Tokens oficiales del UI Kit de iOS 27 (107 colores, 105 estilos de texto, 42 materiales)
 - [x] Geometría real de 1.657 componentes del kit (`docs/ios27-geometry.json`)
 - [x] Métricas aplicadas: fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab 48×48, fila de sidebar 44 px
-- [x] 86 SF Symbols normalizados a `currentColor`
+- [x] **100 SF Symbols** normalizados a `currentColor`
+- [x] **SF Pro en todos los dispositivos** (`local()`, sin distribuir ficheros) con tamaño óptico variable
+- [x] **Botones con material Liquid Glass** (blur 6 px del kit + brillo especular) y medidas reales 50/34/28 px
+- [x] **Diálogos nativos**: hoja inferior en móvil, panel centrado en escritorio, alertas con `<Dialog>` de Konsta
+- [x] **Confirmaciones nativas**: `useConfirm()`; ningún `window.confirm` en la app
+- [x] **44 listas agrupadas** de formulario (HIG · Lists)
 - [x] **Shell flotante de iPadOS 27** (v1.9.0): sidebar y contenido como paneles redondeados; la barra de navegación vive dentro del panel de contenido
 - [x] **Large Title** (34 px) en todas las pantallas
 - [x] Superficies sin marco: la jerarquía se construye con elevación

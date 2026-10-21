@@ -120,6 +120,24 @@ export const ICON_MAP = {
   exclamation: "exclamationmark",
   questionmark: "questionmark",
   arrowLeft: "arrow.left",
+
+  // --- Estandarizacion visual (v1.10.0): iconos de las acciones que
+  //     aun no tenian apoyo visual (sincronizar, transferir, importar,
+  //     duplicar, carpetas, filtros, listados, mas acciones, importes) ---
+  refresh: "arrow.clockwise",
+  transfer: "arrow.left.arrow.right",
+  importData: "tray.and.arrow.down",
+  exportData: "square.and.arrow.up",
+  copy: "plus.square.on.square",
+  folder: "folder",
+  adjust: "slider.horizontal.3",
+  listView: "list.bullet.rectangle",
+  more: "ellipsis.circle",
+  dollars: "dollarsign.circle",
+  tray: "tray",
+  grid2x2: "square.grid.2x2",
+  userPlus: "person.crop.circle.badge.plus",
+  seal: "checkmark.seal",
 };
 
 /** Normaliza un SVG del repo a un fragmento con `currentColor`. */

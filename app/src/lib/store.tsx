@@ -1,3 +1,4 @@
+import { Icon } from "../components/Icon";
 // Estado global de la aplicación + persistencia (local y en Supabase).
 //
 // Optimizaciones de rendimiento y escalabilidad:
@@ -2203,7 +2204,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               No se pudo guardar en este dispositivo (almacenamiento lleno o no disponible).
               Tus últimos cambios pueden perderse si cierras.
             </span>
-            <button className="btn btn--soft btn--sm" type="button" onClick={downloadStateBackup}>
+            <button className="btn btn--soft btn--sm" type="button" onClick={downloadStateBackup}><Icon name="download" /> 
               Descargar respaldo
             </button>
           </div>
