@@ -1,7 +1,7 @@
 // Shell de la aplicación: topbar + sidebar + contenedor de página.
 import { useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Tabbar, TabbarLink } from "konsta/react";
+import { Glass, Tabbar, TabbarLink } from "konsta/react";
 import { useStore } from "../lib/store";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
@@ -218,21 +218,25 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="page">{children}</div>
       </main>
 
-      {/* Barra de pestañas inferior (solo en movil).
-          HIG: la tab bar es la capa funcional flotante — aqui lleva el
-          material translucido, nunca el contenido. */}
-      <Tabbar className="shell__tabbar" labels icons>
-        {visibleTabs.map((t) => (
-          <TabbarLink
-            key={t.to}
-            component={NavLink}
-            linkProps={{ to: t.to }}
-            active={location.pathname === t.to || location.pathname.startsWith(t.to + "/")}
-            icon={<Icon name={t.icon} />}
-            label={t.label}
-          />
-        ))}
-      </Tabbar>
+      {/* Barra de pestañas flotante (solo en movil).
+          HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
+          of the screen. Its items rest on a Liquid Glass background that allows
+          content beneath to peek through." → Glass de Konsta,Separado del borde
+          y con el contenido asomando por debajo. */}
+      <Glass className="shell__tabbar-float">
+        <Tabbar className="shell__tabbar" labels icons>
+          {visibleTabs.map((t) => (
+            <TabbarLink
+              key={t.to}
+              component={NavLink}
+              linkProps={{ to: t.to }}
+              active={location.pathname === t.to || location.pathname.startsWith(t.to + "/")}
+              icon={<Icon name={t.icon} />}
+              label={t.label}
+            />
+          ))}
+        </Tabbar>
+      </Glass>
 
       {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
       <div id="printable-report" aria-hidden="true" />
