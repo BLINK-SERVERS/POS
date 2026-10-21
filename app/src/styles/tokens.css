@@ -74,4 +74,48 @@
   --topbar-h: 64px;
   --ticket-w: 360px;
   --page-max: 1320px;
+
+  /* ==========================================================
+     iOS 27 / iPadOS 27 — paleta del sistema
+     Extraida de SF Symbols 27 (colors-26.csv). Ver docs/DESIGN_IOS27.md
+     NOTA: el acento de iOS 27 es #0088ff (light) / #0091ff (dark).
+     BLINK conserva #007aff como color de marca propio.
+     ========================================================== */
+  --ios-blue: #0088ff;
+  --ios-blue-dark: #0091ff;
+  --ios-green: #34c759;
+  --ios-green-dark: #30d158;
+  --ios-red: #ff3b30;
+  --ios-red-dark: #ff4245;
+  --ios-orange: #ff9500;
+  --ios-yellow: #ffcc00;
+  --ios-indigo: #6155f5;
+  --ios-purple: #cb30e0;
+  --ios-pink: #ff2d55;
+  --ios-teal: #00c3d0;
+  --ios-cyan: #00c0e8;
+  --ios-mint: #00c8b3;
+  --ios-gray: #8e8e93;
+  --ios-gray-dark: #98989d;
+
+  /* Etiquetas: 3 niveles de jerarquia (Apple usa .85 / .50 / .35 en oscuro) */
+  --ios-label: #1d1d1f;
+  --ios-label-secondary: rgba(29, 29, 31, 0.6);
+  --ios-label-tertiary: rgba(29, 29, 31, 0.36);
+
+  /* Rellenos translucidos (system materials) */
+  --ios-fill-quaternary: rgba(29, 29, 31, 0.03);
+  --ios-fill-tertiary: rgba(29, 29, 31, 0.05);
+  --ios-fill-secondary: rgba(29, 29, 31, 0.08);
+  --ios-fill-primary: rgba(29, 29, 31, 0.1);
+
+  /* Radios continuos (iOS 27) */
+  --ios-radius-sm: 8px;
+  --ios-radius-md: 12px;
+  --ios-radius-lg: 16px;
+  --ios-radius-xl: 20px;
+  --ios-radius-continuous: 22px;
+
+  /* Area tactil minima */
+  --ios-touch-target: 44px;
 }

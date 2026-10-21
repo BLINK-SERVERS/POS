@@ -19,10 +19,22 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(255, 254, 251, 0.86);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  /* Liquid Glass (iOS 27, variante "regular"): difumina y ajusta la
+     luminosidad del fondo. Apple's HIG pide usarlo con moderacion y solo
+     en la capa funcional: aqui, el header. Nunca en el POS. */
+  background: rgba(255, 254, 251, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(66, 66, 66, 0.1);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+/* Respeta "reducir transparencia" del sistema operativo. */
+@media (prefers-reduced-transparency: reduce) {
+  .ld-header {
+    background: var(--blink-bg-main);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 .ld-header__inner {
   max-width: var(--ld-max);

@@ -11,6 +11,35 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.5.0] · 2026-10-20
+
+**Extracción de iOS 27 / iPadOS 27 + tokens del sistema + corrección de licencias.**
+
+- **Extracción del kit oficial** — `SF-Symbols-27.dmg` (paquete de Apple) procesado
+  en Windows con 7-Zip (`.dmg` → `.pkg` → `Payload` cpio → `Payload~`).
+  Obtenido: paleta del sistema (20 colores × 8 variantes), 3.986 nombres de símbolos,
+  26 vectores SVG de referencia, 85 archivos SF Pro y el texto de la licencia.
+- **`app/src/lib/ios-tokens.ts`** — módulo nuevo con la paleta iOS 27 completa
+  (`IOS_COLORS`, `iosColor()`), la escala tipográfica iOS/iPadOS 27 y sus variantes
+  Dynamic Type (AX1–AX5), la escala de macOS 26, los materiales estándar, las
+  dos variantes de Liquid Glass y las constantes de radio y área táctil.
+- **`tokens.css`** — nuevos tokens `--ios-*`: colores del sistema, rellenos
+  translúcidos, 3 niveles de etiqueta y radios continuos de iOS 27.
+- **Liquid Glass solo en la landing** — el header público usa la variante `regular`
+  (blur 20 px + saturate 180 %) con el borde especular de Apple y fallback para
+  `prefers-reduced-transparency`. **El POS queda 100 % opaco**, como indica el HIG.
+- **⚠️ Corrección de licencia** — `app/public/fonts/` (5 archivos SF Pro Display) se
+  seguían sirviendo públicamente en `www.blink.com.ve/fonts/…` pese a que el propio
+  `fonts.css` documentaba que SF Pro no se puede distribuir en web. **Eliminados**
+  del repositorio y del despliegue.
+- **Documentación** — `docs/DESIGN_IOS27.md` (paleta, tipografía, materiales, mapeo
+  iOS→BLINK, alternativas libres) y `docs/ios27/` (datos crudos + texto legal).
+- **Limitación de la API de Figma** — con seat *View* en plan *Starter*, los endpoints
+  Tier 1 dan **20 llamadas/mes** (el PAT no sube ese techo: `retry-after: 398482` s).
+  Los specs a nivel de nodo se completarán al reiniciarse la cuota.
+
+---
+
 ## [1.4.0] · 2026-10-20
 
 **Landing page comercial en la raíz + iconos de marca reales (favicon y PWA).**
