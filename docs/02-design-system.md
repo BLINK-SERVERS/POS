@@ -17,11 +17,59 @@ Fuente de verdad: `app/src/styles/tokens.css` (tokens) y
 BLINK usa una **paleta estricta de 3 colores**; cualquier variación se deriva
 de esos tres con transparencia, para no introducir un cuarto color:
 
-| Rol | Token | Hex | Uso |
-|---|---|---|---|
-| Fondo | `--blink-bg-main` | `#FFFEFB` | **Todos** los fondos |
-| Acento | `--blink-primary` | `#007AFF` | Solo CTA, enlaces activos y foco |
-| Texto | `--blink-text-muted` | `#424242` | Textos, bordes, iconos |
+| Rol | Token | Claro | Oscuro | Uso |
+|---|---|---|---|---|
+| Fondo | `--blink-bg-main` | `#FFFEFB` | `#000000` | Fondo de la app |
+| Superficie | `--color-bg-elevated` | `#FFFEFB` | `#1a1a1a` | Tarjetas, paneles, tablas |
+| Acento | `--blink-primary` | `#0088FF` | `#0091FF` | Solo CTA, enlaces activos y foco |
+| Texto | `--blink-text-muted` | `#424242` | `#EBEBF5` | Textos, bordes, iconos |
+| Tinta | `--blink-dark` | `#1D1D1F` | `#FFFFFF` | Texto principal |
+
+> **HIG (Dark Mode):** *"the color palette in Dark Mode includes dimmer
+> background colors and brighter foreground colors. It's important to realize
+> that these colors aren't necessarily inversions of their light
+> counterparts"*. Los dos modos **no** son una inversión: cada valor sale de
+> su variante en el **UI Kit de iOS 27** (materiales *Dark/Regular*,
+> `IOS_LABELS.dark`, `IOS_SYSTEM_COLORS.blue.dark`).
+
+### La paleta oficial BLINK
+
+Diez grupos de color, cada uno con su par claro/oscuro. Es la fuente de
+verdad de la marca (y la que se aplica en los tokens):
+
+| Grupo | Claro | Oscuro |
+|---|---|---|
+| Rojo | `#ff383c` | `#ff4245` |
+| Carmesí | `#ff2d55` | `#ff375f` |
+| Naranja | `#ff8d28` | `#ff9230` |
+| Amarillo | `#ffcc00` | `#ffd600` |
+| Verde | `#34c759` | `#30d158` |
+| Turquesa 1 | `#00c8b3` | `#00dac3` |
+| Turquesa 2 | `#00c3d0` | `#0fd5e2` |
+| Azul / Celeste | `#00c0e8` | `#3cd3fe` |
+| **Azul Principal** | `#0088ff` | `#0091ff` |
+| Índigo / Violeta | `#6a5ff6` | `#7684ff` |
+| Magenta / Púrpura | `#ce3ce2` | `#dd40f3` |
+| Marrón / Tierra | `#b18767` | `#bb916f` |
+
+El **Azul Principal** es el acento de la app; el verde, el rojo y el
+amarillo son los estados semánticos (éxito, error, aviso).
+
+### Cómo se cambia de apariencia
+
+Un solo valor en `<html>`: `color-scheme`.
+
+| Preferencia | `color-scheme` | Resultado |
+|---|---|---|
+| Automático (por defecto) | `light dark` | Sigue al sistema operativo |
+| Claro | `light` | Siempre claro |
+| Oscuro | `dark` | Siempre oscuro |
+
+Los tokens se declaran con `light-dark(claro, oscuro)`, de modo que la
+paleta **no se duplica**: una regla, dos modos. El ajuste vive en
+**Ajustes › Apariencia** y se recuerda en el dispositivo; un script en línea
+de `index.html` lo aplica **antes del primer pintado** (sin destello) y
+Konsta recibe `dark={esOscuro}` para sus propias variantes oscuras.
 
 Derivados (transparencia, sin color nuevo):
 
@@ -379,8 +427,11 @@ Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
 ## 10. Iconografía
 
 - **SVG únicamente.** Sin emoji en ninguna pantalla.
-- Set: **86 SF Symbols** de Apple, normalizados a `currentColor`
+- Set: **102 SF Symbols** de Apple, normalizados a `currentColor`
   (`app/src/lib/sf-symbols.ts`, generado con `npm run icons:sf`).
+  El set se parte en dos: `sf-nucleo.ts` (los 13 que usa la landing) y
+  `sf-symbols.ts` (los 100, que carga la aplicación), de modo que la
+  página pública no descarga los iconos que no usa.
 - API pública estable: `<Icon name="…" size={…} />`, con `IconName` como
   unión de tipos. Ningún *call site* cambia al migrar.
 - **Licencia:** los SF Symbols son material de Apple con uso restringido a
@@ -416,10 +467,11 @@ la paleta: los tokens de BLINK mandan.
 
 ## 12. Verificación
 
-`npm run verify:ui` recorre la app en **dos tamaños** (escritorio 1280×860 y
-móvil 390×844) y hace **38 comprobaciones**: las 15 rutas en cada tamaño, el
-onboarding, el acceso sin sesión y la presentación del modal (hoja inferior en
-móvil / panel centrado en escritorio). En cada vista comprueba:
+`npm run verify:ui` recorre la app en una **matriz de 2 tamaños × 2
+apariencias** (escritorio 1280×860 y móvil 390×844, en claro y en oscuro): **76
+comprobaciones** —las 15 rutas en cada combinación, el onboarding, el acceso
+sin sesión y la presentación del modal (hoja inferior en móvil / panel
+centrado en escritorio). En cada vista comprueba:
 
 - render sin errores de consola;
 - `h1` presente y con el tamaño esperado;
@@ -428,11 +480,19 @@ móvil / panel centrado en escritorio). En cada vista comprueba:
 - elementos que se salen por la derecha;
 - elementos con **poco texto pero mucha altura** (síntoma de un choque de
   clases);
-- la presencia del **grupo de campos** y del **tirador de la hoja**.
+- la presencia del **grupo de campos** y del **tirador de la hoja**;
+- que la **apariencia se haya aplicado de verdad** (el fondo oscuro en
+  oscuro, el claro en claro) y que el **contraste texto/fondo sea ≥ 4.5:1**
+  (HIG · Dark Mode: *"make sure that the contrast ratio of colors is no
+  lower than 4.5:1"*).
 
 Además renderiza el **onboarding** y las **pantallas de acceso sin sesión** en
 contexto aparte (con sesión el gate de ruta devuelve al Inicio y nunca se
 ven).
+
+Además hay scripts sueltos: `npm run qa:apariencia` (el cambio manual de
+tema, la persistencia y la vuelta a "Automático") y `npm run qa:carga`
+(medición de la carga real contra el build de producción).
 
 Sale con código 1 si algo falla, así que sirve como **regresión visual** en CI.
 

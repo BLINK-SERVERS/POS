@@ -38,9 +38,16 @@ const RUTAS = [
 ];
 
 /** Tamanos a verificar. `sufijo` se anade al nombre de la captura. */
+/**
+ * Matriz de verificacion: dos tamanos x dos apariencias.
+ * El modo oscuro se emula con `colorScheme` (el navegador ajusta
+ * `prefers-color-scheme`, que es lo que decide el tema automatico).
+ */
 const VISTAS = [
-  { id: "escritorio", sufijo: "", width: 1280, height: 860 },
-  { id: "movil", sufijo: "-movil", width: 390, height: 844 },
+  { id: "escritorio", sufijo: "", width: 1280, height: 860, scheme: "light" },
+  { id: "movil", sufijo: "-movil", width: 390, height: 844, scheme: "light" },
+  { id: "escritorio-oscuro", sufijo: "-oscuro", width: 1280, height: 860, scheme: "dark" },
+  { id: "movil-oscuro", sufijo: "-movil-oscuro", width: 390, height: 844, scheme: "dark" },
 ];
 
 const PRODUCTOS = [
@@ -60,9 +67,9 @@ for (const vista of VISTAS) {
 
   const ctx = await browser.newContext({
     viewport: { width: vista.width, height: vista.height },
-    colorScheme: "light",
-    isMobile: vista.id === "movil",
-    hasTouch: vista.id === "movil",
+    colorScheme: vista.scheme,
+    isMobile: vista.id.startsWith("movil"),
+    hasTouch: vista.id.startsWith("movil"),
   });
   const page = await ctx.newPage();
 
@@ -141,6 +148,20 @@ for (const vista of VISTAS) {
             (el.tagName + "." + String(el.className || "").split(" ")[0]).slice(0, 28) +
             " h=" + Math.round(el.getBoundingClientRect().height)
         );
+      // Fondo real de la pagina y contraste con el color del texto.
+      const cs = getComputedStyle(document.body);
+      const rgb = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+      const lum = (c) => {
+        const [r, g, b] = c.map((v) => {
+          const x = v / 255;
+          return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const l1 = lum(rgb(cs.backgroundColor));
+      const l2 = lum(rgb(cs.color));
+      const contraste = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+
       return {
         h1Size: h1 ? getComputedStyle(h1).fontSize : null,
         iconos: svgs.length,
@@ -148,14 +169,23 @@ for (const vista of VISTAS) {
         overflowX: document.documentElement.scrollWidth > window.innerWidth + 2,
         desbordados,
         gigantes,
+        fondoOscuro: l1 < 0.1,
+        contraste,
       };
     });
 
     const nuevos = errores.length - antes;
-    const ok = !info.overflowX && info.iconosVacios === 0 && nuevos === 0;
+    const ok =
+      !info.overflowX &&
+      info.iconosVacios === 0 &&
+      nuevos === 0 &&
+      // La apariencia tiene que estar aplicada de verdad (HIG: la app se
+      // ve bien en los dos modos) y el texto tiene que contrastar.
+      info.fondoOscuro === (vista.scheme === "dark") &&
+      info.contraste >= 4.5;
     if (!ok) problemas++;
     console.log(
-      `${ok ? "OK " : "!! "} ${nombre.padEnd(12)} h1=${String(info.h1Size).padEnd(6)} iconos=${String(info.iconos).padStart(2)} (vacios ${info.iconosVacios}) overflowX=${info.overflowX} errores=${nuevos}` +
+      `${ok ? "OK " : "!! "} ${nombre.padEnd(12)} h1=${String(info.h1Size).padEnd(6)} iconos=${String(info.iconos).padStart(2)} (vacios ${info.iconosVacios}) overflowX=${info.overflowX} errores=${nuevos} contraste=${info.contraste.toFixed(1)}` +
         (info.desbordados.length ? "  DESBORDA: " + info.desbordados.join(", ") : "") +
         (info.gigantes.length ? "  ALTO: " + info.gigantes.join(", ") : "")
     );
@@ -357,7 +387,7 @@ for (const vista of VISTAS) {
     };
   });
 
-  const esperaHoja = vista.id === "movil";
+  const esperaHoja = vista.id.startsWith("movil");
   const okDlg =
     abierto &&
     !erroresDlg.length &&

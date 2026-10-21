@@ -11,6 +11,39 @@
      ganan a las de cualquier capa. Por eso el diseño actual de BLINK
      (que define sus propios resets en app.css) no se altera, y Konsta
      recibe el base que le falta.
+
+   RENDIMIENTO: `@source` decide qué clases genera Tailwind. Konsta
+   escanea TODO su paquete, lo que produce ~85 KB de CSS para
+   componentes que la app no usa. Aquí se escanean SOLO los que se
+   usan, más las clases compartidas (`konsta/shared`).
    ============================================================ */
 @import "tailwindcss";
-@import "konsta/react/theme.css";
+@import "konsta/theme.css";
+
+/* Colores de Konsta (`konsta/shared/colors`): de aqui salen las
+   utilities de color (`bg-primary`, `text-primary`, `bg-ios-*`…).
+   Sin esta fuente el estado activo de los controles se queda sin
+   pintar. */
+@source "../../node_modules/konsta/shared/colors";
+
+/* Clases compartidas de Konsta: solo las de los componentes que usa
+   BLINK. Escanear todo `konsta/shared` genera utilities para
+   componentes (List, Navbar, Range, Toggle…) que la app no usa. */
+@source "../../node_modules/konsta/shared/classes/GlassClasses";
+@source "../../node_modules/konsta/shared/classes/SegmentedClasses";
+@source "../../node_modules/konsta/shared/classes/SheetClasses";
+@source "../../node_modules/konsta/shared/classes/DialogClasses";
+@source "../../node_modules/konsta/shared/classes/TabbarLinkClasses";
+@source "../../node_modules/konsta/shared/classes/SearchbarClasses";
+@source "../../node_modules/konsta/shared/classes/ButtonClasses";
+
+/* Componentes de Konsta que usa BLINK. */
+@source "../../node_modules/konsta/react/components/Glass";
+@source "../../node_modules/konsta/react/components/Segmented";
+@source "../../node_modules/konsta/react/components/SegmentedButton";
+@source "../../node_modules/konsta/react/components/Sheet";
+@source "../../node_modules/konsta/react/components/Dialog";
+@source "../../node_modules/konsta/react/components/DialogButton";
+@source "../../node_modules/konsta/react/components/Tabbar";
+@source "../../node_modules/konsta/react/components/TabbarLink";
+@source "../../node_modules/konsta/react/components/Searchbar";

@@ -3,6 +3,13 @@
    Paleta oficial Blink · Jerarquía visual · Minimalismo operativo
    ============================================================ */
 
+/* La maqueta del producto (marco + pantalla) es una ilustracion:
+   mantiene su aspecto en los dos modos. */
+:root {
+  --ld-marco: #1d1d1f;
+  --ld-pantalla: #fffefb;
+}
+
 .landing {
   --ld-max: 1160px;
   --ld-gutter: clamp(1.25rem, 5vw, 3rem);
@@ -15,8 +22,8 @@
 /* ---------------------------------------------------------
    Header fijo
    --------------------------------------------------------- */
-/* Envoltorio de Konsta <Glass>: el material translucido vive aqui
-   para que el header pueda flotar sobre el contenido. */
+/* Envoltorio del header: el material translucido vive en .ld-header,
+   para que la barra pueda flotar sobre el contenido. */
 .ld-glass {
   position: sticky;
   top: 0;
@@ -28,11 +35,30 @@
   /* Liquid Glass (iOS 27, variante "regular"): difumina y ajusta la
      luminosidad del fondo. Apple's HIG pide usarlo con moderacion y solo
      en la capa funcional: aqui, el header. Nunca en el POS. */
-  background: rgba(255, 254, 251, 0.72);
+  background: rgb(var(--papel-rgb) / 0.72);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(66, 66, 66, 0.1);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgb(var(--tinta-rgb) / 0.1);
+  box-shadow: inset 0 -1px 0 rgb(var(--halo-rgb) / 0.12);
+}
+/* Brillo especular al pasar el puntero: es lo que aportaba el
+   <Glass> de Konsta, resuelto en CSS para no arrastrar Konsta al primer
+   paint de la landing (la landing no usa nada mas de Konsta). */
+.ld-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--halo-rgb) / 0.3) 0%,
+    rgb(var(--halo-rgb) / 0) 62%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.ld-header:hover::after {
+  opacity: 1;
 }
 /* Respeta "reducir transparencia" del sistema operativo. */
 @media (prefers-reduced-transparency: reduce) {
@@ -54,7 +80,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 0.3em;
-  font-family: "SF Pro Display", var(--font-primary);
+  font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: -0.01em;
   line-height: 1;
@@ -119,7 +145,7 @@
 }
 .ld-btn--ghost {
   background: transparent;
-  border-color: rgba(66, 66, 66, 0.24);
+  border-color: rgb(var(--tinta-rgb) / 0.24);
   color: var(--blink-dark);
 }
 .ld-btn--ghost:hover {
@@ -128,12 +154,12 @@
 .ld-btn--primary {
   background: var(--blink-primary);
   color: var(--blink-bg-main);
-  box-shadow: 0 6px 18px rgba(0, 122, 255, 0.28);
+  box-shadow: 0 6px 18px rgb(var(--acento-rgb) / 0.28);
 }
 .ld-btn--primary:hover {
-  background: #0069d9;
+  background: var(--color-accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(0, 122, 255, 0.34);
+  box-shadow: 0 10px 26px rgb(var(--acento-rgb) / 0.34);
 }
 .ld-btn--lg {
   padding: 1rem 2.1rem;
@@ -146,7 +172,7 @@
   display: none;
   width: 42px;
   height: 42px;
-  border: 1px solid rgba(66, 66, 66, 0.24);
+  border: 1px solid rgb(var(--tinta-rgb) / 0.24);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--blink-dark);
@@ -175,7 +201,7 @@
   gap: 0.45rem;
   padding: 0.35rem 0.85rem;
   border-radius: var(--radius-pill);
-  background: rgba(0, 122, 255, 0.08);
+  background: rgb(var(--acento-rgb) / 0.08);
   color: var(--blink-primary);
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -227,10 +253,13 @@
 .ld-mock__pc {
   width: 100%;
   max-width: 460px;
-  background: var(--blink-dark);
+  /* Ilustracion del producto: el marco y la pantalla NO se invierten con
+     el modo (HIG · Dark Mode: "if an asset looks good in only one mode,
+     modify the asset"). El movil se dibuja con su UI en claro. */
+  background: var(--ld-marco);
   border-radius: 16px;
   padding: 10px;
-  box-shadow: 0 30px 60px rgba(29, 29, 31, 0.22);
+  box-shadow: 0 30px 60px rgb(var(--negro-rgb) / 0.22);
 }
 .ld-mock__screen {
   background: var(--blink-bg-main);
@@ -246,13 +275,13 @@
   align-items: center;
   gap: 0.5rem;
   padding-bottom: 0.7rem;
-  border-bottom: 1px solid rgba(66, 66, 66, 0.12);
+  border-bottom: 1px solid rgb(var(--tinta-rgb) / 0.12);
 }
 .ld-mock__search {
   flex: 1;
   height: 30px;
   border-radius: var(--radius-pill);
-  background: rgba(66, 66, 66, 0.07);
+  background: rgb(var(--tinta-rgb) / 0.07);
   display: flex;
   align-items: center;
   padding: 0 0.85rem;
@@ -268,7 +297,7 @@
   font-size: 0.78rem;
   color: var(--blink-text-muted);
   padding: 0.3rem 0;
-  border-bottom: 1px dashed rgba(66, 66, 66, 0.12);
+  border-bottom: 1px dashed rgb(var(--tinta-rgb) / 0.12);
 }
 .ld-mock__line b {
   color: var(--blink-dark);
@@ -302,13 +331,13 @@
   right: -1.5rem;
   bottom: -1.75rem;
   width: 168px;
-  background: var(--blink-dark);
+  background: var(--ld-marco);
   border-radius: 22px;
   padding: 8px;
-  box-shadow: 0 24px 48px rgba(29, 29, 31, 0.3);
+  box-shadow: 0 24px 48px rgb(var(--negro-rgb) / 0.3);
 }
 .ld-mock__phone-screen {
-  background: var(--blink-bg-main);
+  background: var(--ld-pantalla);
   border-radius: 16px;
   aspect-ratio: 9 / 17;
   padding: 0.7rem 0.55rem;
@@ -344,7 +373,7 @@
   font-weight: 700;
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-pill);
-  background: rgba(52, 168, 83, 0.12);
+  background: rgb(var(--verde-rgb) / 0.12);
   color: var(--blink-success);
 }
 
@@ -381,7 +410,7 @@
   margin: 0;
 }
 .ld-section--dark .ld-section__head p {
-  color: rgba(255, 254, 251, 0.72);
+  color: rgb(var(--papel-rgb) / 0.72);
 }
 
 /* ---------------------------------------------------------
@@ -394,7 +423,7 @@
 }
 .ld-feature {
   background: var(--blink-bg-main);
-  border: 1px solid rgba(66, 66, 66, 0.12);
+  border: 1px solid rgb(var(--tinta-rgb) / 0.12);
   border-radius: var(--radius-lg);
   padding: clamp(1.5rem, 3vw, 2.1rem);
   display: flex;
@@ -405,8 +434,8 @@
 }
 .ld-feature:hover {
   transform: translateY(-3px);
-  border-color: rgba(0, 122, 255, 0.4);
-  box-shadow: 0 16px 34px rgba(29, 29, 31, 0.08);
+  border-color: rgb(var(--acento-rgb) / 0.4);
+  box-shadow: 0 16px 34px rgb(var(--negro-rgb) / 0.08);
 }
 .ld-feature__icon {
   width: 52px;
@@ -414,7 +443,7 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: rgba(0, 122, 255, 0.1);
+  background: rgb(var(--acento-rgb) / 0.1);
   color: var(--blink-primary);
 }
 .ld-feature__icon .icon {
@@ -467,7 +496,7 @@
 /* Sobre fondo oscuro el gris de marca no alcanza contraste: se usa un
    blanco atenuado en su lugar. */
 .ld-section--dark .ld-trust__by {
-  color: rgba(255, 254, 251, 0.74);
+  color: rgb(var(--papel-rgb) / 0.74);
 }
 .ld-stats {
   display: grid;
@@ -475,7 +504,7 @@
   gap: 1rem;
 }
 .ld-stat {
-  border: 1px solid rgba(255, 254, 251, 0.16);
+  border: 1px solid rgb(var(--papel-rgb) / 0.16);
   border-radius: var(--radius-md);
   padding: 1.35rem;
 }
@@ -488,7 +517,7 @@
 }
 .ld-stat span {
   font-size: var(--fs-sm);
-  color: rgba(255, 254, 251, 0.68);
+  color: rgb(var(--papel-rgb) / 0.68);
   line-height: 1.45;
   display: block;
   margin-top: 0.35rem;
@@ -502,8 +531,8 @@
   margin: 0 auto;
   background: var(--blink-bg-main);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(66, 66, 66, 0.12);
-  box-shadow: 0 24px 60px rgba(29, 29, 31, 0.1);
+  border: 1px solid rgb(var(--tinta-rgb) / 0.12);
+  box-shadow: 0 24px 60px rgb(var(--negro-rgb) / 0.1);
   padding: clamp(2rem, 4.5vw, 3rem);
   text-align: center;
 }
@@ -576,7 +605,7 @@
    Footer
    --------------------------------------------------------- */
 .ld-footer {
-  border-top: 1px solid rgba(66, 66, 66, 0.12);
+  border-top: 1px solid rgb(var(--tinta-rgb) / 0.12);
   padding: clamp(2.5rem, 5vw, 3.5rem) var(--ld-gutter);
 }
 .ld-footer__inner {
@@ -627,10 +656,10 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem var(--ld-gutter);
-  background: rgba(255, 254, 251, 0.9);
+  background: rgb(var(--papel-rgb) / 0.9);
   backdrop-filter: saturate(180%) blur(14px);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid rgba(66, 66, 66, 0.1);
+  border-bottom: 1px solid rgb(var(--tinta-rgb) / 0.1);
 }
 .ld-legal__main {
   max-width: 760px;
@@ -671,7 +700,7 @@
   margin: 0 0 2.75rem;
   padding: 1.15rem 1.35rem;
   border-left: 3px solid var(--blink-primary);
-  background: rgba(0, 122, 255, 0.05);
+  background: rgb(var(--acento-rgb) / 0.05);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 .ld-legal__item {
@@ -686,7 +715,7 @@
 .ld-legal__foot {
   margin-top: 3rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(66, 66, 66, 0.12);
+  border-top: 1px solid rgb(var(--tinta-rgb) / 0.12);
   font-size: var(--fs-sm);
   color: var(--blink-text-muted);
 }
@@ -720,9 +749,9 @@
     align-items: stretch;
     gap: 0;
     background: var(--blink-bg-main);
-    border-bottom: 1px solid rgba(66, 66, 66, 0.12);
+    border-bottom: 1px solid rgb(var(--tinta-rgb) / 0.12);
     padding: 0.5rem var(--ld-gutter) 1rem;
-    box-shadow: 0 18px 30px rgba(29, 29, 31, 0.1);
+    box-shadow: 0 18px 30px rgb(var(--negro-rgb) / 0.1);
     display: none;
   }
   .ld-nav--open {
@@ -730,7 +759,7 @@
   }
   .ld-nav__link {
     padding: 0.85rem 0;
-    border-bottom: 1px solid rgba(66, 66, 66, 0.08);
+    border-bottom: 1px solid rgb(var(--tinta-rgb) / 0.08);
   }
   .ld-burger {
     display: grid;

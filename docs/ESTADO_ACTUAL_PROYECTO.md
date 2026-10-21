@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.10.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.12.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -11,7 +11,7 @@
 | Migraciones (`npm run test:migrations`) | Todas las comprobaciones pasan |
 | Build (`npm run build:pages`) | Exitoso |
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
-| Verificación de UI (`npm run verify:ui`) | 38 comprobaciones (escritorio + móvil + diálogos), 0 errores de consola, 0 iconos vacíos, 0 desbordes |
+| Verificación de UI (`npm run verify:ui`) | 76 comprobaciones (2 tamaños × 2 apariencias), 0 errores de consola, 0 iconos vacíos, 0 desbordes, contraste ≥ 4.5:1 |
 | Documentación (`npm run docs:check`) | 318 Markdown, 2.676 enlaces relativos, 0 rotos |
 | Stress test (`npm run qa:e2e`) | 93 botones en 10 vistas · 0 fallos · 0 diálogos atascados |
 | Funcional (`npm run qa:funcional`) | 8/8 (ticket, IVA, venta, compra, abono, arqueo) |
@@ -67,7 +67,8 @@
 - [x] Tokens oficiales del UI Kit de iOS 27 (107 colores, 105 estilos de texto, 42 materiales)
 - [x] Geometría real de 1.657 componentes del kit (`docs/ios27-geometry.json`)
 - [x] Métricas aplicadas: fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab 48×48, fila de sidebar 44 px
-- [x] **100 SF Symbols** normalizados a `currentColor`
+- [x] **Modo oscuro** con la paleta oficial BLINK (10 grupos, par claro/oscuro) y control en Ajustes › Apariencia
+- [x] **102 SF Symbols** normalizados a `currentColor` (núcleo de 13 para la landing)
 - [x] **SF Pro en todos los dispositivos** (`local()`, sin distribuir ficheros) con tamaño óptico variable
 - [x] **Botones con material Liquid Glass** (blur 6 px del kit + brillo especular) y medidas reales 50/34/28 px
 - [x] **Diálogos nativos**: hoja inferior en móvil, panel centrado en escritorio, alertas con `<Dialog>` de Konsta
@@ -148,6 +149,8 @@ npm run qa:seed         # Siembra del comercio de pruebas en Supabase
 npm run qa:e2e           # Stress test de todos los botones
 npm run qa:funcional     # Pruebas de negocio (ticket, venta, compra, abono)
 npm run qa:responsive    # Matriz de resoluciones y tipografía
+npm run qa:apariencia    # Cambio manual de tema y persistencia
+npm run qa:carga         # Medición de la carga real
 npm run qa              # Bateria completa de QA
 npm run tokens:ios     # Regenerar tokens del UI Kit de iOS 27
 npm run icons:sf       # Regenerar el set de SF Symbols

@@ -4,7 +4,7 @@ Punto de venta web para el comercio venezolano. Vende, cobra en **dólares y
 bolívares a tasa BCV**, controla inventario, caja, contactos y finanzas desde un
 solo lugar — con la cámara del teléfono como escáner de códigos de barras.
 
-**Estado:** v1.10.0 · en vivo en **<https://www.blink.com.ve>** ·
+**Estado:** v1.12.0 · en vivo en **<https://www.blink.com.ve>** ·
 typecheck / build / **50 pruebas** en verde · Supabase (auth + datos) en producción.
 
 - Landmarks del diseño: [`docs/INDEX.md`](docs/INDEX.md)
@@ -74,6 +74,8 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 | `npm run qa:e2e` | Stress test: pulsa todos los botones y comprueba diálogos, foco y doble ejecución |
 | `npm run qa:funcional` | Pruebas de negocio: ticket, IVA, venta, compra, abono y arqueo |
 | `npm run qa:responsive` | Matriz de 6 resoluciones + comprobación de que SF Pro no cae a la fuente genérica |
+| `npm run qa:apariencia` | Cambio manual de tema (Claro/Oscuro/Automático) y su persistencia |
+| `npm run qa:carga` | Mide la carga real (peticiones, bytes, FCP, LCP) contra el build de producción |
 | `npm run tokens:ios` | Extrae los tokens del UI Kit de iOS 27 → `src/lib/ios-design-tokens.ts` |
 | `npm run icons:sf` | Descarga y normaliza los SF Symbols → `src/lib/sf-symbols.ts` |
 | `npm run icons` / `npm run og` | Generan los PNG del PWA y la imagen Open Graph |

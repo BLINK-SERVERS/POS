@@ -115,7 +115,9 @@ implementación actual.
 | `app/scripts/qa-seed.mjs` | Siembra del comercio de pruebas en Supabase (`npm run qa:seed`) |
 | `app/scripts/qa-e2e.mjs` | Stress test: pulsa todos los botones y comprueba diálogos, foco y doble ejecución (`npm run qa:e2e`) |
 | `app/scripts/qa-funcional.mjs` | Pruebas de negocio: ticket, IVA, venta, compra, abono y arqueo (`npm run qa:funcional`) |
-| `app/scripts/qa-responsive.mjs` | Matriz de 6 resoluciones y comprobación de que SF Pro no cae a la fuente genérica (`npm run qa:responsive`) |
+| `app/scripts/qa-responsive.mjs` | Matriz de 6 resoluciones y comprobación de que SF Pro no cae a la fuente genérica (`npm run qa:responsive`)
+| `app/scripts/qa-apariencia.mjs` | Cambio manual de tema, persistencia y vuelta a "Automático" (`npm run qa:apariencia`)
+| `app/scripts/qa-carga.mjs` | Medición de la carga real: peticiones, bytes, FCP y LCP (`npm run qa:carga`) |
 | `app/scripts/postbuild-pages.mjs` | `404.html` + `.nojekyll` para GitHub Pages |
 | `app/scripts/test-migrations.mjs` | Migraciones contra PostgreSQL embebido |
 

@@ -136,9 +136,26 @@ export const ICON_MAP = {
   dollars: "dollarsign.circle",
   tray: "tray",
   grid2x2: "square.grid.2x2",
+  sun: "sun.max.fill",
+  moon: "moon.stars.fill",
   userPlus: "person.crop.circle.badge.plus",
   seal: "checkmark.seal",
 };
+
+/**
+ * Redondea las coordenadas de un path a 3 decimales.
+ *
+ * Los SVG originales traen coordenadas con hasta 11 decimales
+ * (p. ej. "31.947265625"). Redondearlas a 3 decimales reduce el peso
+ * de los 100 símbolos un 37 % sin diferencia visible: sobre una caja de
+ * 78-100 unidades, 0.001 equivale al 0.001 % del tamaño del icono.
+ */
+function redondearPaths(d) {
+  return d.replace(/-?\d+\.\d+/g, (n) => {
+    const v = Math.round(Number(n) * 1000) / 1000;
+    return String(v);
+  });
+}
 
 /** Normaliza un SVG del repo a un fragmento con `currentColor`. */
 function normalize(svg) {
@@ -152,6 +169,9 @@ function normalize(svg) {
     .replace(/\s*stroke='black'/g, "")
     .replace(/\s*stroke-width='[\d.]+'/g, "")
     .replace(/\s*fill-opacity='1\.0'/g, "")
+    // Las coordenadas del repo traen hasta 11 decimales: redondearlas
+    // ahorra ~37 % de peso sin diferencia visible.
+    .replace(/d='([^']+)'/g, (_m, path) => `d='${redondearPaths(path)}'`)
     .trim();
   return { viewBox: `0 0 ${round(w)} ${round(h)}`, body };
 }
@@ -189,6 +209,15 @@ for (const [nombre, fichero] of Object.entries(ICON_MAP)) {
   }
 }
 
+// --- 3. Nucleo de iconos ---
+// Iconos que usan las paginas que viven en el chunk principal: la landing
+// y la pantalla de error. Van aparte para que la landing NO descargue los
+// 100 simbolos (182 KB) que usa la aplicacion.
+const NUCLEO = [
+  "arrowRight", "chart", "check", "home", "refresh", "search",
+  "alert", "receipt", "close", "menu", "scan", "cash", "box",
+];
+
 // --- 3. Modulo TS ---
 const ts = `/**
  * Iconos SF Symbols (Apple) generados automaticamente.
@@ -223,7 +252,30 @@ export type SfSymbolName = keyof typeof SF_SYMBOLS;
 
 fs.writeFileSync(path.join(APP, "src", "lib", "sf-symbols.ts"), ts);
 
-console.log(`simbolos generados: ${Object.keys(simbolos).length}`);
+// --- 3.b Nucleo (chunk principal) ---
+const cabeceraNucleo = `/**
+ * Nucleo de iconos SF Symbols: los que usan las paginas del chunk
+ * principal (landing y pantalla de error).
+ *
+ * NO EDITAR A MANO: lo produce \`npm run icons:sf\`.
+ * El juego completo esta en \`sf-symbols.ts\` y lo registra la aplicacion
+ * con \`registrarIconos()\` (ver \`lib/iconos.ts\`).
+ */
+
+import type { SfSymbol } from "./sf-symbols";
+
+export const SF_NUCLEO: Record<string, SfSymbol> = {
+${NUCLEO.filter((n) => simbolos[n])
+  .map((k) => `  ${JSON.stringify(k)}: {
+    viewBox: ${JSON.stringify(simbolos[k].viewBox)},
+    body: ${JSON.stringify(simbolos[k].body)},
+  },`)
+  .join("\n")}
+};
+`;
+fs.writeFileSync(path.join(APP, "src", "lib", "sf-nucleo.ts"), cabeceraNucleo);
+
+console.log(`simbolos generados: ${Object.keys(simbolos).length} (nucleo: ${NUCLEO.length})`);
 if (faltan.length) {
   console.log("faltan (" + faltan.length + "):");
   for (const f of faltan) console.log("  " + f);

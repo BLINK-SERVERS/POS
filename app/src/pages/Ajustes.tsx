@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs, useConfirm } from "../components/ui";
+import { useTema, type ModoTema } from "../lib/tema";
 import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
@@ -10,12 +11,29 @@ import { formatBsDirect, formatRate } from "../lib/money";
 import { buildDatasets, type Dataset } from "../lib/exportData";
 import { downloadText, printReport, printableTable, reportName, toCsv } from "../lib/export";
 
-const TABS = ["Negocio", "Perfil", "Moneda e impuestos", "Recibo", "Exportar", "Dispositivos", "Cuenta"] as const;
+/** Modos de apariencia (HIG · Dark Mode). */
+const MODOS_APARIENCIA: { modo: ModoTema; etiqueta: string }[] = [
+  { modo: "auto", etiqueta: "Automático" },
+  { modo: "claro", etiqueta: "Claro" },
+  { modo: "oscuro", etiqueta: "Oscuro" },
+];
+
+const TABS = [
+  "Negocio",
+  "Perfil",
+  "Moneda e impuestos",
+  "Recibo",
+  "Exportar",
+  "Dispositivos",
+  "Apariencia",
+  "Cuenta",
+] as const;
 
 export function Ajustes() {
   const { state, user } = useStoreState();
   const { updateBusiness, setRate, syncRate, updateProfile, clearAll, logout } = useStoreActions();
   const confirm = useConfirm();
+  const { modo, setModo } = useTema();
   const { pairing, remoteActive, rotatePairing } = useScanner();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
   const [qrOpen, setQrOpen] = useState(false);
@@ -467,6 +485,47 @@ export function Ajustes() {
           <p className="field__hint" style={{ marginTop: "0.6rem" }}>
             ¿Un lector USB o Bluetooth? Conéctalo y escanea: se lee solo, sin instalar nada.
           </p>
+        </Card>
+      )}
+
+      {tab === "Apariencia" && (
+        <Card
+          title="Apariencia"
+          hint="Claro, oscuro o según el sistema. Lo eligen los ajustes de tu teléfono."
+        >
+          <Tabs
+            tabs={MODOS_APARIENCIA.map((m) => m.etiqueta)}
+            value={MODOS_APARIENCIA.find((m) => m.modo === modo)?.etiqueta ?? "Automático"}
+            onChange={(etiqueta) => {
+              const m = MODOS_APARIENCIA.find((x) => x.etiqueta === etiqueta);
+              if (m) setModo(m.modo);
+            }}
+          />
+          <p className="field__hint" style={{ marginTop: "0.75rem" }}>
+            {modo === "auto" &&
+              "Ahora mismo la app usa el tema que tenga configurado el sistema."}
+            {modo === "claro" && "Ahora mismo la app se muestra siempre en claro."}
+            {modo === "oscuro" && "Ahora mismo la app se muestra siempre en oscuro."}
+          </p>
+
+          <hr
+            style={{
+              margin: "1.25rem 0",
+              border: "none",
+              borderTop: "1px solid var(--color-border)",
+            }}
+          />
+
+          <div className="stack gap-8">
+            <div className="row gap-8" style={{ alignItems: "center" }}>
+              <Icon name="sun" size="lg" />
+              <span>La paleta oscura usa los colores del UI Kit de iOS 27 para el tema oscuro.</span>
+            </div>
+            <div className="row gap-8" style={{ alignItems: "center" }}>
+              <Icon name="moon" size="lg" />
+              <span>El cambio se aplica al instante y se recuerda en este dispositivo.</span>
+            </div>
+          </div>
         </Card>
       )}
 

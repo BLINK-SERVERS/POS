@@ -3,17 +3,22 @@
 //
 // Los glifos vienen normalizados a `currentColor` con su viewBox propio,
 // de modo que heredan el color del texto y escalan a cualquier tamano.
+//
+// El set esta partido en dos (ver lib/iconos.ts):
+//   · `sf-nucleo.ts` → los que usa el chunk principal (landing, error).
+//   · `sf-symbols.ts` → el juego completo, que carga la aplicacion.
 import { memo, type SVGProps } from "react";
-import { SF_SYMBOLS } from "../lib/sf-symbols";
+import { getIcon } from "../lib/iconos";
+import type { SfSymbolName } from "../lib/sf-symbols";
 
-export type IconName = keyof typeof SF_SYMBOLS;
+export type IconName = SfSymbolName;
 
 export const Icon = memo(function Icon({
   name,
   size = "md",
   ...rest
 }: { name: IconName; size?: "sm" | "md" | "lg" | "xl" } & SVGProps<SVGSVGElement>) {
-  const s = SF_SYMBOLS[name];
+  const s = getIcon(name);
   if (!s) return null;
   const cls = size === "md" ? "icon" : `icon icon--${size}`;
   return (

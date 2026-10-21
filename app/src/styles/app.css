@@ -4,115 +4,10 @@
    ============================================================ */
 
 /* Design tokens - Paleta oficial Blink */
-:root {
-  --blink-bg-main: #FFFEFB;
-  --blink-primary: #007AFF;
-  --blink-text-muted: #424242;
-  --blink-success: #34A853;
-  --blink-danger: #EA4335;
-  --blink-warning: #FBBC05;
-  --blink-dark: #1D1D1F;
-  
-  /* Map to existing tokens for compatibility */
-  --color-bg-primary: #FFFEFB;
-  --color-bg-elevated: #FFFEFB;
-  --color-text-primary: #1D1D1F;
-  --color-text-secondary: #424242;
-  --color-text-tertiary: #424242;
-  --color-text-inverse: #FFFEFB;
-  --color-accent: #007AFF;
-  --color-accent-hover: #0062cc;
-  --color-accent-soft: rgba(0, 122, 255, 0.08);
-  --color-accent-soft-strong: rgba(0, 122, 255, 0.16);
-  --color-accent-ring: rgba(0, 122, 255, 0.25);
-  --color-border: rgba(66, 66, 66, 0.16);
-  --color-border-strong: rgba(66, 66, 66, 0.28);
-  --color-neutral-soft: rgba(66, 66, 66, 0.06);
-}
-
-/* --- Reset / base --- */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-html,
-body,
-#root {
-  height: 100%;
-}
-body {
-  margin: 0;
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-family: var(--font-text);
-  /* El eje óptico (opsz) de SF Pro interpola entre los tamaños
-     Display y Text: la misma familia se adapta a cada cuerpo. */
-  font-optical-sizing: auto;
-  font-size: var(--fs-base);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-h1,
-h2,
-h3,
-h4 {
-  margin: 0;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--color-text-primary);
-}
-p {
-  margin: 0;
-}
-a {
-  color: var(--color-accent);
-  text-decoration: none;
-}
-button {
-  font-family: inherit;
-  touch-action: manipulation;
-}
-
-html {
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-input,
-textarea,
-select,
-[contenteditable="true"],
-.allow-select {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
-  font-size: 16px;
-}
-
-img,
-svg {
-  -webkit-user-drag: none;
-  user-drag: none;
-}
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
 
 /* --- Wordmark BLINK POS ---
-   Identidad: BLINK en acento (#007AFF), cursiva y extra bold (800); POS en
-   texto (#424242), recta y ligera (300). Paleta estricta vía tokens y pila de
+   Identidad: BLINK en acento (var(--color-accent)), cursiva y extra bold (800); POS en
+   texto (var(--color-text-secondary)), recta y ligera (300). Paleta estricta vía tokens y pila de
    fuentes del sistema (sin fuentes empaquetadas). Dos variantes:
    `.blink-pos-title` = grande (pantallas de acceso);
    `.brand` = compacta (barra lateral y pantalla de error). */
@@ -128,13 +23,13 @@ svg {
   text-transform: uppercase;
 }
 .blink-pos-title .wordmark__blink {
-  color: var(--color-accent); /* #007AFF */
+  color: var(--color-accent); /* var(--color-accent) */
   font-weight: 800;
   font-style: italic;
   letter-spacing: -0.03em;
 }
 .blink-pos-title .wordmark__pos {
-  color: var(--color-text-primary); /* #424242 */
+  color: var(--color-text-primary); /* var(--color-text-secondary) */
   font-weight: 300;
   font-style: normal;
   letter-spacing: -0.01em;
@@ -152,50 +47,20 @@ svg {
   line-height: 1;
 }
 .brand__blink {
-  color: var(--color-accent); /* #007AFF */
+  color: var(--color-accent); /* var(--color-accent) */
   font-weight: 800;
   font-style: italic;
 }
 .brand__pos {
-  color: var(--color-text-primary); /* #424242 */
+  color: var(--color-text-primary); /* var(--color-text-secondary) */
   font-weight: 300;
 }
 .brand--lg {
   font-size: 1.4rem;
 }
 
-/* --- Iconos SVG --- */
-.icon {
-  width: 1.15em;
-  height: 1.15em;
-  flex: none;
-  display: inline-block;
-  vertical-align: -0.15em;
-}
-.icon--sm {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-.icon--lg {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-.icon--xl {
-  width: 2rem;
-  height: 2rem;
-}
 
-/* --- Utilidades --- */
-.muted {
-  color: var(--color-text-secondary);
-}
-.dim {
-  color: var(--color-text-tertiary);
-}
-.mono {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
+
 /* Cifras tabulares: la misma anchura para que las columnas de
    importes queden alineadas (SF Pro / SF Mono lo traicion). */
 .tabular,
@@ -390,7 +255,7 @@ svg {
   background: var(--ios-veil), var(--color-neutral-soft);
   color: var(--color-text-primary);
   box-shadow: var(--ios-specular), var(--ios-specular-dark),
-    0 1px 2px rgba(29, 29, 31, 0.1);
+    0 1px 2px rgb(var(--negro-rgb) / 0.1);
   transition: background-color var(--transition-speed),
     transform var(--transition-speed), border-color var(--transition-speed),
     color var(--transition-speed), box-shadow var(--transition-speed),
@@ -402,7 +267,7 @@ svg {
    el boton se hunde y el brillo especular se apaga. */
 .btn:active:not(:disabled) {
   transform: translateY(0) scale(0.97);
-  box-shadow: inset 0 1px 2px rgba(66, 66, 66, 0.18);
+  box-shadow: inset 0 1px 2px rgb(var(--tinta-rgb) / 0.18);
 }
 .btn:disabled {
   opacity: 0.4;
@@ -412,15 +277,15 @@ svg {
 .btn--primary {
   background: var(--ios-veil), var(--color-accent);
   color: var(--color-text-inverse);
-  box-shadow: var(--ios-specular-soft), inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-    0 2px 10px rgba(0, 122, 255, 0.28);
+  box-shadow: var(--ios-specular-soft), inset 0 -1px 0 rgb(var(--negro-rgb) / 0.14),
+    0 2px 10px rgb(var(--acento-rgb) / 0.28);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--ios-veil), var(--color-accent-hover);
   transform: translateY(-1px);
 }
 .btn--primary:active:not(:disabled) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.08)),
+  background: linear-gradient(180deg, rgb(var(--halo-rgb) / 0.14), rgb(var(--negro-rgb) / 0.08)),
     var(--color-accent-hover);
   transform: translateY(0) scale(0.97);
 }
@@ -455,11 +320,11 @@ svg {
 }
 /* Rol Destructive: relleno rojo suave con material. */
 .btn--danger {
-  background: var(--ios-veil), rgba(234, 67, 53, 0.12);
+  background: var(--ios-veil), rgb(var(--rojo-rgb) / 0.12);
   color: var(--blink-danger);
 }
 .btn--danger:hover:not(:disabled) {
-  background: var(--ios-veil), rgba(234, 67, 53, 0.2);
+  background: var(--ios-veil), rgb(var(--rojo-rgb) / 0.2);
 }
 /* Medium del UI Kit (34 px). */
 .btn--sm {
@@ -513,7 +378,7 @@ svg {
     background: var(--color-accent-soft);
   }
   .btn--danger {
-    background: rgba(234, 67, 53, 0.12);
+    background: rgb(var(--rojo-rgb) / 0.12);
   }
 }
 
@@ -791,7 +656,7 @@ table.data tbody tr:hover {
     border: none;
     border-radius: var(--radius-md);
     background: var(--color-bg-elevated);
-    box-shadow: 0 1px 3px rgba(29, 29, 31, 0.07);
+    box-shadow: 0 1px 3px rgb(var(--negro-rgb) / 0.07);
     padding: 0.7rem 0.9rem;
     gap: 0;
   }
@@ -985,12 +850,7 @@ table.data tbody tr:hover {
     transform: translateY(0);
   }
 }
-.page-loader {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: var(--color-text-tertiary);
-  font-size: var(--fs-sm);
-}
+
 
 /* --- Items de la sidebar ---
    Medida oficial del UI Kit de iOS 27: fila de sidebar de 44 px. */
@@ -1445,7 +1305,7 @@ table.data tbody tr:hover {
   color: var(--blink-danger);
 }
 .row-action--danger:hover {
-  background: rgba(234, 67, 53, 0.1);
+  background: rgb(var(--rojo-rgb) / 0.1);
 }
 @media (pointer: coarse) {
   .row-action::before {
@@ -1491,7 +1351,7 @@ table.data tbody tr:hover {
   color: var(--blink-danger);
 }
 .row-actions .btn--danger:hover:not(:disabled) {
-  background: rgba(234, 67, 53, 0.1);
+  background: rgb(var(--rojo-rgb) / 0.1);
 }
 
 /* ============================================================
@@ -1531,7 +1391,7 @@ table.data tbody tr:hover {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(29, 29, 31, 0.42);
+  background: rgb(var(--negro-rgb) / 0.42);
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -1546,7 +1406,7 @@ table.data tbody tr:hover {
   z-index: 71;
   max-height: 92dvh;
   background: var(--color-bg-elevated);
-  box-shadow: 0 -8px 40px rgba(29, 29, 31, 0.18);
+  box-shadow: 0 -8px 40px rgb(var(--negro-rgb) / 0.18);
 }
 .sheet__grabber {
   width: 36px;
@@ -1769,8 +1629,8 @@ table.data tbody tr:hover {
 }
 /* El input de Konsta ya trae su fondo translucido: se alinea con la paleta. */
 .k-searchbar > div {
-  background: rgba(66, 66, 66, 0.06);
-  border: 1px solid rgba(66, 66, 66, 0.1);
+  background: rgb(var(--tinta-rgb) / 0.06);
+  border: 1px solid rgb(var(--tinta-rgb) / 0.1);
 }
 
 /* ============================================================
@@ -1862,7 +1722,7 @@ table.data td {
   }
   /* El drawer movil se cierra con un fondo translucido. */
   .shell__scrim {
-    background: rgba(29, 29, 31, 0.32);
+    background: rgb(var(--negro-rgb) / 0.32);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
   }
@@ -1943,7 +1803,7 @@ table.data td {
     position: fixed;
     inset: 0;
     z-index: 70;
-    background: rgba(29, 29, 31, 0.42);
+    background: rgb(var(--negro-rgb) / 0.42);
     animation: fade-in var(--transition-speed) ease-out;
   }
   .auth {
@@ -2140,7 +2000,7 @@ table.data td {
   align-items: center;
   gap: 0.7rem;
   font-weight: 600;
-  color: rgba(66, 66, 66, 0.45);
+  color: rgb(var(--tinta-rgb) / 0.45);
 }
 .wizard__steps li.is-current,
 .wizard__steps li.is-done {
@@ -2268,7 +2128,7 @@ table.data td {
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
-  background: rgba(66, 66, 66, 0.3);
+  background: rgb(var(--tinta-rgb) / 0.3);
   flex: none;
 }
 .dot--on {
@@ -2342,7 +2202,7 @@ table.data td {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: rgba(66, 66, 66, 0.06);
+  background: rgb(var(--tinta-rgb) / 0.06);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -2357,7 +2217,7 @@ table.data td {
   inset: 18% 8%;
   border: 2px solid var(--color-accent);
   border-radius: var(--radius-md);
-  box-shadow: 0 0 0 100vmax rgba(66, 66, 66, 0.22);
+  box-shadow: 0 0 0 100vmax rgb(var(--tinta-rgb) / 0.22);
   pointer-events: none;
 }
 .cam__note {
@@ -2378,7 +2238,7 @@ table.data td {
   right: 0;
   bottom: 0;
   padding: 1.6rem 0.75rem 0.75rem;
-  background: linear-gradient(transparent, rgba(66, 66, 66, 0.55));
+  background: linear-gradient(transparent, rgb(var(--tinta-rgb) / 0.55));
 }
 
 /* Vista previa de la cuenta durante el escaneo (para no mirar la caja). */
@@ -2493,7 +2353,7 @@ table.data td {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(66, 66, 66, 0.42);
+  background: rgb(var(--tinta-rgb) / 0.42);
   animation: fade-in var(--transition-speed) ease-out;
 }
 .scan-ticket__card {

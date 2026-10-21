@@ -45,12 +45,33 @@ export default defineConfig({
     target: "es2022",
     cssCodeSplit: true,
     sourcemap: false,
+    /* `light-dark()` (los dos modos de la paleta) se queda nativo: con
+       objetivos antiguos Lightning CSS lo baja a una media query
+       `prefers-color-scheme`, y entonces el modo manual ("Claro" /
+       "Oscuro") dejaria de funcionar. Estos objetivos ya son el
+       minimo que exige la app (color-mix, dvh, light-dark). */
+    cssTarget: ["chrome123", "safari17.5", "firefox120", "edge123"],
     // Separa las dependencias estables (React, router) en un chunk propio:
     // mejora el cacheo entre despliegues y reduce el chunk de la app.
     rollupOptions: {
       output: {
+        // Se separa el nucleo estable (React) del resto: Supabase solo
+        // hace falta dentro de la aplicacion, y la landing no debe
+        // descargarlo.
+        //
+        // Konsta NO se fuerza a un chunk con nombre: el bundler lo deja
+        // en el trozo comun de la aplicacion, que es donde se usa. Y la
+        // landing no lo importa (el glass del header va en CSS).
         manualChunks(id) {
-          if (id.includes("node_modules")) return "vendor";
+          if (id.includes("@supabase/")) return "supabase";
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/react-router") ||
+            id.includes("/scheduler/")
+          ) {
+            return "vendor";
+          }
           return undefined;
         },
       },

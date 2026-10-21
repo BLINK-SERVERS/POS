@@ -4,6 +4,7 @@
 // El contenido vive aquí (y no en un CMS) para que la web funcione aunque
 // Supabase no esté disponible.
 import { Link } from "react-router-dom";
+import "../styles/landing.css";
 
 type LegalKind = "terminos" | "privacidad";
 

@@ -3,7 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#007AFF" />
+    <!-- Apariencia: "light dark" = sigue al sistema. La preferencia de la
+         app lo ajusta a "light" o "dark" en linea (style="color-scheme"). -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#FFFEFB" />
+    <!-- Se aplica la apariencia ANTES del primer pintado para que no haya
+         destello. Debe ser synchronous y no depender de la red. -->
+    <script>
+      (function () {
+        try {
+          var modo = localStorage.getItem("blink-tema") || "auto";
+          var html = document.documentElement;
+          html.style.colorScheme =
+            modo === "auto" ? "light dark" : modo === "claro" ? "light" : "dark";
+          html.dataset.tema = modo;
+          var oscuro =
+            modo === "oscuro" ||
+            (modo === "auto" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          html.classList.toggle("dark", oscuro);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", oscuro ? "#000000" : "#FFFEFB");
+        } catch (e) {
+          /* sin almacenamiento: se queda el tema del sistema */
+        }
+      })();
+    </script>
     <meta
       name="description"
       content="BLINK POS — El punto de venta más rápido, inteligente y adaptado a Venezuela. Multimoneda USD/EUR a tasa BCV, escáner desde tu celular y operación 100% en la nube. $25/mes."

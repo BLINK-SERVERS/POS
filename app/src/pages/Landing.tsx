@@ -8,7 +8,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "../components/Icon";
-import { Glass } from "konsta/react";
 import "../styles/landing.css";
 
 /** Anclas de navegación de la landing. */
@@ -65,50 +64,53 @@ export function Landing() {
   return (
     <div className="landing">
       {/* ---------------- Header fijo ---------------- */}
-      {/* Konsta <Glass> implementa el material "liquid glass" de iOS 26/27:
-          difumina el fondo y aplica el brillo especular al pasar el puntero.
-          HIG: solo en la capa funcional, nunca en el contenido. */}
-      <Glass className="ld-glass">
+      {/* Material "liquid glass" de iOS 26/27 (HIG · Materials): difumina el
+          fondo y aplica el brillo especular. Se resuelve con CSS (`.ld-header`)
+          en vez de con el componente <Glass> de Konsta: la landing no usa
+          NADA de Konsta, y así no arrastra su CSS (85 KB) ni su JS al
+          primer paint. HIG: solo en la capa funcional, nunca en el
+          contenido. */}
+      <div className="ld-glass">
         <header className="ld-header">
           <div className="ld-header__inner">
-          <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
-            <span className="ld-logo__blink">BLINK</span>
-            <span className="ld-logo__pos">POS</span>
-          </Link>
-
-          <nav className={"ld-nav" + (menuOpen ? " ld-nav--open" : "")} aria-label="Navegación principal">
-            {NAV.map((n) => (
-              <a
-                key={n.href}
-                className="ld-nav__link"
-                href={n.href}
-                onClick={() => setMenuOpen(false)}
-              >
-                {n.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="ld-header__actions">
-            <Link className="ld-btn ld-btn--ghost" to="/app/entrar">
-              Iniciar Sesión
+            <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
+              <span className="ld-logo__blink">BLINK</span>
+              <span className="ld-logo__pos">POS</span>
             </Link>
-            <Link className="ld-btn ld-btn--primary" to="/app/registro">
-              Registrar mi comercio
-            </Link>
-          </div>
 
-          <button
-            className="ld-burger"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={menuOpen}
-          >
-            <Icon name={menuOpen ? "close" : "menu"} size="lg" />
-          </button>
+            <nav className={"ld-nav" + (menuOpen ? " ld-nav--open" : "")} aria-label="Navegación principal">
+              {NAV.map((n) => (
+                <a
+                  key={n.href}
+                  className="ld-nav__link"
+                  href={n.href}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {n.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="ld-header__actions">
+              <Link className="ld-btn ld-btn--ghost" to="/app/entrar">
+                Iniciar Sesión
+              </Link>
+              <Link className="ld-btn ld-btn--primary" to="/app/registro">
+                Registrar mi comercio
+              </Link>
+            </div>
+
+            <button
+              className="ld-burger"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={menuOpen}
+            >
+              <Icon name={menuOpen ? "close" : "menu"} size="lg" />
+            </button>
           </div>
         </header>
-      </Glass>
+      </div>
 
       {/* ---------------- Hero ---------------- */}
       <section className="ld-hero">

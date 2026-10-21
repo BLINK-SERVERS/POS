@@ -13,6 +13,70 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.12.0] · 2026-10-21
+
+**Modo oscuro con la paleta oficial BLINK + optimización de la carga (la landing baja un 66 %).**
+
+### Modo oscuro
+
+- **Las dos apariencias** (claro y oscuro) con una sola paleta de marca. Los
+  valores de cada modo salen del **UI Kit oficial de iOS 27** y de la
+  **paleta oficial BLINK**:
+  - Fondo `#000000` · superficie `#1a1a1a` (materiales *Dark/Regular* del kit)
+  - Texto `#FFFFFF` · secundario `#EBEBF5` (`IOS_LABELS.dark`)
+  - Acento `#0091FF` (`IOS_SYSTEM_COLORS.blue.dark`)
+- **Paleta oficial aplicada**: los diez grupos de color con su par claro/oscuro
+  (rojo, carmesí, naranja, amarillo, verde, turquesa, azul/celeste, índigo,
+  magenta, marrón). El acento pasa a ser el **Azul Principal** `#0088FF` /
+  `#0091FF` y los estados semánticos usan los colores del sistema
+  (verde `#34C759`/`#30D158`, rojo `#FF383C`/`#FF4245`, amarillo
+  `#FFCC00`/`#FFD600`).
+- **Un solo mecanismo**: `color-scheme` en `<html>`. Los tokens se declaran
+  con `light-dark(claro, oscuro)`, asi que la paleta no se duplica. El
+  aparecimiento se elige en **Ajustes › Apariencia** (Automático / Claro /
+  Oscuro) y se recuerda en el dispositivo.
+- **Sin destello**: un script en linea de `index.html` aplica la apariencia
+  antes del primer pintado, y el `theme-color` de la barra del navegador
+  sigue a la apariencia.
+- **Konsta** recibe `dark={esOscuro}`: sus variantes oscuras (que se activan
+  con la clase `dark`) también siguen la preferencia.
+- **Los colores fijos** del CSS (64 valores) se han tokenizado con canales RGB
+  (`rgb(var(--tinta-rgb) / …)`) para que se adapten al modo.
+- La **maqueta del producto** de la landing es una ilustración: mantiene su
+  aspecto en los dos modos (HIG · Dark Mode: *"if an asset looks good in only
+  one mode, modify the asset"*).
+- Se reconstructye el verificador de UI: **matriz de 2 tamanos × 2
+  apariencias** (76 comprobaciones) que además verifica que la apariencia se
+  aplicó de verdad y que el **contraste texto/fondo ≥ 4.5:1** (HIG).
+- Nuevo `npm run qa:apariencia`: comprueba el cambio manual, la clase
+  `dark` de Konsta, la persistencia y la vuelta a "Automático".
+
+### Rendimiento de carga
+
+- **La landing deja de arrastrar la aplicación**: el chunk principal solo trae
+  el router y la landing; el store, Supabase, Konsta y el CSS del POS se
+  cargan **bajo demanda** (`AppInterna`).
+- **Los iconos se parten en dos**: la landing usa 13 (`sf-nucleo.ts`) y la
+  aplicación los 100. El chunk principal pasa de 185 KB a 22 KB.
+- **Las coordenadas de los SF Symbols se redondean** a 3 decimales (el repo
+  las trae con 11): el set pesa un 35 % menos sin diferencia visible.
+- **El CSS se separa**: `base.css` (reset, iconos, utilidades) para todas las
+  páginas y `app.css` solo con la aplicación. El CSS de Konsta se poda
+  (`@source` limitado a los 9 componentes que se usan).
+- **La landing pasa de 1.100 KB a 369 KB** de descarga inicial (−66 %).
+- Nuevo `npm run qa:carga`: mide peticiones, bytes transferidos, FCP y LCP
+  contra el build de producción.
+
+### Correcciones
+
+- La siembra del catálogo global (migración `0004`) **no estaba aplicada en
+  producción** en una entrega anterior: la tabla no existia.
+- El recorte de `@source` de Konsta dejaba fuera `konsta/shared/colors`, de
+  donde sale `bg-primary`: **el estado activo de los controles segmentados
+  se quedaba sin pintar**. Ahora la fuente está incluida.
+
+---
+
 ## [1.11.0] · 2026-10-21
 
 **Batería de QA automatizada: entorno de pruebas sembrado en Supabase, stress test de todos los botones, pruebas funcionales de negocio y matriz de responsividad.**
