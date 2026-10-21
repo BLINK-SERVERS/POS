@@ -1,5 +1,6 @@
 // Ajustes · Negocio, perfil, moneda, recibo, exportación y cuenta.
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs, useConfirm } from "../components/ui";
 import { useTema, type ModoTema } from "../lib/tema";
@@ -35,7 +36,21 @@ export function Ajustes() {
   const confirm = useConfirm();
   const { modo, setModo } = useTema();
   const { pairing, remoteActive, rotatePairing } = useScanner();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Negocio");
+  // La pestana activa se puede fijar por URL (?tab=Perfil): asi el menu de
+  // avatar abre directamente la seccion que el usuario eligio.
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab");
+  const [tab, setTab] = useState<(typeof TABS)[number]>(
+    (TABS as readonly string[]).includes(tabParam ?? "") ? (tabParam as (typeof TABS)[number]) : "Negocio"
+  );
+
+  /** Cambia de pestana y refleja el cambio en la URL. */
+  const irTab = (t: (typeof TABS)[number]) => {
+    setTab(t);
+    const p = new URLSearchParams(params);
+    p.set("tab", t);
+    setParams(p, { replace: true });
+  };
   const [qrOpen, setQrOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -155,7 +170,7 @@ export function Ajustes() {
         subtitle="Configura tu comercio, tu perfil y tu forma de trabajar."
       />
 
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs tabs={TABS} value={tab} onChange={irTab} />
 
       {tab === "Negocio" && (
         <form className="form-grid" onSubmit={onSubmitNegocio}>

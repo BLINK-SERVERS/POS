@@ -1,7 +1,14 @@
-// Shell de la aplicación: topbar + sidebar + contenedor de página.
-import { useState, type ReactNode } from "react";
+// Shell de la aplicación: topbar + sidebar + barra inferior flotante.
+//
+// Navegación (v1.13.0):
+//   · En escritorio, la navegación vive en la barra lateral.
+//   · En móvil, NO hay hamburguesa: la navegación es una barra inferior
+//     flotante de material (Liquid Glass) con una acción central destacada
+//     (Vender) y el menú de cuenta en el avatar del cabecera.
+//   · Todos los módulos usan la misma iconografía (ver MODULOS).
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Glass, Tabbar, TabbarLink } from "konsta/react";
+import { Glass } from "konsta/react";
 import { useStore } from "../lib/store";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
@@ -9,25 +16,22 @@ import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { MobileScannerModal } from "./ScannerModals";
 import { ScannerProvider, useScanner } from "../lib/scanner/ScannerProvider";
-import type { BusinessFeatures } from "../lib/types";
+import { type Modulo } from "../lib/modulos";
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: IconName;
-  sub?: { to: string; label: string }[];
-  feature?: keyof BusinessFeatures;
+/** Elemento de la barra lateral, con sus subsecciones. */
+interface NavItem extends Modulo {
+  sub?: { to: string; label: string; icon: IconName }[];
 }
 
 const NAV: NavItem[] = [
-  { to: "/app/inicio", label: "Inicio", icon: "home" },
+  { to: "/app/inicio", label: "Inicio", icon: "grid2x2" },
   {
     to: "/app/ventas",
     label: "Ventas",
     icon: "cart",
     sub: [
-      { to: "/app/ventas", label: "Vender" },
-      { to: "/app/ventas/historial", label: "Historial" },
+      { to: "/app/ventas", label: "Vender", icon: "cart" },
+      { to: "/app/ventas/historial", label: "Historial", icon: "clock" },
     ],
   },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
@@ -35,22 +39,28 @@ const NAV: NavItem[] = [
   { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
   { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
-  { to: "/app/ajustes", label: "Ajustes", icon: "settings" },
 ];
 
 /**
- * Secciones de la barra de pestañas (solo navegación).
+ * Barra inferior flotante (solo móvil).
  *
- * HIG (Tab bars): "Use a tab bar to support navigation, not to provide actions",
- * "Include tab labels to help with navigation" y "Avoid overflow tabs" — por eso
- * son 5 como máximo y llevan etiqueta.
+ * La HIG limita la barra de pestañas a 5 elementos, así que la barra usa
+ * 2 + 1 + 2: dos accesos a la izquierda, la acción principal en el centro
+ * y dos accesos a la derecha. El resto de módulos se alcanzan desde
+ * General (el panel de módulos) y desde la barra lateral del escritorio.
  */
-const TABS: { to: string; label: string; icon: IconName; feature?: keyof BusinessFeatures }[] = [
-  { to: "/app/ventas", label: "Ventas", icon: "cart" },
+const BAR_IZQUIERDA: Modulo[] = [
+  { to: "/app/inicio", label: "Inicio", icon: "grid2x2" },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
+];
+
+/** Prioridad para los dos accesos de la derecha (si un módulo está
+ *  apagado en el comercio, entra el siguiente de la lista). */
+const BAR_DERECHA: Modulo[] = [
   { to: "/app/inventario", label: "Inventario", icon: "box", feature: "inventory" },
-  { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
   { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
+  { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
+  { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
 ];
 
 /** Botón del topbar: abre el modal del escáner y muestra si el celular está activo. */
@@ -75,11 +85,162 @@ function ScannerTopbarButton() {
   );
 }
 
-export function Shell({ children }: { children: ReactNode }) {
-  const { state, user, logout, openCash, closeCash } = useStore();
+/**
+ * Menú de avatar (cabecera).
+ *
+ * Sustituye al menú hamburguesa en móvil: la cuenta, los ajustes y el
+ * cierre de sesión se concentran aquí.
+ */
+function AvatarMenu() {
+  const { user, logout } = useStore();
   const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+
+  const displayName =
+    user && (user.firstName || user.lastName)
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ")
+      : user?.email ?? "";
+  const iniciales = (displayName || "?").slice(0, 2).toUpperCase();
+  // Sin nombre propio, el titulo del menu es "Tu cuenta" y el correo
+  // pasa al subtitulo (si no, se veria el mismo dato dos veces).
+  const tieneNombre = Boolean(user && (user.firstName || user.lastName));
+
+  // Cierra al pulsar fuera o con Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const ir = (destino: string) => {
+    setOpen(false);
+    nav(destino);
+  };
+
+  return (
+    <div className="avatarmenu__wrap" ref={box}>
+      <button
+        type="button"
+        className="userchip userchip--button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Cuenta y ajustes"
+      >
+        <span className="avatar">{iniciales}</span>
+        <div className="stack" style={{ lineHeight: 1.15 }}>
+          <strong style={{ fontSize: "0.8rem" }}>{displayName || "Sesión activa"}</strong>
+          <span className="dim" style={{ fontSize: "0.7rem" }}>
+            Dueño
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <>
+          <div className="avatarmenu__scrim" onClick={() => setOpen(false)} />
+          <div className="avatarmenu" role="menu" aria-label="Cuenta y ajustes">
+            <div className="avatarmenu__head">
+              <span className="avatar avatar--lg">{iniciales}</span>
+              <div className="avatarmenu__id">
+                <strong>{tieneNombre ? displayName : "Tu cuenta"}</strong>
+                <span className="dim">{tieneNombre ? user?.email : "Dueño del comercio"}</span>
+              </div>
+            </div>
+
+            <div className="avatarmenu__sep" role="separator" />
+
+            <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/ajustes?tab=Negocio")}>
+              <Icon name="store" />
+              <span>Datos del comercio</span>
+            </button>
+            <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/ajustes?tab=Perfil")}>
+              <Icon name="person" />
+              <span>Tu perfil</span>
+            </button>
+            <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/ajustes")}>
+              <Icon name="settings" />
+              <span>Ajustes</span>
+            </button>
+
+            <div className="avatarmenu__sep" role="separator" />
+
+            <button
+              type="button"
+              role="menuitem"
+              className="avatarmenu__item avatarmenu__item--danger"
+              onClick={() => {
+                setOpen(false);
+                void logout();
+                nav("/app/entrar");
+              }}
+            >
+              <Icon name="logout" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Barra de navegación inferior flotante (solo móvil). */
+function BarraInferior({ izquierda, derecha }: { izquierda: Modulo[]; derecha: Modulo[] }) {
+  const location = useLocation();
+  const activo = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
+
+  const item = (m: Modulo) => (
+    <NavLink
+      key={m.to}
+      to={m.to}
+      className={"tabbar__item" + (activo(m.to) ? " is-active" : "")}
+      aria-current={activo(m.to) ? "page" : undefined}
+    >
+      <span className="tabbar__glyph" aria-hidden>
+        <Icon name={m.icon} size="lg" />
+      </span>
+      <span className="tabbar__label">{m.label}</span>
+    </NavLink>
+  );
+
+  return (
+    <Glass className="shell__tabbar-float">
+      <nav className="tabbar" aria-label="Navegación principal">
+        <div className="tabbar__side">{izquierda.map(item)}</div>
+
+        {/* Acción principal: Vender. */}
+        <NavLink
+          to="/app/ventas"
+          className={"tabbar__main" + (activo("/app/ventas") ? " is-active" : "")}
+          aria-label="Vender"
+        >
+          <span className="tabbar__main-glyph" aria-hidden>
+            <Icon name="dollarsign" size="xl" />
+          </span>
+          <span className="tabbar__main-label">Vender</span>
+        </NavLink>
+
+        <div className="tabbar__side">{derecha.map(item)}</div>
+      </nav>
+    </Glass>
+  );
+}
+
+export function Shell({ children }: { children: ReactNode }) {
+  const { state, openCash, closeCash } = useStore();
   const [cashOpen, setCashOpen] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
   const [usd, setUsd] = useState("0");
   const [bs, setBs] = useState("0");
   const [closeOpen, setCloseOpen] = useState(false);
@@ -89,12 +250,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const features = state.business.features;
   const visibleNav = NAV.filter((item) => !item.feature || features[item.feature]);
-  const visibleTabs = TABS.filter((item) => !item.feature || features[item.feature]);
-  const location = useLocation();
-  const displayName =
-    user && (user.firstName || user.lastName)
-      ? [user.firstName, user.lastName].filter(Boolean).join(" ")
-      : user?.email ?? "";
+
+  // La barra inferior mantiene 2 + 2 aunque un módulo esté apagado.
+  const derecha = BAR_DERECHA.filter((m) => !m.feature || features[m.feature]).slice(0, 2);
 
   const session = state.cashSession;
   const expected = session ? expectedCash(state) : { usd: 0, bs: 0 };
@@ -106,7 +264,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <ScannerProvider>
-    <div className={"shell" + (navOpen ? " shell--nav-open" : "")}>
+    <div className="shell">
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
           <Link to="/app/ventas" className="brand brand--lg" aria-label="Ir a ventas">
@@ -122,7 +280,6 @@ export function Shell({ children }: { children: ReactNode }) {
               <NavLink
                 to={item.to}
                 end={!!item.sub}
-                onClick={() => setNavOpen(false)}
                 className={({ isActive }) =>
                   isActive && !item.sub ? "nav__link active" : "nav__link"
                 }
@@ -139,11 +296,13 @@ export function Shell({ children }: { children: ReactNode }) {
                       key={s.label}
                       to={s.to}
                       end={s.label === "Vender"}
-                      onClick={() => setNavOpen(false)}
                       className={({ isActive }) =>
                         isActive ? "nav__link active" : "nav__link"
                       }
                     >
+                      <span className="nav__icon" aria-hidden>
+                        <Icon name={s.icon} />
+                      </span>
                       {s.label}
                     </NavLink>
                   ))}
@@ -153,26 +312,10 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="sidenav__foot">
-          <button className="btn btn--plain" onClick={() => { setNavOpen(false); void logout(); nav("/app/entrar"); }}>
-            <Icon name="logout" />
-            Cerrar sesión
-          </button>
-        </div>
       </aside>
-
-      {navOpen && <div className="shell__scrim" onClick={() => setNavOpen(false)} />}
 
       <div className="shell__content">
         <header className="shell__topbar">
-          <button
-            className="shell__menu"
-            onClick={() => setNavOpen((v) => !v)}
-            aria-label="Abrir menú"
-            aria-expanded={navOpen}
-          >
-            <Icon name={navOpen ? "close" : "menu"} />
-          </button>
           <strong className="topbar__name">{state.business.name}</strong>
           <ScannerTopbarButton />
           <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
@@ -196,25 +339,15 @@ export function Shell({ children }: { children: ReactNode }) {
                 setCloseOpen(true);
               }}
               title={`Abierta ${new Date(session.openedAt).toLocaleTimeString()}`}
-            ><Icon name="cash" /> 
-              Cerrar caja
+            ><Icon name="cash" />
+              <span className="btn__label">Cerrar caja</span>
             </button>
           ) : (
-            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}><Icon name="cash" /> 
-              Abrir caja
+            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}><Icon name="cash" />
+              <span className="btn__label">Abrir caja</span>
             </button>
           )}
-          <div className="userchip">
-            <span className="avatar">
-              {(displayName || "?").slice(0, 2).toUpperCase()}
-            </span>
-            <div className="stack" style={{ lineHeight: 1.15 }}>
-              <strong style={{ fontSize: "0.8rem" }}>{displayName || "Sesión activa"}</strong>
-              <span className="dim" style={{ fontSize: "0.7rem" }}>
-                Dueño
-              </span>
-            </div>
-          </div>
+          <AvatarMenu />
         </header>
 
         <main className="shell__main">
@@ -222,32 +355,19 @@ export function Shell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Barra de pestañas flotante (solo en movil).
+      {/* Barra de navegación inferior flotante (solo en móvil).
           HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
           of the screen. Its items rest on a Liquid Glass background that allows
-          content beneath to peek through." → Glass de Konsta,Separado del borde
-          y con el contenido asomando por debajo. */}
-      <Glass className="shell__tabbar-float">
-        <Tabbar className="shell__tabbar" labels icons>
-          {visibleTabs.map((t) => (
-            <TabbarLink
-              key={t.to}
-              component={NavLink}
-              linkProps={{ to: t.to }}
-              active={location.pathname === t.to || location.pathname.startsWith(t.to + "/")}
-              icon={<Icon name={t.icon} />}
-              label={t.label}
-            />
-          ))}
-        </Tabbar>
-      </Glass>
+          content beneath to peek through." → Glass de Konsta, separado del
+          borde y con el contenido asomando por debajo. */}
+      <BarraInferior izquierda={BAR_IZQUIERDA} derecha={derecha} />
 
       {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
       <div id="printable-report" aria-hidden="true" />
 
       {cashOpen && (
         <Modal title="Abrir caja" onClose={() => setCashOpen(false)}>
-          
+
             <div className="form-group">
                 <Field label="Fondo inicial (USD)" hint="Efectivo con el que abre la caja.">
                                                             <input
@@ -256,24 +376,24 @@ export function Shell({ children }: { children: ReactNode }) {
                                                               value={usd}
                                                               onChange={(e) => setUsd(e.target.value)}
                                                             />
-                                                          </Field>
-                                                          <Field label="Fondo inicial (Bs)">
+                </Field>
+                <Field label="Fondo inicial (Bs)">
                                                             <input
                                                               className="input"
                                                               type="number"
                                                               value={bs}
                                                               onChange={(e) => setBs(e.target.value)}
                                                             />
-                                                          </Field>
-              </div>
-          
+                </Field>
+            </div>
+
           <button
             className="btn btn--primary btn--block"
             onClick={() => {
               openCash(Number(usd) || 0, Number(bs) || 0);
               setCashOpen(false);
             }}
-          ><Icon name="check" /> 
+          ><Icon name="check" />
             Confirmar apertura
           </button>
           <p className="field__hint" style={{ marginTop: "0.6rem" }}>
@@ -288,25 +408,25 @@ export function Shell({ children }: { children: ReactNode }) {
             Cuenta el efectivo y las bolívares contados para registrar el arqueo y la
             diferencia.
           </p>
-          
+
             <div className="form-group">
-                <Field label="Contado (USD)">
+              <Field label="Contado (USD)">
                                                             <input
                                                               className="input"
                                                               type="number"
                                                               value={cUsd}
                                                               onChange={(e) => setCUsd(e.target.value)}
                                                             />
-                                                          </Field>
-                                                          <Field label="Contado (Bs)">
+                </Field>
+              <Field label="Contado (Bs)">
                                                             <input
                                                               className="input"
                                                               type="number"
                                                               value={cBs}
                                                               onChange={(e) => setCBs(e.target.value)}
                                                             />
-                                                          </Field>
-              </div>
+                </Field>
+            </div>
 
           <div className="breakdown" style={{ marginTop: "0.75rem" }}>
             <div className="breakdown__row">
@@ -357,7 +477,7 @@ export function Shell({ children }: { children: ReactNode }) {
               );
               setCloseOpen(false);
             }}
-          ><Icon name="check" /> 
+          ><Icon name="check" />
             Confirmar cierre
           </button>
         </Modal>

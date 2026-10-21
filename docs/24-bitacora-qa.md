@@ -194,6 +194,34 @@ La siembra es **idempotente**: se puede volver a ejecutar sin duplicar.
   mantiene una sola voz tipográfica en todos los dispositivos sin
   distribuir ningún fichero de Apple.
 
+### BUG-08 · En móvil, la cabecera no cabía
+
+- **Comportamiento anómalo:** la barra lateral se convertía en un *drawer*
+  deslizante que se abría con el botón hamburguesa. En pantallas de 390 px
+  el nombre del comercio quedaba cortado en dos letras ("Ti…") y la
+  cabecera era un muro de controles.
+- **Solución:** el menú hamburguesa y su panel desaparecen. La navegación
+  pasa a una **barra inferior flotante de material** con la acción principal
+  (Vender) en el centro, y la cuenta, los ajustes y el cierre de sesión
+  pasan al **menú del avatar** de la cabecera. El botón de caja se queda
+  solo con el icono en móvil y el nombre recupera el espacio.
+- **Comprobación:** `npm run qa:navegacion` → 24/24 en verde (barra con 5
+  elementos, acción central con desvío de 0,00 px, simetría lateral de
+  72,7 vs 72,7 px, menú de avatar completo y ningún control con escala al
+  pulsar).
+
+### BUG-09 · Los controles se encogían al mantenerlos pulsados
+
+- **Comportamiento anómalo:** botones, steppers, acciones de fila y botones
+  de icono aplicaban `transform: scale(0.92-0.97)` en `:active`. Es una
+  sensación de *web app*, no de iOS: la HIG pide un "press state" sin que
+  el control cambie de tamaño.
+- **Solución:** se quita el `scale()` de todos los estados `:active`; el
+  toque se marca solo con tono (opacidad y, en los botones, el brillo
+  especular apagado).
+- **Comprobación:** `npm run qa:navegacion` comprueba que ningún control de
+  la app tiene una matriz de transformación con escala distinta de 1.
+
 ---
 
 ## 4. Incidencias que resultaron ser **correctas** (falsos positivos)

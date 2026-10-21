@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.13.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.14.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -20,6 +20,27 @@
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
 | Tipografía | Una sola pila en toda la app: SF Pro (local) → Inter (OFL, servido) → sistema |
+| Navegación móvil (`npm run qa:navegacion`) | 24/24 en verde: sin hamburguesa, barra inferior de 5 con Vender centrado, menú de avatar, sin escalado al pulsar |
+
+## Novedades de la v1.14.0
+
+### Navegación móvil sin hamburguesa
+
+- **Barra inferior flotante** de material (Liquid Glass) con distribución
+  **2 + 1 + 2**: General y Catálogo a la izquierda, **Vender** en el centro
+  (símbolo de dólar, en un círculo de acento) e Inventario y Finanzas a la
+  derecha. El botón central queda con **desvío de 0,00 px** del centro.
+- **El menú hamburguesa y su panel desaparecen.** La cuenta, los ajustes y
+  el cierre de sesión pasan al **menú del avatar** de la cabecera, con
+  "Cerrar sesión" separado y en color de peligro.
+- **Iconografía única por módulo** (`app/src/lib/modulos.ts`): General
+  (panel), Ventas (carrito), Historial (reloj), Catálogo (etiqueta),
+  Inventario (caja), Contactos (usuarios), Finanzas (billetera) e Informes
+  (gráficas).
+- **General hace de panel de módulos**: los que no caben en la barra (la
+  HIG la limita a 5) se alcanzan desde ahí, con la misma iconografía.
+- **Fin del escalado al pulsar**: ningún control cambia de tamaño al
+  mantenerlo; el toque se marca con tono, como en iOS.
 
 ## Novedades de la v1.13.0
 

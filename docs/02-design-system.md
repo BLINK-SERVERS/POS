@@ -240,8 +240,56 @@ de la ventana, sino paneles flotantes redondeados. BLINK replica ese patrón:
 | Barra de navegación | 56 px, hairline inferior, acciones en texto plano de acento |
 | Título de pantalla | **Large Title** 34 px / leading 41 (28 px en móvil) |
 
-En móvil (< 860 px) el contenido va a sangre, la sidebar sigue siendo un
-drawer —también flotante— y la navegación pasa a la tab bar con Liquid Glass.
+### 4.1 · Navegación: sin hamburguesa, con barra inferior flotante
+
+En móvil (< 860 px) el contenido va a sangre y **no hay menú hamburguesa**
+ni panel lateral. La navegación es una **barra inferior flotante de
+material** (Liquid Glass) y la gestión de cuenta vive en el **avatar de
+la cabecera**.
+
+```
+┌───────────────────────────────┐
+│  cabecera ······  (avatar)    │
+│                               │
+│         contenido             │
+│                               │
+│  ┌─────────────────────────┐  │
+│  │ General  Catálogo  $  ⋮ │  │   ← 2 + 1 + 2
+│  └─────────────────────────┘  │
+└───────────────────────────────┘
+```
+
+| Pieza | Regla |
+|---|---|
+| Elementos de la barra | **5** (el límite de la HIG): 2 a la izquierda, la acción principal y 2 a la derecha |
+| Acción central | **Vender**, con el símbolo de dólar, en un círculo de acento (34 px), ligeramente mayor que el resto |
+| Simetría | los dos elementos de cada lado, a la misma distancia del centro (± 1,5 px) |
+| Item de tab bar | 48 × 48 (área táctil), icono + etiqueta |
+| Menú de avatar | panel flotante bajo el avatar: cuenta, ajustes y **cerrar sesión** separado y en color de peligro |
+| Presión | **sin escalado**: el toque se marca con tono, nunca con zoom (iOS no agranda el control) |
+
+Los módulos que no caben en la barra (la HIG limita la barra a 5) se
+alcanzan desde **General**, que hace de panel con la misma iconografía.
+
+### 4.2 · Iconografía de los módulos
+
+Una sola fuente de verdad (`app/src/lib/modulos.ts`): el mismo módulo
+lleva el mismo icono en la sidebar de escritorio, en la barra inferior y
+en el panel de General.
+
+| Módulo | Icono | Glifo |
+|---|---|---|
+| General / Inicio | panel / dashboard | `grid2x2` |
+| Ventas / Vender | carrito | `cart` |
+| Historial | reloj | `clock` |
+| Catálogo | etiqueta | `tag` |
+| Inventario | caja / stock | `box` |
+| Contactos | usuarios / libreta | `users` |
+| Finanzas | billetera | `wallet` |
+| Informes | gráficas | `chart` |
+
+La cuenta (perfil y datos del comercio), los ajustes y el cierre de
+sesión **no** están en la sidebar: están en el menú del avatar.
 
 ---
 
@@ -263,7 +311,7 @@ Extraídas del UI Kit oficial (1.657 símbolos). Tabla completa en
 | Campo de texto | 288 × 52 | `.input` / `.select` → 52 px |
 | Toggle | 64 × 28 | `.toggle` |
 | Stepper | 46 × 32 | `.stepper button` |
-| Item de tab bar | 48 × 48 | `.shell__tabbar a` (área táctil) |
+| Item de tab bar | 48 × 48 | `.tabbar__item` (área táctil) |
 | Fila de sidebar | 260 × 44 | `.nav__link` (44 px) |
 | Alerta | 300 × 184 | `<Dialog>` de Konsta (300 px) |
 | Botón de alerta | 120 × 48 | `<DialogButton>` de Konsta |

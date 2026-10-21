@@ -5,6 +5,7 @@ import { useStoreState } from "../lib/store";
 import { Card, EmptyState, Money, PageHead } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { capital, dayRange, lowStock, metrics, monthRange } from "../lib/metrics";
+import { modulosVisibles } from "../lib/modulos";
 import { formatUsd } from "../lib/money";
 
 export function Inicio() {
@@ -37,6 +38,22 @@ export function Inicio() {
         title="Inicio"
         subtitle="El resumen de tu día y las cifras que importan."
       />
+
+      {/* Panel de modulos: en movil es la via de acceso a las secciones
+          que no caben en la barra inferior (la HIG limita la barra a 5
+          elementos: 2 + accion central + 2). */}
+      <Card title="Módulos" hint="Todas las secciones del sistema.">
+        <div className="modgrid">
+          {modulosVisibles(state.business.features).map((m) => (
+            <Link key={m.to} to={m.to} className="modgrid__item">
+              <span className="modgrid__icon" aria-hidden>
+                <Icon name={m.icon} />
+              </span>
+              <span className="modgrid__label">{m.label}</span>
+            </Link>
+          ))}
+        </div>
+      </Card>
 
       <div className="kpis kpis--group">
         <div className="kpi">

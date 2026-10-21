@@ -265,10 +265,12 @@
 }
 /* Estado de pulsacion (HIG: "Always include a press state"):
    el boton se hunde y el brillo especular se apaga. */
-.btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
-  box-shadow: inset 0 1px 2px rgb(from var(--tinta) r g b / 0.18);
-}
+  /* HIG: "Always include a press state" — el control no se escala,
+     solo se atenua. Sin zoom ni agrandamiento al mantener pulsado. */
+  .btn:active:not(:disabled) {
+    box-shadow: inset 0 1px 2px rgb(from var(--tinta) r g b / 0.18);
+    opacity: 0.72;
+  }
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -284,11 +286,11 @@
   background: var(--ios-veil), var(--color-accent-hover);
   transform: translateY(-1px);
 }
-.btn--primary:active:not(:disabled) {
-  background: linear-gradient(180deg, rgb(from var(--halo) r g b / 0.14), rgb(from var(--negro) r g b / 0.08)),
-    var(--color-accent-hover);
-  transform: translateY(0) scale(0.97);
-}
+  .btn--primary:active:not(:disabled) {
+    background: linear-gradient(180deg, rgb(from var(--halo) r g b / 0.14), rgb(from var(--negro) r g b / 0.08)),
+      var(--color-accent-hover);
+    opacity: 0.82;
+  }
 /* Boton gris de iOS: relleno suave con material. */
 .btn--ghost {
   background: var(--ios-veil), var(--color-neutral-soft);
@@ -810,25 +812,17 @@ table.data tbody tr:hover {
   color: var(--color-accent);
 }
 /* Botón hamburguesa: oculto en escritorio, visible en móvil. */
-.shell__menu {
-  display: none;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-accent);
-  cursor: pointer;
-}
+  /* El menu hamburguesa desaparece: en movil la navegacion es la barra
+     inferior flotante y la cuenta vive en el avatar de la cabecera. */
+  .shell__menu {
+    display: none;
+  }
 .shell__menu:hover {
   background: var(--color-neutral-soft);
 }
-.shell__scrim {
-  display: none;
-}
+  .shell__scrim {
+    display: none;
+  }
 .shell__main {
   flex: 1;
   min-height: 0;
@@ -1245,9 +1239,9 @@ table.data tbody tr:hover {
   color: var(--color-accent);
   background: var(--ios-veil), var(--color-accent-soft);
 }
-.stepper button:active {
-  transform: scale(0.94);
-}
+  .stepper button:active {
+    opacity: 0.6;
+  }
 .ticket__foot {
   border-top: 1px solid var(--ios-separator);
   padding: 1rem 1.25rem 1.25rem;
@@ -1298,9 +1292,9 @@ table.data tbody tr:hover {
 .row-action:hover {
   background: var(--color-accent-soft);
 }
-.row-action:active {
-  transform: scale(0.92);
-}
+  .row-action:active {
+    opacity: 0.6;
+  }
 .row-action--danger {
   color: var(--blink-danger);
 }
@@ -1675,21 +1669,19 @@ table.data td {
   border-radius: var(--radius-sm);
 }
 
-/* Area tactil de los items de la tab bar: 48 x 48 */
-.shell__tabbar a {
-  min-width: 48px;
-  min-height: 48px;
-}
-
 /* ============================================================
-   Barra de pestañas flotante (Konsta UI, tema iOS 27)
+   Barra de navegacion inferior flotante (Liquid Glass)
    ------------------------------------------------------------
    HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
    of the screen. Its items rest on a Liquid Glass background that allows
    content beneath to peek through."
 
-   → El <Glass> de Konsta aporta el material (tinte + blur + brillo
-     especular). Aqui solo se separa del borde y se le da la altura.
+   Distribucion 2 + 1 + 2: dos accesos a la izquierda, la ACCION
+   PRINCIPAL (Vender) en el centro y dos accesos a la derecha. La HIG
+   limita la barra a 5 elementos, asi que el resto de modulos se
+   alcanzan desde General y desde la barra lateral del escritorio.
+
+   Sin escalado al pulsar: el toque se marca con tono, no con zoom.
    ============================================================ */
 .shell__tabbar-float {
   /* Oculta en escritorio: la navegacion vive en la sidebar. */
@@ -1705,6 +1697,273 @@ table.data td {
   overflow: hidden;
 }
 
+/* Contenido de la barra: 2 items + accion central + 2 items. */
+.tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.15rem;
+  padding: 0.35rem 0.4rem 0.4rem;
+}
+.tabbar__side {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Item lateral: icono + etiqueta (HIG: "Include tab labels"). */
+.tabbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0.25rem 0.15rem;
+  border-radius: 14px;
+  color: var(--blink-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-speed), background-color var(--transition-speed),
+    opacity var(--transition-speed);
+}
+.tabbar__glyph {
+  display: grid;
+  place-items: center;
+  height: 26px;
+}
+.tabbar__label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-align: center;
+}
+.tabbar__item.is-active {
+  color: var(--color-accent);
+}
+/* Presion: tono, nunca zoom. */
+.tabbar__item:active {
+  background: rgb(from var(--tinta) r g b / 0.08);
+  opacity: 0.7;
+}
+
+/* Accion principal (Vender): circular, en acento y algo mayor. */
+.tabbar__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  flex: none;
+  min-width: 70px;
+  padding: 0 0.2rem;
+  text-decoration: none;
+  color: var(--color-accent);
+  transition: opacity var(--transition-speed);
+}
+.tabbar__main-glyph {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ios-veil), var(--color-accent);
+  color: var(--color-text-inverse);
+  box-shadow: var(--ios-specular-soft),
+    0 4px 14px rgb(from var(--acento) r g b / 0.32);
+}
+.tabbar__main-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  color: var(--color-accent);
+}
+.tabbar__main:active {
+  opacity: 0.78;
+}
+
+/* El degradado de desvanecido de Konsta se acorta: la barra flota. */
+.shell__tabbar > div:nth-child(1) {
+  display: none;
+}
+
+/* ============================================================
+   Panel de modulos (General)
+   ------------------------------------------------------------
+   En movil, la barra inferior lleva 5 elementos (2 + accion central +
+   2, el limite de la HIG). El resto de secciones se alcanzan desde
+   aqui, con la misma iconografia.
+   ============================================================ */
+.modgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.55rem;
+}
+.modgrid__item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-soft);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: background-color var(--transition-speed), opacity var(--transition-speed);
+}
+.modgrid__item:active {
+  opacity: 0.7;
+}
+.modgrid__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.modgrid__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Menu de avatar (cabecera)
+   ------------------------------------------------------------
+   Sustituye al menu hamburguesa: cuenta, ajustes y cierre de sesion.
+   ============================================================ */
+.avatarmenu__wrap {
+  position: relative;
+  flex: none;
+}
+.userchip--button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  color: inherit;
+  transition: opacity var(--transition-speed);
+}
+.userchip--button:active {
+  opacity: 0.7;
+}
+.avatar--lg {
+  width: 42px;
+  height: 42px;
+  font-size: var(--fs-base);
+}
+.avatarmenu__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  background: rgb(from var(--negro) r g b / 0.18);
+  animation: fade-in var(--transition-speed) ease-out;
+}
+.avatarmenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 66;
+  width: min(280px, calc(100vw - 2rem));
+  padding: 0.4rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-pop);
+  border: 1px solid var(--ios-separator);
+  animation: pop-in 0.16s ease-out;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.avatarmenu__head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.5rem 0.6rem;
+}
+.avatarmenu__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.avatarmenu__id strong {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avatarmenu__id .dim {
+  font-size: var(--fs-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avatarmenu__sep {
+  height: 1px;
+  margin: 0.25rem 0.35rem;
+  background: var(--ios-separator);
+}
+.avatarmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), opacity var(--transition-speed);
+}
+.avatarmenu__item .icon {
+  color: var(--color-accent);
+}
+.avatarmenu__item:active {
+  background: var(--color-neutral-soft);
+  opacity: 0.7;
+}
+.avatarmenu__item--danger {
+  color: var(--blink-danger);
+}
+.avatarmenu__item--danger .icon {
+  color: var(--blink-danger);
+}
+
+/* ============================================================
+   Barra de pestañas flotante (Konsta UI, tema iOS 27)
+   ------------------------------------------------------------
+   HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
+   of the screen. Its items rest on a Liquid Glass background that allows
+   content beneath to peek through."
+
+   → El <Glass> de Konsta aporta el material (tinte + blur + brillo
+     especular). Aqui solo se separa del borde y se le da la altura.
+   ============================================================ */
 .shell__tabbar {
   background: transparent !important;
   backdrop-filter: none !important;
@@ -1715,16 +1974,6 @@ table.data td {
 @media (max-width: 860px) {
   .shell__tabbar-float {
     display: block;
-  }
-  /* El degradado de desvanecido de Konsta se acorta: la barra flota. */
-  .shell__tabbar > div:nth-child(1) {
-    display: none;
-  }
-  /* El drawer movil se cierra con un fondo translucido. */
-  .shell__scrim {
-    background: rgb(from var(--negro) r g b / 0.32);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
   }
 }
 
@@ -1777,34 +2026,23 @@ table.data td {
   .shell__topbar .userchip .stack {
     display: none;
   }
+  /* El boton de caja se queda solo con el icono: el nombre del comercio
+     necesita el espacio. */
+  .shell__topbar .btn__label {
+    display: none;
+  }
+  .shell__topbar .btn--plain.btn--sm {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
   /* El chip de tasa se acorta: solo el valor. */
   .rate-chip__suffix {
     display: none;
   }
-  /* La barra lateral pasa a ser un panel deslizante (drawer) flotante. */
+  /* Sin drawer: en movil la barra lateral se oculta (la navegacion la
+     lleva la barra inferior flotante y el menu de avatar). */
   .shell__sidebar {
-    position: fixed;
-    top: 0.5rem;
-    left: 0.5rem;
-    bottom: 0.5rem;
-    width: min(82vw, 300px);
-    z-index: 80;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-pop);
-    transform: translateX(-110%);
-    transition: transform var(--transition-speed);
-    will-change: transform;
-  }
-  .shell--nav-open .shell__sidebar {
-    transform: translateX(0);
-  }
-  .shell__scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    background: rgb(from var(--negro) r g b / 0.42);
-    animation: fade-in var(--transition-speed) ease-out;
+    display: none;
   }
   .auth {
     grid-template-columns: 1fr;
@@ -2096,9 +2334,9 @@ table.data td {
   color: var(--color-accent);
   background: var(--ios-veil), var(--color-accent-soft);
 }
-.icon-btn:active {
-  transform: scale(0.92);
-}
+  .icon-btn:active {
+    opacity: 0.6;
+  }
 /* Boton de icono con relleno de acento (junto a un buscador, p. ej.). */
 .icon-btn--accent {
   color: var(--color-accent);
