@@ -42,3 +42,6 @@ docs/05-inventario-assets.md
 # ---- Sistema ----
 .DS_Store
 Thumbs.db
+
+# Capturas del verificador de UI
+verify-shots/
