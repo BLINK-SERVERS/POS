@@ -11,6 +11,27 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.7.0] · 2026-10-21
+
+**Preflight de Tailwind v4 activado + control segmentado de iOS + corrección de bug de hooks.**
+
+- **Preflight de Tailwind habilitado** — `konsta.css` pasa a importar `tailwindcss`
+  completo (con preflight) en vez de solo `theme` + `utilities`. Konsta necesita ese
+  reset base (botones sin marco del navegador, tablas, inputs, listas). Como `app.css` se
+  importa **después y sin capa**, sus reglas ganan a las del `layer(base)` de Tailwind:
+  el preflight no altera el diseño de BLINK.
+- **Regresiones del preflight corregidas** — `.btn--ghost` y `.btn--danger` solo definían
+  `border-color`; con el preflight (`border-width: 0`) perdían el marco. Ahora fijan
+  `border: 1px solid`.
+- **Control segmentado de iOS 26/27** — `<Segmented>` de Konsta en el componente
+  `Tabs`, con lo que Inventario, Finanzas, Catálogo y Contactos adoptan el patrón
+  (segmento activo relleno en el azul de marca con texto blanco, inactivos en azul
+  sobre pista translúcida) sin tocar sus call sites.
+- **🐛 Bug corregido: hook dentro de un `useCallback`** — `syncRate` en `store.tsx`
+  llamaba `useStoreState()` (un hook) dentro del callback, que se ejecuta fuera del
+  render. Provocaba *"Invalid hook call"* al abrir el POS. Ahora lee `currentState`
+  del módulo.
+
 ## [1.6.0] · 2026-10-20
 
 **Konsta UI instalado + HIG de Apple leído completo + barra de pestañas de iOS.**

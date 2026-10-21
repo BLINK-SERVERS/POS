@@ -1,17 +1,16 @@
 /* ============================================================
    Tailwind v4 + Konsta UI (MIT)
    ------------------------------------------------------------
-   Se importa SOLO el theme y las utilities de Tailwind, sin el
-   preflight: el proyecto ya tiene su propio reset (app.css) y el
-   preflight de Tailwind reescribiria botones, inputs y tablas,
-   rompiendo el diseno actual de forma silenciosa.
+   Se importa Tailwind COMPLETO (con preflight) para que los
+   componentes de Konsta tengan el reset base que necesitan
+   (botones sin borde del navegador, tablas, inputs, listas...).
 
-   Konsta aporta:
-     · los colores del sistema iOS (plugin-colors.js)
-     · el componente Glass (styles/glass.css)
-     · los materiales iOS (styles/ios-material.css)
-     · hairlines, safe areas y touch ripple
+   Prioridad de cascada:
+   · El preflight de Tailwind vive en `layer(base)`.
+   · `app.css` se importa DESPUES y SIN capa → en CSS, las reglas sin capa
+     ganan a las de cualquier capa. Por eso el diseño actual de BLINK
+     (que define sus propios resets en app.css) no se altera, y Konsta
+     recibe el base que le falta.
    ============================================================ */
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss";
 @import "konsta/react/theme.css";

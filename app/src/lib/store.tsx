@@ -2067,7 +2067,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const syncRate = useCallback(async (): Promise<"ok" | "cached" | "error"> => {
-    const base = useStoreState().state.business.baseCurrency ?? "USD";
+    // OJO: no llamar hooks aqui. Este callback se ejecuta fuera del render
+    // (auto-sync al abrir el POS) y un hook fuera de un componente lanza
+    // "Invalid hook call". Se lee el estado del modulo directamente.
+    const base = currentState.business.baseCurrency ?? "USD";
     // Dentro de la ventana de caché no se golpea la API.
     if (isCacheFresh(Date.now(), base)) {
       const c = cachedRate(base);

@@ -110,17 +110,80 @@ iconos propios en lugar de emojis.
 
 ---
 
-## 4. Componentes de Konsta disponibles para continuar
+## 4. Componentes de Konsta instalados
 
-Ya instalados y funcionando: `Tabbar` · `TabbarLink` · `Searchbar` · `Glass` · `KonstaProvider` · `useTheme`.
+Ya instalados y funcionando: `KonstaProvider` · `useTheme` · `Tabbar` + `TabbarLink` · `Searchbar` · `Glass` · `Segmented` + `SegmentedButton`.
 
 Disponibles para las siguientes iteraciones (todos con estilo iOS nativo):
 
 `Panel` (sidebars iPadOS) · `Table`/`TableHead`/`TableRow`/`TableCell` · `List`/`ListItem`/`ListButton`/`ListInput` ·
-`Segmented`/`SegmentedButton` · `Sheet` (modales) · `Dialog` · `Popup` · `Popover` · `ActionSheet` ·
+`Sheet` (modales) · `Dialog` · `Popup` · `Popover` · `ActionSheet` ·
 `Navbar` · `Toolbar`/`ToolbarPane` · `Badge` · `Chip` · `Button` · `Stepper` · `Toggle` · `Range` ·
 `Progressbar` · `Messagebar` · `Notification` · `Toast` · `Card` · `Block` · `Icon` · `Fab` · `MenuList` ·
 `Checkbox` · `Radio` · `Preloader` · `Link` · `Breadcrumbs` · `useTheme` (light/dark/system)
+
+---
+
+## 4.1 Preflight de Tailwind v4 (activado)
+
+`app/src/styles/konsta.css` importa Tailwind **completo**, con preflight:
+
+```css
+@import "tailwindcss";
+@import "konsta/react/theme.css";
+```
+
+**Por qué no rompe el diseño de BLINK:** el preflight vive en `layer(base)`, y `app.css`
+se importa **después y sin capa**. En CSS, las reglas sin capa ganan a las de cualquier
+capa, así que los resets propios de BLINK mandan sobre los de Tailwind. Konsta sí recibe
+el base que le faltaba (botones sin el marco del navegador, tablas, inputs, listas).
+
+**Regresiones detectadas y corregidas al activarlo** (auditoría de todos los
+`border-color` sueltos del proyecto):
+
+| Regla | Problema | Corrección |
+|---|---|---|
+| `.btn--ghost` | Solo fijaba `border-color`; con `border-width: 0` perdía el marco | `border: 1px solid var(--color-border-strong)` |
+| `.btn--danger` | Ídem | `border: 1px solid var(--color-border-strong)` |
+
+El resto de reglas con `border-color` heredan el ancho de su regla base, que ya declara
+`border: 1px solid ...` — sin impacto.
+
+---
+
+## 4.2 Control segmentado de iOS 26/27
+
+`Tabs` en `app/src/components/ui.tsx` ahora usa `<Segmented>` + `<SegmentedButton>` de
+Konsta. Al reescribir el componente, **todas** las vistas con pestañas (Inventario,
+Finanzas con 8 secciones, Catálogo, Contactos) adoptan el patrón sin tocar sus call
+sites.
+
+Patrón (HIG · Segmented controls): segmento activo relleno en el azul de marca con texto
+blanco, inactivos en el mismo azul sobre una pista translúcida, ajustado al contenido.
+
+---
+
+## 4.3 Bug corregido: hook dentro de un `useCallback`
+
+`store.tsx` → `syncRate` llamaba a `useStoreState()` **dentro** del callback:
+
+```ts
+const syncRate = useCallback(async () => {
+  const base = useStoreState().state.business.baseCurrency ?? "USD";  // ❌ hook fuera del render
+```
+
+Ese callback se ejecuta fuera del render (auto-sync al abrir el POS), por lo que
+React lanzaba **"Invalid hook call"** y la pantalla del POS se rompía.
+
+**Corrección:** se lee el estado del módulo directamente.
+
+```ts
+const base = currentState.business.baseCurrency ?? "USD";  // ✅
+```
+
+Detectable con `page.on("pageerror")` en Playwright: el error aparecía al navegar a
+`/app/ventas` con la sesión iniciada.
+
 
 ---
 

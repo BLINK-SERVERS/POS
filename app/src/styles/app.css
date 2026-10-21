@@ -336,7 +336,9 @@ svg {
 }
 .btn--ghost {
   background: transparent;
-  border-color: var(--color-border-strong);
+  /* El preflight de Tailwind pone border-width: 0 en todo: hay que fijar
+     el ancho del borde explicitamente o el boton se queda sin marco. */
+  border: 1px solid var(--color-border-strong);
   color: var(--color-text-primary);
 }
 .btn--ghost:hover:not(:disabled) {
@@ -361,7 +363,7 @@ svg {
 }
 .btn--danger {
   background: transparent;
-  border-color: var(--color-border-strong);
+  border: 1px solid var(--color-border-strong);
   color: var(--color-text-secondary);
 }
 .btn--danger:hover:not(:disabled) {
@@ -502,30 +504,27 @@ svg {
   border-color: transparent;
 }
 
+/* Control segmentado de iOS 26/27 (Konsta).
+   Con preflight de Tailwind activo, Konsta ya dibuja el patron completo:
+   pista translucida, segmento activo relleno en el azul de marca con texto
+   blanco e inactivos en azul. Aqui solo se ajusta al ritmo de lectura. */
 .tabs {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.25rem;
+  /* El control segmentado se ajusta a su contenido (como en iOS), no se
+     estira como una barra. */
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 0.25rem;
+  border-radius: 10px;
 }
-.tab {
-  padding: 0.45rem 0.8rem;
-  border-radius: var(--radius-pill);
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
+.tabs button {
+  font-family: inherit;
   font-size: var(--fs-sm);
   font-weight: 600;
-  cursor: pointer;
-}
-.tab:hover {
-  background: var(--color-neutral-soft);
-  color: var(--color-text-primary);
-}
-.tab[aria-selected="true"] {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  width: auto;
+  min-width: 5.5rem;
 }
 
 /* ============================================================

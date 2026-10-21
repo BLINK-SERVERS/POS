@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { formatBs, formatUsd } from "../lib/money";
 import { Icon } from "./Icon";
+import { Segmented, SegmentedButton } from "konsta/react";
 
 /* --- Money (dual USD / Bs) --- */
 export function Money({
@@ -106,7 +107,12 @@ export function EmptyState({
   );
 }
 
-/* --- Tabs (estado interno) --- */
+/* --- Tabs (estado interno) ---
+   Control segmentado de iOS 26/27 (Konsta): segmento activo relleno en el azul
+   de marca con texto blanco, inactivos en azul sobre pista translucida.
+   Al reescribir el componente, todas las vistas con pestañas (Inventario,
+   Finanzas, Catalogo, Contactos...) adoptan el patrón de iOS sin tocar sus
+   call sites. */
 export function Tabs<T extends string>({
   tabs,
   value,
@@ -117,19 +123,19 @@ export function Tabs<T extends string>({
   onChange: (t: T) => void;
 }) {
   return (
-    <div className="tabs" role="tablist">
+    <Segmented className="tabs" role="tablist">
       {tabs.map((t) => (
-        <button
+        <SegmentedButton
           key={t}
           role="tab"
-          className="tab"
+          active={value === t}
           aria-selected={value === t}
           onClick={() => onChange(t)}
         >
           {t}
-        </button>
+        </SegmentedButton>
       ))}
-    </div>
+    </Segmented>
   );
 }
 
