@@ -41,7 +41,7 @@ const fallos = [];
 if (!okDur) fallos.push("la duracion no cuadra con la pista");
 if (!a) fallos.push("no hay pista de audio");
 if (v.width !== 1920 || v.height !== 1080) fallos.push("no es 1920x1080");
-if (v.nb_frames !== 2670) fallos.push(`faltan fotogramas (${v.nb_frames})`);
+if (Number(v.nb_frames) !== 2670) fallos.push(`faltan fotogramas (${v.nb_frames})`);
 
 console.log(fallos.length === 0 ? "\nTodo correcto." : `\nFALLOS: ${fallos.join(" · ")}`);
 process.exit(fallos.length === 0 ? 0 : 1);
