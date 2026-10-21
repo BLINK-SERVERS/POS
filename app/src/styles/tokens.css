@@ -97,7 +97,7 @@
 
   /* --- Estados (misma paleta: solo acento o neutro) --- */
   --color-neutral-soft: rgba(66, 66, 66, 0.06);
-  --color-neutral-soft: light-dark(rgba(66, 66, 66, 0.06), rgba(235, 235, 245, 0.1));
+  --color-neutral-soft: light-dark(rgba(66, 66, 66, 0.06), rgba(235, 235, 245, 0.07));
 
   /* --- Tipografía ---
      SF Pro se pide al sistema con `local()` (ver styles/fonts.css): en
@@ -225,6 +225,20 @@
     rgba(255, 255, 255, 0.62) 0%,
     rgba(255, 255, 255, 0.22) 46%,
     rgba(255, 255, 255, 0.08) 100%
+  );
+  --ios-veil: light-dark(
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.22) 46%,
+      rgba(255, 255, 255, 0.08) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.13) 0%,
+      rgba(255, 255, 255, 0.05) 46%,
+      rgba(255, 255, 255, 0.02) 100%
+    )
   );
 
   --transition-speed: 0.2s ease-in-out;
