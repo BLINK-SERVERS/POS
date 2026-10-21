@@ -11,6 +11,30 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.8.0] · 2026-10-21
+
+**UI Kit oficial de iOS 27 extraído y aplicado + iconos SF Symbols + verificador de UI.**
+
+- **UI Kit de Apple analizado** — `Apple iOS 27 UI Kit.sketch` (160 MB) procesado con
+  7-Zip (es un bundle, no un zip plano). Contiene 34 páginas, **1.578 artboards**,
+  107 colores, 105 estilos de texto y 42 materiales.
+- **`app/src/lib/ios-design-tokens.ts` (nuevo, generado)** — tokens oficiales:
+  12 colores del sistema (light/dark), 5 niveles de etiquetas, 5 de rellenos, la
+  escala tipográfica de iOS 27 con sus variantes y leading, y los 19 materiales
+  Liquid Glass con su radio de desenfoque real.
+- **`tokens.css`** — bloque `--ios-*` con los valores exactos del kit (antes
+  eran aproximaciones extraídas del .dmg de SF Symbols).
+- **`app/src/lib/sf-symbols.ts` (nuevo, generado)** — 70 SF Symbols normalizados a
+  `currentColor` con viewBox propio, desde
+  `github.com/brendanballon/sfsymbols-svg`.
+- **`Icon.tsx` migrado** a SF Symbols rellenos (los iconos de trazo propios se
+  sustituyen). La API pública (`IconName`, `size`) se mantiene: ningún call site
+  cambia.
+- **`npm run verify:ui` (nuevo)** — verifica las 15 vistas (render, tamaño de h1,
+  iconos vacíos, desbordamiento horizontal y errores de consola) y deja capturas
+  en `verify-shots/`. Sale con código 1 si algo falla: sirve como regresión.
+- **Scripts nuevos:** `tokens:ios`, `icons:sf`, `verify:ui`.
+
 ## [1.7.0] · 2026-10-21
 
 **Preflight de Tailwind v4 activado + control segmentado de iOS + corrección de bug de hooks.**

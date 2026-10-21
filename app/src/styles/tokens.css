@@ -76,45 +76,80 @@
   --page-max: 1320px;
 
   /* ==========================================================
-     iOS 27 / iPadOS 27 — paleta del sistema
-     Extraida de SF Symbols 27 (colors-26.csv). Ver docs/DESIGN_IOS27.md
-     NOTA: el acento de iOS 27 es #0088ff (light) / #0091ff (dark).
-     BLINK conserva #007aff como color de marca propio.
+     iOS 27 — valores oficiales del UI Kit de Apple
+     Extraido de "Apple iOS 27 UI Kit.sketch" (107 colores, 105 estilos
+     de texto, 42 materiales). Ver docs/DESIGN_IOS27_KIT.md
      ========================================================== */
-  --ios-blue: #0088ff;
+
+  /* Colores del sistema (acento por tonalidad) */
+  --ios-blue-light: #0088ff;
+  --ios-brown-light: #ac7f5e;
+  --ios-cyan-light: #00c0e8;
+  --ios-green-light: #34c759;
+  --ios-indigo-light: #6155f5;
+  --ios-mint-light: #00c8b3;
+  --ios-orange-light: #ff8d28;
+  --ios-pink-light: #ff2d55;
+  --ios-purple-light: #cb30e0;
+  --ios-red-light: #ff383c;
+  --ios-teal-light: #00c3d0;
+  --ios-yellow-light: #ffcc00;
   --ios-blue-dark: #0091ff;
-  --ios-green: #34c759;
+  --ios-brown-dark: #b78a66;
+  --ios-cyan-dark: #3cd3fe;
   --ios-green-dark: #30d158;
-  --ios-red: #ff3b30;
+  --ios-indigo-dark: #6d7cff;
+  --ios-mint-dark: #00dac3;
+  --ios-orange-dark: #ff9230;
+  --ios-pink-dark: #ff375f;
+  --ios-purple-dark: #db34f2;
   --ios-red-dark: #ff4245;
-  --ios-orange: #ff9500;
-  --ios-yellow: #ffcc00;
-  --ios-indigo: #6155f5;
-  --ios-purple: #cb30e0;
-  --ios-pink: #ff2d55;
-  --ios-teal: #00c3d0;
-  --ios-cyan: #00c0e8;
-  --ios-mint: #00c8b3;
-  --ios-gray: #8e8e93;
-  --ios-gray-dark: #98989d;
+  --ios-teal-dark: #00d2e0;
+  --ios-yellow-dark: #ffd600;
 
-  /* Etiquetas: 3 niveles de jerarquia (Apple usa .85 / .50 / .35 en oscuro) */
-  --ios-label: #1d1d1f;
-  --ios-label-secondary: rgba(29, 29, 31, 0.6);
-  --ios-label-tertiary: rgba(29, 29, 31, 0.36);
+  /* Etiquetas: 5 niveles de jerarquia de texto */
+  --ios-label-light-primary: #000000;
+  --ios-label-light-secondary: #3c3c43;
+  --ios-label-light-tertiary: #3c3c43;
+  --ios-label-light-quaternary: #3c3c43;
+  --ios-label-light-quinary: #3c3c43;
+  --ios-label-dark-primary: #ffffff;
+  --ios-label-dark-secondary: #ebebf5;
+  --ios-label-dark-tertiary: #ebebf5;
+  --ios-label-dark-quaternary: #ebebf5;
+  --ios-label-dark-quinary: #ebebf5;
 
-  /* Rellenos translucidos (system materials) */
-  --ios-fill-quaternary: rgba(29, 29, 31, 0.03);
-  --ios-fill-tertiary: rgba(29, 29, 31, 0.05);
-  --ios-fill-secondary: rgba(29, 29, 31, 0.08);
-  --ios-fill-primary: rgba(29, 29, 31, 0.1);
+  /* Rellenos: 5 niveles de superficies */
+  --ios-fill-light-primary: #787878;
+  --ios-fill-light-secondary: #787880;
+  --ios-fill-light-tertiary: #767680;
+  --ios-fill-light-quaternary: #747480;
+  --ios-fill-light-quinary: #000000;
+  --ios-fill-dark-primary: #787880;
+  --ios-fill-dark-secondary: #787880;
+  --ios-fill-dark-tertiary: #767680;
+  --ios-fill-dark-quaternary: #767680;
+  --ios-fill-dark-quinary: #767680;
 
-  /* Radios continuos (iOS 27) */
-  --ios-radius-sm: 8px;
-  --ios-radius-md: 12px;
-  --ios-radius-lg: 16px;
-  --ios-radius-xl: 20px;
-  --ios-radius-continuous: 22px;
+  /* Materiales Liquid Glass (radio de desenfoque real del kit) */
+  --ios-glass-blur-small: 6px;
+  --ios-glass-blur-medium: 15px;
+  --ios-glass-blur-large: 30px;
+  --ios-glass-bg-light: #f8f8f8;
+  --ios-glass-bg-dark: #1a1a1a;
+
+  /* Escala tipografica de iOS 27 (puntos / interlineado) */
+  --ios-fs-largeTitle: 34px;   --ios-lh-largeTitle: 41px;
+  --ios-fs-title1: 28px;       --ios-lh-title1: 34px;
+  --ios-fs-title2: 22px;       --ios-lh-title2: 28px;
+  --ios-fs-title3: 20px;       --ios-lh-title3: 25px;
+  --ios-fs-headline: 17px;     --ios-lh-headline: 22px;
+  --ios-fs-body: 17px;         --ios-lh-body: 22px;
+  --ios-fs-callout: 16px;      --ios-lh-callout: 21px;
+  --ios-fs-subheadline: 15px;  --ios-lh-subheadline: 20px;
+  --ios-fs-footnote: 13px;     --ios-lh-footnote: 18px;
+  --ios-fs-caption1: 12px;     --ios-lh-caption1: 16px;
+  --ios-fs-caption2: 11px;     --ios-lh-caption2: 13px;
 
   /* Area tactil minima */
   --ios-touch-target: 44px;
