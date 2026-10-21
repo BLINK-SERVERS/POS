@@ -13,6 +13,61 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.11.0] · 2026-10-21
+
+**Batería de QA automatizada: entorno de pruebas sembrado en Supabase, stress test de todos los botones, pruebas funcionales de negocio y matriz de responsividad.**
+
+### Entorno de pruebas
+
+- **Comercio ficticio real en Supabase**, sembrado con `npm run qa:seed`:
+  usuario `qa.blink@tienda.local` (propietario) con **el correo ya
+  confirmado** — sin correo de verificación ni pasarela de pago.
+- **24 fichas en el catálogo global** (EAN-13 con dígito de control
+  válido) **importadas al catálogo privado** de la tienda, más contactos,
+  cuentas, ventas, pendientes en sus tres estados, gastos, movimientos de
+  inventario y caja abierta.
+- La siembra es **idempotente** y escribe el `AppState` completo en
+  `businesses.data` (que es lo que la app hidrata) además de reflejar las
+  filas en las tablas normalizadas.
+
+### Herramientas nuevas
+
+| Script | Qué hace |
+|---|---|
+| `npm run qa:seed` | Siembra el entorno de pruebas en Supabase |
+| `npm run qa:e2e` | Stress test: pulsa los 93 botones de 10 vistas y comprueba respuesta, diálogos, foco y doble ejecución |
+| `npm run qa:funcional` | Flujos con efecto real: ticket, IVA, venta, compra, abono y arqueo |
+| `npm run qa:responsive` | 6 resoluciones × 6 vistas: scroll, recorte, tabla→tarjeta y caída de la tipografía |
+| `npm run qa` | Batería completa: tipos, tests, las tres auditorías y documentación |
+
+### Bugs resueltos
+
+- **La migración del catálogo global nunca se aplicó en producción**:
+  la tabla `catalogo_global` no existía y la función de búsqueda del
+  catálogo fallaba en silencio. Migración aplicada (aditiva e idempotente).
+- **El foco se perdía al cerrar cualquier diálogo** (40 casos): ahora
+  vuelve al control que lo abrió.
+- **El verificador contaba el 404 del *fallback SPA* de GitHub Pages** como
+  error de consola: se distingue del 404 de un recurso real, de modo que la
+  comprobación contra producción es fiable.
+- **La siembra silenciaba los errores de SQL** (la API de gestión de
+  Supabase responde 200 con `{message}`): ahora se lanzan.
+
+Detalle en [`docs/24-bitacora-qa.md`](docs/24-bitacora-qa.md).
+
+### Verificación
+
+```
+typecheck      sin errores
+tests          50/50
+migraciones    todas pasan
+verify:ui      38/38 · 0 errores de consola · 0 iconos vacíos · 0 desbordes
+qa:e2e         93 botones · 0 fallos
+qa:funcional   8/8
+qa:responsive  36 combinaciones · 0 fallos · SF Pro en uso
+docs:check     319 Markdown · 2.683 enlaces · 0 rotos
+```
+
 ## [1.10.0] · 2026-10-21
 
 **Estandarización visual y funcional: SF Pro, Liquid Glass en los botones, iconografía, armonización móvil y diálogos nativos de Apple.**

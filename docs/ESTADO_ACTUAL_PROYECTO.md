@@ -13,6 +13,9 @@
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
 | Verificación de UI (`npm run verify:ui`) | 38 comprobaciones (escritorio + móvil + diálogos), 0 errores de consola, 0 iconos vacíos, 0 desbordes |
 | Documentación (`npm run docs:check`) | 318 Markdown, 2.676 enlaces relativos, 0 rotos |
+| Stress test (`npm run qa:e2e`) | 93 botones en 10 vistas · 0 fallos · 0 diálogos atascados |
+| Funcional (`npm run qa:funcional`) | 8/8 (ticket, IVA, venta, compra, abono, arqueo) |
+| Responsive (`npm run qa:responsive`) | 36 combinaciones resolución×vista · 0 fallos · SF Pro en uso |
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
@@ -141,6 +144,11 @@ npm run build:pages    # Build estático
 npm run deploy         # Publicar en gh-pages
 npm run verify:ui      # Regresión visual: escritorio + móvil
 npm run docs:check     # Enlaces de la documentación
+npm run qa:seed         # Siembra del comercio de pruebas en Supabase
+npm run qa:e2e           # Stress test de todos los botones
+npm run qa:funcional     # Pruebas de negocio (ticket, venta, compra, abono)
+npm run qa:responsive    # Matriz de resoluciones y tipografía
+npm run qa              # Bateria completa de QA
 npm run tokens:ios     # Regenerar tokens del UI Kit de iOS 27
 npm run icons:sf       # Regenerar el set de SF Symbols
 ```

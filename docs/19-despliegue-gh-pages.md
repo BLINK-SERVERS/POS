@@ -2,7 +2,7 @@
 
 **Sitio en vivo:** **https://www.blink.com.ve**
 **Repositorio:** https://github.com/BLINK-SERVERS/POS (público)
-**Último despliegue:** v1.9.0 · 2026-10-21 — verificado en vivo (consola sin
+**Último despliegue:** v1.11.0 · 2026-10-21 — verificado en vivo (consola sin
 errores).
 
 > La URL pública es el **dominio propio**, no la de GitHub. `blink.com.ve`

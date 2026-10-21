@@ -70,6 +70,10 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 | `npm run test:migrations` | Integración de migraciones (PostgreSQL embebido) |
 | `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/`. Con `VERIFY_BASE=https://www.blink.com.ve` corre contra **producción** |
 | `npm run docs:check` | Verifica que no haya enlaces rotos en la documentación |
+| `npm run qa:seed` | Siembra el comercio de pruebas en Supabase (usuario con correo confirmado) |
+| `npm run qa:e2e` | Stress test: pulsa todos los botones y comprueba diálogos, foco y doble ejecución |
+| `npm run qa:funcional` | Pruebas de negocio: ticket, IVA, venta, compra, abono y arqueo |
+| `npm run qa:responsive` | Matriz de 6 resoluciones + comprobación de que SF Pro no cae a la fuente genérica |
 | `npm run tokens:ios` | Extrae los tokens del UI Kit de iOS 27 → `src/lib/ios-design-tokens.ts` |
 | `npm run icons:sf` | Descarga y normaliza los SF Symbols → `src/lib/sf-symbols.ts` |
 | `npm run icons` / `npm run og` | Generan los PNG del PWA y la imagen Open Graph |
@@ -78,6 +82,7 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 
 ```bash
 cd app
+npm run qa              # bateria completa de QA (tipos, tests, UI, negocio, responsive, docs)
 npm run typecheck        # tsc --noEmit
 npm test                 # 50 pruebas
 npm run test:migrations  # migraciones contra PostgreSQL real

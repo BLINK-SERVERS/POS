@@ -198,6 +198,22 @@ export function Field({
   return <label className="field">{body}</label>;
 }
 
+/* --- Foco al cerrar un diálogo ---
+   Al cerrarse, el foco debe volver al control que lo abrió (accesibilidad:
+   un usuario de teclado no puede quedarse sin contexto). El componente se
+   desmonta al cerrarse, así que se restituye en la limpieza del efecto. */
+function useDevolverFoco() {
+  useEffect(() => {
+    const previo = document.activeElement as HTMLElement | null;
+    return () => {
+      if (!previo) return;
+      if (typeof previo.focus !== "function") return;
+      if (!document.contains(previo)) return;
+      previo.focus();
+    };
+  }, []);
+}
+
 /* --- Modal (formularios) ---
    iOS 27 (HIG · Sheets / Modality):
    · En movil, **hoja inferior**: sube desde el borde, con esquineras
@@ -215,6 +231,7 @@ export function Modal({
   children: ReactNode;
 }) {
   const movil = useIsMobile();
+  useDevolverFoco();
 
   if (movil) {
     return (
@@ -286,6 +303,7 @@ export function Alert({
   /** Botón de rol Destructive (rojo). */
   destructive?: { text: string; onClick: () => void };
 }) {
+  useDevolverFoco();
   const botones: ReactNode[] = [];
   if (secondary) {
     botones.push(

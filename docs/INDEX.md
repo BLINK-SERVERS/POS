@@ -78,6 +78,7 @@ cuál es el vigente.
 | [`22-qa-caza-de-bugs.md`](./22-qa-caza-de-bugs.md) | Proceso de QA y bugs detectados |
 | [`18-auditoria-codigo.md`](./18-auditoria-codigo.md) | Auditoría de código |
 | [`23-plan-nuevas-especificaciones.md`](./23-plan-nuevas-especificaciones.md) | Plan de las nuevas especificaciones (moneda base, RBAC, catálogo) |
+| [`24-bitacora-qa.md`](./24-bitacora-qa.md) | **Bitácora de QA**: entorno de pruebas, siembra, auditorías y bugs resueltos |
 
 ---
 
@@ -111,6 +112,10 @@ implementación actual.
 | `app/scripts/build-og-image.mjs` | Genera la imagen Open Graph 1200×630 |
 | `app/scripts/verify-ui.mjs` | Verificación visual en escritorio y móvil (regresión) |
 | `app/scripts/check-docs.mjs` | Verificación de enlaces de la documentación (`npm run docs:check`) |
+| `app/scripts/qa-seed.mjs` | Siembra del comercio de pruebas en Supabase (`npm run qa:seed`) |
+| `app/scripts/qa-e2e.mjs` | Stress test: pulsa todos los botones y comprueba diálogos, foco y doble ejecución (`npm run qa:e2e`) |
+| `app/scripts/qa-funcional.mjs` | Pruebas de negocio: ticket, IVA, venta, compra, abono y arqueo (`npm run qa:funcional`) |
+| `app/scripts/qa-responsive.mjs` | Matriz de 6 resoluciones y comprobación de que SF Pro no cae a la fuente genérica (`npm run qa:responsive`) |
 | `app/scripts/postbuild-pages.mjs` | `404.html` + `.nojekyll` para GitHub Pages |
 | `app/scripts/test-migrations.mjs` | Migraciones contra PostgreSQL embebido |
 
