@@ -1,0 +1,32 @@
+{
+  "name": "blink-comercial",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Comercial Motion UI de BLINK POS con Remotion",
+  "scripts": {
+    "dev": "remotion studio",
+    "compositions": "remotion compositions",
+    "render": "remotion render Comercial comercial.mp4",
+    "render:preview": "remotion render Comercial comercial-preview.mp4 --scale=0.5 --every-nth-frame=2",
+    "still": "remotion still Comercial fotograma.png",
+    "types": "tsc --noEmit",
+    "fuente": "node scripts/generar-fuente.mjs",
+    "verificar": "node scripts/verificar-tokens.mjs",
+    "fotogramas": "node scripts/fotogramas.mjs",
+    "verificar:video": "node scripts/verificar-video.mjs",
+    "frames": "node scripts/extraer-frames.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.410",
+    "@remotion/fonts": "4.0.410",
+    "@remotion/renderer": "4.0.410",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.410"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "typescript": "5.9.3"
+  }
+}
