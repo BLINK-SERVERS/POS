@@ -24,7 +24,7 @@ export interface Modulo {
 
 /** Todos los módulos del sistema, en el orden de la barra lateral. */
 export const MODULOS: Modulo[] = [
-  { to: "/app/inicio", label: "Inicio", icon: "grid2x2" },
+  { to: "/app/inicio", label: "General", icon: "grid2x2" },
   { to: "/app/ventas", label: "Ventas", icon: "cart" },
   { to: "/app/ventas/historial", label: "Historial", icon: "clock" },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },

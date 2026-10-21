@@ -252,7 +252,95 @@ Add(
 await ctxMovil.close();
 
 /* ============================================================
-   2 · Escritorio
+   2 · General (dashboard)
+   ============================================================ */
+console.log("\n=== General (dashboard) ===");
+const ctxGen = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+const gen = await sesion(ctxGen);
+await gen.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
+await gen.waitForTimeout(1400);
+
+const general = await gen.evaluate(() => {
+  const h1 = document.querySelector(".page-head h1");
+  const tarjetas = [...document.querySelectorAll(".bento__card")];
+  const kpis = [...document.querySelectorAll(".bento__kpi")];
+  const cs = tarjetas[0] ? getComputedStyle(tarjetas[0]) : null;
+  const valor = document.querySelector(".bento__kpi-value");
+  const barras = [...document.querySelectorAll(".chart__bar")];
+  return {
+    titulo: h1 ? h1.textContent.trim() : "",
+    tarjetas: tarjetas.length,
+    kpis: kpis.length,
+    blur: cs ? cs.backdropFilter : "",
+    borde: cs ? cs.borderTopWidth : "",
+    radio: cs ? cs.borderTopLeftRadius : "",
+    tabular: valor ? getComputedStyle(valor).fontVariantNumeric : "",
+    familia: valor ? getComputedStyle(valor).fontFamily : "",
+    barras: barras.length,
+    detalle: document.querySelector(".chart__detail")?.textContent.trim() ?? "",
+    detalleTitulo: document.querySelector(".chart__detail-title")?.textContent.trim() ?? "",
+  };
+});
+
+Add(general.titulo === "General" ? "ok" : "FALLO", `la pantalla se llama "General" (${general.titulo})`);
+Add(general.kpis === 4 ? "ok" : "FALLO", `hay 4 tarjetas de metrica (${general.kpis})`);
+Add(/blur\(/.test(general.blur) ? "ok" : "FALLO", `las tarjetas son de cristal (${general.blur})`);
+Add(
+  parseFloat(general.borde) >= 1 && parseFloat(general.borde) <= 1.5 ? "ok" : "FALLO",
+  `las tarjetas llevan borde de 1 px (${general.borde})`
+);
+Add(
+  parseFloat(general.radio) >= 20 ? "ok" : "FALLO",
+  `las tarjetas tienen radio de 20 px o mas (${general.radio})`
+);
+Add(
+  general.tabular.includes("tabular-nums") ? "ok" : "FALLO",
+  `las cifras usan cifras tabulares (${general.tabular})`
+);
+Add(
+  /SF Pro/.test(general.familia) ? "ok" : "FALLO",
+  `las cifras usan SF Pro (${general.familia.split(",")[0]})`
+);
+Add(general.barras === 12 ? "ok" : "FALLO", `el grafico tiene 12 meses (${general.barras})`);
+Add(
+  general.detalleTitulo.length > 0 ? "ok" : "FALLO",
+  `la tarjeta flotante muestra el mes elegido (${general.detalleTitulo})`
+);
+
+/* --- El grafico es interactivo: al tocar un mes cambia el detalle --- */
+const antes = general.detalle;
+await gen.click(".chart__bar:nth-child(3)");
+await gen.waitForTimeout(400);
+const despues = await gen.evaluate(() => ({
+  detalle: document.querySelector(".chart__detail")?.textContent.trim() ?? "",
+  activos: document.querySelectorAll(".chart__bar.is-active").length,
+  titulo: document.querySelector(".chart__detail-title")?.textContent.trim() ?? "",
+}));
+Add(
+  despues.detalle !== antes && despues.activos === 1 ? "ok" : "FALLO",
+  `tocar un mes actualiza la tarjeta flotante (${antes} -> ${despues.titulo})`
+);
+
+/* --- El selector de periodo cambia las cifras --- */
+const valorMes = await gen.evaluate(
+  () => document.querySelector(".bento__kpi-value")?.textContent.trim() ?? ""
+);
+await gen.click('.segmented button:nth-child(1), [role="tab"]:nth-child(1)').catch(async () => {
+  await gen.click(".tabs button:nth-child(1)");
+});
+await gen.waitForTimeout(700);
+const valorHoy = await gen.evaluate(
+  () => document.querySelector(".bento__kpi-value")?.textContent.trim() ?? ""
+);
+Add(
+  valorHoy.length > 0 ? "ok" : "FALLO",
+  `el selector de periodo funciona (mes: ${valorMes}, hoy: ${valorHoy})`
+);
+
+await ctxGen.close();
+
+/* ============================================================
+   3 · Escritorio
    ============================================================ */
 console.log("\n=== Escritorio (1280 x 860) ===");
 const ctxEsc = await browser.newContext({ viewport: { width: 1280, height: 860 }, colorScheme: "light" });

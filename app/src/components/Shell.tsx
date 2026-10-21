@@ -24,7 +24,7 @@ interface NavItem extends Modulo {
 }
 
 const NAV: NavItem[] = [
-  { to: "/app/inicio", label: "Inicio", icon: "grid2x2" },
+  { to: "/app/inicio", label: "General", icon: "grid2x2" },
   {
     to: "/app/ventas",
     label: "Ventas",

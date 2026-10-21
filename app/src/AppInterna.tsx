@@ -37,7 +37,7 @@ registrarIconos(SF_SYMBOLS);
 import "./styles/konsta.css";
 import "./styles/app.css";
 
-const Inicio = lazy(() => import("./pages/Inicio").then((m) => ({ default: m.Inicio })));
+const General = lazy(() => import("./pages/General").then((m) => ({ default: m.General })));
 const Vender = lazy(() => import("./pages/Vender").then((m) => ({ default: m.Vender })));
 const Historial = lazy(() => import("./pages/Historial").then((m) => ({ default: m.Historial })));
 const Catalogo = lazy(() => import("./pages/Catalogo").then((m) => ({ default: m.Catalogo })));
@@ -112,7 +112,9 @@ function AppRoutes() {
       />
 
       {/* --- Módulos protegidos --- */}
-      <Route path="inicio" element={<Protected><Inicio /></Protected>} />
+      <Route path="inicio" element={<Protected><General /></Protected>} />
+      {/* Alias: la seccion se llama General. */}
+      <Route path="general" element={<Protected><General /></Protected>} />
       <Route path="ventas" element={<Protected><Vender /></Protected>} />
       <Route path="ventas/historial" element={<Protected><Historial /></Protected>} />
       <Route path="catalogo" element={<Protected><Catalogo /></Protected>} />

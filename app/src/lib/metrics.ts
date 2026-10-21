@@ -83,16 +83,53 @@ export function prevMonthRange(): [Date, Date] {
   return [from, to];
 }
 
+/** Rango del ano en curso. */
+export function yearRange(): [Date, Date] {
+  const now = new Date();
+  return [new Date(now.getFullYear(), 0, 1), new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)];
+}
+
+/** Rango del ano anterior. */
+export function prevYearRange(): [Date, Date] {
+  const now = new Date();
+  const y = now.getFullYear() - 1;
+  return [new Date(y, 0, 1), new Date(y, 11, 31, 23, 59, 59, 999)];
+}
+
+/**
+ * Variacion porcentual entre dos periodos, en porcentaje (con signo).
+ *
+ * Sin base de comparacion (el periodo anterior fue 0) no hay variacion
+ * que medir: se devuelve `null` para que la interfaz no invente un
+ * "+100 %" que no significa nada.
+ */
+export function growth(previo: number, actual: number): number | null {
+  if (!previo) return null;
+  return Math.round(((actual - previo) / previo) * 1000) / 10;
+}
+
 export interface MonthPoint {
   key: string;
+  /** Etiqueta corta del mes ("abr"). */
   label: string;
+  /** Titulo del mes con el ano ("ABR 26"), para el grafico. */
+  titulo: string;
+  /** Ventas netas del mes. */
   net: number;
+  /** Numero de ordenes cobradas. */
+  count: number;
+  /** Ticket promedio del mes. */
+  avgTicket: number;
 }
 
 /**
  * Ventas netas de los últimos `months` meses.
  * Un solo recorrido sobre las ventas (O(n)), en lugar de recalcular cada mes.
  */
+/** Abreviatura de tres letras de cada mes. El locale "es" devuelve
+ *  "sept" para septiembre y descoloca la etiqueta del grafico. */
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
 export function monthlySeries(sales: Sale[], months = 12): MonthPoint[] {
   const now = new Date();
   const out: MonthPoint[] = [];
@@ -101,15 +138,28 @@ export function monthlySeries(sales: Sale[], months = 12): MonthPoint[] {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     index.set(key, out.length);
-    out.push({ key, label: d.toLocaleDateString("es", { month: "short" }), net: 0 });
+    out.push({
+      key,
+      label: MESES[d.getMonth()],
+      titulo: MESES[d.getMonth()].toUpperCase() + " " + String(d.getFullYear()).slice(2),
+      net: 0,
+      count: 0,
+      avgTicket: 0,
+    });
   }
   for (const s of sales) {
     if (!isCountable(s)) continue;
     const d = new Date(s.at);
     const i = index.get(`${d.getFullYear()}-${d.getMonth()}`);
-    if (i !== undefined) out[i].net += saleNet(s);
+    if (i !== undefined) {
+      out[i].net += saleNet(s);
+      out[i].count += 1;
+    }
   }
-  for (const p of out) p.net = round2(p.net);
+  for (const p of out) {
+    p.net = round2(p.net);
+    p.avgTicket = p.count ? round2(p.net / p.count) : 0;
+  }
   return out;
 }
 

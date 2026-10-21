@@ -140,6 +140,11 @@ export const ICON_MAP = {
   moon: "moon.stars.fill",
   userPlus: "person.crop.circle.badge.plus",
   seal: "checkmark.seal",
+
+  // --- Dashboard "General" (v1.14.0): variacion y tendencia ---
+  arrowUp: "arrow.up",
+  arrowDown: "arrow.down",
+  trendUp: "chart.line.uptrend.xyaxis",
 };
 
 /**

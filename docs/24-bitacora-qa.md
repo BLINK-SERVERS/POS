@@ -222,6 +222,24 @@ La siembra es **idempotente**: se puede volver a ejecutar sin duplicar.
 - **Comprobación:** `npm run qa:navegacion` comprueba que ningún control de
   la app tiene una matriz de transformación con escala distinta de 1.
 
+### BUG-10 · La variación "+100 %" no significaba nada
+
+- **Comportamiento anómalo:** con el commerce recién abierto (el periodo
+  anterior a 0), las cuatro tarjetas de General mostraban "+100,0 %". No
+  era una crecimiento: era una division por cero.
+- **Solución:** `growth()` devuelve `null` cuando no hay base de
+  comparación, y la tarjeta **no muestra pastilla** en ese caso. Es
+  preferible no informar a informar algo falso.
+- **Comprobación:** `npm run qa:navegacion` → 37/37 en verde.
+
+### BUG-11 · Las etiquetas de los meses no cabían en el gráfico
+
+- **Comportamiento anómalo:** el locale "es" devuelve "sept" para
+  septiembre, y en 12 columnas la etiqueta se solapaba con la vecina en
+  móvil.
+- **Solución:** abreviaturas fijas de tres letras (`ene`…`dic`) y un cuerpo
+  menor en móvil.
+
 ---
 
 ## 4. Incidencias que resultaron ser **correctas** (falsos positivos)

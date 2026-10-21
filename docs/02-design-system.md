@@ -291,6 +291,41 @@ en el panel de General.
 La cuenta (perfil y datos del comercio), los ajustes y el cierre de
 sesión **no** están en la sidebar: están en el menú del avatar.
 
+### 4.3 · La pantalla General (bento de cristal)
+
+La sección se llama **General** (antes "Inicio"). Es el centro de control
+del comercio: cuatro métricas con su variación y el gráfico de ventas
+por mes.
+
+```
+┌──────────┬──────────┬──────────┬──────────┐
+│ Ventas   │ Órdenes  │ Ticket   │ Margen   │  ← 4 tarjetas de métrica
+│ totales  │ pagadas  │ promedio │ bruto    │
+├──────────┴──────────┼──────────┴──────────┤
+│ Ventas por mes       │ Capital │ Cierre    │  ← el gráfico ocupa 2 columnas
+├──────────┬──────────┼──────────┴──────────┤
+│ Por      │ Para     │ Módulos              │
+│ atender  │ arrancar │                      │
+└──────────┴──────────┴──────────────────────┘
+```
+
+| Pieza | Regla |
+|---|---|
+| Rejilla | 4 columnas en escritorio (≥ 1280 px), 2 en tablet y móvil |
+| Tarjeta | fondo traslúcido + `backdrop-filter: blur(20px)`, borde de 1 px, radio de 22 px (20 px en móvil) |
+| Cifra grande | SF Pro Display, 700, con `font-variant-numeric: tabular-nums` |
+| Etiqueta | SF Pro Text, 12 px, secundaria |
+| Pastilla de variación | verde `#34c759`/`#30d158` si sube, rojo `#ff383c`/`#ff4245` si baja; **no se muestra** si el periodo anterior fue 0 (no hay comparación honesta) |
+| Detalle del mes | tarjeta flotante de cristal sobre el gráfico, con el mes, el importe, las órdenes y el ticket |
+| periods | Hoy / Mes / Año, con el equivalente anterior como comparativo |
+
+El gráfico es **interactivo**: cada barra es un botón (se puede tocar o
+recorrer con el teclado) y la tarjeta flotante muestra el detalle exacto
+del mes elegido.
+
+> Detrás de las tarjetas hay un **velo de acento**: sobre una página clara
+> el material translúcido solo se ve si hay algo que difuminar.
+
 ---
 
 ## 5. Métricas de componentes (medidas reales de iOS 27)

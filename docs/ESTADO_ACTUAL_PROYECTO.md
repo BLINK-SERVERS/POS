@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.14.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.15.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -20,7 +20,24 @@
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
 | Tipografía | Una sola pila en toda la app: SF Pro (local) → Inter (OFL, servido) → sistema |
-| Navegación móvil (`npm run qa:navegacion`) | 24/24 en verde: sin hamburguesa, barra inferior de 5 con Vender centrado, menú de avatar, sin escalado al pulsar |
+| Navegación móvil (`npm run qa:navegacion`) | 37/37 en verde: sin hamburguesa, barra inferior de 5 con Vender centrado, menú de avatar, sin escalado al pulsar, bento de General |
+
+## Novedades de la v1.15.0
+
+### General: el command center del comercio
+
+- La sección **"Inicio" pasa a llamarse "General"** en móvil y escritorio
+  (la ruta `/app/inicio` se mantiene y `/app/general` funciona como alias).
+- **Bento de tarjetas de cristal**: 4 columnas en escritorio, 2 en tablet y
+  móvil. Tarjetas translúcidas con `backdrop-filter: blur(20px)`, borde de
+  1 px y radio de 22 px, sobre un velo de acento para que el material se lea.
+- **Cuatro métricas con su variación**: Ventas totales, Órdenes pagadas,
+  Ticket promedio y Margen bruto, con pastilla verde/roja frente al
+  periodo equivalente anterior (Hoy/Mes/Año con selector).
+- **Gráfico de ventas por mes** (12 meses) interactivo: cada barra es un
+  botón y una tarjeta flotante de cristal muestra el detalle exacto del mes
+  elegido (importe, órdenes y ticket).
+- Cifras en **SF Pro Display** con `tabular-nums`; etiquetas en SF Pro Text.
 
 ## Novedades de la v1.14.0
 
