@@ -1131,6 +1131,74 @@ table.data tbody tr:hover {
 }
 
 /* ============================================================
+   POS — buscador (Konsta Searchbar, tema iOS)
+   Konsta no propaga className a la raiz, por eso se apunta a .k-searchbar.
+   ============================================================ */
+.k-searchbar {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.k-searchbar input {
+  height: 40px;
+  font-size: var(--fs-sm);
+  border-radius: 999px;
+}
+.k-searchbar input:focus {
+  outline: none;
+}
+/* El input de Konsta ya trae su fondo translucido: se alinea con la paleta. */
+.k-searchbar > div {
+  background: rgba(66, 66, 66, 0.06);
+  border: 1px solid rgba(66, 66, 66, 0.1);
+}
+
+/* ============================================================
+   Barra de pestañas inferior (Konsta UI, tema iOS)
+   Solo visible en movil (< 860px). Es la capa funcional
+   flotante: lleva el material translucido, nunca el contenido.
+   HIG (Tab bars): navegacion (no acciones), con etiquetas,
+   sin overflow y en tonos monocolor.
+   ============================================================ */
+.shell__tabbar {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .shell__tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: rgba(255, 254, 251, 0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(66, 66, 66, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  /* El contenido no debe quedar tapado por la tab bar */
+  .shell__main {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+  /* El drawer movil se cierra con un fondo translucido */
+  .shell__scrim {
+    background: rgba(29, 29, 31, 0.32);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .shell__tabbar {
+    background: var(--color-bg-primary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 1080px) {

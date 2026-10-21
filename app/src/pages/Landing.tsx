@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "../components/Icon";
+import { Glass } from "konsta/react";
 import "../styles/landing.css";
 
 /** Anclas de navegación de la landing. */
@@ -64,8 +65,12 @@ export function Landing() {
   return (
     <div className="landing">
       {/* ---------------- Header fijo ---------------- */}
-      <header className="ld-header">
-        <div className="ld-header__inner">
+      {/* Konsta <Glass> implementa el material "liquid glass" de iOS 26/27:
+          difumina el fondo y aplica el brillo especular al pasar el puntero.
+          HIG: solo en la capa funcional, nunca en el contenido. */}
+      <Glass className="ld-glass">
+        <header className="ld-header">
+          <div className="ld-header__inner">
           <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
             <span className="ld-logo__blink">BLINK</span>
             <span className="ld-logo__pos">POS</span>
@@ -101,8 +106,9 @@ export function Landing() {
           >
             <Icon name={menuOpen ? "close" : "menu"} size="lg" />
           </button>
-        </div>
-      </header>
+          </div>
+        </header>
+      </Glass>
 
       {/* ---------------- Hero ---------------- */}
       <section className="ld-hero">

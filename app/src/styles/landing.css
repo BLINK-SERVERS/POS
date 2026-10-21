@@ -15,9 +15,15 @@
 /* ---------------------------------------------------------
    Header fijo
    --------------------------------------------------------- */
-.ld-header {
+/* Envoltorio de Konsta <Glass>: el material translucido vive aqui
+   para que el header pueda flotar sobre el contenido. */
+.ld-glass {
   position: sticky;
   top: 0;
+  z-index: 50;
+}
+.ld-header {
+  position: relative;
   z-index: 50;
   /* Liquid Glass (iOS 27, variante "regular"): difumina y ajusta la
      luminosidad del fondo. Apple's HIG pide usarlo con moderacion y solo

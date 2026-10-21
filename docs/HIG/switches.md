@@ -1,0 +1,3 @@
+# switches
+
+HTTP 404

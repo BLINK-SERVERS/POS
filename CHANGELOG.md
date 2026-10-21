@@ -11,6 +11,33 @@ bundle (`__APP_VERSION__`). Se muestra en **Ajustes › Cuenta** y en la pantall
 
 ---
 
+## [1.6.0] · 2026-10-20
+
+**Konsta UI instalado + HIG de Apple leído completo + barra de pestañas de iOS.**
+
+- **Konsta UI v5.5.0** (MIT) instalado con su subpath de React (`konsta/react`).
+  Aporta los componentes con estética iOS nativa, los colores del sistema, el material
+  *liquid glass*, hairlines, safe areas y touch ripple.
+- **Tailwind CSS v4.3.3** añadido **sin preflight**: el proyecto ya tiene su propio
+  reset en `app.css` y el preflight de Tailwind habría reescrito botones, inputs y
+  tablas. Solo se importan `theme` + `utilities` + el theme de Konsta.
+- **HIG de Apple leído por completo** — 64 páginas / 764 KB en `docs/HIG/` (la versión
+  Markdown oficial que Apple publica en la misma URL), con índice y *best practices*
+  extraídas por página en `docs/HIG/INDEX.md`.
+- **Barra de pestañas inferior en móvil** (`<Tabbar>` de Konsta) con 5 secciones y
+  etiquetas, en tonos monocromáticos y material translúcido, con fallback opaco bajo
+  `prefers-reduced-transparency: reduce`. En escritorio se oculta y la navegación sigue
+  en la sidebar.
+- **Buscador del POS** sustituido por `<Searchbar>` de Konsta (píldora redondeada, lupa,
+  botón de limpiar, foco iOS).
+- **Header de la landing** con `<Glass>` de Konsta (blur + saturación + brillo especular).
+  El POS (tablas, precios, stock) queda **100 % opaco**, como indica el HIG: *"Don't use
+  Liquid Glass in the content layer"*.
+- **Documentación** — `docs/REDISENO_KONSTA_HIG.md` con el mapeo de cada regla del HIG
+  a su implementación, y lista de componentes de Konsta pendientes de integrar.
+
+---
+
 ## [1.5.0] · 2026-10-20
 
 **Extracción de iOS 27 / iPadOS 27 + tokens del sistema + corrección de licencias.**

@@ -1,0 +1,3 @@
+# macos
+
+HTTP 404

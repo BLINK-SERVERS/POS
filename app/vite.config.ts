@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { readFileSync } from "node:fs";
 
 // La versión vive en un solo sitio (`package.json`) y se inyecta en el build.
@@ -9,7 +10,7 @@ const pkg = JSON.parse(
 
 export default defineConfig({
   base: "/",
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: { port: 5173 },
   preview: { port: 4173 },

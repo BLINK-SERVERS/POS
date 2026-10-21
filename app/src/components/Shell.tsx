@@ -1,6 +1,7 @@
 // Shell de la aplicación: topbar + sidebar + contenedor de página.
 import { useState, type ReactNode } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Tabbar, TabbarLink } from "konsta/react";
 import { useStore } from "../lib/store";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
@@ -35,6 +36,21 @@ const NAV: NavItem[] = [
   { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
   { to: "/app/ajustes", label: "Ajustes", icon: "settings" },
+];
+
+/**
+ * Secciones de la barra de pestañas (solo navegación).
+ *
+ * HIG (Tab bars): "Use a tab bar to support navigation, not to provide actions",
+ * "Include tab labels to help with navigation" y "Avoid overflow tabs" — por eso
+ * son 5 como máximo y llevan etiqueta.
+ */
+const TABS: { to: string; label: string; icon: IconName; feature?: keyof BusinessFeatures }[] = [
+  { to: "/app/ventas", label: "Ventas", icon: "cart" },
+  { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
+  { to: "/app/inventario", label: "Inventario", icon: "box", feature: "inventory" },
+  { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
+  { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
 ];
 
 /** Botón del topbar: abre el modal del escáner y muestra si el celular está activo. */
@@ -73,6 +89,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const features = state.business.features;
   const visibleNav = NAV.filter((item) => !item.feature || features[item.feature]);
+  const visibleTabs = TABS.filter((item) => !item.feature || features[item.feature]);
+  const location = useLocation();
   const displayName =
     user && (user.firstName || user.lastName)
       ? [user.firstName, user.lastName].filter(Boolean).join(" ")
@@ -199,6 +217,22 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="shell__main">
         <div className="page">{children}</div>
       </main>
+
+      {/* Barra de pestañas inferior (solo en movil).
+          HIG: la tab bar es la capa funcional flotante — aqui lleva el
+          material translucido, nunca el contenido. */}
+      <Tabbar className="shell__tabbar" labels icons>
+        {visibleTabs.map((t) => (
+          <TabbarLink
+            key={t.to}
+            component={NavLink}
+            linkProps={{ to: t.to }}
+            active={location.pathname === t.to || location.pathname.startsWith(t.to + "/")}
+            icon={<Icon name={t.icon} />}
+            label={t.label}
+          />
+        ))}
+      </Tabbar>
 
       {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
       <div id="printable-report" aria-hidden="true" />

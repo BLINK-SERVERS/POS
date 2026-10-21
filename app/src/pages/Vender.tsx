@@ -6,6 +6,7 @@ import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { Receipt } from "../components/Receipt";
+import { Searchbar } from "konsta/react";
 import { useScanHandler, useScanner } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
 import {
@@ -510,13 +511,16 @@ export function Vender() {
       <div className="pos">
         <div className="pos__catalog">
           <div className="row gap-8" style={{ alignItems: "center" }}>
-            <input
-              className="input"
+            {/* HIG (Search fields): un solo campo, placeholder explicito
+                y foco automatico. Konsta aporta el estilo iOS nativo. */}
+            <Searchbar
+              className="pos__search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre, código, medida, unidad o marca..."
+              onInput={(e: any) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, código, medida, unidad o marca"
               aria-label="Buscar o escanear"
-              autoFocus
+              inputId="pos-search"
+              clearButton
             />
             <button
               type="button"

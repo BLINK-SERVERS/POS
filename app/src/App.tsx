@@ -6,6 +6,7 @@
 //   /escaner     → Escáner remoto (deep link que abre el celular, sin sesión)
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { KonstaProvider } from "konsta/react";
 import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
 import { Landing } from "./pages/Landing";
@@ -134,9 +135,13 @@ function AppRoutes() {
 export function App() {
   return (
     <StoreProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <AppRoutes />
-      </BrowserRouter>
+      {/* Konsta UI provee los componentes con estética iOS (MIT).
+          El tema "ios" + la clase "k-ios" en <html> activan sus variantes. */}
+      <KonstaProvider theme="ios" iosHoverHighlight>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <AppRoutes />
+        </BrowserRouter>
+      </KonstaProvider>
     </StoreProvider>
   );
 }
