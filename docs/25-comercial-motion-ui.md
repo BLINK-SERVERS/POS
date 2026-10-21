@@ -1,10 +1,16 @@
 # 25 · Comercial Motion UI (Remotion)
 
-**Fecha:** 2026-10-21 · **Version:** 1.0.0 · **Pieza:** `BLINK-COMERCIAL.mp4`
+**Fecha:** 2026-10-21 · **Version:** 1.0.0
 
-Comercial de 01:29 (1920 x 1080, 30 fps, 2670 fotogramas) producido con
-**Remotion** en la carpeta `video/`. No forma parte del bundle de la web:
-vive fuera de `app/` y no se despliega con la app.
+> **Estado: PROYECTO RETIRADO.** La carpeta `video/` se vacio (solo queda
+> `video/SKILL/`, con la guia de produccion y el voice over de
+> referencia). Este documento se conserva por lo que **si se debe saber** para
+> volver a levantarlo: el reparto de la linea de tiempo, la construccion de la
+> mascota y las tres incidencias que costaron tiempo.
+
+Lo que se produjo: un comercial de 01:29 (1920 x 1080, 30 fps, 2670
+fotogramas) con **Remotion**, en la carpeta `video/` (fuera del bundle de
+la web).
 
 ---
 
@@ -92,18 +98,21 @@ en el equipo de 2 nucleos.
 
 ---
 
-## 6 · Comandos
+## 6 · Como volver a levantarlo
 
 ```bash
 cd video
 npm install
-npm run dev            # Remotion Studio
-npm run render        # BLINK-COMERCIAL.mp4
-npm run render:preview  # a media resolucion (rapido)
-npm run fotogramas    # un fotograma por escena
-npm run verificar     # la paleta del video vs. la de la web
-npm run fuente        # regenera la tipografia incrustada
+npm run dev              # Remotion Studio
+npm run render           # BLINK-COMERCIAL.mp4
+npm run render:preview   # a media resolucion (rapido)
+npm run fotogramas       # un fotograma por escena
+npm run verificar        # la paleta del video vs. la de la web
+npm run fuente           # regenera la tipografia incrustada
 ```
+
+El codigo de la version retirada sigue en el historial
+(`git show c7aa4b7:video/`), por si se quiere recuperar parte.
 
 ---
 

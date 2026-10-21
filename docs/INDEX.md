@@ -15,7 +15,7 @@ cuál es el vigente.
 | [`ESTADO_ACTUAL_PROYECTO.md`](./ESTADO_ACTUAL_PROYECTO.md) | Dónde estamos hoy, qué falta, qué se está haciendo |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Historial de versiones con los cambios de cada una |
 | [`18-estado-y-plan-de-desarrollo.md`](./18-estado-y-plan-de-desarrollo.md) | Hoja de ruta y backlog histórico (largo; en parte superado por ESTADO_ACTUAL) |
-| [25 · Comercial Motion UI (Remotion)](./25-comercial-motion-ui.md) | El comercial de 01:29: escenas, mascota, tipografia y render |
+| [25 · Comercial Motion UI (Remotion)](./25-comercial-motion-ui.md) | *Retirado*: el comercial de 01:29 (escenas, mascota, tipografia, render) |
 
 ---
 
