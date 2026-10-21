@@ -67,8 +67,20 @@ for (const vista of VISTAS) {
   const page = await ctx.newPage();
 
   const errores = [];
+  // En GitHub Pages, una ruta profunda devuelve 404 con el HTML de la app
+  // (fallback SPA). El navegador lo registra como error de consola, pero no
+  // es un fallo: se distingue del 404 de un recurso real.
+  let documento404 = false;
+  page.on("response", (r) => {
+    if (r.request().resourceType() === "document") documento404 = r.status() === 404;
+  });
   page.on("pageerror", (e) => errores.push("PAGEERROR " + String(e.message).slice(0, 130)));
-  page.on("console", (m) => { if (m.type() === "error") errores.push("CONSOLE " + m.text().slice(0, 130)); });
+  page.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const t = m.text();
+    if (documento404 && /Failed to load resource: the server responded with a status of 404/.test(t)) return;
+    errores.push("CONSOLE " + t.slice(0, 130));
+  });
 
   await page.addInitScript((productos) => {
     const KEY = "blink-pos-state-v3";
@@ -165,8 +177,17 @@ for (const vista of VISTAS) {
   });
   const pageOnb = await ctxOnb.newPage();
   const erroresOnb = [];
+  let documento404Onb = false;
+  pageOnb.on("response", (r) => {
+    if (r.request().resourceType() === "document") documento404Onb = r.status() === 404;
+  });
   pageOnb.on("pageerror", (e) => erroresOnb.push("PAGEERROR " + String(e.message).slice(0, 130)));
-  pageOnb.on("console", (m) => { if (m.type() === "error") erroresOnb.push("CONSOLE " + m.text().slice(0, 130)); });
+  pageOnb.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const t = m.text();
+    if (documento404Onb && /Failed to load resource: the server responded with a status of 404/.test(t)) return;
+    erroresOnb.push("CONSOLE " + t.slice(0, 130));
+  });
 
   await pageOnb.addInitScript((productos) => {
     const KEY = "blink-pos-state-v3";
@@ -220,8 +241,17 @@ for (const vista of VISTAS) {
   });
   const pagePub = await ctxPub.newPage();
   const erroresPub = [];
+  let documento404Pub = false;
+  pagePub.on("response", (r) => {
+    if (r.request().resourceType() === "document") documento404Pub = r.status() === 404;
+  });
   pagePub.on("pageerror", (e) => erroresPub.push("PAGEERROR " + String(e.message).slice(0, 130)));
-  pagePub.on("console", (m) => { if (m.type() === "error") erroresPub.push("CONSOLE " + m.text().slice(0, 130)); });
+  pagePub.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const t = m.text();
+    if (documento404Pub && /Failed to load resource: the server responded with a status of 404/.test(t)) return;
+    erroresPub.push("CONSOLE " + t.slice(0, 130));
+  });
 
   for (const [ruta, nombre] of [["/app/entrar", "login"], ["/app/registro", "registro"]]) {
     await pagePub.goto(BASE + ruta, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {});
@@ -267,8 +297,17 @@ for (const vista of VISTAS) {
   });
   const pageDlg = await ctxDlg.newPage();
   const erroresDlg = [];
+  let documento404Dlg = false;
+  pageDlg.on("response", (r) => {
+    if (r.request().resourceType() === "document") documento404Dlg = r.status() === 404;
+  });
   pageDlg.on("pageerror", (e) => erroresDlg.push("PAGEERROR " + String(e.message).slice(0, 130)));
-  pageDlg.on("console", (m) => { if (m.type() === "error") erroresDlg.push("CONSOLE " + m.text().slice(0, 130)); });
+  pageDlg.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const t = m.text();
+    if (documento404Dlg && /Failed to load resource: the server responded with a status of 404/.test(t)) return;
+    erroresDlg.push("CONSOLE " + t.slice(0, 130));
+  });
 
   await pageDlg.addInitScript((productos) => {
     const KEY = "blink-pos-state-v3";

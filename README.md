@@ -68,7 +68,7 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Pruebas unitarias (Vitest) |
 | `npm run test:migrations` | Integración de migraciones (PostgreSQL embebido) |
-| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/` |
+| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/`. Con `VERIFY_BASE=https://www.blink.com.ve` corre contra **producción** |
 | `npm run docs:check` | Verifica que no haya enlaces rotos en la documentación |
 | `npm run tokens:ios` | Extrae los tokens del UI Kit de iOS 27 → `src/lib/ios-design-tokens.ts` |
 | `npm run icons:sf` | Descarga y normaliza los SF Symbols → `src/lib/sf-symbols.ts` |

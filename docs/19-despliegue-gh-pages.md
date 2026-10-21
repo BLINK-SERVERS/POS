@@ -65,7 +65,15 @@ versión nueva en cuanto termina el edge.
 ```bash
 npm run docs:check   # enlaces de la documentación
 npm run verify:ui    # regresión visual: escritorio + móvil (requiere el dev server)
+
+# Y contra el sitio ya desplegado, sin levantar nada local:
+VERIFY_BASE=https://www.blink.com.ve npm run verify:ui
 ```
+
+> En GitHub Pages una ruta profunda responde **404 con el HTML de la app**
+> (fallback SPA): el navegador lo registra como error de consola aunque no lo
+> es. El verificador lo distingue del 404 de un recurso real, así que la
+> comprobación contra producción es fiable.
 
 Y a mano, en <https://www.blink.com.ve>:
 
