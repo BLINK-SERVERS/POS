@@ -2,7 +2,7 @@
 
 **Sitio en vivo:** **https://www.blink.com.ve**
 **Repositorio:** https://github.com/BLINK-SERVERS/POS (público)
-**Último despliegue:** v1.8.3 · 2026-10-21 — verificado en vivo (consola sin
+**Último despliegue:** v1.9.0 · 2026-10-21 — verificado en vivo (consola sin
 errores).
 
 > La URL pública es el **dominio propio**, no la de GitHub. `blink.com.ve`
@@ -64,7 +64,7 @@ versión nueva en cuanto termina el edge.
 
 ```bash
 npm run docs:check   # enlaces de la documentación
-npm run verify:ui    # regresión visual de las 15 vistas (requiere el dev server)
+npm run verify:ui    # regresión visual: escritorio + móvil (requiere el dev server)
 ```
 
 Y a mano, en <https://www.blink.com.ve>:
