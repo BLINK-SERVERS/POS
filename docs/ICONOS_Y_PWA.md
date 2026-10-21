@@ -12,18 +12,32 @@
 
 ## Origen de los assets
 
-Los archivos de marca originales están en `clone/` (carpeta **ignorada por git**,
-ver `.gitignore:20`). Se copiaron a `app/public/`, que es lo que se compila y despliega.
+El archivo de marca original es `marca/favicon.png` (512×512). Todo lo demás
+se genera a partir de ahí:
 
-| Origen (`clone/`) | Destino (`app/public/`) | Nota |
+| Origen | Destino (`app/public/`) | Nota |
 |---|---|---|
-| `favicon.svg` | `favicon.svg` | Marcador para navegadores modernos |
-| `favicon-dark.svg` | `favicon-dark.svg` | Variante para tema oscuro del SO |
-| `favicon.ico` | `favicon.ico` | Fallback para navegadores antiguos |
-| `icons/icon.svg` | `icons/icon.svg` | Isotipo con fondo blanco |
-| — | `icons/icon-maskable.svg` | **Creado aquí**: fondo azul + marca blanca en zona segura 80% |
+| `marca/favicon.png` | `favicon.png` (32 px) | Marcador raster |
+| `marca/favicon.png` | `icon.png` (512 px) | Icono de la app |
+| `marca/favicon.png` | `favicon.svg` | Marcador vectorial (trazado reconstruido) |
+| `marca/favicon.png` | `favicon.ico` (16/32/48) | Fallback para navegadores antiguos |
+| `marca/favicon.png` | `icons/icon.svg` | Icono de la PWA |
+| — | `icons/icon-maskable.svg` | **Creado aquí**: fondo azul + marca en zona segura 80% |
 
-El color de la marca en los SVG es `#3347DD` (azul del isotipo).
+### Cómo se reconstruyó el vector
+
+El `favicon.svg` no es un calco: se **midió el PNG** pixel a pixel
+(radio de esquina 80/512, ojo-píldora 150×75 en 55/182, ojo circular r=75
+en 381/181 y boca de semidisco r=81 en 175/324) y se redibujó con esas
+medidas. Vectorial y raster son el mismo dibujo.
+
+> **Aviso de procedencia.** El diseño original (cuadrado azul con una cara
+> que guiña un ojo) es la marca de **Wink**, el competidor que se analizó
+> para este proyecto; las versiones anteriores que estaban en producción
+> (trazo indigo `#3347DD`) venían de `clone/`, el clon de Wink. Si la
+> marca de BLINK debe ser propia, hay que dejar en `marca/` un original
+> distinto: con ese fichero, `npm run icons` y `npm run ico` rehacen
+> todo el juego de iconos.
 
 ## Iconos generados (PNG)
 
@@ -37,12 +51,15 @@ El `manifest.webmanifest` de referencia apuntaba a PNG que **no existían** en
 | `icons/icon-maskable-192.png` | 192×192 | Android adaptativo (máscara) |
 | `icons/icon-maskable-512.png` | 512×512 | Android adaptativo (máscara) |
 | `icons/apple-touch-icon.png` | 180×180 | iOS "Agregar a pantalla de inicio" |
+| `favicon.png` | 32×32 | Marcador raster del navegador |
+| `icon.png` | 512×512 | Icono de la app |
 
 ### Regenerarlos
 
 ```bash
 cd app
-npm run icons     # node scripts/build-icons.mjs
+npm run icons     # node scripts/build-icons.mjs  (PNG)
+npm run ico       # node scripts/build-ico.mjs    (favicon.ico)
 ```
 
 El script `app/scripts/build-icons.mjs` usa `playwright-core` (ya estaba en
@@ -77,9 +94,10 @@ nunca toque el dibujo.
 
 ```html
 <link rel="manifest" href="/manifest.json" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="icon" type="image/svg+xml" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
 <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
@@ -96,7 +114,13 @@ Composición:
 
 | Zona | Contenido |
 |---|---|
-| Izquierda (730 px) | Lockup *BLINK* (azul `#3347DD`, itálica 800) + *POS* (negro, peso 300) con el isotipo del favicon · titular de 3 líneas · subtítulo · 3 píldoras de beneficio · pie con `blink.com.ve` y el precio |
+| Izquierda (730 px) | Lockup *BLINK* (azul `#0088ff`, itálica 800) + *POS* (negro, peso 300) con el isotipo de marca · **lema oficial "Vende en un parpadeo, factura con BLINK ;)"** · subtítulo · 3 píldoras de beneficio · pie con `blink.com.ve` y el precio |
+| Derecha (470 px) | Maqueta del POS con el móvil escaneando al lado, y **tarjetas de cristal** (`backdrop-filter: blur(20px)`) con las cifras clave |
+
+La imagen usa la **paleta oficial** (azul principal `#0088ff`, verde
+`#34c759`) y el material translúcido de la landing. El lema oficial
+de la marca es **"Vende en un parpadeo, factura con BLINK ;)"**: es el que
+llevan el `og:title`, el `og:description` y el `twitter:title`.
 | Derecha (470 px) | Panel Negro Blink (`#1D1D1F`) con círculos brand-blue y la maqueta del POS (líneas de venta, total en USD y equivalente en Bs a tasa BCV) |
 
 Fuentes: SF Pro Display (Bold / Semibold / Regular / Light / Italic) embebidas en

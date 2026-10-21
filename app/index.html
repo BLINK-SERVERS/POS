@@ -31,37 +31,39 @@
     </script>
     <meta
       name="description"
-      content="BLINK POS — El punto de venta más rápido, inteligente y adaptado a Venezuela. Multimoneda USD/EUR a tasa BCV, escáner desde tu celular y operación 100% en la nube. $25/mes."
+      content="Vende en un parpadeo, factura con BLINK ;) — Punto de venta para el comercio venezolano. Multimoneda USD/EUR a tasa BCV, escáner desde tu celular y operación 100 % en la nube. $25/mes."
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="BLINK POS" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Open Graph / redes (la landing es la portada pública del dominio) -->
+    <!-- Open Graph / redes (la landing es la portada pública del dominio).
+         La imagen de vista previa es `og-image.png`: 1200 x 630 px, la
+         proporción que piden WhatsApp, Telegram, X, LinkedIn y Slack.
+         El lema oficial de la marca es "Vende en un parpadeo, factura con BLINK ;)". -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="BLINK POS" />
     <meta property="og:locale" content="es_VE" />
-    <meta property="og:title" content="BLINK POS — Punto de venta para el comercio venezolano" />
+    <meta property="og:title" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
     <meta
       property="og:description"
-      content="Controla tu caja, calcula al instante en Dólares y Bolívares a tasa BCV y usa la cámara de tu teléfono como escáner. Sin equipos costosos y 100% en la nube."
+      content="Vende en un parpadeo, factura con BLINK ;) El punto de venta hecho para Venezuela: multimoneda a tasa BCV, escáner desde el celular y 100 % en la nube."
     />
     <meta property="og:url" content="https://www.blink.com.ve/" />
     <meta property="og:image" content="https://www.blink.com.ve/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="BLINK POS — El punto de venta más rápido, inteligente y adaptado a Venezuela."
-    />
+    <meta property="og:image:alt" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BLINK POS — Punto de venta para el comercio venezolano" />
+    <meta name="twitter:title" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
     <meta
       name="twitter:description"
       content="Multimoneda a tasa BCV, escáner móvil y operación local-first. $25/mes."
     />
     <meta name="twitter:image" content="https://www.blink.com.ve/og-image.png" />
+    <meta name="twitter:image:alt" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
 
     <link rel="manifest" href="/manifest.json" />
 
@@ -76,10 +78,16 @@
       crossorigin
     />
 
-    <!-- Iconos: favicon del navegador + PWA instalable en el celular -->
+    <!-- Iconos: los ficheros institucionales de marca.
+         · favicon.png / icon.png  -> icono de la app (ficha del navegador y
+           pantalla de inicio del movil)
+         · favicon.svg / .ico      -> el mismo icono en vectorial y raster,
+           para los navegadores que no leen PNG
+         · icons/*                -> el juego que usa el manifiesto de la PWA -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/svg+xml" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />

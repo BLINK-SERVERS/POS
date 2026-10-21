@@ -1,16 +1,20 @@
 {
   "name": "BLINK POS",
   "short_name": "BLINK POS",
-  "description": "Administra tu negocio: vender, catalogar, almacenar, cobrar y pagar. Multimoneda USD/EUR a tasa BCV.",
+  "description": "Vende en un parpadeo, factura con BLINK ;) Punto de venta para el comercio venezolano: multimoneda a tasa BCV, escáner desde el celular y 100 % en la nube.",
   "lang": "es-VE",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#3347DD",
+  "theme_color": "#0088ff",
   "background_color": "#FFFEFB",
-  "categories": ["business", "finance", "productivity"],
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon.svg",

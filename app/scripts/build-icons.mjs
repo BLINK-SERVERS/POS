@@ -12,6 +12,10 @@ const JOBS = [
   { src: "icons/icon-maskable.svg", out: "icons/icon-maskable-192.png", size: 192 },
   { src: "icons/icon-maskable.svg", out: "icons/icon-maskable-512.png", size: 512 },
   { src: "icons/icon.svg", out: "icons/apple-touch-icon.png", size: 180 },
+  // Favicon raster para los navegadores que no leen SVG y el icono de
+  // app con el nombre institucional, en la raiz de `public/`.
+  { src: "favicon.svg", out: "favicon.png", size: 32 },
+  { src: "icons/icon.svg", out: "icon.png", size: 512 },
 ];
 
 const browser = await chromium.launch();

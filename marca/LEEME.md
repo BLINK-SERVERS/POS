@@ -24,11 +24,30 @@ npm run deploy   # build + publicación en gh-pages
 
 ## Estado actual
 
-Los iconos que están **live en producción** salen de `BLINK POS/clone/`
-(`favicon.svg`, `favicon-dark.svg`, `favicon.ico`, `icons/icon.svg`). Son los
-únicos assets de BLINK que existen en esta máquina — se buscaron en `Documents`,
-`Downloads`, `Desktop`, `Pictures` y en todo el perfil, y no hay ningún otro
-`favicon` ni `icon.png`.
+Los iconos que están **live en producción** salen del fichero institucional
+`marca/favicon.png` (512×512, el cuadrado azul con la cara que guiña un
+ojo). De ese original se generan, con `npm run icons` y `npm run ico`:
 
-Si los archivos que tienes son **otra versión** (otro color u otra forma), deja
-los tuyos aquí y los reemplazo.
+| Fichero | Uso |
+|---|---|
+| `app/public/favicon.png` (32 px) | favicon raster |
+| `app/public/icon.png` (512 px) | icono de la app |
+| `app/public/favicon.svg` | favicon vectorial (mismo trazado) |
+| `app/public/favicon.ico` (16/32/48) | navegadores antiguos |
+| `app/public/icons/icon-*.png` | PWA instalable |
+| `app/public/icons/apple-touch-icon.png` | iOS "añadir a pantalla de inicio" |
+
+### De dónde salió el vector
+
+`favicon.svg` e `icons/icon.svg` se reconstruyeron **midiendo el PNG**
+(píxel a píxel: radio de esquina 80/512, ojo-píldora 150×75 en 55/182,
+ojo circular r=75 en 381/181 y boca de semidisco r=81 en 175/324). Así el
+icono vectorial y el raster son el mismo dibujo, no dos versiones parecidas.
+
+> **Aviso de procedencia:** el diseño original (el cuadrado azul con la
+> cara que guiña) es la marca de **Wink**, el competidor que se analizado
+> para este proyecto, y las versiones anteriores que estaban en producción
+> (trazo indigo `#3347DD`) venían de `clone/`, el clon de Wink. Si la
+> marca de BLINK debe ser propia, hay que dejar aquí un original
+> distinto: con ese fichero, `npm run icons` y `npm run ico` rehacen
+> todo el juego de iconos.

@@ -1,7 +1,7 @@
 {
   "name": "blink-pos-app",
   "private": true,
-  "version": "1.15.0",
+  "version": "1.16.0",
   "type": "module",
   "description": "BLINK POS — Punto de venta (aplicación propia, diseño y código originales).",
   "scripts": {
@@ -23,11 +23,13 @@
     "qa:e2e": "node scripts/qa-e2e.mjs",
     "qa:funcional": "node scripts/qa-funcional.mjs",
     "qa:responsive": "node scripts/qa-responsive.mjs",
-    "qa": "npm run typecheck && npm test && npm run qa:e2e && npm run qa:funcional && npm run qa:responsive && npm run qa:apariencia && npm run qa:navegacion && npm run docs:check",
+    "qa": "npm run typecheck && npm test && npm run qa:e2e && npm run qa:funcional && npm run qa:responsive && npm run qa:apariencia && npm run qa:navegacion && npm run qa:preview && npm run docs:check",
     "qa:cuenta": "node scripts/qa-cuenta.mjs",
     "qa:carga": "node scripts/qa-carga.mjs",
     "qa:apariencia": "node scripts/qa-apariencia.mjs",
-    "qa:navegacion": "node scripts/qa-navegacion.mjs"
+    "qa:navegacion": "node scripts/qa-navegacion.mjs",
+    "qa:preview": "node scripts/qa-preview.mjs",
+    "ico": "node scripts/build-ico.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

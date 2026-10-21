@@ -240,6 +240,33 @@ La siembra es **idempotente**: se puede volver a ejecutar sin duplicar.
 - **Solución:** abreviaturas fijas de tres letras (`ene`…`dic`) y un cuerpo
   menor en móvil.
 
+### BUG-12 · La imagen de vista previa estaba rota y con la marca equivocada
+
+- **Comportamiento anómalo:** `npm run og` **fallaba**: el generador leia
+  `app/public/fonts/SF-Pro-Display-*.otf`, ficheros que se eliminaron en la
+  v1.5.0 al dejar de distribuir material de Apple. La imagen que seguía en
+  producción era de una versión anterior: trazo indigo `#3347DD` (el color
+  del clon, no el azul oficial) y la copia vieja.
+- **Solución:** el generador usa ahora la SF Pro real de
+  `app/.fonts-sf-local/` (ficheros locales, solo de desarrollo: van
+  incrustados en el PNG, que es una imagen) y, si no están, cae a la pila
+  del sistema. La composicion usa la **paleta oficial** y el lema oficial
+  de la marca.
+- **Comprobación:** `npm run og` genera 1200×630 px y la vista previa sale
+  con el lema, el azul oficial y el material de cristal.
+
+### BUG-13 · Los iconos de la app no tenian version raster institucional
+
+- **Comportamiento anómalo:** el navegador recibia solo el `.svg` y el
+  `.ico` (que venia del clon, en trazo indigo) y el PWA no tenia un PNG
+  propio para la pantalla de inicio.
+- **Solución:** a partir del fichero institucional se generan
+  `favicon.png` (32 px), `icon.png` (512 px), el `.ico` (16/32/48) y todo
+  el juego del manifiesto, y el `favicon.svg` se reconstruyo **midiendo el
+  PNG** para que vectorial y raster sean el mismo dibujo.
+- **Comprobación:** los seis ficheros responden 200 y el icono se lee a 16,
+  32, 48 y 64 px, tambien sobre fondo oscuro.
+
 ---
 
 ## 4. Incidencias que resultaron ser **correctas** (falsos positivos)

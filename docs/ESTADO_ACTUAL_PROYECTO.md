@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.15.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.16.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -21,6 +21,31 @@
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
 | Tipografía | Una sola pila en toda la app: SF Pro (local) → Inter (OFL, servido) → sistema |
 | Navegación móvil (`npm run qa:navegacion`) | 37/37 en verde: sin hamburguesa, barra inferior de 5 con Vender centrado, menú de avatar, sin escalado al pulsar, bento de General |
+
+## Novedades de la v1.16.0
+
+### Vista previa (Open Graph / Twitter Card)
+
+- El **lema oficial** de la marca, *"Vende en un parpadeo, factura con
+  BLINK ;)"*, es el que llevan el `og:title`, el `og:description`, el
+  `twitter:title` y la descripción de la página.
+- `og-image.png` se **vuelve a generar**: 1200×630 px (la proporción que
+  piden WhatsApp, Telegram, X, LinkedIn y Slack), con el mockup del POS, el
+  móvil escaneando y tarjetas de cristal, en la **paleta oficial**
+  (`#0088ff`, verde `#34c759`). El generador ya no fallaba: usa la SF Pro
+  local de desarrollo (incrustada en el PNG) y no las fuentes de Apple.
+- `og:image:type`, `og:image:alt` y `twitter:image:alt` añadidos.
+
+### Iconos y favicon
+
+- A partir del fichero institucional se generan `favicon.png` (32 px),
+  `icon.png` (512 px), `favicon.ico` (16/32/48) y todo el juego del
+  manifiesto de la PWA.
+- El `favicon.svg` se reconstruyó **midiendo el PNG** (radio de esquina,
+  ojo-píldora, ojo circular y boca de semidisco): vectorial y raster son
+  el mismo dibujo.
+- El `theme_color` del manifiesto pasa del indigo del clon al **azul
+  oficial** `#0088ff`.
 
 ## Novedades de la v1.15.0
 
