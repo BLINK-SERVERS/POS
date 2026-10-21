@@ -3,7 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#007AFF" />
+    <!-- Apariencia: "light dark" = sigue al sistema. La preferencia de la
+         app lo ajusta a "light" o "dark" en linea (style="color-scheme"). -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#FFFEFB" />
+    <!-- Se aplica la apariencia ANTES del primer pintado para que no haya
+         destello. Debe ser synchronous y no depender de la red. -->
+    <script>
+      (function () {
+        try {
+          var modo = localStorage.getItem("blink-tema") || "auto";
+          var html = document.documentElement;
+          html.style.colorScheme =
+            modo === "auto" ? "light dark" : modo === "claro" ? "light" : "dark";
+          html.dataset.tema = modo;
+          var oscuro =
+            modo === "oscuro" ||
+            (modo === "auto" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          html.classList.toggle("dark", oscuro);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", oscuro ? "#000000" : "#FFFEFB");
+        } catch (e) {
+          /* sin almacenamiento: se queda el tema del sistema */
+        }
+      })();
+    </script>
     <meta
       name="description"
       content="BLINK POS — El punto de venta más rápido, inteligente y adaptado a Venezuela. Multimoneda USD/EUR a tasa BCV, escáner desde tu celular y operación 100% en la nube. $25/mes."
@@ -49,11 +74,10 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 
     <title>BLINK POS — Punto de venta para el comercio venezolano</title>
-    <script type="module" crossorigin src="/assets/index-55EvNTtE.js"></script>
+    <script type="module" crossorigin src="/assets/index-D5Q0OsBL.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-CbXtAM7H.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-COLg0CJo.js">
-    <link rel="modulepreload" crossorigin href="/assets/supabase-2Xzj8yhD.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CRZ_IFbw.css">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-dkLH83v9.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DVLo8oEZ.css">
   </head>
   <body>
     <div id="root"></div>
