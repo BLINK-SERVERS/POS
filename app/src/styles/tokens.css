@@ -118,4 +118,8 @@
 
   /* Area tactil minima */
   --ios-touch-target: 44px;
+
+  /* Separadores (hairlines) de las listas y tablas de iOS. */
+  --ios-separator: rgba(66, 66, 66, 0.1);
+  --ios-separator-strong: rgba(66, 66, 66, 0.18);
 }

@@ -550,13 +550,15 @@ table.data th {
   color: var(--color-text-tertiary);
   font-weight: 600;
   padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid var(--color-border);
+  /* HIG (Lists and tables): las tablas usan separadores horizontales,
+     nunca divisores verticales. */
+  border-bottom: 1px solid var(--ios-separator-strong);
   background: var(--color-neutral-soft);
   white-space: nowrap;
 }
 table.data td {
   padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--ios-separator);
   vertical-align: middle;
 }
 table.data tbody tr:last-child td {
@@ -588,14 +590,21 @@ table.data tbody tr:hover {
     flex-direction: column;
     gap: 0.75rem;
   }
+  /* HIG (Lists · iOS): lista "inset grouped".
+     · contenedor redondeado SIN borde (la separacion la hace el fondo);
+     · separadores hairline SOLIDOS, inset por el padding del contenedor;
+     · etiqueta a la izquierda en color primario y valor a la derecha
+       en color secundario, como en Ajustes de iOS;
+     · el titulo de la fila va arriba en negrita. */
   table.data tbody tr {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--color-border);
+    border: none;
     border-radius: var(--radius-md);
     background: var(--color-bg-elevated);
-    padding: 0.75rem;
-    gap: 0.35rem;
+    box-shadow: 0 1px 3px rgba(29, 29, 31, 0.07);
+    padding: 0.7rem 0.9rem;
+    gap: 0;
   }
   table.data tbody tr:hover {
     background: var(--color-bg-elevated);
@@ -604,24 +613,30 @@ table.data tbody tr:hover {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 0.35rem 0;
-    border-bottom: 1px dashed var(--color-border);
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--ios-separator);
     text-align: right;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
   }
   table.data tbody tr td:last-child {
     border-bottom: none;
     justify-content: flex-end;
+    padding-bottom: 0;
   }
   table.data tbody tr td::before {
     content: attr(data-label);
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     text-align: left;
-    margin-right: 1rem;
+    flex: none;
   }
   table.data tbody tr td:first-child {
     font-weight: 700;
     font-size: var(--fs-base);
+    color: var(--color-text-primary);
+    padding-bottom: 0.5rem;
   }
   table.data tbody tr td:first-child::before {
     display: none;
