@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.12.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.13.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -19,6 +19,37 @@
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
+| Tipografía | Una sola pila en toda la app: SF Pro (local) → Inter (OFL, servido) → sistema |
+
+## Novedades de la v1.13.0
+
+### Landing tipo Apple, con Liquid Glass
+
+- **Estructura** al estilo de las páginas de producto de Apple: portada,
+  tres "momentos" (una idea por bloque, con su visual), cifras, capacidades,
+  un único plan de precio, preguntas frecuentes, cierre y pie.
+- **Redacción** corta y en afirmativo, sin superlativos: *"El punto de venta
+  hecho para Venezuela"*, *"Tu celular ya es el escáner"*, *"Se cae la señal.
+  Tú no."*
+- **Liquid Glass** en la capa funcional (barra, fichas, tarjetas de precio y
+  cierre), resuelta en CSS con los tokens del proyecto; con "reducir
+  transparencia" del sistema, el material se sustituye por un relleno plano.
+- Las páginas **legales** se rehícen: cabecera con llamada a la acción, texto
+  de entrada como bloque de cristal (sin marco duro), separadores finos y
+  columna de lectura centrada (~68 caracteres).
+
+### Correcciones de raíz
+
+- **BUG-06:** `light-dark()` anidado dentro de `rgb()` es inválido en Chrome y
+  hacía que **toda la capa translúcida** (material, velos, bordes suaves y
+  sombras difusas) no se pintara. Los tokens ahora guardan el color y la
+  transparencia se compone con color relativo: `rgb(from var(--papel) r g b / .62)`.
+- **BUG-07:** media app se dibujaba con la tipografía del sistema (Segoe UI)
+  porque los pesos 800-900 no tenían `@font-face` y las familias "SF Pro
+  Text"/"SF Pro Display" no estaban registradas. Ahora hay una sola pila
+  tipográfica en toda la app, con **Inter** (SIL OFL 1.1, 27 KB recortada) como
+  respaldo para los equipos sin SF Pro. No se distribuye ningún fichero de
+  Apple.
 
 ## Módulos
 

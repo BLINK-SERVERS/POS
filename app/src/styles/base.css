@@ -21,13 +21,22 @@ body,
 #root {
   height: 100%;
 }
+/* La pila tipográfica vive en :root y no en body: así la heredan
+   TODO (incluidos los controles de formulario, que el navegador
+   viste por su cuenta) y también el <html>, donde el preflight de
+   Tailwind escribe su propia font-family. */
+:root {
+  font-family: var(--font-primary);
+  /* El eje óptico (opsz) de SF Pro interpola entre los tamaños
+     Display y Text: la misma familia se adapta a cada cuerpo. */
+  font-optical-sizing: auto;
+}
+
 body {
   margin: 0;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-text);
-  /* El eje óptico (opsz) de SF Pro interpola entre los tamaños
-     Display y Text: la misma familia se adapta a cada cuerpo. */
   font-optical-sizing: auto;
   font-size: var(--fs-base);
   line-height: 1.5;
@@ -57,8 +66,20 @@ a {
   color: var(--color-accent);
   text-decoration: none;
 }
-button {
+/* El navegador da su propia fuente a los controles de formulario
+   (y al texto que se selecciona dentro de ellos). Se fuerza la de la
+   app para que un campo, un boton y su etiqueta digan lo mismo. */
+button,
+input,
+select,
+textarea,
+optgroup,
+option {
   font-family: inherit;
+  font-optical-sizing: auto;
+}
+
+button {
   touch-action: manipulation;
 }
 

@@ -106,10 +106,14 @@ disponible en `tokens.css` para un futuro modo oscuro, pero **no se activa**.
 
 ## 2. Tipografía
 
+**Una sola pila para toda la app** (landing, POS y páginas legales):
+
 ```css
---font-display: "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", …;
---font-text:    "SF Pro Text",    "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", …;
---font-primary: "SF Pro",         -apple-system, BlinkMacSystemFont, "Segoe UI", …;
+--font-pila: "SF Pro", "SF Pro Text", "SF Pro Display", "Inter",
+  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, …;
+--font-display: var(--font-pila);
+--font-text:    var(--font-pila);
+--font-primary: var(--font-pila);
 --font-mono:    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 ```
 
@@ -121,13 +125,35 @@ disponible en `tokens.css` para un futuro modo oscuro, pero **no se activa**.
   explica: *"the system fonts support dynamic optical sizes, which merge
   discrete optical sizes (like Text and Display) and weights into a single,
   continuous design"*.
-- `--font-display` para los títulos (≥ 20 px) y `--font-text` para el cuerpo.
-- **No se distribuye ninguna fuente.** El archivo `app/public/fonts/` se
-  eliminó en la v1.5.0 (servía SF Pro públicamente, con su licencia) y se
+- `--font-display`, `--font-text` y `--font-primary` apuntan a **la misma
+  pila**: la diferencia entre el corte Display y el Text la resuelve el eje
+  óptico de la propia fuente, no el nombre de la familia. Antes se separaban
+  ("SF Pro Display" para titulares, "SF Pro Text" para el cuerpo) y eso
+  obligaba a que el titular y su párrafo se dibujaran con familias
+  distintas.
+- **Inter (SIL OFL 1.1) va justo detrás de SF Pro** y se sirve desde la app
+  (`app/public/fonts/inter-latin.woff2`, 40 KB, recortado al juego de
+  caracteres que usa el producto; licencia en
+  `app/public/fonts/LICENSE-Inter.txt`). Es el respaldo para los equipos sin
+  SF Pro instalada: sin él, el titular grande de la landing salía en la
+  tipografía del sistema (Segoe UI) y el resto del texto en otra voz. Inter
+  es la alternativa libre más parecida a SF Pro (mismas proporciones, eje
+  `wght` 100-900).
+- **No se distribuye ninguna fuente de Apple.** El archivo `app/public/fonts/`
+  se eliminó en la v1.5.0 (servía SF Pro públicamente, con su licencia) y se
   verificó en 404 tras el despliegue. Los ficheros de la v1.10.0 viven solo en
   `app/.fonts-sf-local/` (ignorado por git) y **solo se sirven en
   desarrollo**, mediante un middleware propio de Vite (`apply: "serve"`) y un
   `fonts-dev.css` que se carga únicamente si `import.meta.env.DEV`.
+- En desarrollo, `fonts-dev.css` declara **todo el rango 100-900**: los
+  ficheros de `.fonts-sf-local/` son instancias estáticas (regular,
+  semibold, bold e italic). Si un peso quedara sin cubrir, el navegador
+  descartaba la familia y ese texto salía con la tipografía del sistema.
+- La pila vive en `:root` (no en `body`) y los controles de formulario
+  (`button`, `input`, `select`, `textarea`) heredan: el navegador les da su
+  propia fuente por defecto. `--default-font-family` y `--font-sans` están
+  definidos para que el preflight de Tailwind no imponga la pila del sistema
+  al `<html>`.
 - Los **nombres de familia son los reales** de los ficheros oficiales de
   Apple: `.SF NS Text` y `.SF NS Display` (leídos de su tabla `name`).
 

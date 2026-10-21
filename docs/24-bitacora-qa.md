@@ -143,6 +143,57 @@ La siembra es **idempotente**: se puede volver a ejecutar sin duplicar.
 - **Comprobación:** `VERIFY_BASE=https://www.blink.com.ve npm run verify:ui`
   → 38/38 en verde.
 
+### BUG-06 · Los rellenos translúcidos no se pintaban (en las dos apariencias)
+
+- **Comportamiento anómalo:** la capa de cristal (material "Liquid Glass"),
+  los velos de acento, los bordes suaves y las sombras difusas **no se veían**
+  en ninguna de las dos apariencias. El fondo, el borde y la sombra de las
+  tarjetas de cristal se perdían por completo: solo quedaban los textos.
+- **Causa:** los tokens de canal eran `--papel-rgb: light-dark(255 254 251, 0 0 0)`
+  y se componían con `rgb(var(--papel-rgb) / 0.62)`. **Chrome no admite
+  `light-dark()` anidado dentro de `rgb()`**: la expresión queda inválida y
+  el navegador **descarta la declaración entera** (no es un color invalido,
+  es una declaración que no llega a aplicarse). Por eso el `background`
+  caía a transparente, el `border` a `0px none` y el `box-shadow` a `none`.
+- **Solución:** el token guarda ahora el **color** y la transparencia se
+  compone con la **sintaxis de color relativo**, que sí resuelve
+  `light-dark()` y respeta la apariencia vigente:
+
+      --papel: light-dark(#fffefb, #000000);
+      background: rgb(from var(--papel) r g b / 0.62);
+
+  Se cambiaron los 9 tokens de color y los **94 usos** repartidos entre
+  `tokens.css`, `app.css` y `landing.css`.
+- **Comprobación:** el material se ve en claro y en oscuro; la suite completa
+  (`npm run qa`) sigue en verde y `verify:ui` da 0 problemas y 0 errores de
+  consola en las 4 combinaciones de tamaño y apariencia.
+
+### BUG-07 · Media app se dibujaba con la tipografía del sistema
+
+- **Comportamiento anómalo:** el titular grande de la landing salía en **Segoe
+  UI** (la fuente de Windows) mientras el resto del texto salía en SF Pro: dos
+  voces tipográficas en la misma pantalla. Lo mismo pasaba con los pesos 800 y
+  900 en cualquier parte de la app.
+- **Causa:** dos motivos encadenados.
+  1. `fonts-dev.css` solo declaraba los pesos 400, 500, 600 y 700. Los
+     ficheros de `.fonts-sf-local/` son instancias **estáticas** (regular,
+     semibold, bold e italic), no una variable: un peso sin cubrir no cae
+     en la misma fuente, sino en la siguiente de la pila (la del sistema).
+  2. `--font-display` (`"SF Pro Display"`) y `--font-text` (`"SF Pro Text"`)
+     eran familias **distintas**, y ninguna estaba registrada como
+     `@font-face`: solo lo estaba `"SF Pro"`.
+- **Solución:** se declara **todo el rango 100-900** en `fonts-dev.css`, se
+  registran `"SF Pro Text"` y `"SF Pro Display"` como alias, y las tres
+  variables de fuente apuntan a **una sola pila** (la diferencia entre el
+  corte Display y el Text la resuelve el eje óptico `opsz` de la fuente).
+  Además, la pila vive en `:root` (no en `body`) y los controles de
+  formulario heredan, porque el navegador les da su propia fuente.
+- **Verificación en producción:** los equipos **sin SF Pro instalada** (todo
+  Windows y Linux) caían en la tipografía del sistema. Se añadió **Inter**
+  (SIL OFL 1.1) como respaldo servido desde la app, recortado a 27 KB: se
+  mantiene una sola voz tipográfica en todos los dispositivos sin
+  distribuir ningún fichero de Apple.
+
 ---
 
 ## 4. Incidencias que resultaron ser **correctas** (falsos positivos)

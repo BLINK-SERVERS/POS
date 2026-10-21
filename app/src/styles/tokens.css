@@ -82,12 +82,12 @@
   --color-text-inverse: light-dark(#FFFEFB, #000000);
 
   /* --- Acentos derivados --- */
-  --color-accent-soft: rgb(var(--acento-rgb) / 0.08);
-  --color-accent-soft: light-dark(rgb(var(--acento-rgb) / 0.08), rgb(var(--acento-rgb) / 0.18));
-  --color-accent-soft-strong: rgb(var(--acento-rgb) / 0.16);
-  --color-accent-soft-strong: light-dark(rgb(var(--acento-rgb) / 0.16), rgb(var(--acento-rgb) / 0.3));
-  --color-accent-ring: rgb(var(--acento-rgb) / 0.25);
-  --color-accent-ring: light-dark(rgb(var(--acento-rgb) / 0.25), rgb(var(--acento-rgb) / 0.4));
+  --color-accent-soft: rgb(from var(--acento) r g b / 0.08);
+  --color-accent-soft: light-dark(rgb(from var(--acento) r g b / 0.08), rgb(from var(--acento) r g b / 0.18));
+  --color-accent-soft-strong: rgb(from var(--acento) r g b / 0.16);
+  --color-accent-soft-strong: light-dark(rgb(from var(--acento) r g b / 0.16), rgb(from var(--acento) r g b / 0.3));
+  --color-accent-ring: rgb(from var(--acento) r g b / 0.25);
+  --color-accent-ring: light-dark(rgb(from var(--acento) r g b / 0.25), rgb(from var(--acento) r g b / 0.4));
 
   /* --- Bordes derivados del texto --- */
   --color-border: rgba(66, 66, 66, 0.16);
@@ -100,19 +100,36 @@
   --color-neutral-soft: light-dark(rgba(66, 66, 66, 0.06), rgba(235, 235, 245, 0.07));
 
   /* --- Tipografía ---
-     SF Pro se pide al sistema con `local()` (ver styles/fonts.css): en
-     Apple sale de serie; en Windows/Linux, si el usuario la instala.
-     · --font-display → tamaños opticals "Display" (>= 20 px, titulos)
-     · --font-text    → tamaños opticals "Text" (< 20 px, cuerpo)
-     · --font-mono    → SF Mono (cifras monoespaciadas, SKU, códigos)
-     Ningún fichero de fuente se distribuye. */
-  --font-display: "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, system-ui, "Helvetica Neue", Arial, sans-serif;
-  --font-text: "SF Pro Text", "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    system-ui, "Helvetica Neue", Arial, sans-serif;
-  --font-primary: "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui,
-    "Helvetica Neue", Arial, sans-serif;
+     UNA sola pila para toda la app: la landing, el POS y las páginas
+     legales escriben siempre con la misma voz.
+
+     · SF Pro (Apple) se pide al sistema con `local()`: sale de serie en
+       Apple y se usa en Windows/Linux si el usuario la instala.
+     · Inter (SIL OFL 1.1) va justo detrás y se sirve desde la app: es
+       el respaldo para los equipos sin SF Pro, de modo que ninguna
+       parte de la interfaz se renderice con la tipografía del sistema.
+     · La pila del sistema queda al final, solo como último recurso.
+
+     --font-display, --font-text y --font-primary apuntan a la MISMA
+     pila: la diferencia entre el corte Display y el Text la resuelve
+     el eje óptico (opsz) de la propia fuente, no el nombre de la
+     familia. Separate las familias obligaba a elegir una u otra a
+     mano y provocaba que un titular y su párrafo salieran con
+     tipografías distintas.
+     · --font-mono → SF Mono (cifras monoespaciadas, SKU, códigos).
+     Ningún fichero de Apple se distribuye. */
+  --font-pila: "SF Pro", "SF Pro Text", "SF Pro Display", "Inter", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-pila);
+  --font-text: var(--font-pila);
+  --font-primary: var(--font-pila);
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Tailwind v4 (preflight) escribe `html { font-family: ... }` con
+     estas dos variables. Sin definirlas, el preflight imponía la pila
+     del sistema al <html> de la aplicación. */
+  --default-font-family: var(--font-pila);
+  --font-sans: var(--font-pila);
 
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
@@ -150,19 +167,26 @@
   --blink-brown-light: #b18767;
   --blink-brown-dark: #bb916f;
 
-  /* --- Canales RGB ---
-     Para componer transparencias que se adapten al modo, en vez de
-     escribir rgba(...) a mano (que no cambiaria en oscuro), se compone
-     con el canal del color que corresponda en cada apariencia. */
-  --tinta-rgb: light-dark(66 66 66, 235 235 245);
-  --tinta-inversa-rgb: light-dark(255 254 251, 0 0 0);
-  --papel-rgb: light-dark(255 254 251, 0 0 0);
-  --superficie-rgb: light-dark(255 254 251, 26 26 26);
-  --acento-rgb: light-dark(0 136 255, 0 145 255);
-  --rojo-rgb: light-dark(255 56 60, 255 66 69);
-  --verde-rgb: light-dark(52 199 89, 48 209 88);
-  --negro-rgb: light-dark(29 29 31, 0 0 0);
-  --halo-rgb: light-dark(255 255 255, 235 235 245);
+  /* --- Colores base para componer transparencias ---
+     Para derivar rellenos, bordes y sombras que se adapten a la
+     apariencia, se parte de un color con `light-dark()` y se le aplica
+     la transparencia con la sintaxis de color relativo:
+
+         rgb(from var(--papel) r g b / 0.62)
+
+     Ojo: Chrome NO admite `light-dark()` anidado dentro de `rgb()`
+     (`rgb(from var(--papel) r g b / .62)` con el token como canales queda
+     invalido y se descarta la declaracion entera). Por eso aqui el
+     token es un color, no una lista de canales. */
+  --tinta: light-dark(#424242, #EBEBF5);
+  --tinta-inversa: light-dark(#FFFEFB, #000000);
+  --papel: light-dark(#FFFEFB, #000000);
+  --superficie: light-dark(#FFFEFB, #1a1a1a);
+  --acento: light-dark(#0088ff, #0091ff);
+  --rojo: light-dark(#ff383c, #ff4245);
+  --verde: light-dark(#34c759, #30d158);
+  --negro: light-dark(#1D1D1F, #000000);
+  --halo: light-dark(#ffffff, #ebebf5);
 
   /* --- Formas --- */
   --radius-sm: 8px;

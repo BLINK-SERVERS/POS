@@ -3,6 +3,11 @@
 // Objetivo: explicar en menos de 3 segundos qué es BLINK POS y convertir al
 // visitante en un registro. Sin dependencias de red: todo es SVG + CSS.
 //
+// Estructura al estilo de las páginas de producto de Apple: una idea por
+// bloque, titulares cortos en afirmativo, un solo precio y una sola llamada
+// a la acción. La capa de cristal (Liquid Glass) se usa solo en la capa
+// funcional —barra, tarjetas y cierre—, nunca en el contenido.
+//
 // Convenciones del proyecto: interfaz en español, paleta oficial Blink,
 // iconos SVG propios (sin emoji) y 3 colores base + los semánticos de marca.
 import { useEffect, useState } from "react";
@@ -12,41 +17,121 @@ import "../styles/landing.css";
 
 /** Anclas de navegación de la landing. */
 const NAV = [
+  { href: "#producto", label: "El producto" },
   { href: "#caracteristicas", label: "Características" },
-  { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#precios", label: "Precios" },
+  { href: "#preguntas", label: "Preguntas" },
 ];
 
-/** Beneficios principales (killer features). */
-const FEATURES = [
+/**
+ * Los momentos: una capacidad por bloque, con su titular y su visual.
+ * El titular va en afirmativo y corto; el párrafo explica el beneficio
+ * concreto, sin adjetivos.
+ */
+const MOMENTOS = [
   {
-    icon: "scan" as const,
-    title: "Usa tu celular como escáner inalámbrico",
-    body: "Olvídate de pistolas láser costosas. Vincula tu teléfono por QR y escanea productos o busca al instante desde cualquier pasillo.",
-    tag: "Sin hardware extra",
+    num: "01 · Escáner móvil",
+    titulo: "Tu celular ya es el escáner.",
+    texto:
+      "Enlaza el teléfono con un QR y escanea desde cualquier pasillo. Sin pistolas láser, sin instalar nada, sin cables.",
+    escena: "scan",
   },
   {
+    num: "02 · Multimoneda",
+    titulo: "Dólares y bolívares, siempre a la tasa oficial.",
+    texto:
+      "La tasa BCV se actualiza sola. Puedes mezclar efectivo, pago móvil y dólares, y el sistema calcula el vuelto.",
+    escena: "money",
+  },
+  {
+    num: "03 · Local-first",
+    titulo: "Se cae la señal. Tú no.",
+    texto:
+      "Cada venta se guarda en el dispositivo y se sincroniza sola cuando vuelve la conexión. Puedes cobrar siempre.",
+    escena: "offline",
+  },
+];
+
+/** Cifras que resumen el producto. */
+const CIFRAS = [
+  { valor: "0", texto: "equipos que comprar" },
+  { valor: "3 s", texto: "de la venta al cobro" },
+  { valor: "24/7", texto: "facturando, con o sin internet" },
+  { valor: "$25", texto: "al mes, sin comisión por venta" },
+];
+
+/** Todo lo que incluye el plan. */
+const INCLUYE = [
+  "Punto de venta ilimitado",
+  "Caja, arqueos y cierre de turno",
+  "Escáner móvil enlazado por QR",
+  "Multimoneda con tasa BCV en vivo",
+  "Inventario, compras y ajustes",
+  "Cuentas por cobrar y por pagar",
+  "Informes de ventas y márgenes",
+  "Catálogo compartido entre comercios",
+];
+
+/** Las capacidades, en tarjetas. */
+const CAPACIDADES = [
+  {
     icon: "cash" as const,
-    title: "Multimoneda real (USD/EUR + BCV)",
-    body: "Calcula vueltos mixtos, maneja pagos fraccionados (efectivo, pago móvil, Zelle) y actualiza la tasa oficial automáticamente sin errores.",
-    tag: "Tasa BCV automática",
+    titulo: "Caja y arqueo",
+    texto: "Abre, cobra y cierra el turno con el conteo de efectivo ya cuadrado.",
   },
   {
     icon: "box" as const,
-    title: "Local-First sin interrupciones",
-    body: "Si el internet falla, el sistema sigue facturando de manera local y sincroniza de forma segura al volver la señal.",
-    tag: "Siempre vendiendo",
+    titulo: "Inventario",
+    texto: "Mínimos, ajustes y compras. El stock se descuenta solo al vender.",
+  },
+  {
+    icon: "creditcard" as const,
+    titulo: "Multimoneda",
+    texto: "USD y EUR con bolívares a tasa BCV, y vuelto mixto.",
+  },
+  {
+    icon: "receipt" as const,
+    titulo: "Cuentas por cobrar",
+    texto: "Créditos a clientes, abonos parciales y cuentas por pagar a proveedores.",
+  },
+  {
+    icon: "chart" as const,
+    titulo: "Informes",
+    texto: "Ventas, márgenes y los productos que más rotan, listos para imprimir.",
+  },
+  {
+    icon: "store" as const,
+    titulo: "Catálogo compartido",
+    texto: "Productos precargados que puedes reutilizar entre comercios.",
   },
 ];
 
-/** Incluye la tarifa plana. */
-const INCLUDES = [
-  "POS ilimitado para todos tus puntos de venta",
-  "Control de caja y cierres con arqueo",
-  "App de escaneo móvil enlazada por QR",
-  "Multimoneda con tasa oficial BCV en vivo",
-  "Catálogo colaborativo con productos pre-cargados",
-  "Soporte técnico y actualizaciones automáticas",
+/** Preguntas frecuentes. */
+const PREGUNTAS = [
+  {
+    q: "¿Necesito una computadora o una impresora?",
+    a: "No. BLINK funciona en el navegador del celular o de la computadora. Si más adelante quieres imprimir tickets, puedes conectarlo desde el sistema.",
+  },
+  {
+    q: "¿Qué pasa si se cae el internet?",
+    a: "No pasa nada. Cada venta se guarda en el dispositivo y se sincroniza en cuanto vuelve la señal.",
+  },
+  {
+    q: "¿Cómo cobro en bolívares?",
+    a: "La tasa oficial BCV se actualiza sola. Puedes mezclar pagos en efectivo, pago móvil y dólares, y el sistema calcula el vuelto.",
+  },
+  {
+    q: "¿Puedo usar el celular como escáner?",
+    a: "Sí. Enlazas el teléfono con un QR desde Ajustes y el celular empieza a enviarte los productos que escanea.",
+  },
+  {
+    q: "¿Los datos de mi negocio son míos?",
+    a: "Sí. Puedes exportar los datos y pedir su eliminación cuando quieras. Cada comercio está separado del resto.",
+  },
+  {
+    q: "¿Hay instalación o permanencia?",
+    a: "No hay instalación ni permanencia: es una suscripción mensual de $25 por tienda y cancelas cuando decidas.",
+  },
 ];
 
 export function Landing() {
@@ -63,13 +148,7 @@ export function Landing() {
 
   return (
     <div className="landing">
-      {/* ---------------- Header fijo ---------------- */}
-      {/* Material "liquid glass" de iOS 26/27 (HIG · Materials): difumina el
-          fondo y aplica el brillo especular. Se resuelve con CSS (`.ld-header`)
-          en vez de con el componente <Glass> de Konsta: la landing no usa
-          NADA de Konsta, y así no arrastra su CSS (85 KB) ni su JS al
-          primer paint. HIG: solo en la capa funcional, nunca en el
-          contenido. */}
+      {/* ---------------- Navegación ---------------- */}
       <div className="ld-glass">
         <header className="ld-header">
           <div className="ld-header__inner">
@@ -92,11 +171,11 @@ export function Landing() {
             </nav>
 
             <div className="ld-header__actions">
-              <Link className="ld-btn ld-btn--ghost" to="/app/entrar">
-                Iniciar Sesión
+              <Link className="ld-btn--glass" to="/app/entrar">
+                Iniciar sesión
               </Link>
               <Link className="ld-btn ld-btn--primary" to="/app/registro">
-                Registrar mi comercio
+                Empezar
               </Link>
             </div>
 
@@ -112,33 +191,35 @@ export function Landing() {
         </header>
       </div>
 
-      {/* ---------------- Hero ---------------- */}
+      {/* ---------------- Portada ---------------- */}
       <section className="ld-hero">
         <div className="ld-hero__inner">
           <div>
-            <span className="ld-eyebrow">
+            <span className="ld-glass-pill">
               <Icon name="chart" size="sm" />
-              100% en la nube
+              100 % en la nube
             </span>
-            <h1>El Punto de Venta más rápido, inteligente y adaptado a Venezuela.</h1>
+            <h1>El punto de venta hecho para Venezuela.</h1>
             <p className="ld-hero__sub">
-              Controla tu caja, calcula al instante en Dólares y Bolívares a tasa BCV, y usa la
-              cámara de tu teléfono como escáner de códigos de barras. Sin equipos costosos y 100%
-              en la nube.
+              Cobra en dólares o bolívares a la tasa oficial, escanea con el celular y sigue
+              vendiendo aunque se caiga la señal.
             </p>
             <div className="ld-hero__cta">
               <Link className="ld-btn ld-btn--primary ld-btn--lg" to="/app/registro">
-                Empezar Ahora - $25/mes
+                Empezar ahora
                 <Icon name="arrowRight" />
               </Link>
-              <span className="ld-hero__note">
-                <Icon name="check" size="sm" />
-                Sin costo de instalación
-              </span>
+              <a className="ld-btn--glass" href="#producto">
+                Ver cómo funciona
+              </a>
             </div>
+            <p className="ld-hero__note">
+              <Icon name="check" size="sm" />
+              Sin instalación. Sin hardware. $25 al mes.
+            </p>
           </div>
 
-          {/* Mockup: pantalla del POS + celular escaneando */}
+          {/* Maqueta: la pantalla del POS y el celular escaneando */}
           <div className="ld-mock" aria-hidden>
             <div className="ld-mock__pc">
               <div className="ld-mock__screen">
@@ -180,68 +261,104 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- Beneficios ---------------- */}
-      <section className="ld-section" id="caracteristicas">
-        <div className="ld-section__inner">
-          <div className="ld-section__head">
-            <h2>Todo lo que necesitas, nada más</h2>
-            <p>
-              Tres capacidades que reemplazan el hardware caro, el cálculo manual y la
-              incertidumbre de la tasa.
-            </p>
-          </div>
+      {/* ---------------- El producto ---------------- */}
+      <section className="ld-moments" id="producto">
+        {MOMENTOS.map((m, i) => (
+          <article className={"ld-moment" + (i % 2 ? " ld-moment--flip" : "")} key={m.num}>
+            <div className="ld-moment__body">
+              <span className="ld-moment__num">{m.num}</span>
+              <h2>{m.titulo}</h2>
+              <p>{m.texto}</p>
+            </div>
 
-          <div className="ld-features">
-            {FEATURES.map((f) => (
-              <article className="ld-feature" key={f.title}>
-                <div className="ld-feature__icon">
-                  <Icon name={f.icon} />
+            <div className={"ld-scene ld-scene--" + m.escena}>
+              {m.escena === "scan" && (
+                <div className="ld-scene__phone">
+                  <div className="ld-scene__view">
+                    <span className="ld-scene__mark" />
+                    <div className="ld-scene__bars" />
+                  </div>
+                  <span className="ld-scene__toast">Añadido a la cuenta</span>
                 </div>
-                <h3>{f.title}</h3>
-                <p>{f.body}</p>
-                <span className="ld-feature__tag">
-                  <Icon name="check" size="sm" />
-                  {f.tag}
-                </span>
-              </article>
+              )}
+
+              {m.escena === "money" && (
+                <>
+                  <div className="ld-scene__card">
+                    <div className="ld-scene__row">
+                      <span>Total</span>
+                      <b>$ 24.00</b>
+                    </div>
+                    <div className="ld-scene__row">
+                      <span>Recibido</span>
+                      <b>Bs 21.168,00</b>
+                    </div>
+                    <div className="ld-scene__row ld-scene__row--hi">
+                      <span>Vuelto</span>
+                      <b>$ 1.20</b>
+                    </div>
+                  </div>
+                  <span className="ld-scene__chip">Tasa BCV 882,00</span>
+                </>
+              )}
+
+              {m.escena === "offline" && (
+                <div className="ld-scene__card">
+                  <span className="ld-scene__status">
+                    <span className="ld-scene__dot" />
+                    Vendiendo sin conexión
+                  </span>
+                  <div className="ld-scene__row">
+                    <span>Cuenta #0142</span>
+                    <b>$ 8.40</b>
+                  </div>
+                  <div className="ld-scene__row">
+                    <span>Estado</span>
+                    <b>Guardada en el equipo</b>
+                  </div>
+                  <div className="ld-scene__row">
+                    <span>Sincronización</span>
+                    <b>Al volver la señal</b>
+                  </div>
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
+      </section>
+
+      {/* ---------------- Cifras ---------------- */}
+      <section className="ld-section ld-section--dark">
+        <div className="ld-section__inner">
+          <div className="ld-stats">
+            {CIFRAS.map((s) => (
+              <div className="ld-stat" key={s.valor}>
+                <strong>{s.valor}</strong>
+                <span>{s.texto}</span>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ---------------- Ecosistema / prueba social ---------------- */}
-      <section className="ld-section ld-section--dark" id="como-funciona">
+      {/* ---------------- Características ---------------- */}
+      <section className="ld-section" id="caracteristicas">
         <div className="ld-section__inner">
-          <div className="ld-trust">
-            <div>
-              <p className="ld-trust__quote">
-                Diseñado por desarrolladores que entienden la realidad del comercio local.
-              </p>
-              <p className="ld-trust__by">
-                Catálogo inteligente con miles de productos pre-cargados para que configures tu
-                inventario en minutos, no en horas. Cada comercio que se suma mejora el catálogo
-                compartido de toda la red.
-              </p>
-            </div>
+          <div className="ld-section__head">
+            <h2>Todo lo que un comercio necesita. Nada más.</h2>
+            <p>Una sola herramienta, sin módulos que comprar por separado.</p>
+          </div>
 
-            <div className="ld-stats">
-              <div className="ld-stat">
-                <strong>USD · EUR</strong>
-                <span>Multimoneda con tasa oficial BCV actualizada automáticamente.</span>
-              </div>
-              <div className="ld-stat">
-                <strong>0 ms</strong>
-                <span>Escaneo desde el celular: sin instalación ni mantenimiento.</span>
-              </div>
-              <div className="ld-stat">
-                <strong>24/7</strong>
-                <span>El POS sigue facturando aunque se caiga la conexión.</span>
-              </div>
-              <div className="ld-stat">
-                <strong>$25</strong>
-                <span>Tarifa plana mensual. Sin comisiones ni cobros por venta.</span>
-              </div>
-            </div>
+          <div className="ld-benefits">
+            {CAPACIDADES.map((c) => (
+              <article className="ld-benefit ld-glass-card" key={c.titulo}>
+                <div className="ld-benefit__icon">
+                  <Icon name={c.icon} size="lg" />
+                </div>
+                <h3>{c.titulo}</h3>
+                <p>{c.texto}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -250,21 +367,20 @@ export function Landing() {
       <section className="ld-section" id="precios">
         <div className="ld-section__inner">
           <div className="ld-section__head">
-            <h2>Un precio. Todo incluido.</h2>
-            <p>Sin commissions por venta, sin planes ocultos, sin sorpresas en la factura.</p>
+            <h2>Un solo plan. Todo incluido.</h2>
+            <p>Sin comisiones por venta, sin planes ocultos, sin sorpresas en la factura.</p>
           </div>
 
-          <div className="ld-pricing">
-            <span className="ld-pricing__badge">Plan Pro Comercial</span>
-            <h3>Todo BLINK POS, para tu comercio</h3>
+          <div className="ld-pricing ld-glass-card">
+            <span className="ld-glass-pill">Plan comercial</span>
             <div className="ld-pricing__price">
               <strong>$25</strong>
               <span>/ mes</span>
             </div>
-            <p className="ld-pricing__hint">Un solo plan. Todos los módulos activados.</p>
+            <p className="ld-pricing__hint">Por tienda. Cancela cuando quieras.</p>
 
             <ul className="ld-pricing__list">
-              {INCLUDES.map((item) => (
+              {INCLUYE.map((item) => (
                 <li key={item}>
                   <Icon name="check" size="sm" />
                   {item}
@@ -280,7 +396,45 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- Footer ---------------- */}
+      {/* ---------------- Preguntas ---------------- */}
+      <section className="ld-section" id="preguntas">
+        <div className="ld-section__inner">
+          <div className="ld-section__head">
+            <h2>Preguntas frecuentes.</h2>
+            <p>Si te queda alguna duda, escríbenos a soporte@blink.com.ve.</p>
+          </div>
+
+          <div className="ld-faq">
+            {PREGUNTAS.map((p) => (
+              <details className="ld-glass-card" key={p.q}>
+                <summary>{p.q}</summary>
+                <p>{p.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- Cierre ---------------- */}
+      <section className="ld-glass-band">
+        <div className="ld-cta">
+          <div className="ld-cta__inner">
+            <h2>Empieza hoy.</h2>
+            <p>Crea tu comercio en un minuto. Sin instalación y sin hardware.</p>
+            <div className="ld-cta__actions">
+              <Link className="ld-btn ld-btn--primary ld-btn--lg" to="/app/registro">
+                Crear mi comercio
+                <Icon name="arrowRight" />
+              </Link>
+              <a className="ld-btn--glass" href="mailto:soporte@blink.com.ve">
+                Hablar con soporte
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- Pie ---------------- */}
       <footer className="ld-footer">
         <div className="ld-footer__inner">
           <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">

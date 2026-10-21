@@ -146,9 +146,14 @@ export function Legal({ kind }: { kind: LegalKind }) {
           <span className="ld-logo__blink">BLINK</span>
           <span className="ld-logo__pos">POS</span>
         </Link>
-        <Link className="ld-btn ld-btn--ghost" to="/app/entrar">
-          Iniciar Sesión
-        </Link>
+        <div className="ld-legal__actions">
+          <Link className="ld-btn--glass" to="/">
+            Volver al inicio
+          </Link>
+          <Link className="ld-btn ld-btn--primary" to="/app/registro">
+            Crear mi comercio
+          </Link>
+        </div>
       </header>
 
       <main className="ld-legal__main">
@@ -180,6 +185,15 @@ export function Legal({ kind }: { kind: LegalKind }) {
           <a href="mailto:soporte@blink.com.ve">soporte@blink.com.ve</a>
         </p>
       </main>
+
+      <footer className="ld-legal__foot-bar">
+        <p>© 2026 Blink POS</p>
+        <nav aria-label="Enlaces legales">
+          <Link to="/app/terminos">Términos de servicio</Link>
+          <Link to="/app/privacidad">Política de privacidad</Link>
+          <a href="mailto:soporte@blink.com.ve">Soporte técnico</a>
+        </nav>
+      </footer>
     </div>
   );
 }

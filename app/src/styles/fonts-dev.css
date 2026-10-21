@@ -7,38 +7,38 @@
 
    En PRODUCCIÓN no se carga y no se sirve nada: los ficheros de
    Apple no se distribuyen. Ver `styles/fonts.css`.
+
+   Los ficheros de `.fonts-sf-local/` son instancias ESTÁTICAS
+   (regular, semibold, bold e italic), no una variable. Por eso
+   aquí se declara TODO el rango de peso 100-900: si un peso
+   quedara sin cubrir, el navegador descartaría la familia y el
+   texto saltaría a la tipografía del sistema, que es justo el
+   defecto que se quiere evitar.
    ============================================================ */
 
-/* Regular — peso 400 y 500 */
+/* Regular — pesos 100 a 400 */
 @font-face {
   font-family: "SF Pro";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 400;
   font-display: swap;
   src: url("/.fonts-sf-local/sf-regular.woff2") format("woff2");
 }
+
+/* Semibold — pesos 401 a 600 (medio y semibold) */
 @font-face {
   font-family: "SF Pro";
   font-style: normal;
-  font-weight: 500;
+  font-weight: 401 600;
   font-display: swap;
   src: url("/.fonts-sf-local/sf-semibold.woff2") format("woff2");
 }
 
-/* Semibold — peso 600 */
+/* Bold — pesos 601 a 900 */
 @font-face {
   font-family: "SF Pro";
   font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/.fonts-sf-local/sf-semibold.woff2") format("woff2");
-}
-
-/* Bold — peso 700 */
-@font-face {
-  font-family: "SF Pro";
-  font-style: normal;
-  font-weight: 700;
+  font-weight: 601 900;
   font-display: swap;
   src: url("/.fonts-sf-local/sf-bold.woff2") format("woff2");
 }
@@ -47,7 +47,7 @@
 @font-face {
   font-family: "SF Pro";
   font-style: italic;
-  font-weight: 400 700;
+  font-weight: 100 900;
   font-display: swap;
   src: url("/.fonts-sf-local/sf-italic.woff2") format("woff2");
 }
