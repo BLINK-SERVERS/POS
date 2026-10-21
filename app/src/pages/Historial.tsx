@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
 import { DataTable } from "../components/DataTable";
-import { Card, EmptyState, Field, Modal, Money, PageHead, Badge } from "../components/ui";
+import { EmptyState, Field, Modal, Money, PageHead, Badge } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { Receipt } from "../components/Receipt";
 import { isCountable, saleNet, saleTotal } from "../lib/metrics";
@@ -61,30 +61,31 @@ export function Historial() {
         }
       />
 
-      <div className="kpis">
-        <Card flat>
+      <div className="kpis kpis--group">
+        <div className="kpi">
           <div className="kpi__label">Vendido</div>
           <Money usd={totalUsd} rate={rate} />
           <div className="kpi__hint">Sin contar cotizaciones ni anuladas</div>
-        </Card>
-        <Card flat>
+        </div>
+        <div className="kpi">
           <div className="kpi__label">Ventas</div>
           <div className="kpi__value">{count}</div>
-        </Card>
-        <Card flat>
+        </div>
+        <div className="kpi">
           <div className="kpi__label">Ticket promedio</div>
           <Money usd={avg} rate={rate} />
-        </Card>
-        <Card flat>
+        </div>
+        <div className="kpi">
           <div className="kpi__label">Vendido a crédito</div>
           <Money usd={credit} rate={rate} />
           <div className="kpi__hint">{credit ? "Pendiente de cobro" : "Ninguna venta a crédito"}</div>
-        </Card>
+        </div>
       </div>
 
       {sales.length === 0 ? (
         <EmptyState
-          title="Aún no hay ventas"
+          icon="receipt"
+            title="Aún no hay ventas"
           hint="Las ventas que cobres en el POS aparecerán aquí al instante."
           action={
             <Link className="btn btn--soft btn--sm" to="/app/ventas">

@@ -60,7 +60,7 @@ function ScannerTopbarButton() {
   return (
     <>
       <button
-        className={"btn btn--soft btn--sm scan-topbtn" + (remoteActive ? " scan-topbtn--on" : "")}
+        className={"btn btn--plain btn--sm scan-topbtn" + (remoteActive ? " scan-topbtn--on" : "")}
         onClick={() => setOpen(true)}
         title="Escáner móvil"
       >
@@ -153,70 +153,74 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <button className="btn btn--ghost btn--sm" onClick={() => { setNavOpen(false); void logout(); nav("/app/entrar"); }}>
-          <Icon name="logout" />
-          Cerrar sesión
-        </button>
+        <div className="sidenav__foot">
+          <button className="btn btn--plain" onClick={() => { setNavOpen(false); void logout(); nav("/app/entrar"); }}>
+            <Icon name="logout" />
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
 
       {navOpen && <div className="shell__scrim" onClick={() => setNavOpen(false)} />}
 
-      <header className="shell__topbar">
-        <button
-          className="shell__menu"
-          onClick={() => setNavOpen((v) => !v)}
-          aria-label="Abrir menú"
-          aria-expanded={navOpen}
-        >
-          <Icon name={navOpen ? "close" : "menu"} />
-        </button>
-        <strong className="topbar__name">{state.business.name}</strong>
-        <ScannerTopbarButton />
-        <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
-          {state.rate > 0 ? (
-            <>
-              <strong>{formatRate(state.rate)}</strong>
-              <span className="rate-chip__suffix"> / $ · BCV</span>
-            </>
-          ) : (
-            <strong style={{ fontSize: "0.8rem" }}>Sin tasa</strong>
-          )}
-        </span>
-        <span className="grow" />
-        {session ? (
+      <div className="shell__content">
+        <header className="shell__topbar">
           <button
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              setCUsd(String(session.openingUsd));
-              setCBs(String(session.openingBs));
-              setCNote("");
-              setCloseOpen(true);
-            }}
-            title={`Abierta ${new Date(session.openedAt).toLocaleTimeString()}`}
+            className="shell__menu"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label="Abrir menú"
+            aria-expanded={navOpen}
           >
-            Cerrar caja
+            <Icon name={navOpen ? "close" : "menu"} />
           </button>
-        ) : (
-          <button className="btn btn--soft btn--sm" onClick={() => setCashOpen(true)}>
-            Abrir caja
-          </button>
-        )}
-        <div className="userchip">
-          <span className="avatar">
-            {(displayName || "?").slice(0, 2).toUpperCase()}
+          <strong className="topbar__name">{state.business.name}</strong>
+          <ScannerTopbarButton />
+          <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
+            {state.rate > 0 ? (
+              <>
+                <strong>{formatRate(state.rate)}</strong>
+                <span className="rate-chip__suffix"> / $ · BCV</span>
+              </>
+            ) : (
+              <strong style={{ fontSize: "0.8rem" }}>Sin tasa</strong>
+            )}
           </span>
-          <div className="stack" style={{ lineHeight: 1.15 }}>
-            <strong style={{ fontSize: "0.8rem" }}>{displayName || "Sesión activa"}</strong>
-            <span className="dim" style={{ fontSize: "0.7rem" }}>
-              Dueño
+          <span className="grow" />
+          {session ? (
+            <button
+              className="btn btn--plain btn--sm"
+              onClick={() => {
+                setCUsd(String(session.openingUsd));
+                setCBs(String(session.openingBs));
+                setCNote("");
+                setCloseOpen(true);
+              }}
+              title={`Abierta ${new Date(session.openedAt).toLocaleTimeString()}`}
+            >
+              Cerrar caja
+            </button>
+          ) : (
+            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}>
+              Abrir caja
+            </button>
+          )}
+          <div className="userchip">
+            <span className="avatar">
+              {(displayName || "?").slice(0, 2).toUpperCase()}
             </span>
+            <div className="stack" style={{ lineHeight: 1.15 }}>
+              <strong style={{ fontSize: "0.8rem" }}>{displayName || "Sesión activa"}</strong>
+              <span className="dim" style={{ fontSize: "0.7rem" }}>
+                Dueño
+              </span>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="shell__main">
-        <div className="page">{children}</div>
-      </main>
+        <main className="shell__main">
+          <div className="page">{children}</div>
+        </main>
+      </div>
 
       {/* Barra de pestañas flotante (solo en movil).
           HIG (Tab bars · iOS): "A tab bar floats above content at the bottom

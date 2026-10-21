@@ -6,7 +6,7 @@ import { DataTable } from "../components/DataTable";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { Icon } from "../components/Icon";
-import { Card, EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
+import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
 import { formatUsd, round2 } from "../lib/money";
 
 
@@ -139,24 +139,25 @@ export function Inventario() {
 
       {tab === "Existencias" && (
         <div className="stack gap-16">
-          <div className="kpis">
-            <Card flat>
+          <div className="kpis kpis--group">
+            <div className="kpi">
               <div className="kpi__label">Valor a costo</div>
               <Money usd={valorCosto} rate={rate} />
-            </Card>
-            <Card flat>
+            </div>
+            <div className="kpi">
               <div className="kpi__label">Valor a venta</div>
               <Money usd={valorVenta} rate={rate} />
-            </Card>
-            <Card flat>
+            </div>
+            <div className="kpi">
               <div className="kpi__label">Alertas de stock</div>
               <div className="kpi__value">{low.length}</div>
-            </Card>
+            </div>
           </div>
 
           {products.length === 0 ? (
             <EmptyState
-              title="Sin existencias"
+              icon="box"
+            title="Sin existencias"
               hint="Registra productos para controlar entradas y mínimos."
               action={
                 <Link className="btn btn--soft btn--sm" to="/app/catalogo">
@@ -200,7 +201,7 @@ export function Inventario() {
                     <td data-label="Estado">
                       {out ? <Badge tone="warning">Agotado</Badge> : low ? <Badge tone="warning">Bajo</Badge> : <Badge tone="accent">OK</Badge>}
                     </td>
-                    <td data-label="Acciones" style={{ textAlign: "right" }}>
+                    <td data-label="Acciones" className="row-actions">
                       <button className="btn btn--ghost btn--sm" onClick={() => openAdjust(p.id, p.stock)}>Ajustar</button>
                     </td>
                   </tr>
@@ -215,7 +216,8 @@ export function Inventario() {
         <div className="stack gap-16">
           {inventoryMoves.length === 0 ? (
             <EmptyState
-              title="Sin movimientos"
+              icon="layers"
+            title="Sin movimientos"
               hint="Aquí verás entradas, salidas y ajustes de existencias."
             />
           ) : (
@@ -264,7 +266,8 @@ export function Inventario() {
         <div className="stack gap-16">
           {purchases.length === 0 ? (
             <EmptyState
-              title="Sin compras"
+              icon="download"
+            title="Sin compras"
               hint="Registra una compra para aumentar tus existencias."
             />
           ) : (

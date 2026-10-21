@@ -1,7 +1,7 @@
 // Finanzas · Cuentas, movimientos, transferencias, pendientes, gastos y cierres.
 import { memo, useCallback, useMemo, useState } from "react";
 import { useStoreActions, useStoreState } from "../lib/store";
-import { Card, EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
+import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import type {
   Account,
@@ -75,7 +75,7 @@ const AccountRow = memo(function AccountRow({
       <td>
         {account.active ? <Badge tone="success" icon="check">Activa</Badge> : <Badge>Inactiva</Badge>}
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         <button className="btn btn--soft btn--sm" onClick={() => onMove(account.id, 1)}>
           Ingresar
         </button>
@@ -202,7 +202,7 @@ const PendingRow = memo(function PendingRow({
                 : "Anulado"}
         </Badge>
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         {!closed && (
           <button className="btn btn--soft btn--sm" onClick={() => onAbono(pending.id)}>
             Abonar
@@ -247,7 +247,7 @@ const ExpenseRow = memo(function ExpenseRow({
       <td>
         <Badge tone={expense.paid && !expense.anulado ? "success" : "neutral"}>{state}</Badge>
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         {!expense.paid && !expense.anulado && (
           <button className="btn btn--soft btn--sm" onClick={() => onPay(expense.id)}>
             Pagar
@@ -533,12 +533,12 @@ export function Finanzas() {
       {/* ---------------- Cuentas ---------------- */}
       {tab === "Cuentas" && (
         <>
-          <div className="kpis">
-            <Card flat>
+          <div className="kpis kpis--group">
+            <div className="kpi">
               <div className="kpi__label">Total consolidado</div>
               <Money usd={total} rate={rate} />
-            </Card>
-            <Card flat>
+            </div>
+            <div className="kpi">
               <div className="kpi__label">Bolívares conservados</div>
               <div className="kpi__value">{formatBsDirect(bsConserved)}</div>
               <div className="kpi__hint">
@@ -546,8 +546,8 @@ export function Finanzas() {
                   ? `equivale a ${formatUsd(round2(bsConserved / rate))} a la tasa oficial`
                   : "sin tasa configurada"}
               </div>
-            </Card>
-            <Card flat>
+            </div>
+            <div className="kpi">
               <div className="kpi__label">Tasa oficial</div>
               {rate > 0 ? (
                 <>
@@ -560,12 +560,13 @@ export function Finanzas() {
                   <div className="kpi__hint">Configúrala en Ajustes → Moneda e impuestos.</div>
                 </>
               )}
-            </Card>
+            </div>
           </div>
 
           {state.accounts.length === 0 ? (
             <EmptyState
-              title="Sin cuentas"
+              icon="wallet"
+            title="Sin cuentas"
               hint="Crea una cuenta para registrar entradas y salidas de dinero."
               action={
                 <button className="btn btn--soft btn--sm" onClick={() => setAccOpen(true)}>
@@ -613,7 +614,8 @@ export function Finanzas() {
 
           {movements.length === 0 ? (
             <EmptyState
-              title="Sin movimientos"
+              icon="layers"
+            title="Sin movimientos"
               hint="Cada cobro, gasto, ajuste o transferencia aparece aquí como un asiento."
             />
           ) : (
@@ -656,7 +658,8 @@ export function Finanzas() {
 
           {state.accounts.length < 2 && (
             <EmptyState
-              title="Necesitas dos cuentas"
+              icon="wallet"
+            title="Necesitas dos cuentas"
               hint="Las transferencias mueven dinero de una cuenta a otra. Crea al menos dos."
             />
           )}
@@ -690,7 +693,8 @@ export function Finanzas() {
 
           {state.transfers.length === 0 && state.accounts.length >= 2 && (
             <EmptyState
-              title="Sin transferencias"
+              icon="arrowsUpDown"
+            title="Sin transferencias"
               hint="Registra movimientos entre tus cuentas, con comisión si aplica."
             />
           )}
@@ -708,7 +712,8 @@ export function Finanzas() {
 
           {state.pendings.length === 0 ? (
             <EmptyState
-              title="Sin cuentas por cobrar ni por pagar"
+              icon="creditcard"
+            title="Sin cuentas por cobrar ni por pagar"
               hint="Las ventas a crédito del POS aparecen aquí automáticamente. También puedes crear pendientes manuales."
             />
           ) : (
@@ -754,7 +759,8 @@ export function Finanzas() {
 
           {state.expenses.length === 0 ? (
             <EmptyState
-              title="Sin gastos"
+              icon="note"
+            title="Sin gastos"
               hint="Registra tus gastos para conocer tu utilidad real."
               action={
                 <button className="btn btn--soft btn--sm" onClick={openExpense}>
@@ -819,7 +825,8 @@ export function Finanzas() {
 
           {state.recurringExpenses.length === 0 ? (
             <EmptyState
-              title="Sin gastos recurrentes"
+              icon="clock"
+            title="Sin gastos recurrentes"
               hint="Alquiler, servicios y suscripciones fijas. Al vencer generan un gasto pendiente, sin mover dinero."
             />
           ) : (
@@ -906,7 +913,8 @@ export function Finanzas() {
         <>
           {state.cashClosures.length === 0 ? (
             <EmptyState
-              title="Sin cierres registrados"
+              icon="receipt"
+            title="Sin cierres registrados"
               hint="Cada arqueo que hagas desde la barra superior queda guardado aquí."
             />
           ) : (

@@ -109,7 +109,7 @@ implementación actual.
 | `app/scripts/build-sf-symbols.mjs` | Descarga y normaliza los SF Symbols → `src/lib/sf-symbols.ts` |
 | `app/scripts/build-icons.mjs` | Genera los PNG del PWA (192/512, maskable, apple-touch) |
 | `app/scripts/build-og-image.mjs` | Genera la imagen Open Graph 1200×630 |
-| `app/scripts/verify-ui.mjs` | Verificación visual de las 15 vistas (regresión) |
+| `app/scripts/verify-ui.mjs` | Verificación visual en escritorio y móvil (regresión) |
 | `app/scripts/check-docs.mjs` | Verificación de enlaces de la documentación (`npm run docs:check`) |
 | `app/scripts/postbuild-pages.mjs` | `404.html` + `.nojekyll` para GitHub Pages |
 | `app/scripts/test-migrations.mjs` | Migraciones contra PostgreSQL embebido |

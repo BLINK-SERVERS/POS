@@ -1,7 +1,7 @@
 // Primitivas de UI de BLINK POS.
 import type { ReactNode } from "react";
 import { formatBs, formatUsd } from "../lib/money";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import { Segmented, SegmentedButton } from "konsta/react";
 
 /* --- Money (dual USD / Bs) --- */
@@ -88,18 +88,27 @@ export function PageHead({
   );
 }
 
-/* --- Empty state --- */
+/* --- Empty state ---
+   iOS: icono en un circulo tintado + titulo + texto de ayuda.
+   El icono es opcional para no recargar los estados triviales. */
 export function EmptyState({
   title,
   hint,
   action,
+  icon,
 }: {
   title: string;
   hint?: string;
   action?: ReactNode;
+  icon?: IconName;
 }) {
   return (
     <div className="empty">
+      {icon && (
+        <span className="empty__icon" aria-hidden>
+          <Icon name={icon} />
+        </span>
+      )}
       <div className="empty__title">{title}</div>
       {hint && <p className="empty__hint">{hint}</p>}
       {action}

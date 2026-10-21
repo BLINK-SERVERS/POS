@@ -470,7 +470,7 @@ export function Vender() {
             ) : (
               <Badge tone="warning" icon="alert">Caja cerrada</Badge>
             )}
-            <button className="btn btn--ghost" onClick={newTab}>
+            <button className="btn btn--primary" onClick={newTab}>
               <Icon name="plus" />
               Nueva cuenta
             </button>
@@ -524,7 +524,7 @@ export function Vender() {
             />
             <button
               type="button"
-              className="btn btn--soft btn--sm"
+              className="icon-btn icon-btn--accent"
               title="Escanear con la cámara"
               onClick={() => setCamOpen(true)}
             >
@@ -566,7 +566,8 @@ export function Vender() {
           {!deferredQuery && (
             <div style={{ paddingTop: "1rem" }}>
               <EmptyState
-                title="Escanea o busca"
+                icon="scan"
+            title="Escanea o busca"
                 hint="Escanea con el lector USB, celular vinculado o usa la búsqueda predictiva."
                 action={
                   <Link className="btn btn--soft btn--sm" to="/app/catalogo">
@@ -579,7 +580,8 @@ export function Vender() {
           {deferredQuery && matches.length === 0 && (
             <div style={{ paddingTop: "1rem" }}>
               <EmptyState
-                title="Sin coincidencias"
+                icon="search"
+            title="Sin coincidencias"
                 hint="Prueba con otra combinación: 'MAVESA 500g' o el código de barras."
                 action={
                   <Link className="btn btn--soft btn--sm" to={`/catalogo?barcode=${encodeURIComponent(query.trim())}`}>
@@ -705,7 +707,8 @@ export function Vender() {
           </p>
           {activeDiscounts.length === 0 ? (
             <EmptyState
-              title="Sin descuentos"
+              icon="percent"
+            title="Sin descuentos"
               hint="Aún no hay descuentos vigentes."
               action={
                 <Link className="btn btn--soft btn--sm" to="/app/catalogo">

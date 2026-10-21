@@ -38,19 +38,19 @@ export function Inicio() {
         subtitle="El resumen de tu día y las cifras que importan."
       />
 
-      <div className="kpis">
-        <Card flat>
+      <div className="kpis kpis--group">
+        <div className="kpi">
           <div className="kpi__label">Ventas de hoy</div>
           <Money usd={today.net} rate={rate} />
-        </Card>
-        <Card flat>
+        </div>
+        <div className="kpi">
           <div className="kpi__label">Ventas registradas (mes)</div>
           <div className="kpi__value">{month.count}</div>
-        </Card>
-        <Card flat>
+        </div>
+        <div className="kpi">
           <div className="kpi__label">Utilidad estimada (mes)</div>
           <Money usd={month.profit} rate={rate} />
-        </Card>
+        </div>
       </div>
 
       <div className="kpis">
@@ -108,21 +108,27 @@ export function Inicio() {
 
       <Card title="Por atender" hint="Productos en o por debajo de su mínimo.">
         {low.length ? (
-          <div className="stack gap-8">
-            {low.map((p) => (
-              <div key={p.id} className="row between">
-                <span>{p.name}</span>
-                <span className="dim">
-                  Quedan {p.stock} · mínimo {p.minStock}
-                </span>
-              </div>
-            ))}
+          <div className="stack gap-12">
+            <div className="row-list">
+              {low.map((p) => (
+                <div key={p.id} className="row-list__row">
+                  <span style={{ fontWeight: 500 }}>{p.name}</span>
+                  <span className="dim" style={{ fontSize: "var(--fs-sm)" }}>
+                    Quedan {p.stock} · mínimo {p.minStock}
+                  </span>
+                </div>
+              ))}
+            </div>
             <Link className="btn btn--soft btn--sm" to="/app/inventario" style={{ alignSelf: "flex-start" }}>
               Ver inventario
             </Link>
           </div>
         ) : (
-          <EmptyState title="Todo en orden" hint="No hay productos por debajo de su mínimo." />
+          <EmptyState
+            icon="check"
+            title="Todo en orden"
+            hint="No hay productos por debajo de su mínimo."
+          />
         )}
       </Card>
     </div>

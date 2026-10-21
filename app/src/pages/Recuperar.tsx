@@ -104,8 +104,8 @@ export function Recuperar() {
     <main className="auth">
       <div className="auth__pitch">
         <span className="blink-pos-title">
-          <span className="blink">BLINK</span>
-          <span className="pos">POS</span>
+          <span className="wordmark__blink">BLINK</span>
+          <span className="wordmark__pos">POS</span>
         </span>
         <h2>Recupera el acceso a tu comercio.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>

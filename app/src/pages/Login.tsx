@@ -86,8 +86,8 @@ export function Login() {
     <main className="auth">
       <div className="auth__pitch">
         <span className="blink-pos-title">
-          <span className="blink">BLINK</span>
-          <span className="pos">POS</span>
+          <span className="wordmark__blink">BLINK</span>
+          <span className="wordmark__pos">POS</span>
         </span>
         <h2>Tu punto de venta, rápido y claro.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
@@ -105,7 +105,7 @@ export function Login() {
                 onClick={usarOtraCuenta}
                 style={{ marginBottom: "0.75rem" }}
               >
-                ← Usar otra cuenta
+                <Icon name="arrowLeft" /> Usar otra cuenta
               </button>
               <h1>Verifica tu correo</h1>
               <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>

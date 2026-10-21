@@ -139,7 +139,7 @@ export function Ajustes() {
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {tab === "Negocio" && (
-        <form className="kpis" onSubmit={onSubmitNegocio}>
+        <form className="form-grid" onSubmit={onSubmitNegocio}>
           <Card title="Datos del comercio" hint="Identificación y contacto de tu negocio.">
             <Field label="Nombre del comercio" required hint="Así lo verá tu equipo en BLINK POS.">
               <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

@@ -90,7 +90,8 @@ export function Contactos() {
 
       {state.contacts.length === 0 ? (
         <EmptyState
-          title="Sin contactos"
+          icon="users"
+            title="Sin contactos"
           hint="Añade clientes y proveedores para llevar sus cuentas."
           action={
             <button className="btn btn--soft btn--sm" onClick={() => setOpen(true)}>

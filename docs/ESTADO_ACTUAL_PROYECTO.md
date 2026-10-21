@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.8.3 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.9.0 · **Dominio:** www.blink.com.ve
 
 ## Estado General
 
@@ -8,9 +8,11 @@
 |---|---|
 | TypeScript (`npx tsc --noEmit`) | Sin errores |
 | Tests (`npx vitest run`) | 50/50 en 5 archivos |
+| Migraciones (`npm run test:migrations`) | Todas las comprobaciones pasan |
 | Build (`npm run build:pages`) | Exitoso |
 | Deploy (`npm run deploy`) | Publicado en gh-pages |
-| Verificación de UI (`npm run verify:ui`) | 15/15 vistas, 0 errores de consola, 0 iconos vacíos, 0 desbordes |
+| Verificación de UI (`npm run verify:ui`) | 34 comprobaciones (escritorio + móvil), 0 errores de consola, 0 iconos vacíos, 0 desbordes |
+| Documentación (`npm run docs:check`) | 318 Markdown, 2.676 enlaces relativos, 0 rotos |
 | Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
 | Dominio `blink.com.ve` | 301 → www (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
@@ -51,23 +53,31 @@
 - [x] Cierres de caja
 - [x] Informes imprimibles (PDF)
 
-### UI/UX — sistema de diseño iOS 27 (v1.6.0 → v1.8.3)
+### UI/UX — sistema de diseño iOS 27 (v1.6.0 → v1.9.0)
 - [x] Paleta oficial Blink: `#FFFEFB` fondo, `#007AFF` acento, `#424242` secundario, `#1D1D1F` primario
 - [x] Konsta UI 5 (MIT) como capa de componentes iOS
 - [x] Tailwind v4 con preflight activado, sin alterar el diseño de BLINK
-- [x] Control segmentado de iOS (`<Segmented>`) en Inventario, Finanzas, Catálogo y Contactos
+- [x] Control segmentado de iOS (`<Segmented>`) en Inventario, Finanzas, Catálogo, Contactos, Ajustes, Informes
 - [x] Tab bar flotante con Liquid Glass en móvil (`<Glass>`)
 - [x] Listas *inset grouped* de iOS (contenedor sin borde, hairline inset, etiqueta/valor)
-- [x] Liquid Glass **solo** en la landing; el POS es 100 % opaco
+- [x] Liquid Glass **solo** en la landing y en la tab bar (cromo); el POS es 100 % opaco
 - [x] Tokens oficiales del UI Kit de iOS 27 (107 colores, 105 estilos de texto, 42 materiales)
 - [x] Geometría real de 1.657 componentes del kit (`docs/ios27-geometry.json`)
-- [x] Métricas aplicadas: fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab 48×48
+- [x] Métricas aplicadas: fila 52 px, campo 52 px, toggle 64×28, stepper 46×32, tab 48×48, fila de sidebar 44 px
 - [x] 86 SF Symbols normalizados a `currentColor`
-- [x] Verificación visual automatizada (`npm run verify:ui`)
+- [x] **Shell flotante de iPadOS 27** (v1.9.0): sidebar y contenido como paneles redondeados; la barra de navegación vive dentro del panel de contenido
+- [x] **Large Title** (34 px) en todas las pantallas
+- [x] Superficies sin marco: la jerarquía se construye con elevación
+- [x] Campos *filled*, botones de radio 12 px con la familia real de iOS
+- [x] Acciones de fila en texto plano; datos que no se parten
+- [x] KPIs como grupo con celdas separadas por hairline
+- [x] Estados vacíos con icono en círculo tintado (los 20 de la app)
+- [x] Verificación visual automatizada en **escritorio y móvil** (`npm run verify:ui`)
 
 Detalle en [`REDISENO_KONSTA_HIG.md`](./REDISENO_KONSTA_HIG.md),
-[`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) y
-[`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md).
+[`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md),
+[`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md) y
+[`02-design-system.md`](./02-design-system.md).
 
 ### Landing comercial (v1.4.0)
 - [x] Portada pública en `/` (header, hero, beneficios, ecosistema, precios, footer)
@@ -121,9 +131,11 @@ cd app
 npm run dev            # Desarrollo en :5173
 npm run typecheck      # Verificar tipos
 npx vitest run         # Tests
+npm run test:migrations # Migraciones contra PostgreSQL real
 npm run build:pages    # Build estático
 npm run deploy         # Publicar en gh-pages
-npm run verify:ui      # Regresión visual de las 15 vistas
+npm run verify:ui      # Regresión visual: escritorio + móvil
+npm run docs:check     # Enlaces de la documentación
 npm run tokens:ios     # Regenerar tokens del UI Kit de iOS 27
 npm run icons:sf       # Regenerar el set de SF Symbols
 ```

@@ -124,13 +124,13 @@ svg {
   letter-spacing: -0.02em;
   text-transform: uppercase;
 }
-.blink-pos-title .blink {
+.blink-pos-title .wordmark__blink {
   color: var(--color-accent); /* #007AFF */
   font-weight: 800;
   font-style: italic;
   letter-spacing: -0.03em;
 }
-.blink-pos-title .pos {
+.blink-pos-title .wordmark__pos {
   color: var(--color-text-primary); /* #424242 */
   font-weight: 300;
   font-style: normal;
@@ -238,21 +238,32 @@ svg {
 
 /* ============================================================
    Auth (login)
+   ------------------------------------------------------------
+   Formulario de iOS: el panel de marca y la caja del formulario
+   son dos superficies flotantes (radio + sombra), no columnas
+   separadas por una linea vertical.
    ============================================================ */
 .auth {
   min-height: 100%;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--color-bg-primary);
 }
 .auth__pitch {
   position: relative;
-  padding: 3rem;
-  background: var(--color-bg-primary);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-panel);
   color: var(--color-text-primary);
-  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 2rem;
+  min-height: 420px;
   overflow: hidden;
 }
 .auth__pitch::after {
@@ -266,23 +277,31 @@ svg {
   background: var(--color-accent-soft);
 }
 .auth__pitch h2 {
+  position: relative;
   color: var(--color-text-primary);
-  font-size: 2rem;
+  font-size: var(--ios-fs-title1);
+  line-height: var(--ios-lh-title1);
+  letter-spacing: -0.02em;
   max-width: 22ch;
 }
 .auth__panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  background: var(--color-bg-primary);
+  padding: 0.5rem;
 }
 .auth__card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-panel);
+  padding: 2rem 1.75rem;
 }
 .auth__card h1 {
-  font-size: var(--fs-2xl);
+  font-size: var(--ios-fs-title1);
+  line-height: var(--ios-lh-title1);
+  letter-spacing: -0.02em;
   margin-bottom: 0.35rem;
 }
 .auth__divider {
@@ -296,23 +315,44 @@ svg {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--color-border);
+  background: var(--ios-separator);
+}
+
+/* --- Onboarding (wizard) ---
+   El formulario puede ser alto: nada se centra verticalmente, la
+   columna de marca arranca arriba y se queda pegada al scroll. */
+.auth--wizard {
+  align-items: start;
+}
+.auth--wizard .auth__pitch {
+  min-height: auto;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  position: sticky;
+  top: 1.5rem;
+}
+.auth--wizard .auth__panel {
+  align-items: flex-start;
 }
 
 /* ============================================================
    Botones
+   ------------------------------------------------------------
+   iOS 27: boton relleno (accent), boton tintado (gris o acento),
+   boton de texto plano. Radio de 12 px, no pildora.
    ============================================================ */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
+  gap: 0.45rem;
+  padding: 0.6rem 1.1rem;
   min-height: 44px; /* objetivo táctil cómodo (iOS/Android) */
   border: 1px solid transparent;
-  border-radius: var(--radius-pill);
+  border-radius: 12px;
   font-weight: 600;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: background-color var(--transition-speed),
     transform var(--transition-speed), border-color var(--transition-speed),
@@ -323,7 +363,7 @@ svg {
   transform: translateY(0) scale(0.97); /* respuesta táctil suave */
 }
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 .btn--primary {
@@ -334,17 +374,15 @@ svg {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
 }
+/* Boton gris de iOS: relleno suave, sin marco. */
 .btn--ghost {
-  background: transparent;
-  /* El preflight de Tailwind pone border-width: 0 en todo: hay que fijar
-     el ancho del borde explicitamente o el boton se queda sin marco. */
-  border: 1px solid var(--color-border-strong);
+  background: var(--color-neutral-soft);
   color: var(--color-text-primary);
 }
 .btn--ghost:hover:not(:disabled) {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-border);
 }
+/* Boton tintado de acento. */
 .btn--soft {
   background: var(--color-accent-soft);
   color: var(--color-accent);
@@ -361,19 +399,19 @@ svg {
   color: var(--color-text-primary);
   background: var(--color-neutral-soft);
 }
+/* Boton de accion destructiva: relleno rojo suave. */
 .btn--danger {
-  background: transparent;
-  border: 1px solid var(--color-border-strong);
-  color: var(--color-text-secondary);
+  background: rgba(234, 67, 53, 0.1);
+  color: var(--blink-danger);
 }
 .btn--danger:hover:not(:disabled) {
-  border-color: var(--color-text-primary);
-  color: var(--color-text-primary);
-  background: var(--color-neutral-soft);
+  background: rgba(234, 67, 53, 0.18);
 }
 .btn--sm {
-  padding: 0.4rem 0.85rem;
-  font-size: var(--fs-xs);
+  padding: 0.4rem 0.8rem;
+  min-height: 36px;
+  font-size: var(--fs-sm);
+  border-radius: 10px;
 }
 .btn--block {
   width: 100%;
@@ -381,17 +419,20 @@ svg {
 
 /* ============================================================
    Tarjetas / superficies
+   ------------------------------------------------------------
+   Contenedor agrupado de iOS: SIN borde (la separación la hace la
+   sombra) y con el titulo en *headline*.
    ============================================================ */
 .card {
   background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   padding: 1.25rem;
-  box-shadow: var(--shadow-card);
-  transition: box-shadow var(--transition-speed), transform var(--transition-speed);
+  box-shadow: var(--shadow-ios-card);
+  transition: box-shadow var(--transition-speed);
 }
 .card:hover {
-  box-shadow: 0 4px 14px rgba(66, 66, 66, 0.08);
+  box-shadow: var(--shadow-ios-panel);
 }
 .card--flat {
   box-shadow: none;
@@ -404,12 +445,15 @@ svg {
   margin-bottom: 1rem;
 }
 .card__title {
-  font-size: var(--fs-base);
-  font-weight: 700;
+  font-size: var(--ios-fs-headline);
+  line-height: var(--ios-lh-headline);
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 .card__hint {
-  font-size: var(--fs-xs);
-  color: var(--color-text-tertiary);
+  font-size: var(--ios-fs-footnote);
+  line-height: var(--ios-lh-footnote);
+  color: var(--color-text-secondary);
   margin-top: 2px;
 }
 
@@ -454,18 +498,31 @@ svg {
 .select,
 .textarea {
   width: 100%;
-  padding: 0.6rem 0.75rem;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  /* Campo "filled" de iOS: relleno suave derivado del color de texto,
+     nunca un marco fuerte de aplicación web. */
+  background: var(--color-neutral-soft);
+  border: 1px solid transparent;
+  border-radius: 10px;
   font-size: var(--fs-sm);
   color: var(--color-text-primary);
-  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+  transition: border-color var(--transition-speed), box-shadow var(--transition-speed),
+    background-color var(--transition-speed);
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: var(--color-border);
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
   outline: none;
+  background: var(--color-bg-elevated);
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-ring);
 }
@@ -496,7 +553,7 @@ svg {
   font-weight: 600;
   background: var(--color-neutral-soft);
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
+  border: none;
 }
 .badge--accent {
   background: var(--color-accent-soft);
@@ -516,6 +573,23 @@ svg {
   max-width: 100%;
   margin-bottom: 0.25rem;
   border-radius: 10px;
+  /* Konsta lo centra (justify-center) y lo recorta (overflow-hidden): con
+     muchas pestanas eso deja la primera fuera de la vista. */
+  justify-content: flex-start;
+  /* Con muchas pestanas (Finanzas tiene 9) el control se desplaza en
+     horizontal en vez de recortarse. El degradado del borde derecho
+     avisa de que hay mas. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tabs > * {
+  flex: none;
 }
 .tabs button {
   font-family: inherit;
@@ -529,12 +603,17 @@ svg {
 
 /* ============================================================
    Tablas - Modelo Híbrido (PC: Tabla / Móvil: Tarjetas)
+   ------------------------------------------------------------
+   En escritorio tambien es un grupo de iOS: contenedor sin borde
+   (solo sombra), cabecera en *footnote* secondary sin banda gris y
+   separadores hairline.
    ============================================================ */
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-card);
 }
 table.data {
   width: 100%;
@@ -543,20 +622,19 @@ table.data {
 }
 table.data th {
   text-align: left;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  font-size: var(--ios-fs-footnote);
+  line-height: var(--ios-lh-footnote);
+  color: var(--color-text-secondary);
   font-weight: 600;
-  padding: 0.7rem 0.9rem;
+  padding: 0.75rem 1rem;
   /* HIG (Lists and tables): las tablas usan separadores horizontales,
      nunca divisores verticales. */
   border-bottom: 1px solid var(--ios-separator-strong);
-  background: var(--color-neutral-soft);
+  background: transparent;
   white-space: nowrap;
 }
 table.data td {
-  padding: 0.7rem 0.9rem;
+  padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--ios-separator);
   vertical-align: middle;
 }
@@ -571,7 +649,17 @@ table.data tbody tr:hover {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--color-bg-primary);
+  background: var(--color-bg-elevated);
+}
+/* En escritorio los datos NO se parten: si no caben, la tabla hace scroll
+   horizontal en vez de estrujar las cifras. */
+@media (min-width: 768px) {
+  table.data td:not(:first-child) {
+    white-space: nowrap;
+  }
+  table.data td:first-child {
+    min-width: 9rem;
+  }
 }
 
 /* Modelo híbrido: En móvil, convertir tabla a tarjetas */
@@ -644,17 +732,36 @@ table.data tbody tr:hover {
 
 /* ============================================================
    Estado vacío
+   ------------------------------------------------------------
+   iOS: icono en un circulo tintado + titulo + texto. Sin marco
+   discontinuo (era un recurso de aplicación web).
    ============================================================ */
 .empty {
   text-align: center;
-  padding: 2.5rem 1.5rem;
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
+  padding: 3rem 1.5rem;
+  border: none;
+  background: transparent;
+}
+.empty__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 0.9rem;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.empty__icon svg {
+  width: 26px;
+  height: 26px;
 }
 .empty__title {
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-size: var(--ios-fs-title3);
+  line-height: var(--ios-lh-title3);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  margin-bottom: 0.3rem;
 }
 .empty__hint {
   color: var(--color-text-secondary);
@@ -664,65 +771,100 @@ table.data tbody tr:hover {
 }
 
 /* ============================================================
-   Shell
+   Shell — lienzo flotante (iPadOS 27)
+   ------------------------------------------------------------
+   HIG (iOS 27): en iPadOS la barra lateral y el contenido no son
+   columnas pegadas al borde de la ventana, sino **paneles
+   flotantes** redondeados que se recortan sobre el fondo. Aqui se
+   replica: la sidebar y el contenido son dos superficies con radio
+   y sombra propia, separadas por un margen.
+
+   El topbar vive DENTRO del panel de contenido, de modo que la
+   barra de navegación y las páginas comparten bordes redondeados y
+   el hairline inferior no se escapa de la esquina.
    ============================================================ */
 .shell {
   display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
-  grid-template-rows: var(--topbar-h) 1fr;
-  grid-template-areas: "sidebar topbar" "sidebar main";
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.75rem;
   height: 100%;
+  background: var(--color-bg-primary);
 }
 .shell__sidebar {
-  grid-area: sidebar;
+  min-width: 0;
+  border-radius: var(--radius-lg);
   background: var(--color-bg-elevated);
-  border-right: 1px solid var(--color-border);
-  padding: 1rem 0.75rem;
+  box-shadow: var(--shadow-ios-panel);
+  padding: 1rem 0.6rem 0.6rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.35rem;
   overflow-y: auto;
 }
-.shell__topbar {
-  grid-area: topbar;
+.shell__content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--radius-lg);
   background: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-border);
-  padding: 0 1.25rem;
+  box-shadow: var(--shadow-ios-panel);
+  overflow: hidden;
+}
+.shell__topbar {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.6rem;
+  padding: 0 1.25rem;
+  min-height: var(--topbar-h);
+  /* Hairline de iOS, no un borde de 1 px de aplicación web. */
+  border-bottom: 1px solid var(--ios-separator);
 }
 .topbar__name {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: var(--ios-fs-headline);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+/* Acciones de la barra de navegación: texto plano en acento (iOS). */
+.shell__topbar .btn--plain {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.shell__topbar .btn--plain:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 /* Botón hamburguesa: oculto en escritorio, visible en móvil. */
 .shell__menu {
   display: none;
   place-items: center;
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  border: 1px solid var(--color-border-strong);
+  border: none;
   border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
+  background: transparent;
+  color: var(--color-accent);
   cursor: pointer;
 }
 .shell__menu:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-neutral-soft);
 }
 .shell__scrim {
   display: none;
 }
 .shell__main {
-  grid-area: main;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 2.5rem;
 }
 .page {
   max-width: var(--page-max);
@@ -746,13 +888,15 @@ table.data tbody tr:hover {
   font-size: var(--fs-sm);
 }
 
+/* --- Items de la sidebar ---
+   Medida oficial del UI Kit de iOS 27: fila de sidebar de 44 px. */
 .nav-group {
-  font-size: var(--fs-xs);
+  font-size: var(--ios-fs-caption1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-tertiary);
   font-weight: 600;
-  padding: 0 0.6rem 0.35rem;
+  padding: 0.75rem 0.65rem 0.35rem;
 }
 .nav {
   display: flex;
@@ -762,9 +906,10 @@ table.data tbody tr:hover {
 .nav__link {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0.65rem;
-  border-radius: var(--radius-sm);
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0 0.6rem;
+  border-radius: 10px;
   color: var(--color-text-secondary);
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -778,30 +923,61 @@ table.data tbody tr:hover {
   background: var(--color-accent-soft);
   color: var(--color-accent);
 }
+/* El icono va en una "well" redondeada, como los iconos de app de iOS. */
 .nav__icon {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
+  background: var(--color-neutral-soft);
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+.nav__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.nav__link:hover .nav__icon {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+.nav__link.active .nav__icon {
+  background: var(--color-accent);
+  color: var(--color-bg-elevated);
 }
 .nav__sub {
-  margin-left: 2.1rem;
+  margin-left: 2.4rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .nav__sub .nav__link {
-  padding: 0.35rem 0.6rem;
+  min-height: 36px;
+  padding: 0 0.6rem;
   font-size: var(--fs-xs);
+  font-weight: 500;
+  border-radius: 8px;
 }
 
 .sidenav__brand {
-  padding: 0.25rem 0.5rem 0.75rem;
+  padding: 0.25rem 0.5rem 0.5rem;
 }
 .sidenav__brand .brand {
   cursor: pointer;
   text-decoration: none;
+}
+/* Botón de cierre de sesión: al pie de la sidebar, como texto plano. */
+.sidenav__foot {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ios-separator);
+}
+.sidenav__foot .btn {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .rate-chip {
@@ -809,7 +985,7 @@ table.data tbody tr:hover {
   align-items: center;
   gap: 0.4rem;
   padding: 0.3rem 0.65rem;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-pill);
   background: var(--color-neutral-soft);
   font-size: var(--fs-xs);
@@ -821,7 +997,6 @@ table.data tbody tr:hover {
 }
 .rate-chip--live {
   background: var(--color-accent-soft);
-  border-color: transparent;
   color: var(--color-accent);
 }
 .rate-chip--live strong {
@@ -843,10 +1018,15 @@ table.data tbody tr:hover {
   place-items: center;
   font-weight: 600;
   font-size: var(--fs-sm);
+  flex: none;
 }
 
 /* ============================================================
-   Page header
+   Page header — Large Title de iOS
+   ------------------------------------------------------------
+   El titulo de la pantalla no va en una barra de aplicación web,
+   sino como *Large Title* (34 px) sobre el contenido, con el
+   subtitudo en secondary y las acciones alineadas a la linea base.
    ============================================================ */
 .page-head {
   display: flex;
@@ -854,15 +1034,19 @@ table.data tbody tr:hover {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 .page-head h1 {
-  font-size: var(--fs-xl);
+  font-size: var(--ios-fs-largeTitle);
+  line-height: var(--ios-lh-largeTitle);
+  font-weight: 700;
+  letter-spacing: -0.022em;
 }
 .page-head p {
   color: var(--color-text-secondary);
-  font-size: var(--fs-sm);
-  margin-top: 0.2rem;
+  font-size: var(--ios-fs-subheadline);
+  line-height: var(--ios-lh-subheadline);
+  margin-top: 0.15rem;
 }
 .actions {
   display: flex;
@@ -872,36 +1056,87 @@ table.data tbody tr:hover {
 }
 
 /* ============================================================
-   KPIs
+   KPIs — fichas de iOS
+   ------------------------------------------------------------
+   La etiqueta va en *footnote* secondary (no en mayusculas
+   condensadas) y el dato en *Title 2* tabular.
    ============================================================ */
 .kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
+}
+/* Fila de KPIs como un solo grupo: celdas separadas por hairline. */
+.kpis--group {
+  gap: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-card);
+  overflow: hidden;
+}
+.kpis--group .kpi {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--ios-separator);
+  min-width: 0;
+}
+.kpis--group .kpi:last-child {
+  border-right: none;
+}
+/* KPIs dentro de una tarjeta: solo las celdas, sin superficie propia. */
+.kpis--inline {
+  gap: 0;
+  margin: 0 -0.25rem;
+}
+.kpis--inline .kpi {
+  padding: 0 1.25rem;
+  border-right: 1px solid var(--ios-separator);
+  min-width: 0;
+}
+.kpis--inline .kpi:first-child {
+  padding-left: 0;
+}
+.kpis--inline .kpi:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+/* Rejilla de tarjetas sueltas (no un grupo). */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+/* Rejilla de formularios (Ajustes): tarjetas sueltas, no un grupo. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+  align-items: start;
 }
 .kpi__label {
-  font-size: var(--fs-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
-  font-weight: 600;
+  font-size: var(--ios-fs-footnote);
+  line-height: var(--ios-lh-footnote);
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 .kpi__value {
-  font-size: var(--fs-2xl);
+  font-size: var(--ios-fs-title2);
+  line-height: var(--ios-lh-title2);
   font-weight: 700;
-  margin-top: 0.4rem;
+  letter-spacing: -0.02em;
+  margin-top: 0.2rem;
   font-variant-numeric: tabular-nums;
 }
 .kpi__alt {
   color: var(--color-text-secondary);
-  font-size: var(--fs-sm);
+  font-size: var(--ios-fs-footnote);
   font-variant-numeric: tabular-nums;
   font-weight: 400;
 }
 .kpi__hint {
   color: var(--color-text-tertiary);
-  font-size: var(--fs-xs);
-  margin-top: 0.35rem;
+  font-size: var(--ios-fs-caption1);
+  margin-top: 0.25rem;
 }
 
 /* Checklist de arranque */
@@ -935,9 +1170,9 @@ table.data tbody tr:hover {
    ============================================================ */
 .pos {
   display: grid;
-  grid-template-columns: 1fr var(--ticket-w);
-  gap: 1rem;
-  height: calc(100vh - var(--topbar-h) - 3rem);
+  grid-template-columns: minmax(0, 1fr) var(--ticket-w);
+  gap: 0.75rem;
+  height: calc(100vh - var(--topbar-h) - 4rem);
 }
 .pos__catalog {
   display: flex;
@@ -951,17 +1186,19 @@ table.data tbody tr:hover {
   gap: 0.75rem;
   padding-top: 0.75rem;
 }
+/* Ficha de producto: superficie flotante, sin marco. */
 .prod {
   text-align: left;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
-  padding: 0.75rem;
+  box-shadow: var(--shadow-ios-raised);
+  padding: 0.8rem;
   cursor: pointer;
-  transition: border-color var(--transition-speed), transform var(--transition-speed);
+  transition: box-shadow var(--transition-speed), transform var(--transition-speed);
 }
 .prod:hover {
-  border-color: var(--color-accent);
+  box-shadow: var(--shadow-ios-card);
   transform: translateY(-1px);
 }
 .prod:disabled {
@@ -969,7 +1206,7 @@ table.data tbody tr:hover {
   cursor: not-allowed;
 }
 .prod:disabled:hover {
-  border-color: var(--color-border);
+  box-shadow: var(--shadow-ios-raised);
   transform: none;
 }
 .prod__name {
@@ -986,29 +1223,31 @@ table.data tbody tr:hover {
   color: var(--color-accent);
   font-variant-numeric: tabular-nums;
 }
+/* Ticket: panel agrupado, sin marco. */
 .ticket {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-card);
   overflow: hidden;
 }
 .ticket__head {
-  padding: 1rem;
-  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--ios-separator);
 }
 .ticket__items {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1.25rem;
 }
 .ticket__line {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.25rem 0.5rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px dashed var(--color-border);
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--ios-separator);
 }
 .ticket__line:last-child {
   border-bottom: none;
@@ -1035,8 +1274,8 @@ table.data tbody tr:hover {
   color: var(--color-accent);
 }
 .ticket__foot {
-  border-top: 1px solid var(--color-border);
-  padding: 1rem;
+  border-top: 1px solid var(--ios-separator);
+  padding: 1rem 1.25rem 1.25rem;
 }
 .total-row {
   display: flex;
@@ -1045,9 +1284,67 @@ table.data tbody tr:hover {
   margin-bottom: 0.3rem;
 }
 .total-row--grand {
-  font-size: var(--fs-lg);
+  font-size: var(--ios-fs-title3);
+  line-height: var(--ios-lh-title3);
   font-weight: 700;
+  letter-spacing: -0.014em;
   margin-top: 0.5rem;
+}
+
+/* ============================================================
+   Acciones de fila de tabla
+   ------------------------------------------------------------
+   En iOS las acciones de una fila son **botones de texto plano**,
+   no pildoras rellenas. Se alinean a la derecha.
+   ============================================================ */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  white-space: nowrap;
+}
+.row-actions .btn {
+  background: transparent;
+  border: none;
+  color: var(--color-accent);
+  font-size: var(--ios-fs-subheadline);
+  font-weight: 500;
+  min-height: 30px;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
+}
+.row-actions .btn:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  transform: none;
+}
+.row-actions .btn--danger {
+  color: var(--blink-danger);
+}
+.row-actions .btn--danger:hover:not(:disabled) {
+  background: rgba(234, 67, 53, 0.1);
+}
+
+/* ============================================================
+   Lista de filas simple (dentro de un grupo)
+   ------------------------------------------------------------
+   Separadores hairline como en Ajustes de iOS.
+   ============================================================ */
+.row-list {
+  display: flex;
+  flex-direction: column;
+}
+.row-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.row-list__row:last-child {
+  border-bottom: none;
 }
 
 /* ============================================================
@@ -1071,7 +1368,7 @@ table.data tbody tr:hover {
   background: var(--color-bg-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem 1.5rem;
   animation: modal-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 @keyframes fade-in {
@@ -1096,7 +1393,14 @@ table.data tbody tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+.modal__head h3 {
+  font-size: var(--ios-fs-title3);
+  line-height: var(--ios-lh-title3);
+  font-weight: 600;
+  letter-spacing: -0.014em;
 }
 .modal__close {
   border: none;
@@ -1181,7 +1485,7 @@ table.data tbody tr:hover {
 
 /* Fila de tabla: 52 px de alto (alto de fila de lista de iOS) */
 table.data td {
-  padding: 0.9rem 0.9rem;
+  padding: 0.9rem 1rem;
 }
 
 /* Campo de texto: 52 px de alto */
@@ -1284,19 +1588,24 @@ table.data td {
 @media (max-width: 860px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: var(--topbar-h) 1fr;
-    grid-template-areas: "topbar" "main";
+    padding: 0;
+    gap: 0;
+  }
+  /* En movil el contenido va a sangre: la pantalla es la superficie. */
+  .shell__content {
+    border-radius: 0;
+    box-shadow: none;
   }
   .shell__topbar,
   .shell__main {
     min-width: 0;
   }
   .shell__main {
-    padding: 1rem;
+    padding: 1rem 1rem 6rem;
   }
   .shell__topbar {
     padding: 0 0.75rem;
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
   .shell__menu {
     display: grid;
@@ -1309,17 +1618,17 @@ table.data td {
   .rate-chip__suffix {
     display: none;
   }
-  /* La barra lateral pasa a ser un panel deslizante (drawer). */
+  /* La barra lateral pasa a ser un panel deslizante (drawer) flotante. */
   .shell__sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 0.5rem;
+    left: 0.5rem;
+    bottom: 0.5rem;
     width: min(82vw, 300px);
     z-index: 80;
-    border-right: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-pop);
-    transform: translateX(-102%);
+    transform: translateX(-110%);
     transition: transform var(--transition-speed);
     will-change: transform;
   }
@@ -1331,7 +1640,7 @@ table.data td {
     position: fixed;
     inset: 0;
     z-index: 70;
-    background: rgba(66, 66, 66, 0.42);
+    background: rgba(29, 29, 31, 0.42);
     animation: fade-in var(--transition-speed) ease-out;
   }
   .auth {
@@ -1339,6 +1648,14 @@ table.data td {
   }
   .auth__pitch {
     display: none;
+  }
+  /* Large Title de iOS en pantallas compactas: 28 px (Title 1). */
+  .page-head h1 {
+    font-size: var(--ios-fs-title1);
+    line-height: var(--ios-lh-title1);
+  }
+  .page-head {
+    margin-bottom: 1.1rem;
   }
 }
 
@@ -1556,6 +1873,14 @@ table.data td {
 .icon-btn:active {
   transform: scale(0.92);
 }
+/* Boton de icono con relleno de acento (junto a un buscador, p. ej.). */
+.icon-btn--accent {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border-radius: 12px;
+  min-width: 44px;
+  min-height: 44px;
+}
 
 @media (max-width: 860px) {
   .otp {
@@ -1742,15 +2067,29 @@ table.data td {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ios-separator);
 }
 .scan-remote__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.75rem;
-  padding: 2.5rem 1rem;
+  gap: 0.6rem;
+  padding: 2.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-card);
   color: var(--color-text-secondary);
+}
+.scan-remote__empty .empty__icon {
+  margin-bottom: 0.25rem;
+}
+.scan-remote__empty .empty__title {
+  color: var(--color-text-primary);
+}
+.scan-remote__empty .empty__hint {
+  margin: 0;
 }
 .scan-remote__foot {
   margin-top: 0.25rem;
@@ -1816,15 +2155,16 @@ table.data td {
   justify-content: center;
 }
 .receipt {
-  background: var(--color-bg-primary);
+  /* Vista previa del ticket impreso: se ve como papel, no como un hueco. */
+  background: var(--color-bg-elevated);
   color: var(--color-text-primary);
   padding: 1.25rem 1rem;
-  border: 1px dashed var(--color-border-strong);
+  border: 1px solid var(--ios-separator);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono, monospace);
   font-size: 0.8rem;
   line-height: 1.4;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-ios-raised);
   width: 100%;
 }
 .receipt--58mm {

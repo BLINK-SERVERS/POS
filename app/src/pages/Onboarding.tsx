@@ -243,11 +243,11 @@ export function Onboarding() {
   const canFinish = state.business.name.trim() !== "" && state.accounts.length > 0;
 
   return (
-    <main className="auth wizard">
+    <main className="auth auth--wizard">
       <div className="auth__pitch">
         <span className="blink-pos-title">
-          <span className="blink">BLINK</span>
-          <span className="pos">POS</span>
+          <span className="wordmark__blink">BLINK</span>
+          <span className="wordmark__pos">POS</span>
         </span>
         <h2>Vamos a dejar tu punto de venta listo.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.05rem", fontWeight: 600 }}>

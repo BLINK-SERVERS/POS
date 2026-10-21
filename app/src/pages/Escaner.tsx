@@ -258,8 +258,11 @@ export function Escaner() {
 
       {!pairing ? (
         <div className="scan-remote__empty">
-          <Icon name="alert" />
-          <p>
+          <span className="empty__icon" aria-hidden>
+            <Icon name="alert" />
+          </span>
+          <div className="empty__title">Caja no vinculada</div>
+          <p className="empty__hint">
             Este teléfono no está vinculado a ninguna caja. Abre el QR desde la caja
             (Ajustes › Dispositivos) y escanéalo con la cámara.
           </p>

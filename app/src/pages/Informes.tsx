@@ -188,18 +188,18 @@ export function Informes() {
       {tab === "Resultados" && (
         <>
           <Card title="Resultados del mes" hint={`1 – ${dayCount} de ${new Date().toLocaleDateString("es", { month: "long" })}`}>
-            <div className="kpis">
-              <div>
+            <div className="kpis kpis--inline">
+              <div className="kpi">
                 <div className="kpi__label">Ventas netas</div>
                 <Money usd={cur.net} rate={rate} />
                 <div className="kpi__hint">vs. período anterior: {variation(cur.net, prev.net)}</div>
               </div>
-              <div>
+              <div className="kpi">
                 <div className="kpi__label">Gastos</div>
                 <Money usd={cur.expenses} rate={rate} />
                 <div className="kpi__hint">vs. período anterior: {variation(cur.expenses, prev.expenses)}</div>
               </div>
-              <div>
+              <div className="kpi">
                 <div className="kpi__label">Utilidad neta</div>
                 <Money usd={cur.profit} rate={rate} />
                 <div className="kpi__hint">vs. período anterior: {variation(cur.profit, prev.profit)}</div>
@@ -225,7 +225,7 @@ export function Informes() {
             </div>
           </Card>
 
-          <div className="kpis">
+          <div className="card-grid">
             <Card title="De las ventas a tu utilidad">
               <div className="breakdown">
                 <div className="breakdown__row">

@@ -67,11 +67,20 @@
   --shadow-card: 0 1px 2px rgba(66, 66, 66, 0.04);
   --shadow-pop: 0 12px 32px rgba(66, 66, 66, 0.18);
 
+  /* --- Elevación (iOS 27 · superficies flotantes) ---
+     La paleta exige que TODOS los fondos sean #FFFEFB, así que la
+     jerarquía entre superficies NO se construye con un tinte distinto
+     (como haría systemGroupedBackground), sino con sombra: el grupo se
+     recorta sobre el lienzo blanco, igual que en iOS. */
+  --shadow-ios-card: 0 1px 2px rgba(29, 29, 31, 0.04), 0 4px 16px rgba(29, 29, 31, 0.05);
+  --shadow-ios-panel: 0 1px 2px rgba(29, 29, 31, 0.05), 0 12px 32px rgba(29, 29, 31, 0.07);
+  --shadow-ios-raised: 0 1px 2px rgba(29, 29, 31, 0.06), 0 2px 6px rgba(29, 29, 31, 0.06);
+
   --transition-speed: 0.2s ease-in-out;
 
   /* --- Layout --- */
   --sidebar-w: 248px;
-  --topbar-h: 64px;
+  --topbar-h: 56px;
   --ticket-w: 360px;
   --page-max: 1320px;
 

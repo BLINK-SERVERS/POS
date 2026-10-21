@@ -64,7 +64,7 @@ const ProductRow = memo(function ProductRow({
           <Badge>Inactivo</Badge>
         )}
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         <button className="btn btn--soft btn--sm" onClick={() => onEdit(product)}>
           Editar
         </button>
@@ -111,7 +111,7 @@ const DiscountRow = memo(function DiscountRow({
           {discount.active ? "Activo" : "Inactivo"}
         </label>
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         <button className="btn btn--soft btn--sm" onClick={() => onEdit(discount)}>
           Editar
         </button>
@@ -145,7 +145,7 @@ const SurchargeRow = memo(function SurchargeRow({
           {surcharge.active ? "Activo" : "Inactivo"}
         </label>
       </td>
-      <td className="row gap-4">
+      <td className="row-actions">
         <button className="btn btn--soft btn--sm" onClick={() => onEdit(surcharge)}>
           Editar
         </button>
@@ -208,7 +208,7 @@ const CategoryRow = memo(function CategoryRow({
         </label>
       </td>
       <td className="dim">{count} producto(s)</td>
-      <td className="row gap-4">
+      <td className="row-actions">
         <button className="btn btn--danger btn--sm" onClick={() => onRemove(category.id)}>
           Eliminar
         </button>
@@ -576,6 +576,7 @@ export function Catalogo() {
       {tab === "Productos" &&
         (products.length === 0 ? (
           <EmptyState
+            icon="box"
             title="Sin productos"
             hint="Añade productos en el Catálogo para empezar a vender."
             action={
@@ -655,7 +656,8 @@ export function Catalogo() {
 
           {priceProducts.length === 0 ? (
             <EmptyState
-              title="Sin productos"
+              icon="box"
+            title="Sin productos"
               hint="Añade productos para asignarles precios por canal."
             />
           ) : (
@@ -699,6 +701,7 @@ export function Catalogo() {
       {tab === "Descuentos" &&
         (discounts.length === 0 ? (
           <EmptyState
+            icon="percent"
             title="Sin descuentos"
             hint="Crea códigos de descuento para aplicarlos en el POS."
             action={
@@ -740,6 +743,7 @@ export function Catalogo() {
       {tab === "Recargos" &&
         (surcharges.length === 0 ? (
           <EmptyState
+            icon="percent"
             title="Sin recargos"
             hint="Crea recargos (delivery, servicio) para sumarlos en el POS."
             action={
@@ -778,6 +782,7 @@ export function Catalogo() {
       {tab === "Categorías" &&
         (categories.length === 0 ? (
           <EmptyState
+            icon="tag"
             title="Sin categorías"
             hint="Crea categorías para organizar tu catálogo."
             action={

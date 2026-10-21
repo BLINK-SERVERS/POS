@@ -13,6 +13,79 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.9.0] · 2026-10-21
+
+**Rediseño completo de la aplicación al lenguaje visual de iOS 27.**
+
+Todo el POS (shell, navegación, tablas, formularios, tarjetas, ticket, estados
+vacíos y pantallas de acceso) pasa del patrón de *aplicación web* al de
+**iOS 27**. La landing no se toca: ya estaba en el lenguaje correcto.
+
+### El shell pasa a ser un lienzo flotante (iPadOS 27)
+
+- La **sidebar** deja de ser una columna con una línea vertical a la derecha:
+  ahora es un **panel flotante** redondeado (radio 18 px) con sombra propia,
+  separado del contenido por un margen. En móvil sigue siendo un drawer, pero
+  también flotante.
+- El **contenido** es otro panel flotante, y la **barra de navegación vive
+  dentro** de él: así la barra y las páginas comparten bordes redondeados y el
+  hairline no se escapa de la esquina.
+- Los **items de la sidebar** miden 44 px (medida oficial del UI Kit) y llevan
+  el icono dentro de una *well* redondeada que se rellena de azul cuando el
+  item está activo.
+- Las acciones de la barra de navegación son **texto plano en acento**, como
+  las de una barra de navegación de iOS (nada de píldoras).
+
+### Tipografía y superficies
+
+- El título de cada pantalla pasa a **Large Title de iOS** (34 px, leading 41);
+  en pantallas compactas, Title 1 (28 px).
+- Las **tarjetas** pierden el marco de 1 px: la jerarquía se construye con
+  sombra (elevación), no con bordes, como en iOS.
+- Los **campos** adoptan el estilo *filled* de iOS: relleno suave derivado del
+  color de texto, radio de 10 px, foco con anillo de acento.
+- Los **botones** pasan de píldora a radio de 12 px, con la familia real de
+  iOS: relleno (acento), gris, tintado de acento, texto plano y destructivo.
+- Las **tablas** dejan de estrujar las cifras: los datos no se parten y, si no
+  caben, la tabla se desplaza en horizontal. La cabecera pierde la banda gris
+  y las mayúsculas.
+- Las **acciones de fila** son botones de texto plano (acento), no píldoras.
+- Los **KPIs** son un único grupo con celdas separadas por hairline, con la
+  etiqueta en *footnote* secondary y el dato en *Title 2*.
+- Los **estados vacíos** tienen icono en un círculo tintado, título y texto:
+  se eliminó el marco discontinuo.
+
+### Pantallas de acceso
+
+- Login, registro, recuperación y **onboarding** se rehacen como superficies
+  flotantes (marca + caja del formulario), con campos *filled* y CTA de azul
+  relleno.
+- El **escáner** remoto recibe la misma tarjeta flotante en su estado "caja no
+  vinculada".
+
+### Bugs corregidos
+
+- **Choque de clases `.pos`**: el logotipo "BLINK **POS**" usaba `class="pos"`,
+  que es la del grid del POS (`height: calc(100vh - …)`). El logotipo crecía
+  hasta **740 px de alto** y empujaba el resto de la columna de marca fuera de
+  la pantalla. Las clases internas del wordmark pasan a `wordmark__blink` /
+  `wordmark__pos`.
+- **Control segmentado recortado**: Konsta lo centra (`justify-center`) y lo
+  recorta (`overflow-hidden`), así que con muchas pestañas (Finanzas tiene 9) la
+  primera quedaba fuera de la vista. Ahora el control se desplaza en
+  horizontal, con un degradado que avisa de que hay más.
+
+### Verificación
+
+- `npm run verify:ui` **verifica ahora dos tamaños** (escritorio 1280×860 y
+  móvil 390×844), 15 rutas en cada uno, más el onboarding y las pantallas de
+  acceso **sin sesión** (antes nunca se veían: el gate de ruta devolvía al
+  Inicio). Total: 34 comprobaciones, 0 errores de consola, 0 iconos vacíos,
+  0 desbordes.
+- El verificador detecta además **elementos con poco texto pero mucha altura**
+  (el síntoma del choque de clases) y **elementos que se salen por la derecha**.
+- `app/package.json` → `1.9.0`.
+
 ## [1.8.3] · 2026-10-21
 
 **Documentación completa del proyecto + métricas reales de iOS 27.**
