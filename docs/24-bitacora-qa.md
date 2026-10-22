@@ -402,3 +402,53 @@ renderizar, con el checker del propio motor.
 - El master de Remotion (`video/BLINK-COMERCIAL.mp4`) y el de HyperFrames
   (`BLINK-COMERCIAL-HF.mp4`) conviven; el de HyperFrames es el vigente.
 - El `CHANGELOG.md` todavía no recoge las versiones 1.13.0 a 1.16.0 de la app.
+---
+
+## 9. Liquid Glass en oscuro, fondos planos y diseño (v1.17.0)
+
+**Fecha:** 2026-10-22 · **Alcance:** el material de cristal en la aparición
+oscura, los fondos de la página y las correcciones de diseño que salieron al
+revisar las capturas.
+
+Las capturas de `verify-shots/` se repasaron a mano en las cuatro
+combinaciones (escritorio/móvil × claro/oscuro). Lo que se ve en pantalla no
+lo Pillaba ningún script: el texto negro sobre el azul, el botón de cobrar
+cortado y el solape en móvil salieron al mirar las imágenes.
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run verify:ui` | 0 vistas con problemas · 0 errores de consola |
+| `npm run qa:apariencia` | 0 fallos (el contador ya no llama «avisos» a las comprobaciones correctas) |
+| `npm run qa:responsive` | 0 fallos |
+| `npm test` | 50/50 |
+| `npm run typecheck` | sin errores |
+| `npm run docs:check` | 0 enlaces rotos |
+
+### 9.1 · Errores encontrados y resueltos
+
+| # | Error | Causa | Resolución |
+|---|---|---|---|
+| BUG-16 | En oscuro, el texto de los botones primarios salía **negro sobre el azul** | El token de texto inverso se invierte con la apariencia, pero el azul de marca es igual de claro en los dos modos | Nuevo token `--color-text-on-accent` (siempre claro) en el botón primario, el avatar, el punto de la lista de pasos y los botones de la landing |
+| BUG-17 | El texto de los botones tintados, las insignias de acento y las píldoras de variación no llegaba a 4,5:1 | El azul de la marca sobre su propio velo daba 3,3:1 en claro y 2,9:1 en oscuro; el verde de las píldoras, 1,9:1 | Tres tokens de texto propios: `--color-accent-text`, `--color-success-text` y `--color-danger-text` |
+| BUG-18 | El botón de **cobrar** quedaba cortado por abajo | El pie del ticket encogía (flex-shrink) y el alto del POS era una cuenta fija que no descontaba la cabecera | El pie no encoge, la lista de líneas es la que se desplaza, y la página del POS ocupa el alto que deja la cabecera |
+| BUG-19 | En móvil, el botón del estado vacío se solapaba con la cabecera del ticket | La página del POS estaba comprimida al alto de la pantalla en una sola columna | En una columna (`max-width: 1080px`) la página vuelve a su alto natural |
+| BUG-20 | El gráfico de ventas con los doce meses a cero era un hueco vacío | Se dibujaban doce barras de 1 % de alto y los nombres de los meses | Si no hay ni un euro en el periodo, se dice: estado vacío con el icono y la explicación |
+
+### 9.2 · El material de cristal en la aparición oscura
+
+| Pieza | Claro | Oscuro |
+|---|---|---|
+| Radio de desenfoque (`--ios-blur`) | 6 px (*Light/Regular - Small*) | **15 px** (*Light/Regular - Medium*) |
+| Velo (`--ios-veil`) | 0,62 → 0,22 → 0,08 | **0,20 → 0,08 → 0,035** |
+| Brillo especular (`--ios-specular`) | 0,72 | **0,30** (antes 0,16) |
+| Canto interior (`--ios-rim`, nuevo) | 1 px a 0,14 | 1 px a 0,13 |
+
+El motivo es que sobre el negro un 8 % de blanco no se ve: el material se
+quedaba plano. Los tokens siguen a `color-scheme`, así que el modo elegido a
+mano en Ajustes también los respeta (no es una consulta de medios).
+
+### 9.3 · Lo que sigue pendiente
+
+- Publicación en Product Hunt y redes (falta la cuenta y el copy final).
+- El `CHANGELOG.md` ya recoge las versiones 1.13.0 a 1.17.0 (se había
+  quedado atrás).

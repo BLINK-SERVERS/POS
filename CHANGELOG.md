@@ -13,6 +13,150 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.17.0] · 2026-10-22
+
+**Liquid Glass en el modo oscuro, fondos planos y correcciones de diseño.**
+
+### Liquid Glass en los botones (modo oscuro)
+
+- El material de cristal **ya no se ve plano en oscuro**. El velo (`--ios-veil`),
+  el brillo especular (`--ios-specular`) y el canto interior (`--ios-rim`, nuevo)
+  suben en la aparición oscura, y el desenfoque pasa de 6 px a **15 px**, que es
+  el radio real del material "Dark/Regular" del UI Kit (`--ios-blur`).
+- El botón primario, el secundario de la landing, las insignias y las píldoras
+  llevan ese material: velo + desenfoque + especular + canto.
+- Los tokens siguen a `color-scheme`, así que el modo elegido a mano en
+  Ajustes también se respeta (no es una consulta de medios).
+
+### Fondos planos
+
+- La página **General** deja de llevar la aurora de acento: el fondo es un
+  color plano (`--color-bg-primary`) en las dos apariencias. El relieve lo
+  dan las tarjetas de cristal, no un halo detrás.
+
+### Correcciones de diseño
+
+- **BUG-16**: en la aparición oscura, el texto de los botones primarios salía
+  **negro sobre el azul** (el token de texto inverso se invierte con el modo).
+  Nuevo token `--color-text-on-accent`, siempre claro, en el botón primario,
+  el avatar, el punto de la lista de pasos y los botones de la landing.
+- **BUG-17**: el texto de los botones tintados, de las insignias de acento y
+  de las píldoras de variación **no llegaba a 4,5:1** (el azul de la marca sobre
+  su propio velo daba 2,9:1 en oscuro y 3,3:1 en claro). Nuevos tokens
+  `--color-accent-text`, `--color-success-text` y `--color-danger-text`.
+- **BUG-18**: el botón de **cobrar** quedaba cortado por abajo en la pantalla
+  de venta: el pie del ticket se encogía. Ahora el pie no encoge, la lista de
+  líneas es la que se desplaza, y la página del POS ocupa el alto que deja la
+  cabecera.
+- **BUG-19**: en móvil, el botón del estado vacío ("Ir al Catálogo") se
+  solapaba con la cabecera del ticket: la página del POS estaba comprimida
+  al alto de la pantalla en una sola columna. En una columna vuelve a su alto
+  natural.
+- **BUG-20**: el gráfico de ventas con los doce meses a cero era un hueco
+  vacío con los nombres de los meses. Ahora se dice que no hay ventas.
+- La barra de pestañas de Konsta y los scripts de QA se han revisado; el
+  contador de `qa:apariencia` ya no llama "avisos" a las comprobaciones
+  correctas.
+
+### QA
+
+- `npm run verify:ui`: 0 vistas con problemas, 0 errores de consola (las
+  capturas de `verify-shots/` incluyen las cuatro combinaciones de tamaño y
+  apariencia).
+- `npm run qa:apariencia`: 0 fallos. `npm run qa:responsive`: 0 fallos.
+- `npm test`: 50/50. `npm run typecheck`: sin errores.
+
+---
+
+## [1.16.0] · 2026-10-21
+
+**Vista previa (Open Graph) e iconos institucionales.**
+
+- El lema oficial de la marca, «Vende en un parpadeo, factura con BLINK ;)»,
+  es el que llevan `og:title`, `og:description`, `twitter:title`, la
+  descripción de la página y el manifiesto.
+- `og-image.png` se regenera: 1200×630 px (la proporción que piden WhatsApp,
+  Telegram, X, LinkedIn y Slack), con el mockup del POS, el móvil escaneando y
+  tarjetas de cristal, en la paleta oficial (`#0088ff`, verde `#34c759`).
+- A partir del fichero institucional se generan `favicon.png` (32 px),
+  `icon.png` (512 px), `favicon.ico` (16/32/48) y el juego del manifiesto.
+- El `favicon.svg` se reconstruyó midiendo el PNG (radio 80/512, ojo píldora
+  150×75 en 55/182, ojo circular r=75 en 381/181, boca de semidisco r=81 en
+  175/324).
+- Se añaden `og:image:type`, `og:image:alt` y `twitter:image:alt`.
+
+### Correcciones
+
+- **BUG-12**: `npm run og` fallaba (leía las fuentes de Apple que se
+  eliminaron de `public/` en la v1.5.0) y la imagen que seguía en producción
+  era de una versión anterior, con el indigo del clon.
+- **BUG-13**: los iconos de la app no tenían versión raster institucional.
+
+---
+
+## [1.15.0] · 2026-10-21
+
+**General, el command center del comercio (bento de cristal).**
+
+- La sección «Inicio» pasa a llamarse «General» en móvil y escritorio (la
+  ruta `/app/inicio` se mantiene; `/app/general` funciona como alias).
+- Bento de tarjetas translucidas: 4 columnas en escritorio, 2 en tablet y
+  móvil, con `backdrop-filter: blur(20px)`, borde de 1 px y radio de 22 px.
+- Cuatro métricas con su variación frente al periodo equivalente anterior
+  (selector Hoy/Mes/Año): Ventas totales, Órdenes pagadas, Ticket promedio y
+  Margen bruto, con pastilla verde/roja.
+- Gráfico de ventas por mes (12 meses) interactivo: cada barra es un botón y
+  una tarjeta flotante de cristal muestra el detalle exacto del mes elegido.
+- Cifras en SF Pro Display con `tabular-nums`; etiquetas en SF Pro Text.
+- Iconos nuevos: `arrowUp`, `arrowDown` y `trendUp`.
+
+### Correcciones
+
+- **BUG-10**: `growth()` devolvía `null` sin base de comparación; con el
+  comercio recién abierto se mostraba «+100,0 %» por una división por cero.
+
+---
+
+## [1.14.0] · 2026-10-21
+
+**Navegación móvil sin hamburguesa, con barra inferior flotante.**
+
+- Barra inferior flotante (Liquid Glass) con distribución 2 + 1 + 2: General y
+  Catálogo a la izquierda, la acción principal (Vender) en el centro exacto
+  (desvío de 0,00 px) con el símbolo de dólar en un círculo de acento, e
+  Inventario y Finanzas a la derecha (simetría lateral de 72,7 vs 72,7 px).
+- Cinco elementos con icono y etiqueta (el límite de la HIG). Los módulos que
+  no caben se alcanzan desde General, que hace de panel.
+- Se eliminan el botón y el panel lateral en móvil: la cuenta, los ajustes y
+  el cierre de sesión pasan al menú del avatar, y el botón de caja se queda
+  solo con el icono.
+- Iconografía por módulo desde una sola fuente (`lib/modulos.ts`).
+
+---
+
+## [1.13.0] · 2026-10-21
+
+**Landing tipo Apple con Liquid Glass y una sola pila tipográfica.**
+
+- Estructura al estilo de las páginas de producto de Apple: portada, tres
+  momentos (una idea por bloque con su visual), cifras, capacidades, un único
+  plan de precio, preguntas frecuentes, cierre y pie. Redacción corta y en
+  afirmativo, sin superlativos.
+- Liquid Glass en la capa funcional (barra, fichas, precio, cierre), resuelto
+  en CSS con los tokens del proyecto; con «reducir transparencia» el material
+  se sustituye por un relleno plano.
+- Páginas legales rehechas: cabecera con llamada a la acción, texto de entrada
+  como bloque de cristal, separadores finos y columna de lectura centrada.
+
+### Correcciones de raíz
+
+- **BUG-06**: `light-dark()` anidado en `rgb()` es inválido en Chrome y hacía
+  que toda la capa translucida no se pintara. Los tokens guardan ahora el
+  color y la transparencia se compone con color relativo.
+- **BUG-07**: media app se dibujaba con la tipografía del sistema porque los
+  pesos 800-900 no tenían `@font-face`. Una sola pila en toda la app.
+
+---
 ## [1.12.0] · 2026-10-21
 
 **Modo oscuro con la paleta oficial BLINK + optimización de la carga (la landing baja un 66 %).**

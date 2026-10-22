@@ -133,6 +133,9 @@ if (auto.colorScheme !== "light dark") {
 if (errores.length) Add("FALLO", "errores de consola: " + errores.slice(0, 2).join(" | "));
 
 const fallos = HALLAZGOS.filter((h) => h.nivel === "FALLO");
-console.log(`\nFallos: ${fallos.length} · Avisos: ${HALLAZGOS.length - fallos.length}`);
+/* Los "ok" son comprobaciones, no avisos: contarlos como avisos hacia
+   creer que hay cinco problemas donde no hay ninguno. */
+const avisos = HALLAZGOS.filter((h) => h.nivel !== "ok" && h.nivel !== "FALLO");
+console.log(`\nComprobaciones: ${HALLAZGOS.length} · Fallos: ${fallos.length} · Avisos: ${avisos.length}`);
 await browser.close();
 process.exit(fallos.length ? 1 : 0);

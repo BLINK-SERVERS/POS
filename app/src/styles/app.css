@@ -250,11 +250,13 @@
   font-size: var(--fs-base);
   letter-spacing: -0.01em;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
-  backdrop-filter: blur(var(--ios-material-blur-small)) saturate(180%);
+  /* El material del kit: en oscuro difunde mas (--ios-blur) y lleva el
+     velo, el brillo especular y el canto de vidrio (--ios-rim). */
+  -webkit-backdrop-filter: blur(var(--ios-blur)) saturate(180%);
+  backdrop-filter: blur(var(--ios-blur)) saturate(180%);
   background: var(--ios-veil), var(--color-neutral-soft);
   color: var(--color-text-primary);
-  box-shadow: var(--ios-specular), var(--ios-specular-dark),
+  box-shadow: var(--ios-specular), var(--ios-specular-dark), var(--ios-rim),
     0 1px 2px rgb(from var(--negro) r g b / 0.1);
   transition: background-color var(--transition-speed),
     transform var(--transition-speed), border-color var(--transition-speed),
@@ -275,11 +277,14 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-/* Rol Primary: acento de marca con el material por encima. */
+/* Rol Primary: acento de marca con el material por encima. El texto va
+   en `--color-text-on-accent` (siempre claro): con el token inverso, en
+   oscuro el boton quedaba con el texto negro sobre el azul. */
 .btn--primary {
   background: var(--ios-veil), var(--color-accent);
-  color: var(--color-text-inverse);
-  box-shadow: var(--ios-specular-soft), inset 0 -1px 0 rgb(from var(--negro) r g b / 0.14),
+  color: var(--color-text-on-accent);
+  box-shadow: var(--ios-specular-soft), var(--ios-rim),
+    inset 0 -1px 0 rgb(from var(--negro) r g b / 0.14),
     0 2px 10px rgb(from var(--acento) r g b / 0.28);
 }
 .btn--primary:hover:not(:disabled) {
@@ -299,13 +304,14 @@
 .btn--ghost:hover:not(:disabled) {
   background: var(--ios-veil), var(--color-border);
 }
-/* Boton tintado de acento. */
+/* Boton tintado de acento. El texto usa `--color-accent-text`: con el
+   azul puro sobre el velo del acento se quedaba sin contraste AA. */
 .btn--soft {
   background: var(--ios-veil), var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 .btn--soft:hover:not(:disabled) {
-  background: var(--ios-veil), var(--color-accent-soft-strong);
+  background: var(--ios-veil), var(--color-accent-soft-hover);
 }
 /* Boton de texto plano: sin material, solo el color. */
 .btn--plain {
@@ -526,7 +532,7 @@
 }
 .badge--accent {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   border-color: transparent;
 }
 
@@ -971,7 +977,7 @@ table.data tbody tr:hover {
   height: 34px;
   border-radius: 50%;
   background: var(--color-accent);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-accent);
   display: grid;
   place-items: center;
   font-weight: 600;
@@ -1120,7 +1126,7 @@ table.data tbody tr:hover {
 .check--done .check__mark {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-accent);
 }
 .check--done {
   color: var(--color-text-secondary);
@@ -1134,6 +1140,23 @@ table.data tbody tr:hover {
   grid-template-columns: minmax(0, 1fr) var(--ticket-w);
   gap: 0.75rem;
   height: calc(100vh - var(--topbar-h) - 4rem);
+}
+/* La pagina del POS ocupa el alto que deja la cabecera: el ticket y su
+   pie (el boton de cobrar) tienen que caber en pantalla. Con una altura
+   fija, el pie se salia por abajo y el boton quedaba cortado. */
+.page--pos {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.page--pos .page-head {
+  flex: none;
+}
+.page--pos .pos {
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 .pos__catalog {
   display: flex;
@@ -1243,6 +1266,10 @@ table.data tbody tr:hover {
     opacity: 0.6;
   }
 .ticket__foot {
+  /* El pie no se encoge: si encoge, el boton de cobrar queda cortado
+     por abajo. El espacio que sobra lo toma la lista de lineas, que
+     si se desplaza. */
+  flex: none;
   border-top: 1px solid var(--ios-separator);
   padding: 1rem 1.25rem 1.25rem;
 }
@@ -1772,7 +1799,7 @@ table.data td {
   height: 34px;
   border-radius: 50%;
   background: var(--ios-veil), var(--color-accent);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-accent);
   box-shadow: var(--ios-specular-soft),
     0 4px 14px rgb(from var(--acento) r g b / 0.32);
 }
@@ -1802,22 +1829,17 @@ table.data td {
      y radio de 22 px (iOS).
    · Cifras grandes en SF Pro Display con cifras tabulares; etiquetas
      en SF Pro Text.
-   · Tras la tarjeta hay un velo de acento: sobre una pagina clara el
-     material solo se ve si hay algo que difuminar.
+   · El FONDO DE LA PAGINA ES UN COLOR PLANO (--color-bg-primary), sin
+     auroras ni degradados: el relieve lo dan las tarjetas de cristal,
+     no un halo detras. Asi el patron se lee igual en las dos
+     apariencias y el lienzo no compite con los datos.
    ============================================================ */
 .general {
   position: relative;
+  background: var(--color-bg-primary);
 }
-.general::before {
-  content: "";
-  position: absolute;
-  inset: -1.5rem -1.5rem auto -1.5rem;
-  height: 460px;
-  background:
-    radial-gradient(66% 100% at 28% 0%, rgb(from var(--acento) r g b / 0.17), transparent 72%),
-    radial-gradient(58% 90% at 88% 8%, rgb(from var(--halo) r g b / 0.55), transparent 74%);
-  pointer-events: none;
-}
+/* La aurora que estaba detras de las tarjetas se retira: el fondo de la
+   pagina es un color plano y el relieve lo dan las tarjetas. */
 .general > * {
   position: relative;
 }
@@ -1931,11 +1953,11 @@ table.data td {
 }
 .pill--up {
   background: rgb(from var(--verde) r g b / 0.15);
-  color: var(--blink-success);
+  color: var(--color-success-text);
 }
 .pill--down {
   background: rgb(from var(--rojo) r g b / 0.13);
-  color: var(--blink-danger);
+  color: var(--color-danger-text);
 }
 
 /* --- Grafico de barras mensual --- */
@@ -2302,6 +2324,15 @@ table.data td {
     grid-template-columns: 1fr;
     height: auto;
   }
+  /* En una sola columna la pagina del POS vuelve a su alto natural:
+     si no, la rejilla se comprime y el contenido se solapa. */
+  .page--pos {
+    height: auto;
+  }
+  .page--pos .pos {
+    flex: none;
+    height: auto;
+  }
   .ticket {
     max-height: 60vh;
   }
@@ -2571,7 +2602,7 @@ table.data td {
 .wizard__steps li.is-done .wizard__dot {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-accent);
 }
 .wizard__panel {
   width: 100%;

@@ -386,11 +386,37 @@ Primary: en las alertas es un botón rojo aparte.
 
 ### El material
 
-- **Variante "regular"** de Liquid Glass: desenfoque de **6 px** (el valor
-  real del kit para *Light/Regular - Small*).
+- **Variante "regular"** de Liquid Glass: desenfoque de **6 px** en claro
+  (el valor real del kit para *Light/Regular - Small*) y de **15 px** en
+  oscuro (*Light/Regular - Medium*): sobre el negro, con 6 px el material se
+  veía plano. El radio lo lleva `--ios-blur` y sigue a `color-scheme`, así
+  que también respeta el modo elegido a mano en Ajustes.
 - **Brillo especular** en el borde superior (`inset 0 1px 0`) y sombra en el
-  inferior: es lo que le da el aspecto de vidrio.
-- **Degradado vertical** del material: más luz arriba, translúcido abajo.
+  inferior: es lo que le da el aspecto de vidrio. En oscuro sube de 0,16 a
+  0,30 de alfa.
+- **Canto interior** (`--ios-rim`, `inset 0 0 0 1px`): la línea translúcida
+  que separa el material del fondo.
+- **Degradado vertical** del material: más luz arriba, translúcido abajo. En
+  oscuro el velo sube de 0,13 a 0,20 de alfa: un 8 % de blanco sobre el negro
+  no se ve.
+- **El texto sobre un relleno de acento** (`--color-text-on-accent`) es
+  **siempre claro**: el azul de marca es igual de claro en los dos modos, así
+  que invertir el texto con la apariencia lo dejaba negro sobre azul.
+
+### Contraste del texto tintado
+
+El azul de la marca sobre su propio velo se quedaba en 3,3:1 en claro y
+2,9:1 en oscuro (por debajo del 4,5:1 de AA). Para eso hay tres tokens
+propios:
+
+| Token | Claro | Oscuro | Dónde |
+|---|---|---|---|
+| `--color-accent-text` | `#0066cc` | `#8cc7ff` | botones tintados, insignias de acento |
+| `--color-success-text` | `#1e7a34` | `#30d158` | píldoras de variación |
+| `--color-danger-text` | `#c4272b` | `#ff4245` | píldoras de variación a la baja |
+
+El relleno de acento sigue siendo `#0088FF`: el token de texto es el que se
+oscurece, no el color de marca.
 
 ### Forma
 

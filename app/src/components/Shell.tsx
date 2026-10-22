@@ -351,7 +351,12 @@ export function Shell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="shell__main">
-          <div className="page">{children}</div>
+          {/* El POS (Vender) es la unica pagina que ocupa el alto
+              completo: su ticket lleva el pie con el boton de cobrar y
+              tiene que caber en pantalla. */}
+          <div className={"page" + (location.pathname === "/app/ventas" ? " page--pos" : "")}>
+            {children}
+          </div>
         </main>
       </div>
 

@@ -275,15 +275,23 @@
     border-color var(--transition-speed), transform var(--transition-speed),
     box-shadow var(--transition-speed);
 }
+/* Rol Primary: el mismo material de cristal que los botones de la app
+   (velo + desenfoque + brillo especular + canto). El texto va en
+   `--color-text-on-accent`: con el token inverso, en oscuro salia
+   negro sobre el azul. */
 .ld-btn--primary {
-  background: var(--blink-primary);
-  color: var(--blink-bg-main);
-  box-shadow: 0 6px 18px rgb(from var(--acento) r g b / 0.28);
+  background: var(--ios-veil), var(--blink-primary);
+  color: var(--color-text-on-accent);
+  -webkit-backdrop-filter: blur(var(--ios-blur)) saturate(180%);
+  backdrop-filter: blur(var(--ios-blur)) saturate(180%);
+  box-shadow: var(--ios-specular-soft), var(--ios-rim),
+    0 6px 18px rgb(from var(--acento) r g b / 0.28);
 }
 .ld-btn--primary:hover {
-  background: var(--color-accent-hover);
+  background: var(--ios-veil), var(--color-accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgb(from var(--acento) r g b / 0.34);
+  box-shadow: var(--ios-specular-soft), var(--ios-rim),
+    0 10px 26px rgb(from var(--acento) r g b / 0.34);
 }
 .ld-btn--lg {
   padding: 1rem 2.1rem;

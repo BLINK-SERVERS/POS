@@ -81,6 +81,12 @@
   --color-text-inverse: #FFFEFB;
   --color-text-inverse: light-dark(#FFFEFB, #000000);
 
+  /* Texto sobre un relleno de acento (botón primario, avatar, punto
+     de la lista de pasos). El azul de marca es igual de claro en los
+     dos modos, asi que el texto encima es SIEMPRE claro: si se
+     invirtiera con la apariencia, en oscuro salia negro sobre azul. */
+  --color-text-on-accent: #FFFEFB;
+
   /* --- Acentos derivados --- */
   --color-accent-soft: rgb(from var(--acento) r g b / 0.08);
   --color-accent-soft: light-dark(rgb(from var(--acento) r g b / 0.08), rgb(from var(--acento) r g b / 0.18));
@@ -88,6 +94,28 @@
   --color-accent-soft-strong: light-dark(rgb(from var(--acento) r g b / 0.16), rgb(from var(--acento) r g b / 0.3));
   --color-accent-ring: rgb(from var(--acento) r g b / 0.25);
   --color-accent-ring: light-dark(rgb(from var(--acento) r g b / 0.25), rgb(from var(--acento) r g b / 0.4));
+
+  /* Texto sobre un velo del acento (boton tintado, chip). El relleno
+     es el acento con poca opacidad, asi que el texto necesita su
+     propia variante: con el azul de marca puro se quedaba en 3:1 en
+     claro y en 2,9:1 en oscuro. */
+  --color-accent-text: #0066cc;
+  --color-accent-text: light-dark(#0066cc, #8cc7ff);
+  /* El hover del boton tintado: en claro se carga mas, en oscuro se
+     mantiene suave para no bajar de 4,5:1. */
+  --color-accent-soft-hover: rgb(from var(--acento) r g b / 0.16);
+  --color-accent-soft-hover: light-dark(
+    rgb(from var(--acento) r g b / 0.16),
+    rgb(from var(--acento) r g b / 0.22)
+  );
+
+  /* Texto de estado sobre su propio velo de color (pildoras de
+     variacion). El verde y el rojo de la marca son muy claros: como
+     texto sobre su velo no llegaban a 4,5:1 en la apariencia clara. */
+  --color-success-text: #1e7a34;
+  --color-success-text: light-dark(#1e7a34, #30d158);
+  --color-danger-text: #c4272b;
+  --color-danger-text: light-dark(#c4272b, #ff4245);
 
   /* --- Bordes derivados del texto --- */
   --color-border: rgba(66, 66, 66, 0.16);
@@ -226,17 +254,32 @@
   --ios-material-blur-large: 30px;  /* Light/Regular - Large  #ffffff */
   --ios-material-blur-clear: 3px;   /* Clear                  #f8f8f8 */
 
+  /* Radio de desenfoque segun la apariencia. El material "Dark/Regular"
+     del kit difumina mas que el claro: sin esto, el cristal de la
+     escena oscura se ve plano. Como el token sigue a `color-scheme`,
+     respeta tambien el modo elegido a mano en Ajustes. */
+  --ios-blur: var(--ios-material-blur-small);
+  --ios-blur: light-dark(var(--ios-material-blur-small), var(--ios-material-blur-medium));
+
+  /* El canto del cristal: una linea interior translucida que separa el
+     material del fondo y le da el borde de vidrio. */
+  --ios-rim: inset 0 0 0 1px rgb(from var(--halo) r g b / 0.14);
+  --ios-rim: light-dark(
+    inset 0 0 0 1px rgb(from var(--halo) r g b / 0.14),
+    inset 0 0 0 1px rgb(from var(--halo) r g b / 0.13)
+  );
+
   /* Brillo especular del material: el borde superior iluminado y el
      inferior en sombra, que es lo que le da el aspecto de "vidrio". */
   --ios-specular: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   --ios-specular: light-dark(
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16)
+    inset 0 1px 0 rgba(255, 255, 255, 0.3)
   );
   --ios-specular-soft: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   --ios-specular-soft: light-dark(
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1)
+    inset 0 1px 0 rgba(255, 255, 255, 0.18)
   );
   --ios-specular-dark: inset 0 -1px 0 rgba(66, 66, 66, 0.1);
   --ios-specular-dark: light-dark(
@@ -257,11 +300,13 @@
       rgba(255, 255, 255, 0.22) 46%,
       rgba(255, 255, 255, 0.08) 100%
     ),
+    /* En oscuro el velo necesita mas presencia: sobre el negro, un
+       8 % de blanco es invisible y el boton se ve plano. */
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.13) 0%,
-      rgba(255, 255, 255, 0.05) 46%,
-      rgba(255, 255, 255, 0.02) 100%
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.08) 46%,
+      rgba(255, 255, 255, 0.035) 100%
     )
   );
 

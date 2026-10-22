@@ -100,7 +100,12 @@ function GraficoMensual({ puntos }: { puntos: MonthPoint[] }) {
   const p = puntos[sel] ?? { titulo: "—", net: 0, count: 0, avgTicket: 0 };
   const pct = puntos.length > 1 ? ((sel + 0.5) / puntos.length) * 100 : 50;
 
-  if (!puntos.length) {
+  /* Un grafico con los doce meses a cero no es un grafico: es un hueco
+     vacio con los nombres de los meses abajo. Si no hay nada que
+     representar, se dice. */
+  const hayDatos = puntos.some((p) => p.net > 0);
+
+  if (!puntos.length || !hayDatos) {
     return (
       <EmptyState
         title="Sin ventas todavia"
