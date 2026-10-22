@@ -1,0 +1,264 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: var(--papel);
+    }
+    /* El centrado va con rejilla: un transform en CSS lo pisa GSAP
+       al animar el mismo elemento. */
+    .escena {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+    .tel__vender {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 48px;
+      border-radius: 999px;
+      background: var(--azul);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      box-shadow: 0 6px 16px rgba(0, 136, 255, 0.4);
+    }
+    /* El boton, procesando la venta. */
+    .tel__proceso {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: rgba(0, 136, 255, 0.12);
+      border: 1px solid rgba(0, 136, 255, 0.28);
+      color: #0075dc;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .tel__barra {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(0, 136, 255, 0.16);
+      overflow: hidden;
+    }
+    .tel__barra i { display: block; height: 100%; width: 0%; background: var(--azul); }
+    /* El check verde, con su explosion de particulas. */
+    .tel__ok {
+      display: none;
+      position: relative;
+      top: auto;
+      right: auto;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: rgba(52, 199, 89, 0.14);
+      border: 1px solid rgba(52, 199, 89, 0.4);
+      color: #248a3d;
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .particula {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--verde);
+      opacity: 0;
+    }
+    .cursor {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      z-index: 60;
+    }
+    .cursor svg { filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.32)); }
+  </style>
+
+  <div id="root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div class="escena">
+      <div id="s3-tel">
+      <div class="tel" data-layout-ignore>
+        <div class="tel__screen">
+          <div class="tel__top">
+            <h5>General</h5>
+            <div class="app__avatar" style="width: 26px; height: 26px; font-size: 11px">QA</div>
+          </div>
+
+          <div class="tel__card">
+            <span>Ventas hoy</span>
+            <b>$ 1.240,00</b>
+          </div>
+          <div class="tel__card">
+            <span>Órdenes</span>
+            <b>38</b>
+          </div>
+          <div class="tel__card">
+            <span>Margen</span>
+            <b>$ 412,80</b>
+          </div>
+          <div class="tel__card" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 12px">
+            <span>Rendimiento de Ventas</span>
+            <div class="chispa" style="flex: 1; height: auto; min-height: 40px; margin-top: 8px; align-items: flex-end">
+              <i style="height: 22%"></i><i style="height: 38%"></i><i style="height: 30%"></i><i style="height: 52%"></i>
+              <i style="height: 44%"></i><i style="height: 68%"></i><i style="height: 58%"></i><i style="height: 86%"></i>
+              <i style="height: 74%"></i><i style="height: 100%"></i>
+            </div>
+          </div>
+
+          <div class="tel__vender" id="s3-vender">$ &nbsp;Vender</div>
+          <div class="tel__proceso" id="s3-proceso">
+            <span>Facturando…</span>
+            <span class="tel__barra"><i id="s3-prog"></i></span>
+            <span id="s3-pct">0 %</span>
+          </div>
+          <div class="tel__ok" id="s3-ok">
+            <span>Venta registrada · $ 45,00</span>
+          </div>
+
+          <div class="dock">
+            <span class="on">▦</span>
+            <span>◔</span>
+            <span class="dock__vender">$</span>
+            <span>▣</span>
+            <span>◉</span>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- La explosion de particulas del check -->
+    <div id="s3-particulas" data-layout-ignore style="position: absolute; left: 50%; top: 50%"></div>
+
+    <!-- El cursor -->
+    <div class="cursor" id="s3-cursor" data-layout-ignore>
+      <svg viewBox="0 0 24 24" width="44" height="44">
+        <path
+          d="M4.5 2.2 L4.5 19.4 L8.6 15.6 L11.2 21.6 L14.2 20.1 L11.6 14.3 L17.2 14.1 Z"
+          fill="#FFFFFF"
+          stroke="#1D1D1F"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    const INICIO = 12.327;
+    const b = (n) => window.beat(n) - INICIO;
+
+    const tl = gsap.timeline({ paused: true });
+
+    /* Macro: el movil entra enorme y se asienta en el encuadre. */
+    tl.fromTo(
+      "#s3-tel",
+      { opacity: 0, scale: 2.4, y: 40, rotate: -3 },
+      { opacity: 1, scale: 1.5, y: 0, rotate: 0, duration: 1.1, ease: "power3.out" },
+      0
+    );
+    tl.fromTo(
+      "#s3-tel",
+      { scale: 1.5 },
+      { scale: 1.56, duration: 2.4, ease: "sine.inOut" },
+      1.4
+    );
+    tl.to("#s3-tel", { scale: 1.52, duration: 2.4, ease: "sine.inOut" }, 3.8);
+
+    /* El cursor entra fuera de cuadro y llega al boton. */
+    tl.fromTo(
+      "#s3-cursor",
+      { opacity: 0, x: 520, y: -200 },
+      { opacity: 1, x: 0, y: 0, duration: 0.62, ease: "power2.inOut" },
+      b(33) - 0.5
+    );
+    tl.to("#s3-cursor", { opacity: 0, duration: 0.2 }, b(33) + 0.7);
+
+    /* La pulsacion: escala 1 -> 0,94 -> 1,02. */
+    tl.fromTo(
+      "#s3-vender",
+      { scale: 1 },
+      { scale: 0.94, duration: 0.08, ease: "power2.out" },
+      b(33)
+    );
+    tl.to("#s3-vender", { scale: 1.02, duration: 0.1, ease: "back.out(3)" }, b(33) + 0.08);
+    tl.to("#s3-vender", { scale: 1, duration: 0.16, ease: "power2.out" }, b(33) + 0.18);
+
+    /* El boton se convierte en la barra de proceso. */
+    tl.to("#s3-vender", { opacity: 0, duration: 0.16 }, b(33) + 0.2);
+    tl.set("#s3-proceso", { display: "flex" }, b(33) + 0.2);
+    tl.fromTo(
+      "#s3-proceso",
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.24, ease: "power2.out" },
+      b(33) + 0.2
+    );
+
+    /* La barra corre de 0 % a 100 %. */
+    tl.fromTo(
+      "#s3-prog",
+      { width: "0%" },
+      { width: "100%", duration: 0.95, ease: "power1.inOut" },
+      b(33) + 0.3
+    );
+    tl.fromTo(
+      "#s3-pct",
+      { innerText: "0 %" },
+      { innerText: "100 %", duration: 0.95, ease: "power1.inOut", snap: { innerText: 1 } },
+      b(33) + 0.3
+    );
+
+    /* Y se convierte en el check verde. */
+    tl.to("#s3-proceso", { opacity: 0, duration: 0.16 }, b(35));
+    tl.set("#s3-ok", { display: "flex" }, b(35));
+    tl.fromTo(
+      "#s3-ok",
+      { opacity: 0, scale: 0.86, y: 10 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: "back.out(2)" },
+      b(35)
+    );
+
+    /* La explosion de particulas. */
+    const contenedor = document.getElementById("s3-particulas");
+    const p0 = { x: 0, y: 160 };
+    for (let i = 0; i < 14; i++) {
+      const el = document.createElement("div");
+      el.className = "particula";
+      contenedor.appendChild(el);
+      const ang = (i / 14) * Math.PI * 2;
+      const dist = 70 + (i % 4) * 26;
+      tl.fromTo(
+        el,
+        { opacity: 1, x: p0.x, y: p0.y, scale: 1 },
+        {
+          opacity: 0,
+          x: p0.x + Math.cos(ang) * dist,
+          y: p0.y + Math.sin(ang) * dist,
+          scale: 0.2,
+          duration: 0.7,
+          ease: "power2.out",
+        },
+        b(35) + 0.04
+      );
+    }
+
+    /* El telefono sigue respirando. */
+    tl.to("#s3-tel", { scale: 1.01, duration: 1.6, ease: "sine.inOut" }, b(36));
+
+    window.__timelines["s3"] = tl;
+  </script>
+</template>

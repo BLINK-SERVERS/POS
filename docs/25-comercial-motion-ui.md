@@ -1,126 +1,139 @@
-# 25 · Comercial Motion UI (Remotion)
+# 25 · Launch video de BLINK POS (Remotion)
 
-**Fecha:** 2026-10-21 · **Version:** 1.0.0
+**Fecha:** 2026-10-22 · **Version:** 1.0.0 · **Pieza:** `BLINK-COMERCIAL.mp4`
 
-> **Estado: PROYECTO RETIRADO.** La carpeta `video/` se vacio (solo queda
-> `video/SKILL/`, con la guia de produccion y el voice over de
-> referencia). Este documento se conserva por lo que **si se debe saber** para
-> volver a levantarlo: el reparto de la linea de tiempo, la construccion de la
-> mascota y las tres incidencias que costaron tiempo.
+Video de lanzamiento **30,0 s · 1920 x 1080 · 60 fps · 1800 fotogramas**,
+producido con **Remotion** en la carpeta `video/`. Vive fuera de `app/`: no entra en el
+bundle de la web.
 
-Lo que se produjo: un comercial de 01:29 (1920 x 1080, 30 fps, 2670
-fotogramas) con **Remotion**, en la carpeta `video/` (fuera del bundle de
-la web).
+**Sin voz en off**: todo el relato son cortes de tipografia cinematica
+bicolor. El ritmo lo marcan los movimientos, no una locucion.
 
 ---
 
-## 1 · Por que Remotion
+## 1 · Las entregas
 
-La web se construye con React; el comercial tambien. Se comparten:
+| Formato | Archivo | Lienzo |
+|---|---|---|
+| Master 16:9 | `BLINK-COMERCIAL.mp4` | 1920 x 1080 |
+| Recorte 1:1 | `BLINK-COMERCIAL-1x1.mp4` | 1080 x 1080 |
+| Recorte 9:16 | `BLINK-COMERCIAL-9x16.mp4` | 1080 x 1920 |
+
+Los tres salen de la **misma** composicion: las escenas se dibujan en un
+espacio de 1920 x 1080 y el lienzo recorta (en 1:1, con escala 0,80, para
+que el grupo entero entre en el cuadrado).
+
+---
+
+## 2 · La linea de tiempo
+
+| # | Escena | Tiempo | Fotogramas | Fondo | Que se ve |
+|---|---|---|---|---|---|
+| 1 | El problema | 0:00 - 0:05 | 0 - 299 | claro | Tipografia cinematica: "¿Cansado de registrar tus ventas a mano?" y "¿Cansado de calcular precios y tasas cada dia?" |
+| 2 | Los tres pasos | 0:05 - 0:11 | 300 - 659 | claro | Macro-zoom con profundidad de campo: el dashboard desenfocado y, delante, las tarjetas 1-2-3 y la barra de progreso |
+| 3 | Vender | 0:11 - 0:17 | 660 - 1019 | claro | El boton `$ Vender` en primer plano, con su onda de choque, y el aviso de la venta sincronizada |
+| 4 | Tu tienda en cualquier pantalla | 0:17 - 0:24 | 1020 - 1439 | claro → **oscuro** | Cuatro dispositivos entran en diagonal desde las esquinas; en la segunda mitad, corte a oscuro con los corchetes enmarcando "Cero papeleo. Pura velocidad." |
+| 5 | Cierre | 0:24 - 0:30 | 1440 - 1799 | oscuro | El isotipo, el logotipo, el lema oficial y la llamada a la accion |
+
+El corte a **modo oscuro** ocurre en la segunda mitad de la escena 4
+(fotograma 1220): el fondo pasa de la malla clara a `#050914` con
+auroras azules.
+
+---
+
+## 3 · Anti-wireframe: la interfaz esta llena
+
+Regla critica de las directivas: **ninguna caja vacia, ningun rectangulo de
+relleno**.
+
+**Escritorio** (`src/kit/panel-desktop.tsx`): barra lateral con los
+ocho modulos y sus iconos SVG, buscador superior, insignia de estado, avatar
+con las iniciales, las cuatro tarjetas KPI con su chispa de ocho barras y
+su insignia verde, el grafico de doce meses con el globo de cristal y las
+tres ultimas ventas.
+
+**Movil** (`src/kit/panel-movil.tsx`): barra con "General" y avatar,
+tres tarjetas con las cifras reales, su chispa en vivo y el dock de cristal
+con los cinco accesos, siendo el central el circulo azul con el "$".
+
+El contenedor va en **perspectiva 3D** (perspective 1200 px, rotateX 12,
+rotateY -10, rotateZ 2) con sombras multicapa
+(`0 30px 60px rgba(0,136,255,0.15)`).
+
+---
+
+## 4 · Motion
+
+* **Camara con plataforma 3D**: la rotacion isometrica se interpola a lo
+  largo de la escena y siempre con ease-in-out.
+* **Macro-zooms de 200 - 250 %** en las escenas de accion, con el fondo
+  desenfocado (`blur(10px)`, opacidad 0,35) y los componentes
+  flotando delante al 70 % del ancho, en cristal (blur 24 px, borde blanco
+  de 1,5 px).
+* **Tipografia cinematica**: 72 - 110 px, peso 700, tracking -0,04 em, con
+  revelacion por desenfoque (blur 14 → 0 en 15 fotogramas) y el efecto de
+  "seleccion azul" (`rgba(0,136,255,0.18)`) en las palabras clave.
+* **Bicolor**: negro profundo `#0F172A` + azul electrico `#0088ff`.
+* **Cursor en arcos** (Bezier cuadratica, control al 15 %) y pulsaciones con
+  escala 0,96 → 1.
+* **Nada se queda quieto**: la camara empuja y lo que se mantiene deriva.
+
+---
+
+## 5 · Fondos
+
+| Modo | Fondo |
+|---|---|
+| Claro (escenas 1-3) | Blanco luminoso con dos esferas radiales `#0088ff` difuminadas (blur 140 px, opacidad 0,22) que se desplazan por las esquinas |
+| Oscuro (escena 4-2ª mitad y 5) | `#050914` con auroras azules brillantes y los corchetes `[ ]` que enmarcan el texto |
+
+---
+
+## 6 · Lo que se comparte con la app
 
 | Se comparte | Como |
 |---|---|
 | Los SF Symbols | `video/src/kit/simbolo.tsx` importa `app/src/lib/sf-symbols.ts` |
-| La paleta oficial | `video/src/kit/tokens.ts` (verificada contra `app/src/styles/tokens.css`) |
-| Las medidas del UI Kit | `docs/ios27-geometry.json` (boton 50, tab 54, area tactil 44…) |
-| Los componentes | `video/src/kit/ui.tsx` reproduce el material de cristal, la maqueta del POS, la barra flotante y las tarjetas de metrica de la app |
+| La paleta oficial | `video/src/kit/tema.ts`, verificada contra `app/src/styles/tokens.css` |
+| Las medidas del UI Kit | `docs/ios27-geometry.json` |
 
-El comercial se renderiza con el **Chrome del sistema** (no se descarga el
-Chrome Headless Shell) y usa el **ffmpeg** que Remotion trae.
-
----
-
-## 2 · Las nueve escenas
-
-El guion marca los tiempos; en `video/src/composiciones/Comercial.tsx` estan
-en el objeto `T`.
-
-| # | Escena | Tiempo | Fotogramas | Que se ve |
-|---|---|---|---|---|
-| 1 | Apertura institucional | 0:00 - 0:03 | 0 - 90 | Destello digital, el logotipo y la mascota parpadeando |
-| 2 | El problema | 0:03 - 0:13 | 90 - 390 | Tipografia cinematica: las dos preguntas del comerciante |
-| 3 | La solucion | 0:13 - 0:24 | 390 - 720 | "BLINK" a tamano gigante y el panel real con las 4 tarjetas |
-| 4 | Multimoneda y vuelto | 0:24 - 0:32 | 720 - 960 | Los tres pagos combinados y el vuelto automatico en bolivares |
-| 5 | Conexion BCV | 0:32 - 0:40 | 960 - 1200 | La tasa del dia contando, con el indicador verde |
-| 6 | Reportes | 0:40 - 0:48 | 1200 - 1440 | El bento con el grafico de barras de 12 meses |
-| 7 | Escaner | 0:48 - 0:56 | 1440 - 1680 | El movil escanea y la factura entra al inventario |
-| 8 | Resumen | 0:56 - 1:00 | 1680 - 1800 | La frase de cierre y la mascota guiñando |
-| 9 | Cierre y CTA | 1:00 - 1:29 | 1800 - 2670 | La pregunta final y el boton de cristal con el lema |
-
-La pista (`public/audio/blink-comercial.mp3`, 89,3 s) va montada sobre la
-composicion: los cortes coinciden con la musica.
+`npm run verificar` comprueba que la paleta del video no se desincronice
+de la de la web (12 grupos + 5 semanticos + la fuente).
 
 ---
 
-## 3 · La mascota
+## 7 · Tipografia del render
 
-El isotipo de BLINK (el cuadrado azul con la cara que guiña un ojo) es la
-mascota. Se reconstruyo **midiendo el original** (radio 80/512, ojo-pildora
-150x75 en 55/182, ojo circular r=75 en 381/181, boca de semidisco r=81 en
-175/324) y se anima con cuatro gestos:
+**Inter** (SIL OFL 1.1), incrustada en el bundle (`npm run fuente`).
+Determinista y con licencia para publicar el comercial: la SF Pro de Apple
+solo cubre mockups y prototipos en plataformas de Apple.
 
-| Gesto | Como |
+---
+
+## 8 · Bitacora tecnica
+
+| Incidencia | Resolucion |
 |---|---|
-| Parpadeo | el ojo-pildora se aplasta en vertical |
-| Guiño | el ojo circular se convierte en una linea |
-| Asintido | inclinacion breve de la cabeza |
-| Sonrisa | la boca crece |
-
-Los gestos corren con su propio ritmo (`gestosMascota`), con un parpadeo
-final sincronizado con el corte de la musica.
-
----
-
-## 4 · Tipografia
-
-El render usa **Inter** (SIL OFL 1.1), la misma que sirve la web como
-respaldo de SF Pro, **incrustada en el bundle** (`scripts/generar-fuente.mjs`).
-
-> **Por que no SF Pro:** la licencia de SF Pro de Apple cubre mockups y
-> prototipos en plataformas de Apple, no un comercial publicado. Inter es
-> la alternativa libre, muy parecida, y su licencia lo permite.
-
-La fuente va incrustada (data URL) y **no** se espera con `delayRender`:
-con la fuente en el bundle no hay nada que esperar, y bloquear el
-fotograma mientras se cargaba hacia que el render se cayera por timeout
-en el equipo de 2 nucleos.
+| El render se caia a los ~140 fotogramas con "un delayRender() no se limpio" | Es el **audio**: Remotion bloquea el hilo mientras decodifica la pista. Quitado el `delayRender` de la fuente (va incrustada en el `<head>`: ya esta lista cuando empieza a pintar) |
+| La tipografia no se revelaba | El calculo de la revelacion usaba el fotograma de **inicio** en vez del actual |
+| El degradado del lema salia como un bloque azul | React **no aplica** `background-clip: text` desde el objeto `style`: el degradado va en una **clase CSS** |
+| El directorio `src/composiciones` dejo de resolver | La entrada de nombre largo del directorio se corrompio (solo resolvia el nombre corto 8.3). Se reconstruyo con un nombre corto (`src/comp`) |
+| El `<Audio>` con los cinco tramos no se montaba | Un replacement anterior no habia aplicado y se quedo el audio suelto de la pista entera. Ademas `<Audio>` no admite `durationInFrames`: el recorte lo hace el `<Sequence>` |
+| El encoder se quedaba bloqueado | Un render anterior dejo un `ffmpeg` colgado con el fichero abierto |
 
 ---
 
-## 5 · Reglas de estilo que sigue
-
-* El material de cristal solo en la **capa funcional**; los datos (cifras,
-  tickets) siempre opacos.
-* Una sola familia tipografica, con cifras tabulares (`font-variant-numeric`).
-* Transiciones cortas y con resorte, nunca rebotes.
-* La paleta es la oficial: azul `#0088ff`, verde `#34c759`.
-* Los simbolos son los de la app: el video y el sitio comparten glifo.
-
----
-
-## 6 · Como volver a levantarlo
+## 9 · Comandos
 
 ```bash
 cd video
 npm install
 npm run dev              # Remotion Studio
-npm run render           # BLINK-COMERCIAL.mp4
-npm run render:preview   # a media resolucion (rapido)
+npm run render           # el master 16:9
+npm run render:1x1       # el recorte cuadrado
+npm run render:9x16     # el recorte vertical
 npm run fotogramas       # un fotograma por escena
 npm run verificar        # la paleta del video vs. la de la web
+npm run verificar:video  # streams, duracion y formato del MP4
 npm run fuente           # regenera la tipografia incrustada
 ```
-
-El codigo de la version retirada sigue en el historial
-(`git show c7aa4b7:video/`), por si se quiere recuperar parte.
-
----
-
-## 7 · Bitacora tecnica
-
-| Incidencia | Resolucion |
-|---|---|
-| `npm run og` fallaba (leia fuentes de Apple que ya no estaban) | El generador usa la SF Pro local de desarrollo, incrustada en el PNG |
-| El render se caia a los ~52 fotogramas | El `delayRender` de la fuente (interno de `@remotion/fonts`) no se limpiaba: la fuente se incrusta y no se espera |
-| `AbsoluteFill` es `flex` sin direccion | Se declara `flexDirection` en cada escena (columna o fila) |
-| La mascota salia inclinada en reposo | El gesto va de 0 a 1 y se aplica con un seno: 0 grados en reposo |

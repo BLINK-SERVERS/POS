@@ -267,6 +267,44 @@ La siembra es **idempotente**: se puede volver a ejecutar sin duplicar.
 - **Comprobación:** los seis ficheros responden 200 y el icono se lee a 16,
   32, 48 y 64 px, tambien sobre fondo oscuro.
 
+### BUG-14 · El render del video se caia a los ~140 fotogramas
+
+- **Comportamiento anomalo:** el render se detenia con "un delayRender() no
+  se limpio tras 58000 ms" (la tipografia).
+- **Causa:** no era la tipografia: era el **audio**. Remotion deja el hilo
+  principal bloqueado mientras decodifica la pista, y el `delayRender` de
+  la fuente se quedaba esperando hasta expirar.
+- **Solucion:** la fuente va incrustada en el bundle (data URL), asi que ya
+  esta lista cuando empieza a pintar: no hace falta esperarla y el
+  `delayRender` solo ata el render.
+- **Comprobacion:** los 1800 fotogramas se renderizan sin errores.
+
+### BUG-15 · La locucion sonaba entera desde el fotograma 0
+
+- **Comportamiento anomalo:** en el MP4 se oia la locucion completa de
+  golpe (las cinco frases seguidas, con las pausas del fichero) en vez de
+  una frase por escena.
+- **Causa:** el `<Audio>` con los cinco tramos no llego a montarse: un
+  replacement anterior no habia aplicado (el texto searched habia cambiado)
+  y se quedo el `<Audio>` suelto de la pista entera.
+- **Solucion:** cada tramo va en su `<Sequence>` (que es lo que recorta la
+  duracion: `<Audio>` no admite `durationInFrames`), con `trimBefore`
+  para cortar el silencio inicial de cada frase y `playbackRate` para que
+  termine dentro de su ventana.
+- **Comprobacion:** `npm run analizar-audio` sobre el MP4 final: los cinco
+  tramos caen en 0,1 s / 4,0 s / 11,2 s / 19,0 s / 24,8 s y la voz
+  termina en el 29,4 s (quedan 0,6 s antes del corte).
+
+### BUG-16 · El degradado del lema salia como un bloque azul
+
+- **Comportamiento anomalo:** en el cierre, "BLINK ;)" era un rectángulo
+  azul solido: el texto, transparente, dejaba ver el fondo sin recortar.
+- **Causa:** React **no aplica** `background-clip: text` desde el objeto
+  `style` (en HTML plano, el mismo CSS funciona: verificado).
+- **Solucion:** el degradado va en una **clase CSS** (inyectada con un
+  `<style>`), y el barrido se mueve con la variable `--barrido`.
+- **Comprobacion:** el fotograma del cierre sale con el texto en degradado.
+
 ---
 
 ## 4. Incidencias que resultaron ser **correctas** (falsos positivos)
@@ -325,3 +363,42 @@ catálogo global, llevaba tiempo sin detectarse en producción).
 - Cambios por versión: [`../CHANGELOG.md`](../CHANGELOG.md)
 - Diseño y HIG: [`02-design-system.md`](./02-design-system.md) ·
   [`REDISENO_KONSTA_HIG.md`](./REDISENO_KONSTA_HIG.md)
+
+---
+
+## 8. Comercial de 30 s en HyperFrames (vídeo)
+
+**Fecha:** 2026-10-22 · **Alcance:** el video de lanzamiento y sus recortes.
+
+El comercial se rehizo con **HyperFrames** (HTML → MP4) y se verificó antes de
+renderizar, con el checker del propio motor.
+
+| Comprobación | Resultado |
+|---|---|
+| `hyperframes check` (lint, runtime, layout, movimiento, contraste, craft) | **0 errores, 0 avisos** |
+| Contraste WCAG AA | 13/13 y 15/15 textos pasan |
+| Rejilla de beats | 153 BPM medidos sobre la pista (primer golpe en 0,17 s) |
+| Revisión visual (`snapshot`) | 12 fotogramas clave revisados a 1920×1080 |
+| Entregables | master 16:9 (8,8 MB), 9:16 (2,7 MB) y 1:1 (2,7 MB): los tres a 60 fps, 1800 fotogramas y con audio (pico −4,1 dB) |
+
+### 8.1 · Errores encontrados y resueltos
+
+| # | Error | Causa | Resolución |
+|---|---|---|---|
+| V-01 | Tipografías sin `@font-face` | «Segoe Print» y «Comic Sans MS» no se resuelven en el render | Se declara `@font-face { src: local(...) }` en la escena que las usa |
+| V-02 | Contraste AA insuficiente | Los textos secundarios usaban `#8A9099` (3,1:1) | Se bajan a `#6F747C`; el azul de marca sobre papel pasa a `#0075DC` (los rellenos siguen en `#0088FF`) |
+| V-03 | Escenas descuadradas | **GSAP pisa el `transform`** del elemento que anima, así que el `translate(-50 %, -50 %)` de centrado se perdía | El centrado pasa a rejilla (`grid` + `place-items: center`) o a `margin`/`inset` |
+| V-04 | Panel de escritorio cortado | El panel (1080×620) no cabía en una celda de la rejilla 3×3 | La escena 2 usa una columna flexible |
+| V-05 | Texto descentrado en la escena 4 | `1fr` crece hasta el ancho mínimo del elemento y empuja la columna central | `repeat(3, minmax(0, 1fr))` y `max-width` en el titular |
+| V-06 | Dispositivos fuera de cuadro | Miniaturas escaladas sin caja: el `transform` no cambia la caja de layout | Se fija la caja (432×248 y 126×273) y se escala el interior |
+| V-07 | Botón de venta encima de la cabecera | La regla global del badge (`position: absolute`) heredaba en el botón de confirmación | La escena 3 reinicia `position: relative` |
+| V-08 | Primer fotograma vacío | La primera palabra entraba a opacidad 0 | Arranca visible (desenfocada) y se afina: el fotograma 0 es la miniatura en redes |
+| V-09 | Partículas verdes sueltas | Las partículas existían desde el arranque, con opacidad 1 | `opacity: 0` por defecto; el tween las enciende |
+| V-10 | Recortes 9:16 y 1:1 descentrados y con los titulares cortados | El motor ajusta la escena al lienzo de la raíz por su cuenta: el escalado manual de una segunda raíz se peleaba con ese ajuste | Los recortes se sacan del master con ffmpeg (lienzo completo a 1080×608 sobre un marco azul noche con la firma) |
+
+### 8.2 · Lo que sigue pendiente
+
+- Publicación en Product Hunt y redes (falta la cuenta y el copy final).
+- El master de Remotion (`video/BLINK-COMERCIAL.mp4`) y el de HyperFrames
+  (`BLINK-COMERCIAL-HF.mp4`) conviven; el de HyperFrames es el vigente.
+- El `CHANGELOG.md` todavía no recoge las versiones 1.13.0 a 1.16.0 de la app.

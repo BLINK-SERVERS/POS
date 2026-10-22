@@ -1,0 +1,250 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: var(--noche);
+    }
+    .aurora {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(140px);
+      opacity: 0.3;
+    }
+    .aurora--a { width: 880px; height: 880px; left: -60px; top: -140px; background: radial-gradient(circle, #0091ff 0%, transparent 68%); }
+    .aurora--b { width: 820px; height: 820px; right: -80px; bottom: -160px; background: radial-gradient(circle, #0088ff 0%, transparent 68%); }
+
+    .escena-cierre {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      text-align: center;
+    }
+    .lockup {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .lockup__nombre {
+      font-size: 62px;
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: #f5f5f7;
+      line-height: 1;
+    }
+    .lockup__pos {
+      font-size: 62px;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      line-height: 1;
+    }
+    .lema {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.12;
+      color: #f5f5f7;
+      min-height: 66px;
+    }
+    .lema .cursor-escritura {
+      display: inline-block;
+      width: 4px;
+      height: 48px;
+      margin-left: 6px;
+      background: var(--azul);
+      vertical-align: -6px;
+    }
+    .cta {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .cta__boton {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 38px;
+      border-radius: 999px;
+      background: var(--azul);
+      color: #fff;
+      font-size: 28px;
+      font-weight: 700;
+      box-shadow: 0 16px 44px rgba(0, 136, 255, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    .cta__boton svg { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)); }
+    .fecha {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 26px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #cbd5e1;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .fecha b { color: #f5f5f7; }
+    .dominio {
+      font-size: 28px;
+      color: #94a3b8;
+      letter-spacing: 0.01em;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s5" data-width="1920" data-height="1080">
+    <div class="aurora aurora--a" data-layout-ignore id="s5-aurora-a"></div>
+    <div class="aurora aurora--b" data-layout-ignore id="s5-aurora-b"></div>
+
+    <div class="escena-cierre">
+      <!-- El isotipo se cuela y el logotipo aparece al lado -->
+      <div class="lockup" id="s5-lockup">
+        <svg id="s5-isotipo" viewBox="0 0 512 512" style="width: 104px; height: 104px; border-radius: 24px; box-shadow: 0 18px 40px rgba(0, 136, 255, 0.4)">
+          <rect width="512" height="512" rx="80" fill="#0088ff" />
+          <g id="s5-ojo-izq">
+            <rect x="55" y="182" width="150" height="75" rx="37.5" fill="#fff" />
+          </g>
+          <g id="s5-ojo-der">
+            <circle cx="381" cy="181" r="75" fill="#fff" />
+          </g>
+          <path id="s5-boca" d="M175 324 H337 A81 81 0 0 1 175 324 Z" fill="#fff" />
+        </svg>
+        <span class="lockup__nombre" id="s5-nombre">BLINK</span>
+        <span class="lockup__pos" id="s5-pos">POS</span>
+      </div>
+
+      <!-- El lema, escrito -->
+      <div class="lema" id="s5-lema"></div>
+
+      <!-- La llamada a la accion y la fecha -->
+      <div class="cta" id="s5-cta">
+        <div class="cta__boton" id="s5-boton">
+          Empieza hoy
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12h15M13 6l6 6-6 6" />
+          </svg>
+        </div>
+        <div class="fecha" id="s5-fecha">Disponible el <b>01/12/27</b></div>
+      </div>
+
+      <div class="dominio" id="s5-dominio">blink.com.ve</div>
+    </div>
+  </div>
+
+  <script>
+    const INICIO = 25.268;
+    const b = (n) => window.beat(n) - INICIO;
+
+    const tl = gsap.timeline({ paused: true });
+
+    /* Las auroras se mueven despacio. */
+    tl.fromTo("#s5-aurora-a", { x: 0, y: 0 }, { x: 120, y: 90, duration: 4.732, ease: "none" }, 0);
+    tl.fromTo("#s5-aurora-b", { x: 0, y: 0 }, { x: -140, y: -100, duration: 4.732, ease: "none" }, 0);
+
+    /* El isotipo entra y el logotipo se revela a su lado. */
+    tl.fromTo(
+      "#s5-isotipo",
+      { opacity: 0, scale: 0.6, x: -80, rotate: -16 },
+      { opacity: 1, scale: 1, x: 0, rotate: 0, duration: 0.7, ease: "back.out(1.8)" },
+      b(64)
+    );
+    tl.fromTo(
+      "#s5-nombre",
+      { opacity: 0, x: -40, filter: "blur(10px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.45, ease: "power3.out" },
+      b(65)
+    );
+    tl.fromTo(
+      "#s5-pos",
+      { opacity: 0, x: -30, filter: "blur(10px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.45, ease: "power3.out" },
+      b(65) + 0.06
+    );
+
+    /* El lema se escribe, con el cursor de escritura. */
+    const lema = "Vende en un parpadeo, factura con BLINK ;)";
+    const el = document.getElementById("s5-lema");
+    const contenedorCursor = document.createElement("span");
+    contenedorCursor.className = "cursor-escritura";
+    el.appendChild(contenedorCursor);
+
+    const escribir = (texto, t0) => {
+      for (let i = 0; i < texto.length; i++) {
+        const t = t0 + i * 0.028;
+        tl.set(
+          el,
+          { innerText: texto.slice(0, i + 1) },
+          t
+        );
+      }
+      return t0 + texto.length * 0.028;
+    };
+    const fin = escribir(lema, b(66));
+
+    /* El cursor parpadea mientras escribe. */
+    tl.fromTo(
+      contenedorCursor,
+      { opacity: 1 },
+      { opacity: 0, duration: 0.22, ease: "steps(1)", repeat: 12, yoyo: true },
+      b(66)
+    );
+    tl.set(contenedorCursor, { opacity: 0 }, fin + 0.1);
+
+    /* La llamada a la accion. */
+    tl.fromTo(
+      "#s5-cta",
+      { opacity: 0, y: 34 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.6)" },
+      b(68)
+    );
+    tl.fromTo(
+      "#s5-dominio",
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+      b(69)
+    );
+
+    /* El cursor pulsa el boton. */
+    tl.fromTo(
+      "#s5-boton",
+      { scale: 1 },
+      { scale: 0.96, duration: 0.08, ease: "power2.out" },
+      b(70)
+    );
+    tl.to("#s5-boton", { scale: 1.02, duration: 0.1, ease: "back.out(3)" }, b(70) + 0.08);
+    tl.to("#s5-boton", { scale: 1, duration: 0.16, ease: "power2.out" }, b(70) + 0.18);
+
+    /* El guiño final de la mascota (sincronizado con el corte). */
+    tl.fromTo(
+      "#s5-ojo-der",
+      { scaleY: 1, transformOrigin: "381px 181px" },
+      { scaleY: 0.08, duration: 0.1, ease: "power2.in" },
+      b(72)
+    );
+    tl.to("#s5-ojo-der", { scaleY: 1, duration: 0.16, ease: "power2.out" }, b(72) + 0.1);
+    tl.fromTo(
+      "#s5-boca",
+      { scaleY: 1, transformOrigin: "175px 324px" },
+      { scaleY: 1.18, duration: 0.2, ease: "power2.out" },
+      b(72) + 0.1
+    );
+
+    /* Todo sigue respirando hasta el final. */
+    tl.to("#s5-isotipo", { y: "-=8", duration: 1.6, ease: "sine.inOut" }, b(72));
+    tl.to("#s5-isotipo", { y: "+=8", duration: 1.6, ease: "sine.inOut" }, b(72) + 1.6);
+
+    window.__timelines["s5"] = tl;
+  </script>
+</template>

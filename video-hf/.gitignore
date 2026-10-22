@@ -1,0 +1,17 @@
+# ============================================================
+# Comercial de BLINK POS en HyperFrames (HTML -> MP4)
+#
+#   · El motor (hyperframes) se usa con npx: no hay node_modules.
+#   · La musica tiene derechos: se copia desde la carpeta del
+#     usuario, no se versiona (ver el README).
+#   · Los efectos de sonido se regeneran con
+#     `node scripts/generar-sfx.mjs`.
+# ============================================================
+node_modules/
+renders/
+.hyperframes/
+*.mp4
+*.webm
+*.mp3
+*.wav
+*.hf-transaction-*/

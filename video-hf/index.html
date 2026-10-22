@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* ==========================================================
+         El tema de BLINK: la paleta oficial y los tokens de la
+         marca. Los componentes (el panel de escritorio, el movil,
+         las tarjetas KPI) son los reales de la app, con su barra
+         lateral, su buscador, su avatar y sus datos de verdad.
+         ========================================================== */
+      :root {
+        --azul: #0088ff;
+        --azul-oscuro: #0091ff;
+        --verde: #34c759;
+        --papel: #fffefb;
+        --tinta: #0f172a;
+        --tinta-2: #424242;
+        --noche: #0a0f1d;
+        --radio: 16px;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      /* La letra de los recibos: la del sistema (no hay fichero que
+         incrustar, asi que se declara con local()). */
+      @font-face {
+        font-family: "Segoe Print";
+        src: local("Segoe Print");
+      }
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--papel);
+        font-family: Inter, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root { position: absolute; inset: 0; overflow: hidden; }
+
+      /* --- El cristal de Liquid Glass (HIG) --- */
+      .glass {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .glass-oscuro {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* --- La tipografia cinematica --- */
+      .tipo {
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1.04;
+        color: var(--tinta);
+      }
+      .tipo .azul { color: var(--azul); }
+      .tipo .marca {
+        background: rgba(0, 136, 255, 0.18);
+        border-radius: 10px;
+        padding: 0 0.1em;
+      }
+
+      /* ==========================================================
+         El panel de escritorio: la app real.
+         ========================================================== */
+      .app {
+        display: flex;
+        width: 1080px;
+        height: 620px;
+        border-radius: var(--radio);
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0, 136, 255, 0.15), 0 12px 28px rgba(15, 23, 42, 0.14);
+      }
+      .app__side {
+        width: 76px;
+        flex: none;
+        background: linear-gradient(180deg, #fbfcff, #f2f4f8);
+        border-right: 1px solid rgba(15, 23, 42, 0.07);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 0 16px;
+      }
+      .app__logo {
+        width: 34px; height: 34px; border-radius: 10px;
+        background: var(--azul); color: #fff;
+        display: grid; place-items: center;
+        font-weight: 800; font-size: 18px;
+        margin-bottom: 12px;
+      }
+      .app__item {
+        width: 44px; height: 44px; border-radius: 12px;
+        display: grid; place-items: center;
+        color: #9aa0aa;
+        font-size: 17px;
+      }
+      .app__item.on { color: var(--azul); background: rgba(0, 136, 255, 0.12); }
+      .app__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      .app__top {
+        height: 58px; flex: none;
+        display: flex; align-items: center; gap: 12px;
+        padding: 0 16px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+      }
+      .app__search {
+        flex: 1; max-width: 330px; height: 34px; border-radius: 10px;
+        background: rgba(15, 23, 42, 0.05);
+        display: flex; align-items: center; gap: 8px;
+        padding: 0 12px; color: #8a9099; font-size: 14px;
+      }
+      .app__online {
+        margin-left: auto;
+        display: flex; align-items: center; gap: 7px;
+        height: 26px; padding: 0 12px; border-radius: 999px;
+        background: rgba(52, 199, 89, 0.12); color: var(--verde);
+        font-size: 13px; font-weight: 600;
+      }
+      .app__online i { width: 7px; height: 7px; border-radius: 999px; background: var(--verde); }
+      .app__avatar {
+        width: 30px; height: 30px; border-radius: 999px;
+        background: var(--azul); color: #fff;
+        display: grid; place-items: center;
+        font-size: 12px; font-weight: 700;
+      }
+      .app__body { flex: 1; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      .kpi {
+        padding: 12px 13px 13px; border-radius: 14px;
+        background: rgba(246, 247, 250, 0.8);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        position: relative;
+      }
+      .kpi__head { display: flex; align-items: center; justify-content: space-between; }
+      .kpi__icon {
+        width: 26px; height: 26px; border-radius: 8px;
+        background: rgba(0, 136, 255, 0.13); color: var(--azul);
+        display: grid; place-items: center; font-size: 14px; font-weight: 700;
+      }
+      .pill {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 3px 8px; border-radius: 999px;
+        background: rgba(52, 199, 89, 0.15); color: var(--verde);
+        font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+      }
+      .kpi__label { font-size: 12px; font-weight: 600; color: #6e6e73; margin-top: 9px; }
+      .kpi__value {
+        font-size: 25px; font-weight: 700; letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums; color: var(--tinta); line-height: 1.15;
+      }
+      .kpi__foot { font-size: 11px; color: #8a9099; margin-top: 1px; }
+      .chispa { display: flex; align-items: flex-end; gap: 3px; height: 26px; margin-top: 8px; }
+      .chispa i { flex: 1; border-radius: 2px 2px 0 0; background: rgba(0, 136, 255, 0.24); }
+      .chispa i:last-child { background: var(--azul); }
+      .filas { display: grid; grid-template-columns: 1fr 236px; gap: 10px; flex: 1; min-height: 0; }
+      .panel {
+        position: relative;
+        padding: 12px 14px; border-radius: 14px;
+        background: rgba(246, 247, 250, 0.8);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+      }
+      .panel h4 { font-size: 13px; font-weight: 700; color: var(--tinta); }
+      .panel small { font-size: 11px; color: #8a9099; }
+      .barras { display: flex; align-items: flex-end; gap: 6px; height: 118px; margin-top: 8px; }
+      .barras i { flex: 1; border-radius: 3px 3px 0 0; background: rgba(0, 136, 255, 0.24); }
+      .barras i:last-child { background: linear-gradient(180deg, var(--azul), #0066cc); }
+      .globo {
+        position: absolute; right: 26px; top: 34px;
+        padding: 8px 12px; border-radius: 11px;
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1.5px solid rgba(255, 255, 255, 0.65);
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+        font-size: 12px; font-weight: 600; color: var(--tinta);
+      }
+      .venta {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 0; border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+        font-size: 12px; color: #3a3a3c;
+      }
+      .venta b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+
+      /* ==========================================================
+         El movil: la misma app, en la web movil.
+         ========================================================== */
+      .tel {
+        width: 268px; border-radius: 40px; padding: 10px;
+        background: #1d1d1f;
+        box-shadow: 0 30px 60px rgba(0, 136, 255, 0.16), 0 12px 28px rgba(15, 23, 42, 0.2);
+      }
+      .tel__screen {
+        position: relative; border-radius: 30px; background: #fff;
+        padding: 14px 13px 12px; display: flex; flex-direction: column; gap: 8px;
+        height: 560px; overflow: hidden;
+      }
+      .tel__top { display: flex; align-items: center; justify-content: space-between; }
+      .tel__top h5 { font-size: 15px; font-weight: 700; color: var(--tinta); }
+      .tel__card {
+        padding: 10px 11px 11px; border-radius: 13px;
+        background: rgba(246, 247, 250, 0.8);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+        position: relative;
+      }
+      .tel__card span { font-size: 10px; font-weight: 600; color: #6e6e73; }
+      .tel__card b {
+        display: block; font-size: 20px; font-weight: 700; letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums; color: var(--tinta);
+      }
+      .tel__ok {
+        position: absolute; top: -6px; right: -6px;
+        width: 18px; height: 18px; border-radius: 999px;
+        background: var(--verde); color: #fff;
+        display: grid; place-items: center; font-size: 10px; font-weight: 700;
+      }
+      .dock {
+        margin-top: auto;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 10px; border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+        color: #8e8e93; font-size: 15px;
+      }
+      .dock .on { color: var(--azul); }
+      .dock__vender {
+        width: 34px; height: 34px; border-radius: 999px;
+        background: var(--azul); color: #fff;
+        display: grid; place-items: center; font-weight: 800; font-size: 18px;
+        box-shadow: 0 4px 12px rgba(0, 136, 255, 0.36);
+      }
+
+      /* --- El cursor --- */
+      .cursor { position: absolute; width: 38px; height: 38px; z-index: 60; }
+      .cursor svg { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.32)); }
+
+      /* --- El isotipo: la mascota --- */
+      .isotipo { width: 96px; height: 96px; }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================
+         La raiz: las variables, las escenas montadas, la musica y
+         los efectos de sonido.
+         La duracion es de 30 s a 60 fps: 1800 fotogramas.
+         ============================================================ -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- 1 · El gancho -->
+      <div
+        id="s1"
+        data-composition-id="s1"
+        data-composition-src="compositions/s1-hook.html"
+        data-start="0"
+        data-duration="5.268"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- 2 · La marca y el escritorio -->
+      <div
+        id="s2"
+        data-composition-id="s2"
+        data-composition-src="compositions/s2-marca.html"
+        data-start="5.268"
+        data-duration="7.059"
+        data-track-index="2"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- 3 · El movil y el cobro -->
+      <div
+        id="s3"
+        data-composition-id="s3"
+        data-composition-src="compositions/s3-movil.html"
+        data-start="12.327"
+        data-duration="6.667"
+        data-track-index="3"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- 4 · La sincronizacion radial -->
+      <div
+        id="s4"
+        data-composition-id="s4"
+        data-composition-src="compositions/s4-sync.html"
+        data-start="18.994"
+        data-duration="6.274"
+        data-track-index="4"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- 5 · El cierre -->
+      <div
+        id="s5"
+        data-composition-id="s5"
+        data-composition-src="compositions/s5-cierre.html"
+        data-start="25.268"
+        data-duration="4.732"
+        data-track-index="5"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- ============================================================
+           El audio: la musica (el bed) y los efectos de UI.
+           Cada uno lleva su id (obligatorio) y su sitio en la
+           linea de tiempo.
+           ============================================================ -->
+      <!-- La musica: el bed percusivo. -->
+      <audio
+        id="musica"
+        data-timeline-role="music"
+        class="clip"
+        data-start="0"
+        data-duration="30"
+        data-track-index="6"
+        data-volume="0.9"
+        src="assets/audio/musica.mp3"
+      ></audio>
+
+      <!-- Los efectos de UI, sobre el beat. -->
+      <audio
+        id="sfx-swoosh-borro"
+        class="clip"
+        data-start="3.307"
+        data-duration="0.7"
+        data-track-index="7"
+        data-volume="0.55"
+        src="assets/audio/swoosh.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-d1"
+        class="clip"
+        data-start="19.003"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.7"
+        src="assets/audio/clic.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-d2"
+        class="clip"
+        data-start="19.395"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.7"
+        src="assets/audio/clic.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-d3"
+        class="clip"
+        data-start="19.787"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.7"
+        src="assets/audio/clic.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-d4"
+        class="clip"
+        data-start="20.18"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.7"
+        src="assets/audio/clic.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-vender"
+        class="clip"
+        data-start="13.111"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.8"
+        src="assets/audio/clic.wav"
+      ></audio>
+      <audio
+        id="sfx-pop-proceso"
+        class="clip"
+        data-start="13.3"
+        data-duration="0.3"
+        data-track-index="7"
+        data-volume="0.6"
+        src="assets/audio/pop.wav"
+      ></audio>
+      <audio
+        id="sfx-ding-check"
+        class="clip"
+        data-start="13.895"
+        data-duration="1"
+        data-track-index="7"
+        data-volume="0.7"
+        src="assets/audio/ding.wav"
+      ></audio>
+      <audio
+        id="sfx-swoosh-noche"
+        class="clip"
+        data-start="22.131"
+        data-duration="0.7"
+        data-track-index="7"
+        data-volume="0.5"
+        src="assets/audio/swoosh.wav"
+      ></audio>
+      <audio
+        id="sfx-pop-isotipo"
+        class="clip"
+        data-start="25.268"
+        data-duration="0.3"
+        data-track-index="7"
+        data-volume="0.65"
+        src="assets/audio/pop.wav"
+      ></audio>
+      <audio
+        id="sfx-clic-cta"
+        class="clip"
+        data-start="27.621"
+        data-duration="0.2"
+        data-track-index="7"
+        data-volume="0.8"
+        src="assets/audio/clic.wav"
+      ></audio>
+    </div>
+
+    <script>
+      /* La rejilla de beats: 153 BPM, con el primer golpe en 0,17 s
+         (medido sobre la pista con `hyperframes audio`). Cada acento
+         visual cae en un beat. */
+      window.BPM = 153;
+      window.FASE = 0.17;
+      window.beat = (n) => window.FASE + (n * 60) / window.BPM;
+      window.beatDe = (segundos) => Math.round((segundos - window.FASE) / (60 / window.BPM));
+
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

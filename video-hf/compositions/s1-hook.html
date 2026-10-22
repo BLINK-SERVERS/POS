@@ -1,0 +1,234 @@
+<template>
+  <style>
+    /* La letra de los recibos: la del sistema, declarada con local()
+       porque no hay fichero que incrustar. */
+    @font-face {
+      font-family: "Segoe Print";
+      src: local("Segoe Print");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: var(--papel);
+    }
+    /* Las esferas del mesh, difuminadas, en las esquinas. */
+    .esfera {
+      position: absolute;
+      width: 760px;
+      height: 760px;
+      border-radius: 999px;
+      filter: blur(140px);
+      opacity: 0.22;
+      background: radial-gradient(circle, #0088ff 0%, transparent 68%);
+    }
+    .tipo-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 1500px;
+      text-align: center;
+      font-size: 104px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.06;
+      color: var(--tinta);
+    }
+    .barra {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1500px;
+      height: 190px;
+      margin-top: -95px;
+      margin-left: -750px;
+      background: rgba(0, 136, 255, 0.18);
+      border-radius: 14px;
+      z-index: 3;
+    }
+    /* Los tokens de diseño flotando: insignias HIG. */
+    .token {
+      position: absolute;
+      padding: 13px 20px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 18px 40px rgba(0, 136, 255, 0.12);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--tinta);
+      z-index: 2;
+    }
+    .token small { display: block; font-size: 12px; font-weight: 500; color: #6f747c; margin-top: 3px; }
+    .token--azul { color: #0075dc; }
+    /* Los recibos de papel. */
+    .recibo {
+      position: absolute;
+      width: 236px;
+      padding: 16px 18px;
+      border-radius: 4px;
+      background: #f4f1e8;
+      color: #2b2b2b;
+      font-family: "Segoe Print", cursive;
+      font-size: 21px;
+      line-height: 1.35;
+      box-shadow: 0 24px 46px rgba(0, 0, 0, 0.22);
+      z-index: 2;
+    }
+    .recibo--amarillo { background: #ffe9a8; }
+    .recibo s { display: block; color: #5c5c5c; font-size: 17px; margin-top: 4px; }
+    .recibo--tachado { text-decoration: line-through; }
+  </style>
+
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <!-- El mesh azul en las esquinas -->
+    <div class="esfera" data-layout-ignore id="s1-esfera-a" style="left: -120px; top: -160px"></div>
+    <div class="esfera" data-layout-ignore id="s1-esfera-b" style="right: -140px; bottom: -180px"></div>
+
+    <!-- Los tokens de diseño y los recibos, flotando alrededor -->
+    <div class="token" data-layout-ignore id="s1-token-a" style="left: 130px; top: 200px">
+      Tabla de_segments
+      <small>Apple HIG · List</small>
+    </div>
+    <div class="token token--azul" data-layout-ignore id="s1-token-b" style="right: 150px; top: 300px">
+      Liquid Glass
+      <small>Material · blur 24 px</small>
+    </div>
+    <div class="token" data-layout-ignore id="s1-token-c" style="left: 190px; bottom: 210px">
+      Motion UI
+      <small>Spring · damping 15</small>
+    </div>
+
+    <div class="recibo" data-layout-ignore id="s1-r1" style="left: 300px; top: 480px">
+      Anoté la venta
+      <s>lunes 8,40</s>
+    </div>
+    <div class="recibo recibo--amarillo" data-layout-ignore id="s1-r2" style="left: 560px; top: 620px">
+      Cuenta pendiente
+      <s>revisar</s>
+    </div>
+    <div class="recibo" data-layout-ignore id="s1-r3" style="left: 430px; top: 760px">
+      Recibo #42
+      <s>$ 18,50 (¿Pagó?)</s>
+    </div>
+    <div class="recibo recibo--tachado" data-layout-ignore id="s1-r4" style="left: 700px; top: 500px">
+      Inventario a mano
+    </div>
+
+    <!-- El titular: primero la pregunta, despues la respuesta -->
+    <div class="tipo-wrap">
+      <div id="s1-frase-b" data-layout-allow-overlap style="position: relative; z-index: 4">
+        <span id="s1-p1" data-layout-allow-overlap data-layout-allow-occlusion>Misma venta,</span>
+        <span id="s1-p2" data-layout-allow-overlap data-layout-allow-occlusion>mil cuadernos</span>
+      </div>
+      <div id="s1-frase-a" data-layout-allow-overlap data-layout-allow-occlusion style="position: absolute; inset: 0; z-index: 1; opacity: 0">
+        Deja de <span class="azul" data-layout-allow-occlusion>anotar a mano.</span>
+      </div>
+    </div>
+
+    <!-- La barra azul que borra el texto -->
+    <div class="barra" data-layout-allow-overflow id="s1-barra" style="opacity: 0"></div>
+  </div>
+
+  <script>
+    /* La rejilla: 153 BPM con el primer golpe en 0,17 s. */
+    const b = (n) => window.beat(n);
+
+    const tl = gsap.timeline({ paused: true });
+
+    /* Las esferas derivan despacio, sin parar. */
+    tl.fromTo(
+      "#s1-esfera-a",
+      { x: 0, y: 0 },
+      { x: 130, y: 90, duration: 5.268, ease: "none" },
+      0
+    );
+    tl.fromTo(
+      "#s1-esfera-b",
+      { x: 0, y: 0 },
+      { x: -150, y: -110, duration: 5.268, ease: "none" },
+      0
+    );
+
+    /* Los tokens y los recibos entran escalonados, sobre el beat. */
+    const flotan = [
+      ["#s1-token-a", b(1), -60, 40],
+      ["#s1-r1", b(1), -40, 30],
+      ["#s1-token-b", b(2), 60, -40],
+      ["#s1-r2", b(3), -50, 34],
+      ["#s1-token-c", b(4), 50, -30],
+      ["#s1-r3", b(5), -44, 28],
+      ["#s1-r4", b(6), 56, -34],
+    ];
+    for (const [sel, t0, dx, dy] of flotan) {
+      tl.fromTo(
+        sel,
+        { opacity: 0, x: dx, y: dy, scale: 0.94, filter: "blur(10px)" },
+        { opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "back.out(1.6)" },
+        t0
+      );
+    }
+
+    /* Deriva continua de lo que queda en pantalla. */
+    tl.to("#s1-token-a", { y: "-=18", duration: 2.2, ease: "sine.inOut" }, b(2));
+    tl.to("#s1-token-a", { y: "+=18", duration: 2.2, ease: "sine.inOut" }, b(2) + 2.2);
+    tl.to("#s1-r1", { y: "-=14", duration: 2.4, ease: "sine.inOut" }, b(3));
+    tl.to("#s1-r1", { y: "+=14", duration: 2.4, ease: "sine.inOut" }, b(3) + 2.4);
+
+    /* El titular se escribe palabra a palabra, en los beats. */
+    /* La primera palabra ya esta en pantalla (desenfocada): el
+       fotograma 0 es la miniatura en los reproductores sociales. */
+    tl.fromTo(
+      "#s1-p1",
+      { opacity: 1, filter: "blur(16px)", y: 34 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.45, ease: "power4.out" },
+      0
+    );
+    tl.fromTo(
+      "#s1-p2",
+      { opacity: 0, filter: "blur(16px)", y: 34 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.45, ease: "power4.out" },
+      b(2)
+    );
+
+    /* La barra azul barre el texto y lo borra de un solo trazo. */
+    tl.fromTo(
+      "#s1-barra",
+      { opacity: 1, x: -1560 },
+      { opacity: 1, x: 0, duration: 0.62, ease: "power2.inOut" },
+      b(8)
+    );
+    tl.fromTo(
+      "#s1-frase-b",
+      { clipPath: "inset(0 0 0 0%)" },
+      { clipPath: "inset(0 0 0 100%)", duration: 0.62, ease: "power2.inOut" },
+      b(8)
+    );
+    tl.fromTo(
+      "#s1-frase-a",
+      { opacity: 0 },
+      { opacity: 1, duration: 0.3, ease: "power1.out" },
+      b(8) + 0.18
+    );
+    tl.to("#s1-barra", { opacity: 0, duration: 0.25 }, b(8) + 0.62);
+
+    /* El zoom final: la camara se mete en el texto. */
+    tl.fromTo(
+      "#s1-frase-a",
+      { scale: 1 },
+      { scale: 1.16, duration: 1.1, ease: "power2.inOut" },
+      b(9)
+    );
+    tl.to(
+      "#root",
+      {},
+      { duration: 0.01 },
+      0
+    );
+
+    window.__timelines["s1"] = tl;
+  </script>
+</template>

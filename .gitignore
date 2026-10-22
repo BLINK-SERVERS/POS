@@ -45,3 +45,11 @@ Thumbs.db
 
 # Capturas del verificador de UI
 verify-shots/
+
+# ---- Comercial en HyperFrames (video-hf/) y sus renders ----
+# Los MP4 son entregables pesados: no se versionan.
+/BLINK-COMERCIAL-HF*.mp4
+video-hf/renders/
+video-hf/.hyperframes/
+.hf-transaction-*/
+*.hf-transaction-*/

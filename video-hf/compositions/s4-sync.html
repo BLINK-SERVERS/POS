@@ -1,0 +1,285 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: var(--papel);
+    }
+    /* El paso a oscuro: la escena entera cambia de fondo. */
+    .noche {
+      position: absolute;
+      inset: 0;
+      background: var(--noche);
+      opacity: 0;
+    }
+    .aurora {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(140px);
+      opacity: 0;
+    }
+    .aurora--a { width: 860px; height: 860px; left: -80px; top: -120px; background: radial-gradient(circle, #0091ff 0%, transparent 68%); }
+    .aurora--b { width: 780px; height: 780px; right: -60px; bottom: -140px; background: radial-gradient(circle, #0088ff 0%, transparent 68%); }
+
+    .escena-centro {
+      grid-area: 2 / 2;
+      place-self: center;
+      text-align: center;
+      font-size: 70px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: var(--tinta);
+      width: 100%;
+      max-width: 900px;
+    }
+    .escena-centro .azul { color: var(--azul); margin-left: 0.14em; }
+
+    /* Rejilla 3x3: cada dispositivo en su esquina y el titular en el
+       hueco central. (Sin transforms de centrado: GSAP los pisa.) */
+    .escena {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      padding: 36px;
+    }
+    .disp--ai { grid-area: 1 / 1; justify-self: start; align-self: start; }
+    .disp--ad { grid-area: 1 / 3; justify-self: end; align-self: start; }
+    .disp--bi { grid-area: 3 / 1; justify-self: start; align-self: end; }
+    .disp--bd { grid-area: 3 / 3; justify-self: end; align-self: end; }
+    /* Las miniaturas se miden por su caja: el interior se escala,
+       para que el centro de la escena quede libre. */
+    .mini-app {
+      width: 432px;
+      height: 248px;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 18px 40px rgba(0, 136, 255, 0.16), 0 8px 18px rgba(15, 23, 42, 0.14);
+    }
+    .mini-app .app { transform: scale(0.4); transform-origin: top left; }
+    .mini-tel {
+      width: 126px;
+      height: 273px;
+      overflow: hidden;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0, 136, 255, 0.16), 0 8px 18px rgba(15, 23, 42, 0.14);
+    }
+    .mini-tel .tel { transform: scale(0.47); transform-origin: top left; }
+
+    /* Los corchetes enmarcan el texto: van en la misma fila. */
+    .escena-bracket {
+      grid-area: 2 / 2;
+      place-self: center;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    .corchete {
+      font-size: 150px;
+      font-weight: 300;
+      line-height: 0.8;
+      color: var(--azul);
+      text-shadow: 0 0 34px rgba(0, 136, 255, 0.55);
+    }
+    .escena-bracket__texto {
+      font-size: 88px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #f5f5f7;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s4" data-width="1920" data-height="1080">
+    <!-- El paso a modo oscuro -->
+    <div class="noche" id="s4-noche" data-layout-ignore></div>
+    <div class="aurora aurora--a" id="s4-aurora-a" data-layout-ignore></div>
+    <div class="aurora aurora--b" id="s4-aurora-b" data-layout-ignore></div>
+
+    <div class="escena">
+    <!-- Los cuatro dispositivos -->
+    <div class="disp disp--ai" id="s4-d1" data-layout-ignore>
+      <div class="mini-app">
+        <div class="app">
+          <div class="app__side">
+            <div class="app__logo">$</div>
+            <div class="app__item on">▦</div>
+            <div class="app__item">▤</div>
+            <div class="app__item">◔</div>
+            <div class="app__item">◑</div>
+            <div class="app__item">▣</div>
+            <div class="app__item">◉</div>
+            <div class="app__item">◨</div>
+          </div>
+          <div class="app__main">
+            <div class="app__top">
+              <div class="app__search">⌕ &nbsp;Buscar…</div>
+              <div class="app__online"><i></i>En línea</div>
+              <div class="app__avatar">QA</div>
+            </div>
+            <div class="app__body">
+              <div class="kpis">
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">$</span><span class="pill">↑ +12.4 %</span></div><div class="kpi__label">Ventas</div><div class="kpi__value">$ 1.240,00</div><div class="chispa"><i style="height: 30%"></i><i style="height: 46%"></i><i style="height: 58%"></i><i style="height: 74%"></i><i style="height: 100%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">▤</span><span class="pill">↑ +8.1 %</span></div><div class="kpi__label">Órdenes</div><div class="kpi__value">38</div><div class="chispa"><i style="height: 42%"></i><i style="height: 56%"></i><i style="height: 68%"></i><i style="height: 80%"></i><i style="height: 92%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">▧</span><span class="pill">↑ +3.2 %</span></div><div class="kpi__label">Ticket</div><div class="kpi__value">$ 32,63</div><div class="chispa"><i style="height: 56%"></i><i style="height: 60%"></i><i style="height: 66%"></i><i style="height: 70%"></i><i style="height: 78%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">◨</span><span class="pill">↑ +5.7 %</span></div><div class="kpi__label">Margen</div><div class="kpi__value">$ 412,80</div><div class="chispa"><i style="height: 30%"></i><i style="height: 44%"></i><i style="height: 58%"></i><i style="height: 66%"></i><i style="height: 78%"></i></div></div>
+              </div>
+              <div class="filas">
+                <div class="panel"><h4>Rendimiento de Ventas</h4><div class="barras"><i style="height: 38%"></i><i style="height: 52%"></i><i style="height: 44%"></i><i style="height: 61%"></i><i style="height: 58%"></i><i style="height: 72%"></i><i style="height: 66%"></i><i style="height: 81%"></i><i style="height: 74%"></i><i style="height: 92%"></i><i style="height: 86%"></i><i style="height: 100%"></i></div></div>
+                <div class="panel"><h4>Ultimas ventas</h4><div class="venta"><span>Café Molido 500g</span><b>$ 6,50</b></div><div class="venta"><span>Harina PAN x3</span><b>$ 4,20</b></div><div class="venta"><span>Combo Desayuno</span><b>$ 12,00</b></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disp disp--ad" id="s4-d2" data-layout-ignore>
+      <div class="mini-tel">
+        <div class="tel">
+          <div class="tel__screen">
+            <div class="tel__top"><h5>General</h5><div class="app__avatar" style="width: 26px; height: 26px; font-size: 11px">QA</div></div>
+            <div class="tel__card"><span>Ventas hoy</span><b>$ 1.240,00</b></div>
+            <div class="tel__card"><span>Órdenes</span><b>38</b></div>
+            <div class="tel__card"><span>Margen</span><b>$ 412,80</b></div>
+            <div class="tel__card" style="padding-bottom: 14px"><span>Rendimiento</span><div class="chispa" style="height: 40px; margin-top: 6px"><i style="height: 30%"></i><i style="height: 46%"></i><i style="height: 58%"></i><i style="height: 74%"></i><i style="height: 100%"></i></div></div>
+            <div class="dock"><span class="on">▦</span><span>◔</span><span class="dock__vender">$</span><span>▣</span><span>◉</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disp disp--bi" id="s4-d3" data-layout-ignore>
+      <div class="mini-tel">
+        <div class="tel">
+          <div class="tel__screen">
+            <div class="tel__top"><h5>General</h5><div class="app__avatar" style="width: 26px; height: 26px; font-size: 11px">QA</div></div>
+            <div class="tel__card"><span>Ventas hoy</span><b>$ 1.240,00</b></div>
+            <div class="tel__card"><span>Órdenes</span><b>38</b></div>
+            <div class="tel__card"><span>Margen</span><b>$ 412,80</b></div>
+            <div class="tel__card" style="padding-bottom: 14px"><span>Rendimiento</span><div class="chispa" style="height: 40px; margin-top: 6px"><i style="height: 30%"></i><i style="height: 46%"></i><i style="height: 58%"></i><i style="height: 74%"></i><i style="height: 100%"></i></div></div>
+            <div class="dock"><span class="on">▦</span><span>◔</span><span class="dock__vender">$</span><span>▣</span><span>◉</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disp disp--bd" id="s4-d4" data-layout-ignore>
+      <div class="mini-app">
+        <div class="app">
+          <div class="app__side">
+            <div class="app__logo">$</div>
+            <div class="app__item on">▦</div>
+            <div class="app__item">▤</div>
+            <div class="app__item">◔</div>
+            <div class="app__item">◑</div>
+            <div class="app__item">▣</div>
+            <div class="app__item">◉</div>
+            <div class="app__item">◨</div>
+          </div>
+          <div class="app__main">
+            <div class="app__top">
+              <div class="app__search">⌕ &nbsp;Buscar…</div>
+              <div class="app__online"><i></i>En línea</div>
+              <div class="app__avatar">QA</div>
+            </div>
+            <div class="app__body">
+              <div class="kpis">
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">$</span><span class="pill">↑ +12.4 %</span></div><div class="kpi__label">Ventas</div><div class="kpi__value">$ 1.240,00</div><div class="chispa"><i style="height: 30%"></i><i style="height: 46%"></i><i style="height: 58%"></i><i style="height: 74%"></i><i style="height: 100%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">▤</span><span class="pill">↑ +8.1 %</span></div><div class="kpi__label">Órdenes</div><div class="kpi__value">38</div><div class="chispa"><i style="height: 42%"></i><i style="height: 56%"></i><i style="height: 68%"></i><i style="height: 80%"></i><i style="height: 92%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">▧</span><span class="pill">↑ +3.2 %</span></div><div class="kpi__label">Ticket</div><div class="kpi__value">$ 32,63</div><div class="chispa"><i style="height: 56%"></i><i style="height: 60%"></i><i style="height: 66%"></i><i style="height: 70%"></i><i style="height: 78%"></i></div></div>
+                <div class="kpi"><div class="kpi__head"><span class="kpi__icon">◨</span><span class="pill">↑ +5.7 %</span></div><div class="kpi__label">Margen</div><div class="kpi__value">$ 412,80</div><div class="chispa"><i style="height: 30%"></i><i style="height: 44%"></i><i style="height: 58%"></i><i style="height: 66%"></i><i style="height: 78%"></i></div></div>
+              </div>
+              <div class="filas">
+                <div class="panel"><h4>Rendimiento de Ventas</h4><div class="barras"><i style="height: 38%"></i><i style="height: 52%"></i><i style="height: 44%"></i><i style="height: 61%"></i><i style="height: 58%"></i><i style="height: 72%"></i><i style="height: 66%"></i><i style="height: 81%"></i><i style="height: 74%"></i><i style="height: 92%"></i><i style="height: 86%"></i><i style="height: 100%"></i></div></div>
+                <div class="panel"><h4>Ultimas ventas</h4><div class="venta"><span>Café Molido 500g</span><b>$ 6,50</b></div><div class="venta"><span>Harina PAN x3</span><b>$ 4,20</b></div><div class="venta"><span>Combo Desayuno</span><b>$ 12,00</b></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- El titular, en el hueco del centro -->
+    <div class="escena-centro" id="s4-texto">
+      Tu tienda. <span class="azul">En cualquier pantalla.</span><br />Sin descargas.
+    </div>
+
+    </div>
+
+    <!-- El corte a oscuro, con los corchetes enmarcando el texto -->
+    <div class="escena">
+    <div class="escena-bracket" id="s4-bracket">
+      <span class="corchete" id="s4-corchete-izq">[</span>
+      <span class="escena-bracket__texto">
+        Cero Papeleo. <span style="color: #0091ff">Pura Velocidad.</span>
+      </span>
+      <span class="corchete" id="s4-corchete-der">]</span>
+    </div>
+    </div>
+  </div>
+
+  <script>
+    const INICIO = 18.994;
+    const b = (n) => window.beat(n) - INICIO;
+
+    const tl = gsap.timeline({ paused: true });
+
+    /* Los cuatro dispositivos entran en diagonal, sobre el beat. */
+    const dispositivos = [
+      ["#s4-d1", b(48), -260, -180],
+      ["#s4-d2", b(49), 260, -180],
+      ["#s4-d3", b(50), -260, 180],
+      ["#s4-d4", b(51), 260, 180],
+    ];
+    for (const [sel, t0, dx, dy] of dispositivos) {
+      tl.fromTo(
+        sel,
+        { opacity: 0, x: dx, y: dy, rotate: dx > 0 ? 9 : -9, scale: 0.9 },
+        { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1, duration: 0.85, ease: "power3.out" },
+        t0
+      );
+    }
+
+    /* El titular ocupa el centro. */
+    tl.fromTo(
+      "#s4-texto",
+      { opacity: 0, filter: "blur(16px)", y: 40 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.6, ease: "power4.out" },
+      b(50)
+    );
+
+    /* El corte a oscuro (frame 1320 = 3,01 s local). */
+    tl.to("#s4-noche", { opacity: 1, duration: 0.55, ease: "power2.inOut" }, b(57));
+    tl.to("#s4-aurora-a", { opacity: 0.36, duration: 0.55 }, b(57));
+    tl.to("#s4-aurora-b", { opacity: 0.28, duration: 0.55 }, b(57));
+    tl.to("#s4-texto", { opacity: 0, filter: "blur(14px)", duration: 0.4, ease: "power2.in" }, b(57));
+    tl.to("#s4-d1", { opacity: 0, scale: 0.9, duration: 0.45, ease: "power2.in" }, b(57));
+    tl.to("#s4-d2", { opacity: 0, scale: 0.9, duration: 0.45, ease: "power2.in" }, b(57));
+    tl.to("#s4-d3", { opacity: 0, scale: 0.9, duration: 0.45, ease: "power2.in" }, b(57));
+    tl.to("#s4-d4", { opacity: 0, scale: 0.9, duration: 0.45, ease: "power2.in" }, b(57));
+
+    /* Los corchetes se cierran sobre el texto. */
+    tl.fromTo(
+      "#s4-corchetes",
+      { opacity: 0, x: -260, scale: 0.7 },
+      { opacity: 1, x: 0, scale: 1, duration: 0.42, ease: "back.out(2.2)" },
+      b(57)
+    );
+    tl.fromTo(
+      "#s4-bracket",
+      { opacity: 0, scale: 1.14, filter: "blur(14px)" },
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.45, ease: "back.out(2)" },
+      b(57) + 0.1
+    );
+
+    /* La camara tira hacia atras y atraviesa los corchetes. */
+    tl.to("#s4-bracket", { scale: 1.06, duration: 1.2, ease: "power2.inOut" }, b(59));
+
+    window.__timelines["s4"] = tl;
+  </script>
+</template>
