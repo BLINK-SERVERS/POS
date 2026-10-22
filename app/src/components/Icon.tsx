@@ -11,7 +11,7 @@ import { memo, type SVGProps } from "react";
 import { getIcon } from "../lib/iconos";
 import type { SfSymbolName } from "../lib/sf-symbols";
 
-export type IconName = SfSymbolName;
+export type IconName = SfSymbolName | "grid2x2.solid";
 
 export const Icon = memo(function Icon({
   name,

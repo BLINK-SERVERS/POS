@@ -10,12 +10,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Glass } from "konsta/react";
 import { useStore } from "../lib/store";
-import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
+import { formatBsDirect, formatTasaCabecera, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
-import { MobileScannerModal } from "./ScannerModals";
-import { ScannerProvider, useScanner } from "../lib/scanner/ScannerProvider";
+import { ScannerProvider } from "../lib/scanner/ScannerProvider";
 import { type Modulo } from "../lib/modulos";
 
 /** Elemento de la barra lateral, con sus subsecciones. */
@@ -24,7 +23,7 @@ interface NavItem extends Modulo {
 }
 
 const NAV: NavItem[] = [
-  { to: "/app/inicio", label: "General", icon: "grid2x2" },
+  { to: "/app/inicio", label: "General", icon: "grid2x2.solid" },
   {
     to: "/app/ventas",
     label: "Ventas",
@@ -50,7 +49,7 @@ const NAV: NavItem[] = [
  * General (el panel de módulos) y desde la barra lateral del escritorio.
  */
 const BAR_IZQUIERDA: Modulo[] = [
-  { to: "/app/inicio", label: "Inicio", icon: "grid2x2" },
+  { to: "/app/inicio", label: "Inicio", icon: "grid2x2.solid" },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
 ];
 
@@ -63,35 +62,21 @@ const BAR_DERECHA: Modulo[] = [
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
 ];
 
-/** Botón del topbar: abre el modal del escáner y muestra si el celular está activo. */
-function ScannerTopbarButton() {
-  const { remoteActive, pairing } = useScanner();
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        className={"btn btn--plain btn--sm scan-topbtn" + (remoteActive ? " scan-topbtn--on" : "")}
-        onClick={() => setOpen(true)}
-        title="Escáner móvil"
-      >
-        <Icon name="scan" />
-        <span className="scan-topbtn__label">
-          {remoteActive ? "Escáner activo" : pairing ? "Escáner" : "Vincular"}
-        </span>
-        {remoteActive && <span className="dot dot--on" aria-hidden />}
-      </button>
-      {open && <MobileScannerModal onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
 /**
  * Menú de avatar (cabecera).
  *
  * Sustituye al menú hamburguesa en móvil: la cuenta, los ajustes y el
  * cierre de sesión se concentran aquí.
  */
-function AvatarMenu() {
+function AvatarMenu({
+  onCaja,
+  cajaAbierta,
+}: {
+  /** Abre el formulario de apertura o de cierre de caja. */
+  onCaja: () => void;
+  /** Si la caja del dia esta abierta. */
+  cajaAbierta: boolean;
+}) {
   const { user, logout } = useStore();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
@@ -158,6 +143,23 @@ function AvatarMenu() {
                 <span className="dim">{tieneNombre ? user?.email : "Dueño del comercio"}</span>
               </div>
             </div>
+
+            <div className="avatarmenu__sep" role="separator" />
+
+            {/* La caja del dia vive aqui: la barra superior se queda
+                solo con el nombre, la tasa y la cuenta. */}
+            <button
+              type="button"
+              role="menuitem"
+              className="avatarmenu__item"
+              onClick={() => {
+                setOpen(false);
+                onCaja();
+              }}
+            >
+              <Icon name="cash" />
+              <span>{cajaAbierta ? "Cerrar caja" : "Abrir caja"}</span>
+            </button>
 
             <div className="avatarmenu__sep" role="separator" />
 
@@ -316,38 +318,34 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <div className="shell__content">
         <header className="shell__topbar">
-          <strong className="topbar__name">{state.business.name}</strong>
-          <ScannerTopbarButton />
+          {/* La barra lleva solo lo imprescindible: el nombre del
+              comercio, la tasa del dia y la cuenta. El escaner y la
+              caja se abren desde sus propios modulos. */}
+          <span className="topbar__name">{state.business.name}</span>
+          <span className="grow" />
           <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
             {state.rate > 0 ? (
               <>
-                <strong>{formatRate(state.rate)}</strong>
+                <strong>{formatTasaCabecera(state.rate)}</strong>
                 <span className="rate-chip__suffix"> / $ · BCV</span>
               </>
             ) : (
               <strong style={{ fontSize: "0.8rem" }}>Sin tasa</strong>
             )}
           </span>
-          <span className="grow" />
-          {session ? (
-            <button
-              className="btn btn--plain btn--sm"
-              onClick={() => {
-                setCUsd(String(session.openingUsd));
-                setCBs(String(session.openingBs));
-                setCNote("");
-                setCloseOpen(true);
-              }}
-              title={`Abierta ${new Date(session.openedAt).toLocaleTimeString()}`}
-            ><Icon name="cash" />
-              <span className="btn__label">Cerrar caja</span>
-            </button>
-          ) : (
-            <button className="btn btn--plain btn--sm" onClick={() => setCashOpen(true)}><Icon name="cash" />
-              <span className="btn__label">Abrir caja</span>
-            </button>
-          )}
-          <AvatarMenu />
+          <AvatarMenu
+            onCaja={
+              session
+                ? () => {
+                    setCUsd(String(session.openingUsd));
+                    setCBs(String(session.openingBs));
+                    setCNote("");
+                    setCloseOpen(true);
+                  }
+                : () => setCashOpen(true)
+            }
+            cajaAbierta={Boolean(session)}
+          />
         </header>
 
         <main className="shell__main">

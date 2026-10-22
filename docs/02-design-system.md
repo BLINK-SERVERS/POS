@@ -240,6 +240,31 @@ de la ventana, sino paneles flotantes redondeados. BLINK replica ese patrón:
 | Barra de navegación | 56 px, hairline inferior, acciones en texto plano de acento |
 | Título de pantalla | **Large Title** 34 px / leading 41 (28 px en móvil) |
 
+### 4.0 · La barra superior: lo mínimo
+
+La barra lleva **solo lo imprescindible**, en este orden:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Nombre del comercio        Bs 884,75 / $ · BCV    (avatar) │
+└──────────────────────────────────────────────────────────┘
+```
+
+| Pieza | Regla |
+|---|---|
+| Nombre del comercio | A la izquierda, **peso medio** (500), con elipsis si no cabe |
+| Tasa del día | A la derecha, **dos decimales exactos** (`Bs 884,75`); el cálculo sigue con cuatro |
+| Avatar | A la derecha, con el menú de cuenta (datos, perfil, ajustes, caja, salir) |
+| Botón de escáner | **No está** en la barra: el escáner se abre desde su propio módulo |
+| Apertura de caja | **No está** en la barra: vive en el menú del avatar |
+
+**Paridad en oscuro**: la barra y las páginas comparten **exactamente** el
+mismo fondo (`--color-bg-primary`, el negro de la marca) y el borde inferior
+desaparece. El lienzo de la app es el fondo, no una superficie elevada: las
+tarjetas sí son superficies y flotan sobre él. Si la barra fuera una
+superficie `#1a1a1a` sobre un lienzo negro, quedaría un parche visible
+justo en la línea de separación.
+
 ### 4.1 · Navegación: sin hamburguesa, con barra inferior flotante
 
 En móvil (< 860 px) el contenido va a sangre y **no hay menú hamburguesa**
@@ -467,11 +492,48 @@ Implementado en `app.css` con el bloque `table.data tbody tr` y la clase
 Icono en un círculo tintado (56 px), título en *Title 3* y texto de ayuda.
 **Sin marco discontinuo**: era un recurso de aplicación web.
 
+### Tablas en móvil: tarjetas apiladas (HIG · Lists)
+
+Por debajo de 860 px la tabla se convierte en **tarjetas apiladas**, sin
+scroll lateral obligatorio:
+
+```
+┌───────────────────────────────┐
+│ AZUCAR KONFIT 1kg             │  ← el primer campo es el titulo
+│ SKU            SKU-001        │  ← rotulo a la izquierda
+│ Existencia     24             │    valor a la derecha
+│ Mínimo         6              │
+│ Valor (costo)  $ 21.60        │
+└───────────────────────────────┘
+```
+
+El rótulo de cada celda (`data-label`) **se sacude de la propia cabecera**:
+el componente `DataTable` los lee de los `<th>` y los inyecta en las
+celdas. Así ninguna página los repite y no pueden desincronizarse.
+
+La retícula es la de una lista *inset grouped* de iOS: contenedor redondeado
+sin borde, separadores hairline y el título de la fila arriba en negrita.
+
 ### KPIs
 
 Una sola superficie con celdas separadas por hairline (`.kpis--group`), la
 etiqueta en *footnote* secondary y el dato en *Title 2* tabular. Dentro de una
 tarjeta se usa la variante `.kpis--inline` (solo las celdas).
+
+### Tarjetas de producto (HIG · Cards)
+
+El catálogo es una **rejilla de tarjetas de cristal**, no una tabla de nueve
+columnas:
+
+| Pieza | Regla |
+|---|---|
+| Rejilla | `repeat(auto-fill, minmax(248px, 1fr))`, separación 0,9 rem |
+| Miniatura | Cuadrado de 46 px con radio 14 px, **macizo**, con las iniciales del producto sobre un tinte estable (el mismo siempre, derivado del nombre) |
+| Nombre | *Headline* semibold, dos líneas como máximo |
+| Marca y categoría | *Footnote* secondary, con el SKU si no hay marca |
+| Precio | *Title 3* tabular **alineado a la derecha**, con su equivalente en bolivares al lado |
+| Margen y estado | En una fila, bajo el precio |
+| SKU y acciones | Al pie: el SKU a la izquierda, las acciones a la derecha |
 
 ---
 
@@ -569,6 +631,12 @@ Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
   página pública no descarga los iconos que no usa.
 - API pública estable: `<Icon name="…" size={…} />`, con `IconName` como
   unión de tipos. Ningún *call site* cambia al migrar.
+- **Iconos propios de la marca:** los SF Symbols tienen licencia de Apple y
+  no se pueden modificar, así que los iconos que la marca necesita con otra
+  forma son drawings de BLINK en `app/src/lib/iconos-blink.ts`, registrados
+  en el mismo diccionario (`registrarIconos`). Hoy está `grid2x2.solid`: los
+  cuatro cuadrados del icono de General, **macizos** y con el radio suave de
+  Apple (el de SF Symbols es un contorno).
 - **Licencia:** los SF Symbols son material de Apple con uso restringido a
   software de plataformas Apple. Está documentado, junto con las alternativas
   libres (Phosphor MIT, Lucide ISC, Tabler MIT), en
@@ -586,9 +654,10 @@ Implementado con `<Glass>` de Konsta UI en la tab bar móvil y en la landing.
 | `Tabs` | Konsta `<Segmented>` | control segmentado de iOS, desplazable si hay muchas pestañas |
 | `Searchbar` | Konsta | búsqueda en la barra |
 | `Glass` | Konsta | tab bar flotante y landing |
-| `DataTable` | propio | tabla en escritorio, tarjetas en móvil |
+| `DataTable` | propio | tabla en escritorio, tarjetas en móvil; los rótulos de columna se sacan de la cabecera |
 | `Receipt` | propio | ticket en vivo, siempre visible |
-| `Icon` | SF Symbols | `currentColor`, sin emoji |
+| `Icon` | SF Symbols + marca | `currentColor`, sin emoji |
+| `ThemeSlider` | propio | deslizante de apariencia (sol ↔ luna) con el icono del tema activo dentro del knob |
 
 Konsta UI es MIT. Se usa como **capa de componentes iOS**, no como fuente de
 la paleta: los tokens de BLINK mandan.
@@ -628,6 +697,13 @@ ven).
 Además hay scripts sueltos: `npm run qa:apariencia` (el cambio manual de
 tema, la persistencia y la vuelta a "Automático") y `npm run qa:carga`
 (medición de la carga real contra el build de producción).
+
+`npm run qa:navegacion` comprueba además, con 20 comprobaciones nuevas, la
+**barra superior** (nombre del comercio, peso medio, tasa con dos decimales,
+sin botón de escáner ni de caja, y el mismo fondo que la página), el
+**selector de periodo** (exactamente Día, Semana y Mes), el **catálogo de
+tarjetas** (miniatura, radio, precio alineado, cristal, rejilla) y las
+**tablas en móvil** (todas las celdas con su rótulo y sin scroll lateral).
 
 Sale con código 1 si algo falla, así que sirve como **regresión visual** en CI.
 

@@ -13,6 +13,86 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.18.0] · 2026-10-22
+
+**Rediseño de la interfaz: barra superior, saludo, selector de periodo, deslizante de apariencia, catálogo de tarjetas y tablas en móvil.**
+
+### Botón de Inicio
+
+- Los cuatro cuadrados del icono de General son **macizos**, con el radio
+  suave de Apple. El de SF Symbols es un contorno y no se puede modificar
+  (su licencia), así que el icono es un dibujo propio de la marca:
+  `lib/iconos-blink.ts` (`grid2x2.solid`), registrado en el mismo
+  diccionario que los SF Symbols.
+
+### Barra superior
+
+- Se retiran el **botón de escáner** y el **acceso de caja**. La barra queda
+  limpia: nombre del comercio a la izquierda (peso medio), tasa del día y
+  avatar a la derecha.
+- La caja del día se abre desde el **menú del avatar** («Abrir caja» /
+  «Cerrar caja»), que es donde ya viven la cuenta y los ajustes.
+- La tasa se muestra con **dos decimales exactos** (`Bs 884,75`); el cálculo
+  de dinero sigue con la precisión completa (hasta cuatro decimales).
+- **Paridad en oscuro**: la barra y las páginas comparten exactamente el
+  mismo fondo (`--color-bg-primary`, negro de marca) y el borde de la barra
+  desaparece en oscuro. Antes la barra era una superficie `#1a1a1a` sobre un
+  lienzo negro: un parche visible.
+
+### Cabecera del panel
+
+- El saludo es directo: **«Hola, [Nombre] [Apellido]»**, con el subtítulo
+  «Así va tu negocio». Sin nombre de usuario, «Hola».
+
+### Selector de periodo
+
+- El resumen general tiene **Día, Semana y Mes**. Se retira **Año**: los
+  informes anuales se consultan en Informes.
+- La semana va de **lunes a domingo** (`weekRange` y `prevWeekRange` en
+  `lib/metrics.ts`).
+- Sigue siendo el control segmentado nativo de Konsta (iOS UI Kit), con su
+  indicador deslizante.
+
+### Deslizante de apariencia
+
+- El selector de tema es un **control deslizante** (HIG · Sliders): un knob
+  que se desplaza y lleva dentro el icono del tema en vigor —**sol** a la
+  izquierda, **luna** a la derecha. Se puede tocar o arrastrar.
+- «Automático» sigue disponible: la app sigue al sistema hasta que se toca
+  el control.
+
+### Catálogo de productos
+
+- La tabla de nueve columnas pasa a una **rejilla de tarjetas** de cristal:
+  miniatura con las iniciales sobre un tinte estable, nombre, marca y
+  categoría, **precio alineado a la derecha** con su equivalente en
+  bolivares, margen, estado y acciones al pie.
+
+### Tablas en móvil
+
+- Las tablas se convierten en **tarjetas apiladas** sin scroll lateral: cada
+  celda lleva el rótulo de su columna a la izquierda y el valor a la
+  derecha. Los rótulos se sacan de la propia cabecera, así que ninguna
+  página los repite (`DataTable` los inyecta como `data-label`).
+
+### Paridad claro/oscuro
+
+- Todo lo anterior está desarrollado con sus dos estilos: el deslizante
+  cambia de icono, la barra funde con el lienzo, las tarjetas de producto
+  usan el mismo material en las dos apariencias y las tablas en móvil
+  comparten la retícula.
+
+### QA
+
+- `qa:navegacion` incorpora 20 comprobaciones nuevas: barra superior
+  (nombre, peso, tasa, sin escáner, sin caja, mismo fondo que la página),
+  selector de periodo (exactamente Día/Semana/Mes), catálogo (tarjetas,
+  miniatura, radio, precio, cristal, rejilla) y tablas en móvil (rótulos en
+  todas las celdas y sin scroll horizontal).
+- `qa:apariencia` se adaptó al deslizante. `verify:ui` siembra ya el
+  nombre del comercio, para que la barra se pueda comprobar.
+
+---
 ## [1.17.0] · 2026-10-22
 
 **Liquid Glass en el modo oscuro, fondos planos y correcciones de diseño.**

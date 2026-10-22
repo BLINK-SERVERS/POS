@@ -76,6 +76,34 @@ export function monthRange(): [Date, Date] {
   return [from, to];
 }
 
+/**
+ * Rango de la semana en curso: de lunes a domingo.
+ *
+ * La semana empieza en lunes (la convencion de la app y de la
+ * region), no en domingo como en el calendario de Estados Unidos.
+ */
+export function weekRange(ref = new Date()): [Date, Date] {
+  const from = startOfWeek(ref);
+  const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6, 23, 59, 59, 999);
+  return [from, to];
+}
+
+/** La semana anterior a la de `ref`. */
+export function prevWeekRange(ref = new Date()): [Date, Date] {
+  const from = startOfWeek(new Date(ref.getTime() - 7 * 86_400_000));
+  const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6, 23, 59, 59, 999);
+  return [from, to];
+}
+
+/** Lunes a las 00:00 de la semana que contiene `ref`. */
+function startOfWeek(ref: Date): Date {
+  const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+  // getDay(): 0 = domingo, 1 = lunes. La semana empieza en lunes.
+  const offset = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - offset);
+  return d;
+}
+
 export function prevMonthRange(): [Date, Date] {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);

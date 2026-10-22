@@ -282,7 +282,11 @@ const general = await gen.evaluate(() => {
   };
 });
 
-Add(general.titulo === "General" ? "ok" : "FALLO", `la pantalla se llama "General" (${general.titulo})`);
+/* El panel se saluda por el nombre del dueño: "Hola, <nombre>". */
+Add(
+  /^Hola\b/.test(general.titulo) ? "ok" : "FALLO",
+  `la pantalla saluda al usuario ("${general.titulo}")`
+);
 Add(general.kpis === 4 ? "ok" : "FALLO", `hay 4 tarjetas de metrica (${general.kpis})`);
 Add(/blur\(/.test(general.blur) ? "ok" : "FALLO", `las tarjetas son de cristal (${general.blur})`);
 Add(
@@ -370,6 +374,170 @@ Add(
   escritorio.panel.length >= 8 ? "ok" : "FALLO",
   `el panel de General lista ${escritorio.panel.length} módulos`
 );
+
+/* ============================================================
+   3 · La barra superior (v1.18.0)
+   ============================================================ */
+console.log("\n=== Barra superior ===");
+const ctxBarra2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+const barra2 = await sesion(ctxBarra2);
+await barra2.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
+await barra2.waitForTimeout(1200);
+
+const infoBarra = await barra2.evaluate(() => {
+  const top = document.querySelector(".shell__topbar");
+  const nombre = top?.querySelector(".topbar__name");
+  const tasa = top?.querySelector(".rate-chip strong");
+  const botones = [...(top?.querySelectorAll("button") ?? [])].map((b) =>
+    (b.textContent || "").trim()
+  );
+  const fondo = getComputedStyle(top).backgroundColor;
+  const pagina = getComputedStyle(document.querySelector(".general")).backgroundColor;
+  return {
+    nombre: (nombre?.textContent || "").trim(),
+    peso: nombre ? getComputedStyle(nombre).fontWeight : "",
+    tasa: (tasa?.textContent || "").trim(),
+    botones,
+    fondo,
+    pagina,
+  };
+});
+
+Add(
+  infoBarra.nombre.length > 0 ? "ok" : "FALLO",
+  `la barra lleva el nombre del comercio ("${infoBarra.nombre}")`
+);
+Add(
+  Number(infoBarra.peso) >= 500 && Number(infoBarra.peso) <= 600 ? "ok" : "FALLO",
+  `el nombre va en peso medio (${infoBarra.peso})`
+);
+Add(
+  /^Bs [\d.,]+$/.test(infoBarra.tasa) && /[.,]\d{2}$/.test(infoBarra.tasa) ? "ok" : "FALLO",
+  `la tasa se muestra con dos decimales ("${infoBarra.tasa}")`
+);
+Add(
+  !infoBarra.botones.some((b) => /Vincular|Escaner|Escáner/.test(b)) ? "ok" : "FALLO",
+  `la barra no tiene boton de escaner (${infoBarra.botones.join(" | ") || "sin botones"})`
+);
+Add(
+  !infoBarra.botones.some((b) => /caja/i.test(b)) ? "ok" : "FALLO",
+  `la barra no tiene boton de caja (${infoBarra.botones.join(" | ") || "sin botones"})`
+);
+Add(
+  infoBarra.fondo === infoBarra.pagina ? "ok" : "FALLO",
+  `la barra y la pagina comparten el mismo fondo (${infoBarra.fondo} / ${infoBarra.pagina})`
+);
+await ctxBarra2.close();
+
+/* ============================================================
+   4 · Selector de periodo (v1.18.0)
+   ============================================================ */
+console.log("\n=== Selector de periodo ===");
+const ctxPeriodo = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+const periodo = await sesion(ctxPeriodo);
+await periodo.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
+await periodo.waitForTimeout(1200);
+
+const infoPeriodo = await periodo.evaluate(() => {
+  const pestanas = [...document.querySelectorAll(".page-head .tabs button")].map((b) =>
+    (b.textContent || "").trim()
+  );
+  const activo = document.querySelector(".page-head .tabs button.is-active, .page-head .tabs button[aria-pressed='true']");
+  return { pestanas, activo: (activo?.textContent || "").trim() };
+});
+
+Add(
+  infoPeriodo.pestanas.join(",") === "Día,Semana,Mes" ? "ok" : "FALLO",
+  `el selector tiene Dia, Semana y Mes (${infoPeriodo.pestanas.join(", ")})`
+);
+Add(
+  !infoPeriodo.pestanas.includes("Año") ? "ok" : "FALLO",
+  `el selector ya no tiene la opcion Año`
+);
+await ctxPeriodo.close();
+
+/* ============================================================
+   5 · Catalogo de tarjetas (v1.18.0)
+   ============================================================ */
+console.log("\n=== Catalogo ===");
+const ctxCatalogo = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+const catalogo = await sesion(ctxCatalogo);
+await catalogo.goto(BASE + "/app/catalogo", { waitUntil: "networkidle" });
+await catalogo.waitForTimeout(1200);
+
+const infoCatalogo = await catalogo.evaluate(() => {
+  const tarjetas = [...document.querySelectorAll(".prodcard")];
+  const primera = tarjetas[0];
+  const miniatura = primera?.querySelector(".prodthumb");
+  const precio = primera?.querySelector(".prodcard__precio strong");
+  const cs = primera ? getComputedStyle(primera) : null;
+  return {
+    tarjetas: tarjetas.length,
+    tabla: document.querySelectorAll("table.data").length,
+    miniatura: miniatura ? (miniatura.textContent || "").trim() : "",
+    radioMini: miniatura ? getComputedStyle(miniatura).borderRadius : "",
+    precio: (precio?.textContent || "").trim(),
+    blur: cs?.backdropFilter || "",
+    columnas: getComputedStyle(document.querySelector(".prodgrid")).gridTemplateColumns.split(" ").length,
+  };
+});
+
+Add(infoCatalogo.tarjetas > 0 ? "ok" : "FALLO", `el catalogo muestra tarjetas (${infoCatalogo.tarjetas})`);
+Add(infoCatalogo.tabla === 0 ? "ok" : "FALLO", `el catalogo ya no usa la tabla de nueve columnas`);
+Add(
+  infoCatalogo.miniatura.length > 0 ? "ok" : "FALLO",
+  `cada producto lleva su miniatura ("${infoCatalogo.miniatura}")`
+);
+Add(
+  parseFloat(infoCatalogo.radioMini) >= 10 ? "ok" : "FALLO",
+  `la miniatura tiene las esquinas redondeadas (${infoCatalogo.radioMini})`
+);
+Add(
+  infoCatalogo.precio.startsWith("$") ? "ok" : "FALLO",
+  `el precio se alinea a la derecha ("${infoCatalogo.precio}")`
+);
+Add(
+  /blur\(/.test(infoCatalogo.blur) ? "ok" : "FALLO",
+  `la tarjeta es de cristal (${infoCatalogo.blur})`
+);
+Add(
+  infoCatalogo.columnas >= 2 ? "ok" : "FALLO",
+  `la rejilla tiene varias columnas (${infoCatalogo.columnas})`
+);
+await ctxCatalogo.close();
+
+/* ============================================================
+   6 · Tablas en movil: tarjetas apiladas con rotulo (v1.18.0)
+   ============================================================ */
+console.log("\n=== Tablas en movil ===");
+const ctxTabla = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
+const tabla = await sesion(ctxTabla);
+await tabla.goto(BASE + "/app/inventario", { waitUntil: "networkidle" });
+await tabla.waitForTimeout(1200);
+
+const infoTabla = await tabla.evaluate(() => {
+  const celdas = [...document.querySelectorAll("table.data tbody tr td")].filter(
+    (td) => !td.classList.contains("row-actions")
+  );
+  const conRotulo = celdas.filter((td) => (td.getAttribute("data-label") || "").length > 0);
+  const desbordes = document.documentElement.scrollWidth > window.innerWidth + 2;
+  return {
+    celdas: celdas.length,
+    conRotulo: conRotulo.length,
+    desbordes,
+    primero: conRotulo[0]?.getAttribute("data-label") || "",
+  };
+});
+
+Add(
+  infoTabla.celdas > 0 && infoTabla.conRotulo === infoTabla.celdas ? "ok" : "FALLO",
+  `las celdas llevan su rotulo (${infoTabla.conRotulo}/${infoTabla.celdas}, el primero es "${infoTabla.primero}")`
+);
+Add(
+  !infoTabla.desbordes ? "ok" : "FALLO",
+  `la vista no tiene scroll horizontal`
+);
+await ctxTabla.close();
 
 await esc.screenshot({ path: path.join(OUT, "qa-navegacion-escritorio.png") });
 await ctxEsc.close();

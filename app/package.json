@@ -1,7 +1,7 @@
 {
   "name": "blink-pos-app",
   "private": true,
-  "version": "1.17.0",
+  "version": "1.18.0",
   "type": "module",
   "description": "BLINK POS — Punto de venta (aplicación propia, diseño y código originales).",
   "scripts": {

@@ -20,28 +20,28 @@ import {
   monthRange,
   monthlySeries,
   prevMonthRange,
-  prevYearRange,
-  yearRange,
+  prevWeekRange,
+  weekRange,
   type MonthPoint,
 } from "../lib/metrics";
 import { formatUsd } from "../lib/money";
 import { modulosVisibles } from "../lib/modulos";
 
 /** Periodos del panel: el comparativo es el equivalente anterior. */
-const PERIODOS = ["Hoy", "Mes", "Año"] as const;
+const PERIODOS = ["Día", "Semana", "Mes"] as const;
 type Periodo = (typeof PERIODOS)[number];
 
 /** Rangos del periodo actual y del equivalente anterior. */
 function rangos(periodo: Periodo): [Date, Date, Date, Date] {
-  if (periodo === "Hoy") {
+  if (periodo === "Día") {
     const [f, t] = dayRange();
     const [pf, pt] = dayRange(new Date(Date.now() - 86_400_000));
     return [f, t, pf, pt];
   }
-  if (periodo === "Año") {
-    const [f, t] = yearRange();
-    const [pf, pt] = prevYearRange();
-    return [f, t, pf, pt];
+  if (periodo === "Semana") {
+    const [f, t] = weekRange();
+    const [pf] = prevWeekRange();
+    return [f, t, pf, t];
   }
   const [f, t] = monthRange();
   const [pf, pt] = prevMonthRange();
@@ -163,8 +163,13 @@ function GraficoMensual({ puntos }: { puntos: MonthPoint[] }) {
 }
 
 export function General() {
-  const { state } = useStoreState();
+  const { state, user } = useStoreState();
   const [periodo, setPeriodo] = useState<Periodo>("Mes");
+
+  /** El nombre del dueño, para el saludo. */
+  const nombreUsuario = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
+    : "";
 
   const { actual, varVentas, varOrdenes, varTicket, varMargen } = useMemo(() => {
     const [f, t, pf, pt] = rangos(periodo);
@@ -184,7 +189,8 @@ export function General() {
   const puntos = useMemo(() => monthlySeries(state.sales, 12), [state.sales]);
 
   const margenPct = actual.net > 0 ? Math.round((actual.gross / actual.net) * 100) : 0;
-  const comparativo = periodo === "Hoy" ? "ayer" : periodo === "Mes" ? "el mes anterior" : "el año anterior";
+  const comparativo =
+    periodo === "Día" ? "ayer" : periodo === "Semana" ? "la semana anterior" : "el mes anterior";
 
   const steps = [
     { done: Boolean(state.business.name.trim()), label: "Completa los datos de tu comercio" },
@@ -199,8 +205,8 @@ export function General() {
   return (
     <div className="general">
       <PageHead
-        title="General"
-        subtitle="El estado de tu negocio, de un vistazo."
+        title={nombreUsuario ? `Hola, ${nombreUsuario}` : "Hola"}
+        subtitle="Así va tu negocio."
         actions={
           <Tabs
             tabs={PERIODOS}

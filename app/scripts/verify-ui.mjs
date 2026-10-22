@@ -98,6 +98,9 @@ for (const vista of VISTAS) {
         const st = JSON.parse(raw);
         if (st.onboarding) st.onboarding.completed = true;
         if (!st.products || st.products.length === 0) st.products = productos;
+        // El nombre del comercio va en la barra superior: sin el, la
+        // comprobacion de la barra seria vacua.
+        st.business = { ...(st.business || {}), name: "Abastos La Esquina" };
         localStorage.setItem(KEY, JSON.stringify(st));
       } catch {}
     };

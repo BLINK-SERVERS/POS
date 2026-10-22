@@ -452,3 +452,54 @@ mano en Ajustes también los respeta (no es una consulta de medios).
 - Publicación en Product Hunt y redes (falta la cuenta y el copy final).
 - El `CHANGELOG.md` ya recoge las versiones 1.13.0 a 1.17.0 (se había
   quedado atrás).
+---
+
+## 10. Rediseño de interfaz (v1.18.0)
+
+**Fecha:** 2026-10-22 · **Alcance:** barra superior, cabecera del panel,
+selector de periodo, deslizante de apariencia, catálogo y tablas en móvil.
+
+La especification llegó como documento: ocho puntos con sus reglas. Se
+implementó punto por punto y cada uno tiene su comprobación en
+`qa:navegacion`, para que no se deshaga sola.
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` | sin errores |
+| `npm test` | 50/50 |
+| `npm run verify:ui` | 0 vistas con problemas · 0 errores de consola |
+| `npm run qa:navegacion` | 0 fallos · 0 avisos (20 comprobaciones nuevas) |
+| `npm run qa:apariencia` | 0 fallos (5 comprobaciones) |
+| `npm run qa:e2e` | 70 botones, 61 probados, 1 aviso (el PDF, preexistente) |
+| `npm run qa:funcional` | 8/8 |
+| `npm run qa:responsive` | 0 fallos |
+| `npm run docs:check` | 0 enlaces rotos |
+
+### 10.1 · Lo que pedía la especificación y cómo quedó
+
+| Punto | Decisión | Nota |
+|---|---|---|
+| 1 · Icono de Inicio macizo | Icono propio de la marca (`grid2x2.solid`) | Los SF Symbols son de Apple y no se pueden modificar: su `grid2x2` es un contorno |
+| 2 · Barra superior | Fuera el escáner y la caja; nombre (peso 500) + tasa de 2 decimales + avatar | La caja se abre desde el menú del avatar |
+| 2 · Paridad en oscuro | La barra y la página comparten el mismo negro, sin borde | Antes la barra era una superficie `#1a1a1a` sobre un lienzo negro: un parche visible |
+| 3 · Saludo | «Hola, [Nombre] [Apellido]» + «Así va tu negocio» | Sin nombre propio, «Hola» |
+| 4 · Periodo | Día, Semana, Mes (fuera Año) | Semana de lunes a domingo (`weekRange`) |
+| 5 · Deslizante de tema | Knob con el icono del tema dentro: sol a la izquierda, luna a la derecha | «Automático» se mantiene: la app sigue al sistema hasta que se toca el control |
+| 6 · Catálogo | Rejilla de tarjetas de cristal con miniatura, precio alineado y acciones al pie | La tabla de nueve columnas desaparece |
+| 7 · Tablas en móvil | Tarjetas apiladas con el rótulo de la columna en cada celda | Los rótulos se sacan de la cabecera: ninguna página los repite |
+| 8 · Paridad claro/oscuro | Todo con sus dos estilos | Comprobado en las cuatro capturas de `verify:ui` |
+
+### 10.2 · Errores encontrados al implementarlo
+
+| # | Error | Causa | Resolución |
+|---|---|---|---|
+| BUG-21 | El icono de General salía **vacío** (un cuadrado sin dibujo) | El `body` del icono llevaba los datos del *path* sin el elemento `<path>` | Se envuelve en `<path d='…' />`; el verificador de iconos vacíos lo detectó |
+| BUG-22 | El deslizante no se movía de sitio | En `translateX()`, un porcentaje es el ancho del **propio** knob (36 px), no el de la pista | El recorrido es fijo: 260 − 36 − 8 = 216 px |
+| BUG-23 | La barra superior quedaba **vacía** a la izquierda en las capturas | El QA no sembraba el nombre del comercio | El seed de `verify:ui` lo siembra ahora y la barra se comprueba |
+| BUG-24 | `qa:navegacion` fallaba al pedir un `h1` "General" | La cabecera ahora saluda por el nombre | La comprobación acepta el saludo |
+
+### 10.3 · Lo que sigue pendiente
+
+- Publicación en Product Hunt y redes (falta la cuenta y el copy final).
+- La caja del día se abre desde el avatar; si se abre mucho, merece su propio
+  acceso en General (hoy está en la lista de arranque de tareas).

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStoreState, useStoreActions } from "../lib/store";
 import { Card, Field, PageHead, Tabs, useConfirm } from "../components/ui";
-import { useTema, type ModoTema } from "../lib/tema";
+import { ThemeSlider } from "../components/ThemeSlider";
 import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
@@ -11,13 +11,6 @@ import { PAIRING_DAYS } from "../lib/scanner/pairing";
 import { formatBsDirect, formatRate } from "../lib/money";
 import { buildDatasets, type Dataset } from "../lib/exportData";
 import { downloadText, printReport, printableTable, reportName, toCsv } from "../lib/export";
-
-/** Modos de apariencia (HIG · Dark Mode). */
-const MODOS_APARIENCIA: { modo: ModoTema; etiqueta: string }[] = [
-  { modo: "auto", etiqueta: "Automático" },
-  { modo: "claro", etiqueta: "Claro" },
-  { modo: "oscuro", etiqueta: "Oscuro" },
-];
 
 const TABS = [
   "Negocio",
@@ -34,7 +27,6 @@ export function Ajustes() {
   const { state, user } = useStoreState();
   const { updateBusiness, setRate, syncRate, updateProfile, clearAll, logout } = useStoreActions();
   const confirm = useConfirm();
-  const { modo, setModo } = useTema();
   const { pairing, remoteActive, rotatePairing } = useScanner();
   // La pestana activa se puede fijar por URL (?tab=Perfil): asi el menu de
   // avatar abre directamente la seccion que el usuario eligio.
@@ -508,20 +500,7 @@ export function Ajustes() {
           title="Apariencia"
           hint="Claro, oscuro o según el sistema. Lo eligen los ajustes de tu teléfono."
         >
-          <Tabs
-            tabs={MODOS_APARIENCIA.map((m) => m.etiqueta)}
-            value={MODOS_APARIENCIA.find((m) => m.modo === modo)?.etiqueta ?? "Automático"}
-            onChange={(etiqueta) => {
-              const m = MODOS_APARIENCIA.find((x) => x.etiqueta === etiqueta);
-              if (m) setModo(m.modo);
-            }}
-          />
-          <p className="field__hint" style={{ marginTop: "0.75rem" }}>
-            {modo === "auto" &&
-              "Ahora mismo la app usa el tema que tenga configurado el sistema."}
-            {modo === "claro" && "Ahora mismo la app se muestra siempre en claro."}
-            {modo === "oscuro" && "Ahora mismo la app se muestra siempre en oscuro."}
-          </p>
+          <ThemeSlider />
 
           <hr
             style={{

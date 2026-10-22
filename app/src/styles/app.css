@@ -637,8 +637,11 @@ table.data tbody tr:hover {
   }
 }
 
-/* Modelo híbrido: En móvil, convertir tabla a tarjetas */
-@media (max-width: 767px) {
+/* Modelo híbrido: En móvil, convertir tabla a tarjetas.
+   Los rótulos de cada celda (data-label) los pone el componente
+   DataTable, leyéndolos de la cabecera: así ninguna página los
+   repite y la ficha se lee sin scroll lateral. */
+@media (max-width: 860px) {
   .table-wrap {
     border: none;
     background: transparent;
@@ -703,6 +706,248 @@ table.data tbody tr:hover {
   table.data tbody tr td:first-child::before {
     display: none;
   }
+  /* La celda de acciones: sin rotulo, pegada a la derecha. */
+  table.data tbody tr td.row-actions {
+    border-bottom: none;
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+    justify-content: flex-end;
+  }
+  table.data tbody tr td.row-actions::before {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Deslizante de apariencia (sol ↔ luna)
+   ------------------------------------------------------------
+   HIG · Sliders: un interruptor tactil con un knob que se
+   desplaza. El knob lleva dentro el icono del tema EN VIGOR
+   (sol a la izquierda, luna a la derecha) y el material es el
+   mismo de los botones.
+   ============================================================ */
+.temaslider {
+  --ancho-slider: 260px;
+  max-width: min(340px, 100%);
+}
+.temaslider__track {
+  position: relative;
+  width: min(var(--ancho-slider), 100%);
+  height: 46px;
+  border-radius: 999px;
+  background: var(--ios-veil), var(--color-neutral-soft);
+  -webkit-backdrop-filter: blur(var(--ios-blur)) saturate(180%);
+  backdrop-filter: blur(var(--ios-blur)) saturate(180%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--ios-specular), var(--ios-rim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 9px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.temaslider__extremo {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-tertiary);
+}
+.temaslider__knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--ios-veil), var(--color-bg-elevated);
+  box-shadow: var(--ios-specular), var(--ios-rim),
+    0 2px 10px rgb(from var(--negro) r g b / 0.22);
+  display: grid;
+  place-items: center;
+  color: var(--color-text-primary);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color var(--transition-speed), color var(--transition-speed);
+}
+.temaslider__knob.is-dark {
+  /* El recorrido del knob es el ancho de la pista menos el knob y los
+    margenes: 260 - 36 - 8 = 216 px. (Un porcentaje en translateX
+     seria el ancho del propio knob, no el de la pista.) */
+  transform: translateX(216px);
+  color: var(--color-accent);
+}
+.temaslider__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+.temaslider__label,
+.temaslider__auto {
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: color var(--transition-speed), background-color var(--transition-speed),
+    border-color var(--transition-speed);
+}
+.temaslider__label:hover,
+.temaslider__auto:hover {
+  color: var(--color-text-primary);
+  background: var(--color-neutral-soft);
+}
+.temaslider__label[aria-pressed="true"] {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-ring);
+}
+.temaslider__auto.is-on {
+  color: var(--color-text-primary);
+  background: var(--color-neutral-soft);
+  border-color: var(--color-border);
+}
+.temaslider__hint {
+  margin: 0.75rem 0 0;
+}
+
+/* ============================================================
+   Catálogo · tarjetas de producto
+   ------------------------------------------------------------
+   HIG · Cards: superficie de cristal, jerarquía en tres niveles
+   (nombre, metadatos, precio) y las acciones al pie, a la derecha.
+   El precio se alinea a la derecha para que la columna de
+   cifras se lea de un vistazo.
+   ============================================================ */
+.prodgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 0.9rem;
+}
+.prodcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.95rem 1rem 0.85rem;
+  border-radius: 20px;
+  background: rgb(from var(--papel) r g b / 0.66);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgb(from var(--tinta) r g b / 0.12);
+  box-shadow:
+    inset 0 1px 0 rgb(from var(--halo) r g b / 0.55),
+    0 1px 2px rgb(from var(--negro) r g b / 0.04),
+    0 10px 26px rgb(from var(--negro) r g b / 0.06);
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+.prodcard:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgb(from var(--halo) r g b / 0.55),
+    0 2px 6px rgb(from var(--negro) r g b / 0.06),
+    0 16px 34px rgb(from var(--negro) r g b / 0.1);
+}
+.prodcard.is-archived {
+  opacity: 0.6;
+}
+.prodcard__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.prodcard__id {
+  min-width: 0;
+}
+.prodcard__name {
+  font-size: var(--ios-fs-headline);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.prodcard__meta {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* La miniatura: no hay fotos, asi que se dibuja la pieza. */
+.prodthumb {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 2px 8px rgb(from var(--negro) r g b / 0.16);
+}
+.prodthumb--azul { background: linear-gradient(160deg, #4aa8ff, #0072d6); }
+.prodthumb--verde { background: linear-gradient(160deg, #4fd07f, #1f9c4c); }
+.prodthumb--naranja { background: linear-gradient(160deg, #ffb057, #e07b16); }
+.prodthumb--violeta { background: linear-gradient(160deg, #a58bff, #6d51e8); }
+.prodthumb--rosa { background: linear-gradient(160deg, #ff7ba8, #e0497c); }
+.prodthumb--teal { background: linear-gradient(160deg, #4fd6d0, #149c98); }
+.prodcard__precio {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--ios-separator);
+}
+.prodcard__precio strong {
+  font-size: var(--ios-fs-title3);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+.prodcard__precio .dim {
+  font-size: var(--fs-xs);
+}
+.prodcard__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.prodcard__margen {
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+}
+.prodcard__margen b {
+  color: var(--color-text-primary);
+}
+.prodcard__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--ios-separator);
+}
+.prodcard__sku {
+  font-size: var(--fs-xs);
 }
 
 /* ============================================================
@@ -784,7 +1029,11 @@ table.data tbody tr:hover {
   min-width: 0;
   min-height: 0;
   border-radius: var(--radius-lg);
-  background: var(--color-bg-elevated);
+  /* El lienzo de la app es el fondo de la marca (#000000 en oscuro),
+     no una superficie elevada: asi la barra superior y las paginas
+     comparten el mismo negro, sin parches. Las tarjetas si son
+     superficies y flotan sobre el. */
+  background: var(--color-bg-primary);
   box-shadow: var(--shadow-ios-panel);
   overflow: hidden;
 }
@@ -795,8 +1044,11 @@ table.data tbody tr:hover {
   gap: 0.6rem;
   padding: 0 1.25rem;
   min-height: var(--topbar-h);
-  /* Hairline de iOS, no un borde de 1 px de aplicación web. */
-  border-bottom: 1px solid var(--ios-separator);
+  /* En oscuro la barra se funde con la pagina: mismo fondo, mismo
+     borde (ninguno). El hairline solo existe en la apariencia clara,
+     donde el papel necesita la linea para separar la barra. */
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid light-dark(rgba(66, 66, 66, 0.12), transparent);
 }
 .topbar__name {
   font-family: var(--font-text);
@@ -805,7 +1057,7 @@ table.data tbody tr:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--ios-fs-headline);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 /* Acciones de la barra de navegación: texto plano en acento (iOS). */

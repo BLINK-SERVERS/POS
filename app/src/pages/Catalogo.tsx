@@ -2,7 +2,6 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
-import { DataTable } from "../components/DataTable";
 import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
@@ -20,79 +19,7 @@ function internalCode(): string {
 
 const margin = (p: number, c: number) => (p > 0 ? Math.round(((p - c) / p) * 100) : 0);
 
-/* --- Filas memoizadas ------------------------------------------- */
 
-/** Fila de producto. */
-const ProductRow = memo(function ProductRow({
-  product,
-  rate,
-  onEdit,
-  onArchive,
-  onRemove,
-}: {
-  product: Product;
-  rate: number;
-  onEdit: (p: Product) => void;
-  onArchive: (id: string, archived: boolean) => void;
-  onRemove: (id: string) => void;
-}) {
-  return (
-    <tr style={product.archived ? { opacity: 0.55 } : undefined}>
-      <td style={{ fontWeight: 600 }}>{product.name}</td>
-      <td className="mono">{product.sku}</td>
-      <td className="tabular">{formatUsd(product.cost)}</td>
-      <td className="tabular">{margin(product.price, product.cost)}%</td>
-      <td>{product.category}</td>
-      <td className="dim" style={{ whiteSpace: "nowrap" }}>
-        {product.presentationQty > 0 ? `${product.presentationQty} ${product.unit}` : product.unit}
-      </td>
-      <td className="tabular">
-        {formatUsd(product.price)}
-        {rate > 0 && (
-          <span className="dim" style={{ fontSize: "0.72rem" }}>
-            {" "}
-            {formatBs(product.price, rate)}
-          </span>
-        )}
-      </td>
-      <td>
-        {product.archived ? (
-          <Badge>Archivado</Badge>
-        ) : product.active ? (
-          <Badge tone="success" icon="check">Activo</Badge>
-        ) : (
-          <Badge>Inactivo</Badge>
-        )}
-      </td>
-      <td className="row-actions">
-        <button
-          className="row-action"
-          onClick={() => onEdit(product)}
-          title="Editar"
-          aria-label={`Editar ${product.name}`}
-        >
-          <Icon name="pencil" />
-        </button>
-        <button
-          className="row-action"
-          onClick={() => onArchive(product.id, !product.archived)}
-          title={product.archived ? "Reactivar" : "Archivar"}
-          aria-label={`${product.archived ? "Reactivar" : "Archivar"} ${product.name}`}
-        >
-          <Icon name="archive" />
-        </button>
-        <button
-          className="row-action row-action--danger"
-          onClick={() => onRemove(product.id)}
-          title="Eliminar"
-          aria-label={`Eliminar ${product.name}`}
-        >
-          <Icon name="trash" />
-        </button>
-      </td>
-    </tr>
-  );
-});
 
 /** Fila de descuento. */
 const DiscountRow = memo(function DiscountRow({
@@ -268,6 +195,117 @@ const EMPTY_PRODUCT = {
   active: true,
   channelPrices: {} as Record<string, string>,
 };
+
+/**
+ * Miniatura de producto.
+ *
+ * El catalogo no tiene fotos: la ficha es un dibujo. Cada producto
+ * recibe un tinte estable (el mismo siempre, segun su nombre) y sus
+ * iniciales, para que la rejilla se lea de un vistazo.
+ */
+const TONOS = ["azul", "verde", "naranja", "violeta", "rosa", "teal"] as const;
+
+function tonoDe(clave: string): (typeof TONOS)[number] {
+  let h = 0;
+  for (let i = 0; i < clave.length; i++) h = (h * 31 + clave.charCodeAt(i)) >>> 0;
+  return TONOS[h % TONOS.length];
+}
+
+function inicialesDe(nombre: string): string {
+  const palabras = nombre.trim().split(/\s+/).filter(Boolean);
+  if (!palabras.length) return "?";
+  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+  return (palabras[0][0] + palabras[1][0]).toUpperCase();
+}
+
+/**
+ * Tarjeta de producto (HIG · Cards).
+ *
+ * · Miniatura con las iniciales sobre un tinte estable.
+ * · Nombre arriba, en titulo; marca y categoria debajo, en secundario.
+ * · Precio alineado a la derecha, con su equivalente en bolivares.
+ * · Margen y estado en una fila, y las acciones al pie.
+ */
+function ProductCard({
+  product,
+  rate,
+  onEdit,
+  onArchive,
+  onRemove,
+}: {
+  product: Product;
+  rate: number;
+  onEdit: (p: Product) => void;
+  onArchive: (id: string, archived: boolean) => void;
+  onRemove: (id: string) => void;
+}) {
+  const tono = tonoDe(product.name || product.id);
+  return (
+    <article className={"prodcard" + (product.archived ? " is-archived" : "")}>
+      <div className="prodcard__head">
+        <span className={"prodthumb prodthumb--" + tono} aria-hidden>
+          {inicialesDe(product.name)}
+        </span>
+        <div className="prodcard__id">
+          <h3 className="prodcard__name" title={product.name}>
+            {product.name}
+          </h3>
+          <span className="prodcard__meta">
+            {[product.brand, product.category].filter(Boolean).join(" · ") || product.sku}
+          </span>
+        </div>
+      </div>
+
+      <div className="prodcard__precio">
+        <strong className="tabular">{formatUsd(product.price)}</strong>
+        {rate > 0 && <span className="dim tabular">{formatBs(product.price, rate)}</span>}
+      </div>
+
+      <div className="prodcard__fila">
+        <span className="prodcard__margen">
+          Margen <b className="tabular">{margin(product.price, product.cost)} %</b>
+        </span>
+        {product.archived ? (
+          <Badge>Archivado</Badge>
+        ) : product.active ? (
+          <Badge tone="success" icon="check">Activo</Badge>
+        ) : (
+          <Badge>Inactivo</Badge>
+        )}
+      </div>
+
+      <div className="prodcard__pie">
+        <span className="dim mono prodcard__sku">{product.sku}</span>
+        <div className="row-actions">
+          <button
+            className="row-action"
+            onClick={() => onEdit(product)}
+            title="Editar"
+            aria-label={`Editar ${product.name}`}
+          >
+            <Icon name="pencil" />
+          </button>
+          <button
+            className="row-action"
+            onClick={() => onArchive(product.id, !product.archived)}
+            title={product.archived ? "Reactivar" : "Archivar"}
+            aria-label={`${product.archived ? "Reactivar" : "Archivar"} ${product.name}`}
+          >
+            <Icon name={product.archived ? "arrowLeft" : "archive"} />
+          </button>
+          <button
+            className="row-action row-action--danger"
+            onClick={() => onRemove(product.id)}
+            title="Eliminar"
+            aria-label={`Eliminar ${product.name}`}
+          >
+            <Icon name="trash" />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function Catalogo() {
   const products = useStoreSelector((s) => s.products);
@@ -640,33 +678,18 @@ export function Catalogo() {
             }
           />
         ) : (
-          <DataTable
-            colCount={9}
-            items={products}
-            rowKey={(p) => p.id}
-            head={
-              <tr>
-                <th>Producto</th>
-                <th>SKU</th>
-                <th>Costo</th>
-                <th>Margen</th>
-                <th>Categoría</th>
-                <th>Presentación</th>
-                <th>Precio</th>
-                <th>Estado</th>
-                <th />
-              </tr>
-            }
-            renderRow={(p) => (
-              <ProductRow
+          <div className="prodgrid">
+            {products.map((p) => (
+              <ProductCard
+                key={p.id}
                 product={p}
                 rate={rate}
                 onEdit={openEdit}
                 onArchive={(id, archived) => updateProduct(id, { archived })}
                 onRemove={removeProductConfirmado}
               />
-            )}
-          />
+            ))}
+          </div>
         ))}
 
       {/* ---------------- Precios por canal ---------------- */}

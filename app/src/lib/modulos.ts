@@ -4,7 +4,7 @@
 // barra lateral de escritorio, en la barra inferior flotante de móvil y
 // en el panel de módulos de General.
 //
-//   General   · panel / dashboard  · grid2x2
+//   General   · panel / dashboard  · grid2x2.solid (cuadrados macizos)
 //   Ventas    · carrito             · cart
 //   Historial · reloj               · clock
 //   Catálogo  · etiqueta            · tag
@@ -24,7 +24,7 @@ export interface Modulo {
 
 /** Todos los módulos del sistema, en el orden de la barra lateral. */
 export const MODULOS: Modulo[] = [
-  { to: "/app/inicio", label: "General", icon: "grid2x2" },
+  { to: "/app/inicio", label: "General", icon: "grid2x2.solid" },
   { to: "/app/ventas", label: "Ventas", icon: "cart" },
   { to: "/app/ventas/historial", label: "Historial", icon: "clock" },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },

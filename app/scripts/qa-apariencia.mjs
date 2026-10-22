@@ -84,8 +84,8 @@ if (antes.oscuro) Add("AVISO", "la app arranca en oscuro (el sistema lo pide)");
 
 /* --- Elegir "Oscuro" --- */
 await page.evaluate(() => {
-  const b = [...document.querySelectorAll(".tabs button, .k-segmented button")].find((x) =>
-    (x.textContent || "").trim() === "Oscuro"
+  const b = [...document.querySelectorAll(".tabs button, .k-segmented button, .temaslider__label")].find(
+    (x) => (x.textContent || "").trim() === "Oscuro"
   );
   b && b.click();
 });
@@ -117,8 +117,8 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(600);
 await page.evaluate(() => {
-  const b = [...document.querySelectorAll(".tabs button, .k-segmented button")].find((x) =>
-    (x.textContent || "").trim() === "Automático"
+  const b = [...document.querySelectorAll(".tabs button, .k-segmented button, .temaslider__auto")].find(
+    (x) => (x.textContent || "").trim() === "Automático"
   );
   b && b.click();
 });

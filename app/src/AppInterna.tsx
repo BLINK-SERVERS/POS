@@ -20,6 +20,7 @@ import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } 
 import { Shell } from "./components/Shell";
 import { ConfirmProvider } from "./components/ui";
 import { registrarIconos } from "./lib/iconos";
+import { ICONOS_BLINK } from "./lib/iconos-blink";
 import { SF_SYMBOLS } from "./lib/sf-symbols";
 import { useTema } from "./lib/tema";
 import { Login } from "./pages/Login";
@@ -30,7 +31,9 @@ import { Legal } from "./pages/Legal";
 
 // El juego completo de iconos (182 KB) se registra aqui: la landing solo
 // carga el nucleo (13 iconos) y asi no descarga los 100.
+// Los iconos propios de la marca van con ellos.
 registrarIconos(SF_SYMBOLS);
+registrarIconos(ICONOS_BLINK);
 
 // El CSS de la aplicación se importa aquí: Vite lo emite como CSS del
 // chunk lazy, de modo que la landing no lo descarga.
