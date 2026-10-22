@@ -2,7 +2,8 @@
  * Verifica el MP4 final: duracion, resolucion, fps, numero de
  * fotogramas y si la pista de audio lleva sonido (no silencio).
  *
- * Uso: node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF.mp4"
+ * Uso: node scripts/verificar-video.mjs <archivo> [WxH]
+ *      (la resolucion esperada es 1920x1080 si no se indica otra)
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -15,6 +16,9 @@ const OBJETIVO = {
 };
 
 const ruta = process.argv[2] || "../BLINK-COMERCIAL-HF.mp4";
+const [anchoEsperado, altoEsperado] = (process.argv[3] || "1920x1080")
+  .split("x")
+  .map(Number);
 const absoluta = path.resolve(ruta);
 
 if (!fs.existsSync(absoluta)) {
@@ -111,14 +115,18 @@ if (Math.abs(duracion - OBJETIVO.duracion) > 0.15)
   problemas.push(`duracion ${duracion.toFixed(2)} s (se esperaba ${OBJETIVO.duracion} s)`);
 if (Math.abs(fps - OBJETIVO.fps) > 0.01)
   problemas.push(`fps ${fps} (se esperaba ${OBJETIVO.fps})`);
-if (video.width !== 1920 || video.height !== 1080)
-  problemas.push(`resolucion ${video.width}x${video.height} (se esperaba 1920x1080)`);
+if (video.width !== anchoEsperado || video.height !== altoEsperado)
+  problemas.push(
+    `resolucion ${video.width}x${video.height} (se esperaba ${anchoEsperado}x${altoEsperado})`
+  );
 if (Math.abs(Number(fotogramas) - OBJETIVO.fotogramas) > 1)
   problemas.push(`fotogramas ${fotogramas} (se esperaban ${OBJETIVO.fotogramas})`);
 
 console.log("\n=== veredicto ===");
 if (problemas.length === 0) {
-  console.log("  OK: 30 s, 1920x1080, 60 fps, 1800 fotogramas.");
+  console.log(
+    `  OK: ${OBJETIVO.duracion} s, ${anchoEsperado}x${altoEsperado}, ${OBJETIVO.fps} fps, ${OBJETIVO.fotogramas} fotogramas.`
+  );
 } else {
   for (const p of problemas) console.log("  !", p);
   process.exitCode = 1;

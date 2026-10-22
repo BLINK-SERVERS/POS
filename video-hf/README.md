@@ -137,7 +137,7 @@ el marco lleva el rótulo: `BLINK POS`, `blink.com.ve` y
 ```bash
 npx hyperframes check .     # 0 errores, 0 avisos (lint, runtime, layout, motion, contraste, craft)
 npx hyperframes snapshot --at 0.2,3.8,6.4,10.6,12.9,14.4,21.4,23.4,26.4,29.1
-node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF.mp4"      # duración, fps, fotogramas y audio
-node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF-9x16.mp4"
-node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF-1x1.mp4"
+node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF.mp4"                  # 1920x1080
+node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF-9x16.mp4" 1080x1920
+node scripts/verificar-video.mjs "../BLINK-COMERCIAL-HF-1x1.mp4" 1080x1080
 ```
