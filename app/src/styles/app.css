@@ -575,6 +575,11 @@
   width: auto;
   min-width: 5.5rem;
 }
+/* El segmento activo usa el azul de la marca (#0088ff), no el de Konsta
+   (#007AFF): el control segmentado forma parte de la interfaz de BLINK. */
+.tabs button.bg-primary {
+  background-color: var(--color-accent);
+}
 
 /* ============================================================
    Tablas - Modelo Híbrido (PC: Tabla / Móvil: Tarjetas)

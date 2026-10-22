@@ -503,3 +503,49 @@ implementó punto por punto y cada uno tiene su comprobación en
 - Publicación en Product Hunt y redes (falta la cuenta y el copy final).
 - La caja del día se abre desde el avatar; si se abre mucho, merece su propio
   acceso en General (hoy está en la lista de arranque de tareas).
+---
+
+## 11. Saludo dinámico de la pantalla principal (v1.19.0)
+
+**Fecha:** 2026-10-22 · **Alcance:** el título de la pantalla General.
+
+El saludo dejó de ser un «Hola» seco: ahora se decide por la hora del
+dispositivo y por la fecha del calendario, con reglas estrictas y una
+prioridad definida.
+
+| Comprobación | Resultado |
+|---|---|
+| `npm test` (saludo) | 14/14 en `saludo.test.ts` (64/64 en total) |
+| `npm run typecheck` | sin errores |
+| `npm run qa:navegacion` | 0 fallos (comprueba que el saludo corresponde a la hora y a la fecha de ahora) |
+| `npm run verify:ui` | 0 vistas con problemas · 0 errores de consola |
+
+### 11.1 · Las reglas y su prioridad
+
+1. **1–10 de enero** → «Hola, [Nombre], Feliz Año Nuevo !» (anula todo lo demás).
+2. **Diciembre**: el 24 y el 25 son obligatorios («Feliz navidad ;)»), el 31
+   es de cierre de año («Feliz año nuevo ;)») y en el resto se alterna: los
+   días **impares** son festivos y los **pares** recurren a los generales.
+3. **Madrugada** (antes de las 06:00) → «te levantaste temprano hoy ;)».
+4. El resto del año, por franja: mañana, tarde o noche.
+
+La variante dentro de cada grupo se elige con una semilla estable (el día
+del año): el mensaje no cambia al repintar la pantalla ni al navegar, pero
+sí varia de un día a otro.
+
+### 11.2 · Dos decisiones que hubo que tomar
+
+- **La madrugada pisa a la franja de la noche.** La especificación define
+  «Noche» como 19:00–05:59 y, a la vez, una condición especial por debajo
+  de las 06:00. Se resolvió a favor de la condición especial: de 00:00 a
+  05:59 siempre se saluda el arranque temprano. Las pruebas lo fijan.
+- **En diciembre, los días pares a las 05:00 saludan la madrugada**, porque
+  recurren a los saludos generales y la madrugada es una condición especial
+  del grupo general. Los días impares, en cambio, muestran el saludo
+  nautideño, que es obligatorio.
+
+### 11.3 · Un detalle de coherencia
+
+El segmento activo del control segmentado usaba el azul de Konsta
+(`#007AFF`) en vez del de la marca (`#0088ff`). Ahora ambos son el mismo
+azul: el control forma parte de la interfaz de BLINK, no de la librería.

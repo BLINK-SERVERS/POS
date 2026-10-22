@@ -13,6 +13,53 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [1.19.0] · 2026-10-22
+
+**Saludo dinámico: por la hora del día y por la fecha.**
+
+### El saludo de la pantalla principal
+
+El título de General deja de ser un «Hola» seco: es un saludo que se adapta,
+con el nombre del usuario dentro y la puntuación de la marca (el wink `;)`).
+
+**Por orden de prioridad** (la primera que aplica gana):
+
+| Regla | Condición | Mensaje |
+|---|---|---|
+| Año nuevo | Del 1 al 10 de enero | «Hola, [Nombre], Feliz Año Nuevo !» (anula todos los demás) |
+| Navidad | 24 y 25 de diciembre | «Hola, [Nombre], Feliz navidad ;)» |
+| Fin de año | 31 de diciembre | «Hola, [Nombre], Feliz año nuevo ;)» |
+| Diciembre festivo | Días **impares** de diciembre (1, 3, 5…) | «Feliz navidad ;)」 o «Felices fiestas ;)» |
+| Madrugada | Antes de las 06:00 | «Hola, [Nombre], te levantaste temprano hoy ;)» |
+| Mañana | 06:00 – 11:59 | «buenos días ;)」 · «que bueno verte por aquí ;)» · «Hey!, hola de nuevo [Nombre]» |
+| Tarde | 12:00 – 18:59 | «buenas tardes ;)」 · «que bueno verte por aquí ;)» · «Hey!, hola de nuevo [Nombre]» |
+| Noche | 19:00 – 23:59 | «buenas noches ;)」 · «que bueno verte por aquí ;)» · «Hey!, hola de nuevo [Nombre]» |
+
+- En diciembre los días **pares** (y los 24, 25 y 31, que son obligatorios)
+  recurren a los saludos generales.
+- La **madrugada** es una condición especial: pisa a la franja horaria, así
+  que entre las 00:00 y las 05:59 siempre se saluda el arranque temprano.
+- La variante dentro de cada grupo se elige con una **semilla estable**
+  (el día del año): el mensaje no cambia cada vez que se repinta la
+  pantalla, pero sí va variando de un día a otro.
+- Sin nombre de usuario, el saludo se acorta («Hola, buenos días ;)») en vez
+  de dejar un hueco raro.
+
+### Dónde vive la lógica
+
+`app/src/lib/saludo.ts` (puro, sin dependencias de React) y 14 pruebas en
+`app/src/lib/__tests__/saludo.test.ts` que cubren las fronteras de las
+franjas, la madrugada, la alternancia de diciembre, los días obligatorios
+y la temporada de año nuevo.
+
+### QA
+
+- `qa:navegacion` comprueba que el saludo de la cabecera corresponde a la
+  hora y a la fecha del momento, y que no deja huecos raros.
+- El segmento activo del control segmentado pasa a usar el **azul de la
+  marca** (`#0088ff`) en vez del de Konsta (`#007AFF`).
+
+---
 ## [1.18.0] · 2026-10-22
 
 **Rediseño de la interfaz: barra superior, saludo, selector de periodo, deslizante de apariencia, catálogo de tarjetas y tablas en móvil.**

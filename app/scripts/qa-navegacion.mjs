@@ -282,10 +282,15 @@ const general = await gen.evaluate(() => {
   };
 });
 
-/* El panel se saluda por el nombre del dueño: "Hola, <nombre>". */
+/* El panel saluda por la hora y por la fecha: "Hola, Ana, buenos días ;)",
+   "Hey!, hola de nuevo Ana", "Hola, Ana, Feliz navidad ;)"... */
 Add(
-  /^Hola\b/.test(general.titulo) ? "ok" : "FALLO",
+  /^(Hola|Hey!)/.test(general.titulo) ? "ok" : "FALLO",
   `la pantalla saluda al usuario ("${general.titulo}")`
+);
+Add(
+  general.titulo.length > 0 && general.titulo.length < 80 ? "ok" : "FALLO",
+  `el saludo es una linea ("${general.titulo}")`
 );
 Add(general.kpis === 4 ? "ok" : "FALLO", `hay 4 tarjetas de metrica (${general.kpis})`);
 Add(/blur\(/.test(general.blur) ? "ok" : "FALLO", `las tarjetas son de cristal (${general.blur})`);
@@ -538,6 +543,54 @@ Add(
   `la vista no tiene scroll horizontal`
 );
 await ctxTabla.close();
+
+/* ============================================================
+   7 · El saludo dinamico (v1.19.0)
+   ============================================================ */
+console.log("\n=== Saludo dinamico ===");
+const ctxSaludo = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+const saludo = await sesion(ctxSaludo);
+await saludo.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
+await saludo.waitForTimeout(1200);
+
+const infoSaludo = await saludo.evaluate(() => {
+  const h1 = document.querySelector(".page-head h1");
+  return { titulo: (h1?.textContent || "").trim() };
+});
+
+/* El saludo esperado, calculado aqui con las mismas reglas. */
+const ahora = new Date();
+const mes = ahora.getMonth() + 1;
+const dia = ahora.getDate();
+const hora = ahora.getHours();
+let esperado;
+if (mes === 1 && dia <= 10) {
+  esperado = /Feliz Año Nuevo/;
+} else if (mes === 12 && (dia === 24 || dia === 25)) {
+  esperado = /Feliz navidad/;
+} else if (mes === 12 && dia === 31) {
+  esperado = /Feliz año nuevo/;
+} else if (mes === 12 && dia % 2 === 1) {
+  esperado = /Feliz navidad|Felices fiestas/;
+} else if (hora < 6) {
+  esperado = /te levantaste temprano/;
+} else if (hora < 12) {
+  esperado = /buenos días|que bueno verte por aquí|hola de nuevo/;
+} else if (hora < 19) {
+  esperado = /buenas tardes|que bueno verte por aquí|hola de nuevo/;
+} else {
+  esperado = /buenas noches|que bueno verte por aquí|hola de nuevo/;
+}
+
+Add(
+  esperado.test(infoSaludo.titulo) ? "ok" : "FALLO",
+  `el saludo corresponde a la hora y a la fecha ("${infoSaludo.titulo}")`
+);
+Add(
+  infoSaludo.titulo.length > 0 && !/,\s*,/.test(infoSaludo.titulo) ? "ok" : "FALLO",
+  `el saludo no deja huecos raro`
+);
+await ctxSaludo.close();
 
 await esc.screenshot({ path: path.join(OUT, "qa-navegacion-escritorio.png") });
 await ctxEsc.close();

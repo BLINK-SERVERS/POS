@@ -26,6 +26,7 @@ import {
 } from "../lib/metrics";
 import { formatUsd } from "../lib/money";
 import { modulosVisibles } from "../lib/modulos";
+import { saludoDe } from "../lib/saludo";
 
 /** Periodos del panel: el comparativo es el equivalente anterior. */
 const PERIODOS = ["Día", "Semana", "Mes"] as const;
@@ -166,10 +167,14 @@ export function General() {
   const { state, user } = useStoreState();
   const [periodo, setPeriodo] = useState<Periodo>("Mes");
 
-  /** El nombre del dueño, para el saludo. */
-  const nombreUsuario = user
-    ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
-    : "";
+  /** El saludo: por la hora del dia y por la fecha. */
+  const saludo = useMemo(
+    () =>
+      saludoDe(
+        user ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim() : "",
+      ),
+    [user]
+  );
 
   const { actual, varVentas, varOrdenes, varTicket, varMargen } = useMemo(() => {
     const [f, t, pf, pt] = rangos(periodo);
@@ -205,7 +210,7 @@ export function General() {
   return (
     <div className="general">
       <PageHead
-        title={nombreUsuario ? `Hola, ${nombreUsuario}` : "Hola"}
+        title={saludo.texto}
         subtitle="Así va tu negocio."
         actions={
           <Tabs
