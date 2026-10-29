@@ -21,6 +21,7 @@ const NAV = [
   { href: "#caracteristicas", label: "Características" },
   { href: "#precios", label: "Precios" },
   { href: "#preguntas", label: "Preguntas" },
+  { href: "https://pasajes.blink.com.ve", label: "Pasajes" },
 ];
 
 /**
@@ -257,6 +258,29 @@ export function Landing() {
                 <span className="ld-mock__pill">Escaneado</span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- BLINK Pasajes ---------------- */}
+      <section className="ld-section ld-pasajes" aria-labelledby="pasajes-titulo">
+        <div className="ld-section__inner">
+          <div className="ld-pasajes__card ld-glass-card">
+            <div className="ld-pasajes__texto">
+              <span className="ld-glass-pill">
+                <Icon name="chart" size="sm" />
+                Transporte público
+              </span>
+              <h2 id="pasajes-titulo">BLINK Pasajes</h2>
+              <p>
+                El cobro del pasaje en cada unidad, con tarjeta y sin efectivo. El pasajero
+                recarga desde su celular y tú ves la recaudación del día al instante.
+              </p>
+            </div>
+            <a className="ld-btn ld-btn--primary ld-btn--lg" href="https://pasajes.blink.com.ve">
+              Abrir Pasajes
+              <Icon name="arrowRight" />
+            </a>
           </div>
         </div>
       </section>

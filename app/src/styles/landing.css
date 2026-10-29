@@ -500,6 +500,47 @@
 }
 
 /* ---------------------------------------------------------
+   BLINK Pasajes: producto hermano, banda a lo ancho
+   --------------------------------------------------------- */
+.ld-pasajes {
+  /* La portada ya deja aire abajo; no se suma otro colchon. */
+  padding-top: 0;
+}
+.ld-pasajes__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.4rem, 4vw, 2.4rem);
+}
+.ld-pasajes__texto {
+  max-width: 62ch;
+}
+.ld-pasajes__texto h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--blink-dark);
+  margin: 0.7rem 0 0.5rem;
+}
+.ld-pasajes__texto p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--blink-text-muted);
+}
+.ld-pasajes__card > .ld-btn {
+  flex: none;
+}
+@media (max-width: 720px) {
+  .ld-pasajes__card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------------------------------------------------------
    Secciones genéricas
    --------------------------------------------------------- */
 .ld-section {
