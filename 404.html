@@ -1,104 +1,24 @@
 <!doctype html>
-<html lang="es" data-theme="light" class="k-ios">
+<html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <!-- Apariencia: "light dark" = sigue al sistema. La preferencia de la
-         app lo ajusta a "light" o "dark" en linea (style="color-scheme"). -->
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#FFFEFB" />
-    <!-- Se aplica la apariencia ANTES del primer pintado para que no haya
-         destello. Debe ser synchronous y no depender de la red. -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>BLINK POS</title>
     <script>
       (function () {
+        var ruta = location.pathname + location.search + location.hash;
         try {
-          var modo = localStorage.getItem("blink-tema") || "auto";
-          var html = document.documentElement;
-          html.style.colorScheme =
-            modo === "auto" ? "light dark" : modo === "claro" ? "light" : "dark";
-          html.dataset.tema = modo;
-          var oscuro =
-            modo === "oscuro" ||
-            (modo === "auto" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
-          html.classList.toggle("dark", oscuro);
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute("content", oscuro ? "#000000" : "#FFFEFB");
+          sessionStorage.setItem("blink-ruta-404", ruta);
         } catch (e) {
-          /* sin almacenamiento: se queda el tema del sistema */
+          /* sin almacenamiento: se entra a la portada */
         }
+        location.replace("/");
       })();
     </script>
-    <meta
-      name="description"
-      content="Vende en un parpadeo, factura con BLINK ;) — Punto de venta para el comercio venezolano. Multimoneda USD/EUR a tasa BCV, escáner desde tu celular y operación 100 % en la nube. $25/mes."
-    />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="BLINK POS" />
-    <meta name="format-detection" content="telephone=no" />
-
-    <!-- Open Graph / redes (la landing es la portada pública del dominio).
-         La imagen de vista previa es `og-image.png`: 1200 x 630 px, la
-         proporción que piden WhatsApp, Telegram, X, LinkedIn y Slack.
-         El lema oficial de la marca es "Vende en un parpadeo, factura con BLINK ;)". -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="BLINK POS" />
-    <meta property="og:locale" content="es_VE" />
-    <meta property="og:title" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
-    <meta
-      property="og:description"
-      content="Vende en un parpadeo, factura con BLINK ;) El punto de venta hecho para Venezuela: multimoneda a tasa BCV, escáner desde el celular y 100 % en la nube."
-    />
-    <meta property="og:url" content="https://www.blink.com.ve/" />
-    <meta property="og:image" content="https://www.blink.com.ve/og-image.png" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
-    <meta
-      name="twitter:description"
-      content="Multimoneda a tasa BCV, escáner móvil y operación local-first. $25/mes."
-    />
-    <meta name="twitter:image" content="https://www.blink.com.ve/og-image.png" />
-    <meta name="twitter:image:alt" content="BLINK POS — Vende en un parpadeo, factura con BLINK ;)" />
-
-    <link rel="manifest" href="/manifest.json" />
-
-    <!-- Tipografía: se adelanta la fuente de respaldo (Inter, OFL) para
-         que el texto no salte al pintar. SF Pro se pide al sistema con
-         local(): no se distribuye ningún fichero de Apple. -->
-    <link
-      rel="preload"
-      href="/fonts/inter-latin.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-
-    <!-- Iconos: los ficheros institucionales de marca.
-         · favicon.png / icon.png  -> icono de la app (ficha del navegador y
-           pantalla de inicio del movil)
-         · favicon.svg / .ico      -> el mismo icono en vectorial y raster,
-           para los navegadores que no leen PNG
-         · icons/*                -> el juego que usa el manifiesto de la PWA -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
-
-    <title>BLINK POS — Punto de venta para el comercio venezolano</title>
-    <script type="module" crossorigin src="/assets/index-CYTrl0rv.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-CbXtAM7H.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-hzoPRTZp.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-BUxfS2ha.css">
+    <noscript><meta http-equiv="refresh" content="0; url=/" /></noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <p>Redirigiendo a <a href="/">BLINK POS</a>…</p>
   </body>
 </html>

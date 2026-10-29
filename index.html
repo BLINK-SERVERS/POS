@@ -7,6 +7,21 @@
          app lo ajusta a "light" o "dark" en linea (style="color-scheme"). -->
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#FFFEFB" />
+    <!-- GitHub Pages no reescribe rutas: una ruta profunda (/app/ventas,
+         /escaner) cae en `404.html`, que guarda la ruta y vuelve a la raíz.
+         Aquí se restaura antes de montar React para que el router la resuelva. -->
+    <script>
+      (function () {
+        try {
+          var ruta = sessionStorage.getItem("blink-ruta-404");
+          if (!ruta) return;
+          sessionStorage.removeItem("blink-ruta-404");
+          history.replaceState(null, "", ruta);
+        } catch (e) {
+          /* sin almacenamiento: se queda en la portada */
+        }
+      })();
+    </script>
     <!-- Se aplica la apariencia ANTES del primer pintado para que no haya
          destello. Debe ser synchronous y no depender de la red. -->
     <script>
@@ -93,7 +108,7 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 
     <title>BLINK POS — Punto de venta para el comercio venezolano</title>
-    <script type="module" crossorigin src="/assets/index-CYTrl0rv.js"></script>
+    <script type="module" crossorigin src="/assets/index-CcPhGnEa.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-CbXtAM7H.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-hzoPRTZp.js">
     <link rel="stylesheet" crossorigin href="/assets/index-BUxfS2ha.css">
