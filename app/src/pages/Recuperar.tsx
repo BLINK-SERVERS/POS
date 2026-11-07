@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth, useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
+import { BrandLogo } from "../components/BrandLogo";
 
 export function Recuperar() {
   const { resetPassword, updatePassword, logout } = useStoreActions();
@@ -103,10 +104,7 @@ export function Recuperar() {
   return (
     <main className="auth">
       <div className="auth__pitch">
-        <span className="blink-pos-title">
-          <span className="wordmark__blink">BLINK</span>
-          <span className="wordmark__pos">POS</span>
-        </span>
+        <BrandLogo className="brand-logo--auth" />
         <h2>Recupera el acceso a tu comercio.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
           Te enviamos un enlace seguro para crear una nueva contraseña, sin perder tus datos.
@@ -123,7 +121,7 @@ export function Recuperar() {
                 onClick={usarOtraCuenta}
                 style={{ marginBottom: "0.75rem" }}
               >
-                ← Usar otra cuenta
+                <Icon name="arrowLeft" /> Usar otra cuenta
               </button>
               <h1>Crea tu nueva contraseña.</h1>
               <p className="muted" style={{ marginBottom: "1.5rem" }}>

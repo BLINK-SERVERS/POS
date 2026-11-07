@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
+import { BrandLogo } from "../components/BrandLogo";
 
 export function Registro() {
   const { signUp, resendCode } = useStoreActions();
@@ -87,10 +88,7 @@ export function Registro() {
   return (
     <main className="auth">
       <div className="auth__pitch">
-        <span className="blink-pos-title">
-          <span className="wordmark__blink">BLINK</span>
-          <span className="wordmark__pos">POS</span>
-        </span>
+        <BrandLogo className="brand-logo--auth" />
         <h2>Empecemos por lo básico.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
           Crea tu cuenta, verifica tu correo y arma tu punto de venta a tu medida.
@@ -216,7 +214,7 @@ export function Registro() {
                 }}
                 style={{ marginBottom: "0.75rem" }}
               >
-                ← Cambiar datos
+                <Icon name="arrowLeft" /> Cambiar datos
               </button>
               <h1>Verifica tu correo</h1>
               <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>

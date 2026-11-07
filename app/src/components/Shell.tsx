@@ -14,6 +14,7 @@ import { formatBsDirect, formatTasaCabecera, formatUsd, round2 } from "../lib/mo
 import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
+import { BrandLogo } from "./BrandLogo";
 import { ScannerProvider } from "../lib/scanner/ScannerProvider";
 import { type Modulo } from "../lib/modulos";
 
@@ -269,9 +270,8 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="shell">
       <aside className="shell__sidebar">
         <div className="sidenav__brand">
-          <Link to="/app/ventas" className="brand brand--lg" aria-label="Ir a ventas">
-            <span className="brand__blink">BLINK</span>
-            <span className="brand__pos">POS</span>
+          <Link to="/app/ventas" className="brand" aria-label="Blink POS, ir a ventas">
+            <BrandLogo />
           </Link>
         </div>
 

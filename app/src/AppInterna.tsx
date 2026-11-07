@@ -19,6 +19,7 @@ import { KonstaProvider } from "konsta/react";
 import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
 import { Shell } from "./components/Shell";
 import { ConfirmProvider } from "./components/ui";
+import { BrandLoader as PageLoader } from "./components/BrandLoader";
 import { registrarIconos } from "./lib/iconos";
 import { ICONOS_BLINK } from "./lib/iconos-blink";
 import { SF_SYMBOLS } from "./lib/sf-symbols";
@@ -49,10 +50,6 @@ const Contactos = lazy(() => import("./pages/Contactos").then((m) => ({ default:
 const Finanzas = lazy(() => import("./pages/Finanzas").then((m) => ({ default: m.Finanzas })));
 const Informes = lazy(() => import("./pages/Informes").then((m) => ({ default: m.Informes })));
 const Ajustes = lazy(() => import("./pages/Ajustes").then((m) => ({ default: m.Ajustes })));
-
-function PageLoader() {
-  return <div className="page-loader">Cargando…</div>;
-}
 
 function Protected({ children }: { children: ReactNode }) {
   const authed = useAuth();

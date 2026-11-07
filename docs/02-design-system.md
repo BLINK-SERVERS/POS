@@ -6,6 +6,12 @@ Fuente de verdad: `app/src/styles/tokens.css` (tokens) y
 `app/src/styles/app.css` (componentes). El bloque `--ios-*` procede del
 **UI Kit oficial de iOS 27** de Apple.
 
+> La **identidad de marca** (isotipo, logotipos, iconos de app, tarjeta y
+> movimiento de los cargadores) está en el documento maestro
+> [`../../Pay/docs/documento-maestro-estetica.md`](../../Pay/docs/documento-maestro-estetica.md)
+> (`BLINK-EST-001`). Este documento cubre los tokens y componentes del POS;
+> si hay discrepancia en la marca, manda el maestro.
+
 > El design system de **WINK** (proyecto previo) está en
 > [`wink/02b-design-system-wink.md`](./wink/02b-design-system-wink.md) como
 > referencia histórica. No se usa en BLINK.

@@ -1187,6 +1187,8 @@ table.data tbody tr:hover {
   padding: 0.25rem 0.5rem 0.5rem;
 }
 .sidenav__brand .brand {
+  min-height: 44px;
+  align-items: center;
   cursor: pointer;
   text-decoration: none;
 }

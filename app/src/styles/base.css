@@ -132,16 +132,76 @@ svg {
   height: 2rem;
 }
 
-/* --- Utilidades --- */
-
-/* Cargador de página: lo usa el chunk principal (App.tsx), asi que
-   vive en la base y no en el CSS de la aplicación. */
-.page-loader {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: var(--color-text-tertiary);
-  font-size: var(--fs-sm);
+.brand-logo {
+  display: block;
+  width: 144px;
+  max-width: 100%;
+  height: auto;
 }
+.brand-logo--auth {
+  width: clamp(200px, 30vw, 320px);
+}
+.brand-loader {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2rem;
+  min-height: min(65svh, 32rem);
+  padding: 4rem 2rem;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+.brand-loader .brand-mark {
+  display: block;
+  width: clamp(200px, 60vw, 320px);
+  max-width: 100%;
+  color: var(--color-text-primary);
+}
+.brand-loader .brand-mark svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.brand-loader .brand-mark [id="ojo-guino"],
+.brand-loader .brand-mark [id="ojo-abierto"],
+.brand-loader .brand-mark [id="boca"] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-reassemble 2.8s cubic-bezier(.45, 0, .2, 1) infinite;
+}
+.brand-loader .brand-mark [id="ojo-guino"] {
+  --piece-x: -56px;
+  --piece-y: -48px;
+  --piece-turn: -360deg;
+}
+.brand-loader .brand-mark [id="ojo-abierto"] {
+  --piece-x: 40px;
+  --piece-y: -56px;
+  --piece-turn: 360deg;
+}
+.brand-loader .brand-mark [id="boca"] {
+  --piece-x: -12px;
+  --piece-y: 58px;
+  --piece-turn: 360deg;
+}
+@keyframes brand-reassemble {
+  0%, 12% { transform: translate(0, 0) rotate(0deg); }
+  32% { transform: translate(var(--piece-x), var(--piece-y)) rotate(0deg); }
+  64% { transform: translate(var(--piece-x), var(--piece-y)) rotate(var(--piece-turn)); }
+  84%, 100% { transform: translate(0, 0) rotate(var(--piece-turn)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader .brand-mark [id="ojo-guino"],
+  .brand-loader .brand-mark [id="ojo-abierto"],
+  .brand-loader .brand-mark [id="boca"] {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* --- Utilidades --- */
 .muted {
   color: var(--color-text-secondary);
 }

@@ -12,14 +12,11 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { TemaProvider } from "./lib/tema";
+import { BrandLoader as PageLoader } from "./components/BrandLoader";
 
 const Landing = lazy(() => import("./pages/Landing").then((m) => ({ default: m.Landing })));
 const AppInterna = lazy(() => import("./AppInterna").then((m) => ({ default: m.AppInterna })));
 const Escaner = lazy(() => import("./pages/Escaner").then((m) => ({ default: m.Escaner })));
-
-function PageLoader() {
-  return <div className="page-loader">Cargando…</div>;
-}
 
 export function App() {
   return (

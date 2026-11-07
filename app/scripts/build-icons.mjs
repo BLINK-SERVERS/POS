@@ -1,10 +1,13 @@
 // Rasteriza los SVG de marca a PNG (192/512 + maskable + apple-touch).
 // Usa Chromium de Playwright para un render idéntico al del navegador.
+// Si el navegador de Playwright no está descargado, se puede apuntar a uno
+// del sistema con CHROMIUM_PATH=/usr/bin/chromium.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
-const PUB = "C:/Users/prodz/Desktop/BLINK POS/app/public";
+const PUB = fileURLToPath(new URL("../public", import.meta.url));
 
 const JOBS = [
   { src: "icons/icon.svg", out: "icons/icon-192.png", size: 192 },
@@ -18,7 +21,9 @@ const JOBS = [
   { src: "icons/icon.svg", out: "icon.png", size: 512 },
 ];
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}
+);
 const page = await browser.newPage();
 
 for (const job of JOBS) {

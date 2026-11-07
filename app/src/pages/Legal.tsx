@@ -4,6 +4,7 @@
 // El contenido vive aquí (y no en un CMS) para que la web funcione aunque
 // Supabase no esté disponible.
 import { Link } from "react-router-dom";
+import { BrandLogo } from "../components/BrandLogo";
 import "../styles/landing.css";
 
 type LegalKind = "terminos" | "privacidad";
@@ -142,9 +143,8 @@ export function Legal({ kind }: { kind: LegalKind }) {
   return (
     <div className="ld-legal">
       <header className="ld-legal__bar">
-        <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
-          <span className="ld-logo__blink">BLINK</span>
-          <span className="ld-logo__pos">POS</span>
+        <Link to="/" className="ld-logo" aria-label="Blink POS, inicio">
+          <BrandLogo />
         </Link>
         <div className="ld-legal__actions">
           <Link className="ld-btn--glass" to="/">

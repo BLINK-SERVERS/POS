@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "../components/Icon";
+import { BrandLogo } from "../components/BrandLogo";
 import "../styles/landing.css";
 
 /** Anclas de navegación de la landing. */
@@ -152,9 +153,8 @@ export function Landing() {
       <div className="ld-glass">
         <header className="ld-header">
           <div className="ld-header__inner">
-            <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
-              <span className="ld-logo__blink">BLINK</span>
-              <span className="ld-logo__pos">POS</span>
+            <Link to="/" className="ld-logo" aria-label="Blink POS, inicio">
+              <BrandLogo />
             </Link>
 
             <nav className={"ld-nav" + (menuOpen ? " ld-nav--open" : "")} aria-label="Navegación principal">
@@ -168,6 +168,9 @@ export function Landing() {
                   {n.label}
                 </a>
               ))}
+              <Link className="ld-nav__link ld-nav__login" to="/app/entrar" onClick={() => setMenuOpen(false)}>
+                Iniciar sesión
+              </Link>
             </nav>
 
             <div className="ld-header__actions">
@@ -407,7 +410,10 @@ export function Landing() {
           <div className="ld-faq">
             {PREGUNTAS.map((p) => (
               <details className="ld-glass-card" key={p.q}>
-                <summary>{p.q}</summary>
+                <summary>
+                  {p.q}
+                  <span className="ld-faq__indicator" aria-hidden="true"><Icon name="close" size="sm" /></span>
+                </summary>
                 <p>{p.a}</p>
               </details>
             ))}
@@ -437,9 +443,8 @@ export function Landing() {
       {/* ---------------- Pie ---------------- */}
       <footer className="ld-footer">
         <div className="ld-footer__inner">
-          <Link to="/" className="ld-logo" aria-label="BLINK POS, inicio">
-            <span className="ld-logo__blink">BLINK</span>
-            <span className="ld-logo__pos">POS</span>
+          <Link to="/" className="ld-logo" aria-label="Blink POS, inicio">
+            <BrandLogo />
           </Link>
 
           <nav className="ld-footer__legal" aria-label="Enlaces legales">

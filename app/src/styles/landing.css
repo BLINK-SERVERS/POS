@@ -210,23 +210,16 @@
 }
 .ld-logo {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.3em;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  line-height: 1;
+  align-items: center;
+  min-height: 44px;
   text-decoration: none;
   flex: none;
 }
-.ld-logo__blink {
-  color: var(--blink-primary);
-  font-weight: 800;
-  font-style: italic;
+.ld-logo .brand-logo {
+  width: 136px;
 }
-.ld-logo__pos {
-  color: var(--blink-dark);
-  font-weight: 300;
+.ld-nav__login {
+  display: none;
 }
 
 /* Navegación central (desktop) */
@@ -1056,15 +1049,15 @@
 .ld-faq summary::-webkit-details-marker {
   display: none;
 }
-.ld-faq summary::after {
-  content: "+";
-  font-size: 1.2rem;
-  font-weight: 400;
+.ld-faq__indicator {
+  display: flex;
+  flex: none;
   color: var(--blink-text-muted);
+  transform: rotate(45deg);
   transition: transform var(--transition-speed);
 }
-.ld-faq details[open] summary::after {
-  transform: rotate(45deg);
+.ld-faq details[open] .ld-faq__indicator {
+  transform: none;
 }
 .ld-faq p {
   margin: 0;
@@ -1158,6 +1151,15 @@
 }
 
 @media (max-width: 860px) {
+  .ld-header__inner {
+    gap: 0.75rem;
+  }
+  .ld-logo .brand-logo {
+    width: 112px;
+  }
+  .ld-nav__login {
+    display: block;
+  }
   .ld-nav {
     position: fixed;
     inset: 64px 0 auto 0;

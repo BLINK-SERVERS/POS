@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
+import { BrandLogo } from "../components/BrandLogo";
 
 export function Login() {
   const { login, sendDeviceCode, logout } = useStoreActions();
@@ -85,10 +86,7 @@ export function Login() {
   return (
     <main className="auth">
       <div className="auth__pitch">
-        <span className="blink-pos-title">
-          <span className="wordmark__blink">BLINK</span>
-          <span className="wordmark__pos">POS</span>
-        </span>
+        <BrandLogo className="brand-logo--auth" />
         <h2>Tu punto de venta, rápido y claro.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
           Vende, cobra en dólares y bolívares, y controla tu inventario desde un solo lugar.

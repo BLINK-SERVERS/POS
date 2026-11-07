@@ -25,6 +25,7 @@ cuál es el vigente.
 | Documento | Contenido |
 |---|---|
 | [`02-design-system.md`](./02-design-system.md) | **El design system de BLINK**: tokens, tipografía, color, métricas de componentes, listas y Liquid Glass |
+| [`../../Pay/docs/documento-maestro-estetica.md`](../../Pay/docs/documento-maestro-estetica.md) | **Documento maestro de estética Blink** (`BLINK-EST-001`): marca, color, tipografía, materiales, movimiento, accesibilidad y activos |
 | [`REDISENO_KONSTA_HIG.md`](./REDISENO_KONSTA_HIG.md) | Rediseño con Konsta UI + HIG: reglas del HIG aplicadas una a una |
 | [`DESIGN_IOS27_KIT.md`](./DESIGN_IOS27_KIT.md) | Tokens oficiales extraídos del UI Kit de iOS 27 (colores, tipografía, materiales) |
 | [`IOS27_METRICAS_COMPONENTES.md`](./IOS27_METRICAS_COMPONENTES.md) | **Medidas reales** de cada componente de iOS 27 y comparación con BLINK |
