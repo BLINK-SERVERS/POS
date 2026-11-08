@@ -20,7 +20,7 @@ describe("marca compartida", () => {
     const logo = renderToStaticMarkup(createElement(BrandLogo));
     expect(logo).toContain(`src="${source}"`);
     expect(logo).toContain('alt="Blink POS"');
-    expect(logo).toContain('width="876" height="190"');
+    expect(logo).toContain('width="869" height="194"');
   });
 
   it("incrusta el marcado en el cargador, sin `use` externo", () => {
