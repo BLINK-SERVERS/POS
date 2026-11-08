@@ -1,67 +1,338 @@
-// Landing page comercial de BLINK (ruta raíz "/").
+// Landing comercial de Blink POS (pos.blink.com.ve, ruta "/").
 //
-// Objetivo: explicar en menos de 3 segundos qué es BLINK POS y convertir al
-// visitante en un registro. Sin dependencias de red: todo es SVG + CSS.
-//
-// Estructura al estilo de las páginas de producto de Apple: una idea por
-// bloque, titulares cortos en afirmativo, un solo precio y una sola llamada
-// a la acción. La capa de cristal (Liquid Glass) se usa solo en la capa
-// funcional —barra, tarjetas y cierre—, nunca en el contenido.
+// Refleja la landing de Blink Pay: misma barra de cristal, misma cinta,
+// titulares en afirmativo, beneficios oscuros en rejilla, pasos con el
+// visual pegajoso, piezas de confianza en oscuro, acordeón de preguntas y
+// notas numeradas. La diferencia es el material: aquí no hay maquetas CSS,
+// sino capturas reales de la aplicación con datos de ejemplo.
 //
 // Convenciones del proyecto: interfaz en español, paleta oficial Blink,
-// iconos SVG propios (sin emoji) y 3 colores base + los semánticos de marca.
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+// iconos SF Symbols del núcleo (los únicos del chunk público) y toda la
+// tipografía y los materiales salen de tokens.css.
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "../components/Icon";
-import { BrandLogo } from "../components/BrandLogo";
+import { Link } from "react-router-dom";
+import ventaSrc from "../assets/landing/pos-venta.webp";
+import catalogoSrc from "../assets/landing/pos-catalogo.webp";
+import historialSrc from "../assets/landing/pos-historial.webp";
+import cuentaSrc from "../assets/landing/pos-cuenta.webp";
+import movilSrc from "../assets/landing/pos-movil.webp";
+import movilVentaSrc from "../assets/landing/pos-movil-venta.webp";
+import movilCatalogoSrc from "../assets/landing/pos-movil-catalogo.webp";
+import movilCobrarSrc from "../assets/landing/pos-movil-cobrar.webp";
+import movilHistorialSrc from "../assets/landing/pos-movil-historial.webp";
 import "../styles/landing.css";
 
-/** Anclas de navegación de la landing. */
-const NAV = [
-  { href: "#producto", label: "El producto" },
-  { href: "#caracteristicas", label: "Características" },
+const BASE = import.meta.env.BASE_URL;
+const LOCKUP = `${BASE}brand/blink-pos.svg`;
+const LOCKUP_BLANCO = `${BASE}brand/blink-pos-blanco.svg`;
+
+const SECCIONES = [
+  { href: "#como-funciona", label: "Producto" },
   { href: "#precios", label: "Precios" },
   { href: "#preguntas", label: "Preguntas" },
 ];
 
+/* ------------------------------------------------------------------ *
+ * Piezas visuales
+ * ------------------------------------------------------------------ */
+
+/** La captura real de la app dentro de una ventana de escritorio. */
+function Ventana({ src, etiqueta }: { src: string; etiqueta: string }) {
+  return (
+    <div className="lp-ventana" role="img" aria-label={etiqueta}>
+      <div className="lp-ventana__barra" aria-hidden="true">
+        <span className="lp-ventana__punto lp-ventana__punto--rojo" />
+        <span className="lp-ventana__punto lp-ventana__punto--ambar" />
+        <span className="lp-ventana__punto lp-ventana__punto--verde" />
+        <span className="lp-ventana__url">pos.blink.com.ve</span>
+      </div>
+      <img src={src} alt="" width="2000" height="1250" decoding="async" draggable={false} />
+    </div>
+  );
+}
+
+/** La app en el celular, dentro del marco del teléfono. */
+function Telefono({ src, etiqueta }: { src: string; etiqueta: string }) {
+  return (
+    <div className="lp-telefono" role="img" aria-label={etiqueta}>
+      <div className="lp-telefono__marco">
+        <span className="lp-telefono__isla" />
+        <div className="lp-telefono__pantalla">
+          <img src={src} alt="" width="780" height="1688" decoding="async" draggable={false} />
+        </div>
+        <span className="lp-telefono__barra" />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Acordeón de preguntas
+ * ------------------------------------------------------------------ */
+
+interface Pregunta {
+  pregunta: string;
+  respuesta: ReactNode;
+}
+
+function Acordeon({ items }: { items: Pregunta[] }) {
+  const base = useId();
+  const [abierta, setAbierta] = useState<number | null>(null);
+
+  return (
+    <ul className="lp-acordeon">
+      {items.map((item, indice) => {
+        const activo = abierta === indice;
+        const idBoton = `${base}-boton-${indice}`;
+        const idPanel = `${base}-panel-${indice}`;
+        return (
+          <li
+            key={item.pregunta}
+            className={`lp-acordeon__item${activo ? " lp-acordeon__item--abierto" : ""}`}
+          >
+            <h3 className="lp-acordeon__titulo">
+              <button
+                type="button"
+                className="lp-acordeon__boton"
+                id={idBoton}
+                aria-expanded={activo}
+                aria-controls={idPanel}
+                onClick={() => setAbierta(activo ? null : indice)}
+              >
+                <span className="lp-acordeon__texto">{item.pregunta}</span>
+                <span className="lp-acordeon__chevron" aria-hidden="true">
+                  <Icon name="arrowRight" size="sm" />
+                </span>
+              </button>
+            </h3>
+            <div
+              className="lp-acordeon__bandeja"
+              id={idPanel}
+              role="region"
+              aria-labelledby={idBoton}
+              inert={!activo}
+            >
+              <div className="lp-acordeon__contenido">
+                <p className="lp-acordeon__respuesta">{item.respuesta}</p>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Pasos con el visual pegajoso (como el hardware de Blink Pay)
+ * ------------------------------------------------------------------ */
+
+const PASOS = [
+  {
+    titulo: "Carga tu catálogo una vez.",
+    cuerpo: (
+      <>
+        Registra cada producto con su código de barras, su precio en dólares y en bolívares, su
+        IVA y su margen. El stock se descuenta solo al vender y te avisa cuando algo llega al
+        mínimo.<sup>1</sup>
+      </>
+    ),
+    pie: "Catálogo real, con datos de ejemplo.",
+  },
+  {
+    titulo: "Cobra como te paguen.",
+    cuerpo: (
+      <>
+        Efectivo, pago móvil, punto de venta o dólares. La cuenta suma el IVA, aplica descuentos
+        y recargos, y calcula el vuelto en la moneda que elijas con la tasa BCV del día.
+      </>
+    ),
+    pie: "La cuenta de una venta real.",
+  },
+  {
+    titulo: "Cierra el día cuadrado.",
+    cuerpo: (
+      <>
+        Cada venta queda con su método de pago, su referencia y su tasa. Al cerrar el turno, el
+        arqueo de efectivo se compara con lo que entró y sabes exactamente cuánto hay en
+        caja.<sup>2</sup>
+      </>
+    ),
+    pie: "Historial del día, con datos de ejemplo.",
+  },
+];
+
+function useMedio(consulta: string) {
+  const [ok, setOk] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(consulta).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(consulta);
+    const on = () => setOk(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [consulta]);
+  return ok;
+}
+
 /**
- * Los momentos: una capacidad por bloque, con su titular y su visual.
- * El titular va en afirmativo y corto; el párrafo explica el beneficio
- * concreto, sin adjetivos.
+ * Como la barra de Apple: el cristal se tiñe según lo que pasa por debajo.
+ * Sobre una sección oscura el blanco translúcido se lee gris; ahí la barra
+ * pasa a negro y el contenido a claro.
  */
-const MOMENTOS = [
-  {
-    num: "01 · Escáner móvil",
-    titulo: "Tu celular ya es el escáner.",
-    texto:
-      "Enlaza el teléfono con un QR y escanea desde cualquier pasillo. Sin pistolas láser, sin instalar nada, sin cables.",
-    escena: "scan",
-  },
-  {
-    num: "02 · Multimoneda",
-    titulo: "Dólares y bolívares, siempre a la tasa oficial.",
-    texto:
-      "La tasa BCV se actualiza sola. Puedes mezclar efectivo, pago móvil y dólares, y el sistema calcula el vuelto.",
-    escena: "money",
-  },
-  {
-    num: "03 · Local-first",
-    titulo: "Se cae la señal. Tú no.",
-    texto:
-      "Cada venta se guarda en el dispositivo y se sincroniza sola cuando vuelve la conexión. Puedes cobrar siempre.",
-    escena: "offline",
-  },
-];
+function useSobreOscuro() {
+  const [oscuro, setOscuro] = useState(false);
+  useEffect(() => {
+    const secciones = Array.from(
+      document.querySelectorAll<HTMLElement>(".lp-seccion--oscura")
+    );
+    if (!secciones.length) return;
+    const revisar = () =>
+      setOscuro(
+        secciones.some((seccion) => {
+          const { top, bottom } = seccion.getBoundingClientRect();
+          return top <= 28 && bottom > 28;
+        })
+      );
+    revisar();
+    let cuadro = 0;
+    const alMover = () => {
+      if (cuadro) return;
+      cuadro = requestAnimationFrame(() => {
+        cuadro = 0;
+        revisar();
+      });
+    };
+    window.addEventListener("scroll", alMover, { passive: true });
+    window.addEventListener("resize", alMover);
+    return () => {
+      cancelAnimationFrame(cuadro);
+      window.removeEventListener("scroll", alMover);
+      window.removeEventListener("resize", alMover);
+    };
+  }, []);
+  return oscuro;
+}
 
-/** Cifras que resumen el producto. */
-const CIFRAS = [
-  { valor: "0", texto: "equipos que comprar" },
-  { valor: "3 s", texto: "de la venta al cobro" },
-  { valor: "24/7", texto: "facturando, con o sin internet" },
-  { valor: "$25", texto: "al mes, sin comisión por venta" },
-];
+function Pasos() {
+  // El visual pegajoso necesita dos columnas; debajo de 900 se apila.
+  const escritorio = useMedio("(min-width: 901px)");
+  // Las capturas del celular solo tienen sentido en un teléfono.
+  const compacto = useMedio("(max-width: 767px)");
+  const [activo, setActivo] = useState(0);
+  const refs = useRef<(HTMLDivElement | null)[]>([]);
 
-/** Todo lo que incluye el plan. */
+  // El visual queda fijo y cambia con el párrafo que se está leyendo.
+  useEffect(() => {
+    if (!escritorio) return;
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        const visible = entradas
+          .filter((entrada) => entrada.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const indice = Number((visible.target as HTMLElement).dataset.indice);
+        if (!Number.isNaN(indice)) setActivo(indice);
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.25, 0.5, 1] }
+    );
+    refs.current.forEach((nodo) => nodo && observador.observe(nodo));
+    return () => observador.disconnect();
+  }, [escritorio]);
+
+  // En el celular el visual va dentro del teléfono: una captura de
+  // escritorio encogida a 350 px no se lee.
+  const visuales = compacto
+    ? [
+        <Telefono
+          key="catalogo"
+          src={movilCatalogoSrc}
+          etiqueta="El catálogo de Blink POS en el celular, con las fichas de producto"
+        />,
+        <Telefono
+          key="cuenta"
+          src={movilCobrarSrc}
+          etiqueta="La hoja de Cobrar en el celular, con los totales y los métodos de pago"
+        />,
+        <Telefono
+          key="historial"
+          src={movilHistorialSrc}
+          etiqueta="El historial de ventas en el celular, con el resumen del día"
+        />,
+      ]
+    : [
+        <Ventana
+          key="catalogo"
+          src={catalogoSrc}
+          etiqueta="Catálogo de Blink POS con las fichas de producto, el precio en dólares y bolívares, el margen y el stock"
+        />,
+        <div className="lp-cuenta" key="cuenta">
+          <img src={cuentaSrc} alt="" width="730" height="1300" decoding="async" />
+        </div>,
+        <Ventana
+          key="historial"
+          src={historialSrc}
+          etiqueta="Historial de ventas con el método de pago de cada operación, su estado y su total"
+        />,
+      ];
+
+  if (!escritorio) {
+    return (
+      <div className="lp-pasos">
+        {PASOS.map((paso, indice) => (
+          <div className="lp-paso" key={paso.titulo}>
+            <div className="lp-paso__hardware">{visuales[indice]}</div>
+            <div className="lp-paso__texto">
+              <h3 className="lp-paso__titulo">{paso.titulo}</h3>
+              <p className="lp-dos-tonos">{paso.cuerpo}</p>
+              <p className="lp-nota-visual">{paso.pie}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="lp-pegajoso">
+      <div className="lp-pegajoso__hardware">
+        {PASOS.map((paso, indice) => (
+          <div
+            key={paso.titulo}
+            className={`lp-pegajoso__escena${activo === indice ? " lp-pegajoso__escena--activa" : ""}`}
+            aria-hidden={activo !== indice}
+          >
+            {visuales[indice]}
+            <p className="lp-nota-visual">{paso.pie}</p>
+          </div>
+        ))}
+      </div>
+      <div className="lp-pegajoso__texto">
+        {PASOS.map((paso, indice) => (
+          <div
+            className="lp-paso"
+            key={paso.titulo}
+            data-indice={indice}
+            ref={(nodo) => {
+              refs.current[indice] = nodo;
+            }}
+          >
+            <div className="lp-paso__texto">
+              <h3 className="lp-paso__titulo">{paso.titulo}</h3>
+              <p className="lp-dos-tonos">{paso.cuerpo}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Página
+ * ------------------------------------------------------------------ */
+
 const INCLUYE = [
   "Punto de venta ilimitado",
   "Caja, arqueos y cierre de turno",
@@ -73,387 +344,358 @@ const INCLUYE = [
   "Catálogo compartido entre comercios",
 ];
 
-/** Las capacidades, en tarjetas. */
-const CAPACIDADES = [
+const PREGUNTAS: Pregunta[] = [
   {
-    icon: "cash" as const,
-    titulo: "Caja y arqueo",
-    texto: "Abre, cobra y cierra el turno con el conteo de efectivo ya cuadrado.",
+    pregunta: "¿Necesito una computadora o una impresora?",
+    respuesta:
+      "No. BLINK funciona en el navegador del celular o de la computadora. Si más adelante quieres imprimir tickets, puedes conectarlo desde el sistema.",
   },
   {
-    icon: "box" as const,
-    titulo: "Inventario",
-    texto: "Mínimos, ajustes y compras. El stock se descuenta solo al vender.",
+    pregunta: "¿Qué pasa si se cae el internet?",
+    respuesta:
+      "Nada. Cada venta se guarda en el dispositivo y se sincroniza en cuanto vuelve la señal. Puedes seguir cobrando y el inventario se pone al día después.",
   },
   {
-    icon: "creditcard" as const,
-    titulo: "Multimoneda",
-    texto: "USD y EUR con bolívares a tasa BCV, y vuelto mixto.",
+    pregunta: "¿Cómo cobro en bolívares?",
+    respuesta:
+      "La tasa oficial BCV se actualiza sola. Puedes mezclar pagos en efectivo, pago móvil y dólares, y el sistema calcula el vuelto en la moneda que elijas.",
   },
   {
-    icon: "receipt" as const,
-    titulo: "Cuentas por cobrar",
-    texto: "Créditos a clientes, abonos parciales y cuentas por pagar a proveedores.",
+    pregunta: "¿Puedo usar el celular como escáner?",
+    respuesta:
+      "Sí. Enlazas el teléfono con un QR desde Ajustes y lo que escaneas aparece en la cuenta de la computadora al instante. No hay que instalar nada.",
   },
   {
-    icon: "chart" as const,
-    titulo: "Informes",
-    texto: "Ventas, márgenes y los productos que más rotan, listos para imprimir.",
+    pregunta: "¿Los datos de mi negocio son míos?",
+    respuesta:
+      "Sí. Puedes exportar los datos y pedir su eliminación cuando quieras. Cada comercio está separado del resto y solo entra quien tenga su cuenta.",
   },
   {
-    icon: "store" as const,
-    titulo: "Catálogo compartido",
-    texto: "Productos precargados que puedes reutilizar entre comercios.",
-  },
-];
-
-/** Preguntas frecuentes. */
-const PREGUNTAS = [
-  {
-    q: "¿Necesito una computadora o una impresora?",
-    a: "No. BLINK funciona en el navegador del celular o de la computadora. Si más adelante quieres imprimir tickets, puedes conectarlo desde el sistema.",
-  },
-  {
-    q: "¿Qué pasa si se cae el internet?",
-    a: "No pasa nada. Cada venta se guarda en el dispositivo y se sincroniza en cuanto vuelve la señal.",
-  },
-  {
-    q: "¿Cómo cobro en bolívares?",
-    a: "La tasa oficial BCV se actualiza sola. Puedes mezclar pagos en efectivo, pago móvil y dólares, y el sistema calcula el vuelto.",
-  },
-  {
-    q: "¿Puedo usar el celular como escáner?",
-    a: "Sí. Enlazas el teléfono con un QR desde Ajustes y el celular empieza a enviarte los productos que escanea.",
-  },
-  {
-    q: "¿Los datos de mi negocio son míos?",
-    a: "Sí. Puedes exportar los datos y pedir su eliminación cuando quieras. Cada comercio está separado del resto.",
-  },
-  {
-    q: "¿Hay instalación o permanencia?",
-    a: "No hay instalación ni permanencia: es una suscripción mensual de $25 por tienda y cancelas cuando decidas.",
+    pregunta: "¿Hay instalación o permanencia?",
+    respuesta:
+      "No hay instalación ni permanencia: es una suscripción mensual de $25 por tienda y cancelas cuando decidas. No se cobra comisión por venta.",
   },
 ];
 
 export function Landing() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Cierra el menú al redimensionar a escritorio (evita un estado "colgado").
-  useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth > 860) setMenuOpen(false);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const sobreOscuro = useSobreOscuro();
 
   return (
-    <div className="landing">
-      {/* ---------------- Navegación ---------------- */}
-      <div className="ld-glass">
-        <header className="ld-header">
-          <div className="ld-header__inner">
-            <Link to="/" className="ld-logo" aria-label="Blink POS, inicio">
-              <BrandLogo />
-            </Link>
+    <div className="lp">
+      <a className="lp-salto" href="#contenido-lp">
+        Saltar al contenido
+      </a>
 
-            <nav className={"ld-nav" + (menuOpen ? " ld-nav--open" : "")} aria-label="Navegación principal">
-              {NAV.map((n) => (
-                <a
-                  key={n.href}
-                  className="ld-nav__link"
-                  href={n.href}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {n.label}
-                </a>
-              ))}
-              <Link className="ld-nav__link ld-nav__login" to="/app/entrar" onClick={() => setMenuOpen(false)}>
-                Iniciar sesión
-              </Link>
-            </nav>
-
-            <div className="ld-header__actions">
-              <Link className="ld-btn--glass" to="/app/entrar">
-                Iniciar sesión
-              </Link>
-              <Link className="ld-btn ld-btn--primary" to="/app/registro">
-                Empezar
-              </Link>
-            </div>
-
-            <button
-              className="ld-burger"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={menuOpen}
-            >
-              <Icon name={menuOpen ? "close" : "menu"} size="lg" />
-            </button>
-          </div>
-        </header>
-      </div>
-
-      {/* ---------------- Portada ---------------- */}
-      <section className="ld-hero">
-        <div className="ld-hero__inner">
-          <div>
-            <span className="ld-glass-pill">
-              <Icon name="chart" size="sm" />
-              100 % en la nube
-            </span>
-            <h1>El punto de venta hecho para Venezuela.</h1>
-            <p className="ld-hero__sub">
-              Cobra en dólares o bolívares a la tasa oficial, escanea con el celular y sigue
-              vendiendo aunque se caiga la señal.
-            </p>
-            <div className="ld-hero__cta">
-              <Link className="ld-btn ld-btn--primary ld-btn--lg" to="/app/registro">
-                Empezar ahora
-                <Icon name="arrowRight" />
-              </Link>
-              <a className="ld-btn--glass" href="#producto">
-                Ver cómo funciona
+      <header className={`lp-nav${sobreOscuro ? " lp-nav--oscura" : ""}`}>
+        <div className="lp-nav__fila">
+          <Link className="lp-nav__marca" to="/" aria-label="Blink POS, inicio">
+            <img
+              className="lp-nav__marca--clara"
+              src={LOCKUP}
+              width="1206"
+              height="281"
+              alt=""
+              draggable={false}
+            />
+            <img
+              className="lp-nav__marca--oscura"
+              src={LOCKUP_BLANCO}
+              width="1206"
+              height="281"
+              alt=""
+              draggable={false}
+            />
+          </Link>
+          <nav className="lp-nav__enlaces" aria-label="Secciones">
+            {SECCIONES.map((seccion) => (
+              <a key={seccion.href} href={seccion.href}>
+                {seccion.label}
               </a>
+            ))}
+          </nav>
+          <Link className="lp-boton lp-boton--primario lp-nav__cta" to="/app/registro">
+            Empezar
+          </Link>
+        </div>
+      </header>
+
+      <main id="contenido-lp">
+        {/* Portada */}
+        <section className="lp-seccion lp-seccion--clara lp-hero" id="arriba" aria-labelledby="hero-titulo">
+          <div className="lp-contenido">
+            <div className="lp-cinta">
+              <p>
+                Escáner móvil incluido.{" "}
+                <a className="lp-enlace" href="#como-funciona">
+                  Más información
+                  <Icon name="arrowRight" size="sm" />
+                </a>
+              </p>
             </div>
-            <p className="ld-hero__note">
-              <Icon name="check" size="sm" />
-              Sin instalación. Sin hardware. $25 al mes.
+
+            <h1 className="visualmente-oculto" id="hero-titulo">
+              Blink POS
+            </h1>
+            <img className="lp-hero__marca" src={LOCKUP} width="1206" height="281" alt="Blink POS" />
+            <h2 className="lp-hero__titular">
+              El punto de venta hecho para Venezuela.
+              <span className="lp-hero__sub">
+                Cobra en dólares o bolívares a la tasa oficial, escanea con el celular y sigue
+                vendiendo aunque se caiga la señal.
+              </span>
+            </h2>
+            <p className="lp-hero__cta">
+              <Link className="lp-boton lp-boton--primario" to="/app/registro">
+                Empezar ahora
+              </Link>
+              <a className="lp-boton lp-boton--fantasma" href="#como-funciona">
+                Ver cómo funciona
+                <Icon name="arrowRight" size="sm" />
+              </a>
             </p>
-          </div>
 
-          {/* Maqueta: la pantalla del POS y el celular escaneando */}
-          <div className="ld-mock" aria-hidden>
-            <div className="ld-mock__pc">
-              <div className="ld-mock__screen">
-                <div className="ld-mock__bar">
-                  <div className="ld-mock__search">
-                    <Icon name="search" size="sm" />
-                    Buscar o escanear…
-                  </div>
-                </div>
-                <div className="ld-mock__line">
-                  <b>AZUCAR KONFIT 1kg</b>
-                  <span>2 x $2.00</span>
-                </div>
-                <div className="ld-mock__line">
-                  <b>MALTA RETORNABLE</b>
-                  <span>3 x $1.50</span>
-                </div>
-                <div className="ld-mock__line">
-                  <b>PAPEL DE ALUMINIO TUC</b>
-                  <span>1 x $0.90</span>
-                </div>
-                <div className="ld-mock__total">
-                  <span>Total a pagar</span>
-                  <strong>$ 8.40</strong>
-                </div>
-                <div className="ld-mock__bs">Bs 7.408,80 · Tasa BCV 882.00</div>
+            <div className="lp-hero__hardware">
+              <div className="lp-hero__escritorio">
+                <Ventana
+                  src={ventaSrc}
+                  etiqueta="Pantalla de Vender con cuatro productos en la cuenta, el total en dólares y bolívares y el botón Cobrar"
+                />
               </div>
-            </div>
-
-            <div className="ld-mock__phone">
-              <div className="ld-mock__phone-screen">
-                <div className="ld-mock__frame">
-                  <div className="ld-mock__barcode" />
-                </div>
-                <span className="ld-mock__pill">Escaneado</span>
+              <div className="lp-hero__movil">
+                <Telefono
+                  src={movilVentaSrc}
+                  etiqueta="La app de Blink POS en el celular, con la cuenta y los totales de una venta"
+                />
               </div>
+              <p className="lp-nota-visual">La app real, con datos de ejemplo.</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ---------------- El producto ---------------- */}
-      <section className="ld-moments" id="producto">
-        {MOMENTOS.map((m, i) => (
-          <article className={"ld-moment" + (i % 2 ? " ld-moment--flip" : "")} key={m.num}>
-            <div className="ld-moment__body">
-              <span className="ld-moment__num">{m.num}</span>
-              <h2>{m.titulo}</h2>
-              <p>{m.texto}</p>
-            </div>
-
-            <div className={"ld-scene ld-scene--" + m.escena}>
-              {m.escena === "scan" && (
-                <div className="ld-scene__phone">
-                  <div className="ld-scene__view">
-                    <span className="ld-scene__mark" />
-                    <div className="ld-scene__bars" />
-                  </div>
-                  <span className="ld-scene__toast">Añadido a la cuenta</span>
-                </div>
-              )}
-
-              {m.escena === "money" && (
-                <>
-                  <div className="ld-scene__card">
-                    <div className="ld-scene__row">
-                      <span>Total</span>
-                      <b>$ 24.00</b>
-                    </div>
-                    <div className="ld-scene__row">
-                      <span>Recibido</span>
-                      <b>Bs 21.168,00</b>
-                    </div>
-                    <div className="ld-scene__row ld-scene__row--hi">
-                      <span>Vuelto</span>
-                      <b>$ 1.20</b>
-                    </div>
-                  </div>
-                  <span className="ld-scene__chip">Tasa BCV 882,00</span>
-                </>
-              )}
-
-              {m.escena === "offline" && (
-                <div className="ld-scene__card">
-                  <span className="ld-scene__status">
-                    <span className="ld-scene__dot" />
-                    Vendiendo sin conexión
+        {/* Beneficios */}
+        <section className="lp-seccion lp-seccion--oscura lp-beneficios" aria-label="Lo que incluye Blink POS">
+          <div className="lp-contenido">
+            <ul className="lp-beneficios__rejilla">
+              {[
+                "Cobra en segundos, desde el mostrador o el celular.",
+                "Sigue vendiendo aunque se caiga la señal.",
+                "Dólares y bolívares, siempre a la tasa oficial.",
+                "Inventario, cuentas e informes incluidos.",
+              ].map((texto) => (
+                <li className="lp-beneficio" key={texto}>
+                  <span className="lp-beneficio__check" aria-hidden="true">
+                    <Icon name="check" size="lg" />
                   </span>
-                  <div className="ld-scene__row">
-                    <span>Cuenta #0142</span>
-                    <b>$ 8.40</b>
-                  </div>
-                  <div className="ld-scene__row">
-                    <span>Estado</span>
-                    <b>Guardada en el equipo</b>
-                  </div>
-                  <div className="ld-scene__row">
-                    <span>Sincronización</span>
-                    <b>Al volver la señal</b>
-                  </div>
-                </div>
-              )}
-            </div>
-          </article>
-        ))}
-      </section>
-
-      {/* ---------------- Cifras ---------------- */}
-      <section className="ld-section ld-section--dark">
-        <div className="ld-section__inner">
-          <div className="ld-stats">
-            {CIFRAS.map((s) => (
-              <div className="ld-stat" key={s.valor}>
-                <strong>{s.valor}</strong>
-                <span>{s.texto}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- Características ---------------- */}
-      <section className="ld-section" id="caracteristicas">
-        <div className="ld-section__inner">
-          <div className="ld-section__head">
-            <h2>Todo lo que un comercio necesita. Nada más.</h2>
-            <p>Una sola herramienta, sin módulos que comprar por separado.</p>
-          </div>
-
-          <div className="ld-benefits">
-            {CAPACIDADES.map((c) => (
-              <article className="ld-benefit ld-glass-card" key={c.titulo}>
-                <div className="ld-benefit__icon">
-                  <Icon name={c.icon} size="lg" />
-                </div>
-                <h3>{c.titulo}</h3>
-                <p>{c.texto}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- Precios ---------------- */}
-      <section className="ld-section" id="precios">
-        <div className="ld-section__inner">
-          <div className="ld-section__head">
-            <h2>Un solo plan. Todo incluido.</h2>
-            <p>Sin comisiones por venta, sin planes ocultos, sin sorpresas en la factura.</p>
-          </div>
-
-          <div className="ld-pricing ld-glass-card">
-            <span className="ld-glass-pill">Plan comercial</span>
-            <div className="ld-pricing__price">
-              <strong>$25</strong>
-              <span>/ mes</span>
-            </div>
-            <p className="ld-pricing__hint">Por tienda. Cancela cuando quieras.</p>
-
-            <ul className="ld-pricing__list">
-              {INCLUYE.map((item) => (
-                <li key={item}>
-                  <Icon name="check" size="sm" />
-                  {item}
+                  <h2 className="lp-beneficio__titulo">{texto}</h2>
                 </li>
               ))}
             </ul>
-
-            <Link className="ld-btn ld-btn--primary ld-btn--lg" to="/app/registro">
-              Crear mi comercio
-              <Icon name="arrowRight" />
-            </Link>
+            <p className="lp-disponibilidad">
+              Para cualquier comercio de <strong>Venezuela</strong>. Sin instalación ni equipos.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ---------------- Preguntas ---------------- */}
-      <section className="ld-section" id="preguntas">
-        <div className="ld-section__inner">
-          <div className="ld-section__head">
-            <h2>Preguntas frecuentes.</h2>
-            <p>Si te queda alguna duda, escríbenos a soporte@blink.com.ve.</p>
+        {/* Cómo funciona */}
+        <section
+          className="lp-seccion lp-seccion--clara lp-configurar"
+          id="como-funciona"
+          aria-labelledby="como-funciona-titulo"
+        >
+          <div className="lp-contenido">
+            <h2 className="lp-titulo-seccion" id="como-funciona-titulo">
+              Tres pasos. Ningún equipo nuevo.
+            </h2>
+            <Pasos />
           </div>
+        </section>
 
-          <div className="ld-faq">
-            {PREGUNTAS.map((p) => (
-              <details className="ld-glass-card" key={p.q}>
-                <summary>
-                  {p.q}
-                  <span className="ld-faq__indicator" aria-hidden="true"><Icon name="close" size="sm" /></span>
-                </summary>
-                <p>{p.a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- Cierre ---------------- */}
-      <section className="ld-glass-band">
-        <div className="ld-cta">
-          <div className="ld-cta__inner">
-            <h2>Empieza hoy.</h2>
-            <p>Crea tu comercio en un minuto. Sin instalación y sin hardware.</p>
-            <div className="ld-cta__actions">
-              <Link className="ld-btn ld-btn--primary ld-btn--lg" to="/app/registro">
-                Crear mi comercio
-                <Icon name="arrowRight" />
-              </Link>
-              <a className="ld-btn--glass" href="mailto:soporte@blink.com.ve">
-                Hablar con soporte
-              </a>
+        {/* Escáner móvil */}
+        <section className="lp-seccion lp-simple" aria-labelledby="escaner-titulo">
+          <div className="lp-contenido">
+            <h2 className="lp-titulo-seccion" id="escaner-titulo">
+              Tu celular ya es el escáner.
+            </h2>
+            <p className="lp-cuerpo-icono">
+              Lo enlazas una vez con un QR y escaneas desde donde esté el producto.
+            </p>
+            <div className="lp-fila">
+              <div className="lp-fila__visual">
+                <Telefono
+                  src={movilSrc}
+                  etiqueta="La app de Blink POS en el celular, con la cuenta y los totales de una venta"
+                />
+              </div>
+              <div className="lp-fila__texto">
+                <h3 className="lp-subtitulo">Sin pistolas láser ni cables.</h3>
+                <p className="lp-dos-tonos">
+                  <strong>Escanea con la cámara del teléfono.</strong> Abre el escáner, apunta al
+                  código de barras y el producto entra en la cuenta que está abierta en la
+                  computadora, al instante.
+                </p>
+                <p className="lp-dos-tonos">
+                  <strong>El mismo sistema en las dos pantallas.</strong> La cuenta, el inventario
+                  y los totales se actualizan a la vez, así el mostrador y el pasillo trabajan con
+                  la misma información.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ---------------- Pie ---------------- */}
-      <footer className="ld-footer">
-        <div className="ld-footer__inner">
-          <Link to="/" className="ld-logo" aria-label="Blink POS, inicio">
-            <BrandLogo />
-          </Link>
+        {/* Confianza */}
+        <section className="lp-seccion lp-seccion--oscura lp-seguridad" id="seguridad" aria-labelledby="seguridad-titulo">
+          <div className="lp-contenido">
+            <h2 className="lp-titulo-seccion" id="seguridad-titulo">
+              Pensado para un mostrador real.
+            </h2>
+            <ul className="lp-seguridad__rejilla">
+              <li className="lp-pieza">
+                <h3 className="lp-pieza__titulo">Se cae la señal. Tú no.</h3>
+                <p className="lp-dos-tonos">
+                  Cada venta se guarda en el dispositivo y se sincroniza sola cuando vuelve la
+                  conexión. El estado de la conexión queda a la vista para que nunca cobres a
+                  ciegas.
+                </p>
+              </li>
+              <li className="lp-pieza">
+                <h3 className="lp-pieza__titulo">Los datos de tu negocio son tuyos.</h3>
+                <p className="lp-dos-tonos">
+                  Cada comercio está separado del resto y solo entra quien tenga su cuenta.
+                  Puedes exportar tus datos o pedir su eliminación cuando quieras, sin pedir
+                  permiso.
+                </p>
+              </li>
+              <li className="lp-pieza">
+                <h3 className="lp-pieza__titulo">El vuelto, sin discusiones.</h3>
+                <p className="lp-dos-tonos">
+                  La tasa BCV se actualiza sola y cada cobro guarda su tasa, su moneda y su
+                  referencia. El arqueo del turno cuadra al céntimo y queda en el historial.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </section>
 
-          <nav className="ld-footer__legal" aria-label="Enlaces legales">
-            <Link to="/app/terminos">Términos de servicio</Link>
-            <Link to="/app/privacidad">Política de privacidad</Link>
-            <a href="mailto:soporte@blink.com.ve">Soporte técnico</a>
-          </nav>
+        {/* Precios */}
+        <section className="lp-seccion lp-precios" id="precios" aria-labelledby="precios-titulo">
+          <div className="lp-contenido">
+            <h2 className="lp-titulo-seccion" id="precios-titulo">
+              Un solo plan. Todo incluido.
+            </h2>
+            <p className="lp-cuerpo-icono">
+              Sin comisiones por venta, sin módulos que comprar aparte.
+            </p>
 
-          <p className="ld-footer__copy">© 2026 Blink POS</p>
+            <div className="lp-plan">
+              <p className="lp-plan__etiqueta">Blink POS</p>
+              <p className="lp-plan__precio">
+                <span className="lp-plan__moneda">$</span>25
+                <span className="lp-plan__periodo"> / mes</span>
+              </p>
+              <p className="lp-plan__nota">Por tienda. Cancela cuando quieras.</p>
+
+              <ul className="lp-plan__lista">
+                {INCLUYE.map((item) => (
+                  <li key={item}>
+                    <Icon name="check" size="sm" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="lp-plan__cta">
+                <Link className="lp-boton lp-boton--primario" to="/app/registro">
+                  Crear mi comercio
+                  <Icon name="arrowRight" size="sm" />
+                </Link>
+                <Link className="lp-boton lp-boton--fantasma" to="/app/entrar">
+                  Ya tengo cuenta
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Preguntas */}
+        <section className="lp-seccion lp-preguntas" id="preguntas" aria-labelledby="preguntas-titulo">
+          <div className="lp-contenido lp-contenido--estrecho">
+            <h2 className="lp-titulo-seccion" id="preguntas-titulo">
+              Las respuestas a tus preguntas.
+            </h2>
+            <Acordeon items={PREGUNTAS} />
+            <ul className="lp-enlaces lp-enlaces--pie">
+              <li>
+                <Link className="lp-enlace" to="/app/registro">
+                  Crear cuenta
+                  <Icon name="arrowRight" size="sm" />
+                </Link>
+              </li>
+              <li>
+                <Link className="lp-enlace" to="/app/entrar">
+                  Entrar a mi comercio
+                  <Icon name="arrowRight" size="sm" />
+                </Link>
+              </li>
+              <li>
+                <Link className="lp-enlace" to="/app/terminos">
+                  Términos de servicio
+                  <Icon name="arrowRight" size="sm" />
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Notas */}
+        <section className="lp-seccion lp-notas" aria-label="Notas">
+          <div className="lp-contenido">
+            <ol className="lp-notas__lista">
+              <li>
+                El catálogo se puede cargar a mano, importar desde un archivo o escanear con el
+                celular. El stock se descuenta con cada venta confirmada.
+              </li>
+              <li>
+                Las ventas hechas sin conexión se guardan en el dispositivo y se sincronizan al
+                recuperar la señal. El arqueo del turno compara lo cobrado con lo contado.
+              </li>
+              <li>
+                La tasa BCV se consulta automáticamente y puede fijarse a mano desde Ajustes. El
+                plan mensual es por tienda y no cobra comisión por venta.
+              </li>
+            </ol>
+          </div>
+        </section>
+      </main>
+
+      <footer className="lp-pie">
+        <div className="lp-contenido">
+          <img className="lp-pie__marca" src={LOCKUP} width="1206" height="281" alt="Blink POS" />
+          <div className="lp-pie__fila">
+            <p className="lp-pie__legal">Copyright © 2026 Blink POS. Maracaibo, Venezuela.</p>
+            <ul className="lp-pie__enlaces">
+              <li>
+                <Link className="lp-enlace" to="/app/terminos">
+                  Términos de servicio
+                </Link>
+              </li>
+              <li>
+                <Link className="lp-enlace" to="/app/privacidad">
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <a className="lp-enlace" href="mailto:soporte@blink.com.ve">
+                  soporte@blink.com.ve
+                </a>
+              </li>
+              <li>
+                <Link className="lp-enlace" to="/app/entrar">
+                  Entrar
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </footer>
     </div>

@@ -4,7 +4,7 @@ import marcaClara from "../assets/marca-blink.svg?raw";
 
 export function useBrandSource() {
   const { esOscuro } = useTema();
-  return `${import.meta.env.BASE_URL}brand/${esOscuro ? "blink-blanco.svg" : "blink.svg"}`;
+  return `${import.meta.env.BASE_URL}brand/${esOscuro ? "blink-pos-blanco.svg" : "blink-pos.svg"}`;
 }
 
 function useBrandMark() {
@@ -17,8 +17,8 @@ export function BrandLogo({ className = "" }: { className?: string }) {
     <img
       className={`brand-logo ${className}`.trim()}
       src={useBrandSource()}
-      width="869"
-      height="194"
+      width="1206"
+      height="281"
       alt="Blink POS"
       draggable={false}
     />

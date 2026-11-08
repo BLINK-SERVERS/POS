@@ -1,1220 +1,1132 @@
 /* ============================================================
-   BLINK — Landing Page comercial (ruta raíz "/")
-   Paleta oficial Blink · Jerarquía visual · Minimalismo operativo
+   BLINK POS — Landing de pos.blink.com.ve
+
+   La estructura sigue la landing de Blink Pay (que a su vez sigue
+   https://www.apple.com/la/apple-pay/): cinta, portada con el lockup,
+   cuatro beneficios en oscuro, pasos con el visual pegajoso, una fila
+   5/12 + 8/12, tres piezas de confianza en oscuro, el plan, preguntas
+   en acordeón, notas y pie.
+
+   Aquí los visuales NO son maquetas: son capturas reales de la app
+   (`src/assets/landing/*.webp`) dentro de una ventana de escritorio o
+   del marco del teléfono.
+
+   Todo sale de tokens.css: la pila SF Pro/Inter, los radios, las sombras
+   y las medidas de iOS. Los colores de cada tema se fijan aquí con los
+   valores de token de esa apariencia, porque `light-dark()` se resuelve
+   donde se declara el token (:root) y no seguiría al tema de la sección.
    ============================================================ */
 
-/* Variables de la landing. Son GLOBALES a proposito: las paginas
-   legales (terminos, privacidad) comparten la retícula y el header, y
-   antes de definirlas aqui se rompia su cabecera. */
-:root {
-  /* La maqueta del producto (marco + pantalla) es una ilustracion:
-     mantiene su aspecto en los dos modos. */
-  --ld-marco: #1d1d1f;
-  --ld-pantalla: #fffefb;
+.lp {
+  /* --- Tema claro por defecto: barra y pie --- */
+  --lp-fondo: #ffffff;
+  --lp-fondo-alt: #f2f2f7;
+  --lp-texto: #1d1d1f;
+  --lp-texto-2: #424242;
+  --lp-texto-3: #6e6e6e;
+  --lp-enlace: #0066cc;
+  --lp-acento: #007aff;
+  --lp-borde: rgba(66, 66, 66, 0.16);
+  --lp-relleno: rgba(66, 66, 66, 0.06);
+  --lp-relleno-fuerte: rgba(66, 66, 66, 0.1);
 
-  /* Retícula */
-  --ld-max: 1160px;
-  --ld-gutter: clamp(1.25rem, 5vw, 3rem);
-  --ld-measure: 68ch;
+  /* --- Escala de marketing (extensión de la escala de iOS) --- */
+  --lp-fs-hero: clamp(2.5rem, 6.2vw, 4.75rem);
+  --lp-fs-seccion: clamp(2rem, 4.6vw, 3.5rem);
+  --lp-fs-beneficio: clamp(1.375rem, 2.4vw, 2rem);
+  --lp-fs-parrafo: clamp(1.0625rem, 1.5vw, 1.25rem);
+  --lp-fs-cuerpo: 1.0625rem;
+  --lp-fs-nota: 0.75rem;
 
-  /* Banda de contraste (cifras): se mantiene oscura en las dos
-     apariencias, como las bandas de las paginas de producto de Apple. */
-  --ld-banda-bg: light-dark(#1d1d1f, #141416);
-  --ld-banda-ink: light-dark(#fffefb, #f5f5f7);
+  --lp-ancho: 1040px;
+  --lp-curva: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* Material "Liquid Glass" (HIG · Materials, variante "regular").
-     Se apoya en los tokens del proyecto para que el material sea el
-     mismo en la landing, en la app y en sus dos apariencias. */
-  --ld-glass-blur: 24px;
-  --ld-glass-bg: rgb(from var(--papel) r g b / 0.62);
-  --ld-glass-edge: rgb(from var(--tinta) r g b / 0.1);
-  --ld-glass-highlight: rgb(from var(--halo) r g b / 0.55);
+  background: var(--lp-fondo);
+  color: var(--lp-texto);
+  font-family: var(--font-text);
+  -webkit-user-select: text;
+  user-select: text;
+  overflow-x: clip;
 }
 
-.landing {
-  background: var(--blink-bg-main);
-  color: var(--blink-dark);
-  min-height: 100%;
-  overflow-x: hidden;
-}
-
-
-/* ============================================================
-   Liquid Glass (HIG · Materials)
-   ------------------------------------------------------------
-   El material es una CAPA FUNCIONAL: barra de navegacion, fichas
-   de producto, tarjetas de precio y el cierre de la pagina. Nunca
-   se usa para el contenido ni para los datos.
-
-   - El desenfoque y la luminosidad vienen del material "regular"
-     del UI Kit (blur 6/15/30 px).
-   - El brillo especular es el borde superior iluminado.
-   - Con "reducir transparencia" del sistema, el material se
-     sustituye por un relleno plano.
-   ============================================================ */
-.ld-glass-card {
-  position: relative;
-  background: var(--ld-glass-bg);
-  -webkit-backdrop-filter: blur(var(--ld-glass-blur)) saturate(180%);
-  backdrop-filter: blur(var(--ld-glass-blur)) saturate(180%);
-  border: 1px solid var(--ld-glass-edge);
-  border-radius: 22px;
-  box-shadow:
-    inset 0 1px 0 var(--ld-glass-highlight),
-    0 1px 2px rgb(from var(--negro) r g b / 0.04),
-    0 12px 32px rgb(from var(--negro) r g b / 0.06);
-  overflow: hidden;
-}
-/* El reflejo que recorre la superficie. */
-.ld-glass-card::before {
-  content: "";
+.visualmente-oculto {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    160deg,
-    rgb(from var(--halo) r g b / 0.34) 0%,
-    rgb(from var(--halo) r g b / 0.06) 38%,
-    rgb(from var(--halo) r g b / 0) 68%
-  );
-}
-.ld-glass-card > * {
-  position: relative;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* Pastilla de cristal: chip, etiqueta o boton secundario. */
-.ld-glass-pill {
+.lp-seccion--oscura {
+  --lp-fondo: #000000;
+  --lp-fondo-alt: #1c1c1e;
+  --lp-texto: #ffffff;
+  --lp-texto-2: #ebebf5;
+  --lp-texto-3: #a1a1aa;
+  --lp-enlace: #8cc7ff;
+  --lp-acento: #0091ff;
+  --lp-borde: rgba(235, 235, 245, 0.18);
+  --lp-relleno: rgba(235, 235, 245, 0.07);
+  --lp-relleno-fuerte: rgba(235, 235, 245, 0.12);
+}
+
+.lp *,
+.lp *::before,
+.lp *::after {
+  box-sizing: border-box;
+}
+
+.lp-seccion {
+  background: var(--lp-fondo);
+  color: var(--lp-texto);
+  padding-block: clamp(3.5rem, 8vw, 6.5rem);
+}
+
+.lp-seccion[id] {
+  /* La barra mide 57 px: el ancla deja la sección justo debajo, sin que
+     asome el borde de la sección anterior por la franja de la barra. */
+  scroll-margin-top: 57px;
+}
+
+.lp-contenido {
+  width: min(100% - 2.5rem, var(--lp-ancho));
+  margin-inline: auto;
+}
+
+.lp-contenido--estrecho {
+  max-width: 720px;
+}
+
+.lp-titulo-seccion {
+  font-size: var(--lp-fs-seccion);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--lp-texto);
+}
+
+.lp-subtitulo {
+  font-size: clamp(1.25rem, 2.1vw, 1.625rem);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.85rem;
+  color: var(--lp-texto);
+}
+
+.lp-dos-tonos {
+  font-size: var(--lp-fs-parrafo);
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: var(--lp-texto-2);
+  text-wrap: pretty;
+}
+
+.lp-dos-tonos strong {
+  font-weight: 700;
+  color: var(--lp-texto);
+}
+
+.lp sup {
+  font-size: 0.62em;
+  line-height: 0;
+  vertical-align: super;
+  color: inherit;
+}
+
+/* --- Enlaces y botones --- */
+
+.lp-enlace {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.32rem 0.75rem;
-  border-radius: 999px;
-  background: rgb(from var(--papel) r g b / 0.55);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--ld-glass-edge);
-  box-shadow: inset 0 1px 0 var(--ld-glass-highlight);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--blink-text-muted);
-}
-
-/* Banda de cristal a sangre: el cierre de la pagina. */
-.ld-glass-band {
-  position: relative;
-  /* Un velo de acento detras del cristal: sobre una pagina clara el
-     material solo se ve si hay algo que difuminar. */
-  background:
-    radial-gradient(85% 130% at 50% 0%, rgb(from var(--acento) r g b / 0.16), transparent 70%),
-    var(--ld-glass-bg);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  backdrop-filter: blur(32px) saturate(180%);
-  border-top: 1px solid var(--ld-glass-edge);
-  border-bottom: 1px solid var(--ld-glass-edge);
-  box-shadow: inset 0 1px 0 var(--ld-glass-highlight);
-}
-
-/* Boton de cristal (secundario del header y del cierre). */
-.ld-btn--glass {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--blink-dark);
+  gap: 0.2rem;
+  min-height: 44px;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  color: var(--lp-enlace);
+  font-family: inherit;
+  font-size: var(--lp-fs-cuerpo);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
   text-decoration: none;
-  background: rgb(from var(--papel) r g b / 0.5);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--ld-glass-edge);
-  box-shadow: inset 0 1px 0 var(--ld-glass-highlight);
-  transition: background-color var(--transition-speed), transform var(--transition-speed);
+  cursor: pointer;
 }
-.ld-btn--glass:hover {
-  background: rgb(from var(--papel) r g b / 0.75);
+
+.lp-enlace:hover {
+  text-decoration: underline;
 }
-.ld-btn--glass:active {
+
+.lp-enlace .icon {
+  width: 0.7em;
+  height: 0.7em;
+}
+
+.lp-enlaces {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin: 0.5rem 0 0;
+  padding: 0 0 1.15rem;
+  list-style: none;
+}
+
+.lp-enlaces--pie {
+  margin-top: clamp(1.75rem, 4vw, 2.5rem);
+  padding-bottom: 0;
+}
+
+.lp-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 48px;
+  padding: 0.7rem 1.4rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  /* 19 px / 700 = texto grande a efectos de contraste (WCAG 1.4.3). */
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    filter var(--transition-speed),
+    background var(--transition-speed);
+}
+
+.lp-boton:active {
   transform: scale(0.98);
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .ld-glass-card,
-  .ld-glass-pill,
-  .ld-glass-band,
-  .ld-btn--glass {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: var(--color-bg-elevated);
-  }
+.lp-boton--primario {
+  background: var(--lp-acento);
+  color: #ffffff;
 }
 
-/* ---------------------------------------------------------
-   Header fijo
-   --------------------------------------------------------- */
-/* Envoltorio del header: el material translucido vive en .ld-header,
-   para que la barra pueda flotar sobre el contenido. */
-.ld-glass {
+.lp-boton--primario:hover {
+  filter: brightness(1.08);
+}
+
+.lp-boton--fantasma {
+  background: transparent;
+  color: var(--lp-enlace);
+  padding-inline: 0.9rem;
+}
+
+.lp-boton--fantasma:hover {
+  text-decoration: underline;
+}
+
+.lp-boton .icon {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+/* --- Salto al contenido --- */
+
+.lp-salto {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0 0 var(--radius-md) 0;
+  background: var(--lp-fondo);
+  color: var(--lp-enlace);
+  font-weight: 600;
+}
+
+.lp-salto:focus {
+  left: 0;
+}
+
+/* --- Barra superior --- */
+
+.lp-nav {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 40;
+  background: rgb(255 255 255 / 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--ios-material-blur-large));
+  backdrop-filter: saturate(180%) blur(var(--ios-material-blur-large));
+  border-bottom: 1px solid var(--lp-borde);
 }
-.ld-header {
-  position: relative;
-  z-index: 50;
-  /* Liquid Glass (iOS 27, variante "regular"): difumina y ajusta la
-     luminosidad del fondo. Apple's HIG pide usarlo con moderacion y solo
-     en la capa funcional: aqui, el header. Nunca en el POS. */
-  background: rgb(from var(--papel) r g b / 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.1);
-  box-shadow: inset 0 -1px 0 rgb(from var(--halo) r g b / 0.12);
-}
-/* Brillo especular al pasar el puntero: es lo que aportaba el
-   <Glass> de Konsta, resuelto en CSS para no arrastrar Konsta al primer
-   paint de la landing (la landing no usa nada mas de Konsta). */
-.ld-header::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgb(from var(--halo) r g b / 0.3) 0%,
-    rgb(from var(--halo) r g b / 0) 62%
-  );
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-.ld-header:hover::after {
-  opacity: 1;
-}
-/* Respeta "reducir transparencia" del sistema operativo. */
-@media (prefers-reduced-transparency: reduce) {
-  .ld-header {
-    background: var(--blink-bg-main);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-.ld-header__inner {
-  max-width: var(--ld-max);
-  margin: 0 auto;
-  padding: 0.85rem var(--ld-gutter);
+
+.lp-nav__fila {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  width: min(100% - 2.5rem, var(--lp-ancho));
+  min-height: 56px;
+  margin-inline: auto;
 }
-.ld-logo {
+
+.lp-nav__marca {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  text-decoration: none;
-  flex: none;
-}
-.ld-logo .brand-logo {
-  width: 136px;
-}
-.ld-nav__login {
-  display: none;
-}
-
-/* Navegación central (desktop) */
-.ld-nav {
-  display: flex;
-  align-items: center;
-  gap: 1.75rem;
-  margin-left: auto;
-}
-.ld-nav__link {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--blink-text-muted);
-  text-decoration: none;
-  padding: 0.35rem 0;
-  border-bottom: 2px solid transparent;
-  transition: color var(--transition-speed), border-color var(--transition-speed);
-  white-space: nowrap;
-}
-.ld-nav__link:hover {
-  color: var(--blink-dark);
-  border-bottom-color: var(--blink-primary);
-}
-.ld-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
   flex: none;
 }
 
-/* Botones de la landing */
-.ld-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.3rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color var(--transition-speed), color var(--transition-speed),
-    border-color var(--transition-speed), transform var(--transition-speed),
-    box-shadow var(--transition-speed);
-}
-/* Rol Primary: el mismo material de cristal que los botones de la app
-   (velo + desenfoque + brillo especular + canto). El texto va en
-   `--color-text-on-accent`: con el token inverso, en oscuro salia
-   negro sobre el azul. */
-.ld-btn--primary {
-  background: var(--ios-veil), var(--blink-primary);
-  color: var(--color-text-on-accent);
-  -webkit-backdrop-filter: blur(var(--ios-blur)) saturate(180%);
-  backdrop-filter: blur(var(--ios-blur)) saturate(180%);
-  box-shadow: var(--ios-specular-soft), var(--ios-rim),
-    0 6px 18px rgb(from var(--acento) r g b / 0.28);
-}
-.ld-btn--primary:hover {
-  background: var(--ios-veil), var(--color-accent-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--ios-specular-soft), var(--ios-rim),
-    0 10px 26px rgb(from var(--acento) r g b / 0.34);
-}
-.ld-btn--lg {
-  padding: 1rem 2.1rem;
-  font-size: var(--fs-base);
-  border-radius: 14px;
-}
-
-/* Botón hamburguesa (móvil) */
-.ld-burger {
-  display: none;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgb(from var(--tinta) r g b / 0.24);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--blink-dark);
-  cursor: pointer;
-  place-items: center;
-  flex: none;
-}
-
-/* ---------------------------------------------------------
-   Hero
-   --------------------------------------------------------- */
-.ld-hero {
-  padding: clamp(3rem, 8vw, 6rem) var(--ld-gutter) clamp(3.5rem, 9vw, 7rem);
-}
-.ld-hero__inner {
-  max-width: var(--ld-max);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: clamp(2rem, 6vw, 4.5rem);
-  align-items: center;
-}
-.ld-hero h1 {
-  font-size: clamp(2.1rem, 5.4vw, 3.6rem);
-  line-height: 1.06;
-  letter-spacing: -0.03em;
-  font-weight: 800;
-  color: var(--blink-dark);
-  margin: 0 0 1.35rem;
-}
-.ld-hero__sub {
-  font-size: clamp(1rem, 1.9vw, 1.2rem);
-  line-height: 1.6;
-  color: var(--blink-text-muted);
-  max-width: 54ch;
-  margin: 0 0 2.4rem;
-}
-.ld-hero__cta {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-}
-.ld-hero__note {
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.ld-hero__note .icon {
-  color: var(--blink-success);
-}
-
-/* Mockup del POS + celular */
-  .ld-mock {
-    /* Hueco reservado para el movil, que se apoya en el marco del
-       POS sin tapar el contenido de la pantalla. */
-    --ld-mock-gap: 124px;
-    position: relative;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-end;
-    gap: 0;
-    min-height: 380px;
-    padding-right: var(--ld-mock-gap);
-  }
-  .ld-mock__pc {
-    width: 100%;
-    max-width: 100%;
-    /* Ilustracion del producto: el marco y la pantalla NO se invierten con
-       el modo (HIG · Dark Mode: "if an asset looks good in only one mode,
-       modify the asset"). El movil se dibuja con su UI en claro. */
-    background: var(--ld-marco);
-    border-radius: 16px;
-    padding: 10px;
-    box-shadow: 0 30px 60px rgb(from var(--negro) r g b / 0.22);
-  }
-.ld-mock__screen {
-  background: var(--blink-bg-main);
-  border-radius: 10px;
-  padding: 1rem 1.1rem 1.2rem;
-  min-height: 260px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-.ld-mock__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.12);
-}
-.ld-mock__search {
-  flex: 1;
-  height: 30px;
-  border-radius: var(--radius-pill);
-  background: rgb(from var(--tinta) r g b / 0.07);
-  display: flex;
-  align-items: center;
-  padding: 0 0.85rem;
-  font-size: 0.7rem;
-  color: var(--blink-text-muted);
-  gap: 0.4rem;
-}
-.ld-mock__line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.78rem;
-  color: var(--blink-text-muted);
-  padding: 0.3rem 0;
-  border-bottom: 1px dashed rgb(from var(--tinta) r g b / 0.12);
-}
-.ld-mock__line b {
-  color: var(--blink-dark);
-  font-weight: 600;
-}
-.ld-mock__total {
-  margin-top: auto;
-  padding-top: 0.85rem;
-  border-top: 2px solid var(--blink-dark);
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-.ld-mock__total span {
-  font-size: 0.75rem;
-  color: var(--blink-text-muted);
-}
-.ld-mock__total strong {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--blink-dark);
-  font-variant-numeric: tabular-nums;
-}
-.ld-mock__bs {
-  font-size: 0.72rem;
-  color: var(--blink-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-  .ld-mock__phone {
-    position: absolute;
-    right: 0;
-    bottom: -1.75rem;
-    width: calc(var(--ld-mock-gap) - 8px);
-    background: var(--ld-marco);
-    border-radius: 22px;
-    padding: 8px;
-    box-shadow: 0 24px 48px rgb(from var(--negro) r g b / 0.3);
-  }
-.ld-mock__phone-screen {
-  background: var(--ld-pantalla);
-  border-radius: 16px;
-  aspect-ratio: 9 / 17;
-  padding: 0.7rem 0.55rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-.ld-mock__frame {
-  width: 100%;
-  flex: 1;
-  border: 2px solid var(--blink-primary);
-  border-radius: 10px;
-  position: relative;
-  display: grid;
-  place-items: center;
-  color: var(--blink-primary);
-}
-.ld-mock__barcode {
-  width: 62%;
-  height: 34%;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--blink-dark) 0 2px,
-    transparent 2px 4px,
-    var(--blink-dark) 4px 5px,
-    transparent 5px 8px
-  );
-  opacity: 0.75;
-}
-.ld-mock__pill {
-  font-size: 0.58rem;
-  font-weight: 700;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: rgb(from var(--verde) r g b / 0.12);
-  color: var(--blink-success);
-}
-
-/* ---------------------------------------------------------
-   Secciones genéricas
-   --------------------------------------------------------- */
-.ld-section {
-  padding: clamp(3.5rem, 9vw, 6.5rem) var(--ld-gutter);
-}
-  .ld-section--dark {
-    background: var(--ld-banda-bg);
-    color: var(--ld-banda-ink);
-  }
-.ld-section__inner {
-  max-width: var(--ld-max);
-  margin: 0 auto;
-}
-.ld-section__head {
-  max-width: 62ch;
-  margin: 0 auto clamp(2.5rem, 6vw, 4rem);
-  text-align: center;
-}
-  .ld-section__head h2 {
-    font-family: var(--font-display);
-    font-size: clamp(1.7rem, 3.6vw, 2.5rem);
-    line-height: 1.12;
-    letter-spacing: -0.025em;
-    font-weight: 700;
-    margin: 0 0 0.9rem;
-  }
-.ld-section__head p {
-  font-size: var(--fs-lg);
-  line-height: 1.6;
-  color: var(--blink-text-muted);
-  margin: 0;
-}
-  .ld-section--dark .ld-section__head p {
-    color: rgb(from var(--ld-banda-ink) r g b / 0.72);
-  }
-
-/* ---------------------------------------------------------
-   Beneficios (grid de 3)
-   --------------------------------------------------------- */
-
-/* ---------------------------------------------------------
-   Ecosistema / prueba social
-   --------------------------------------------------------- */
-/* Sobre fondo oscuro el gris de marca no alcanza contraste: se usa un
-   blanco atenuado en su lugar. */
-  .ld-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-  }
-  .ld-stat {
-    border: 1px solid rgb(from var(--ld-banda-ink) r g b / 0.16);
-    border-radius: var(--radius-md);
-    padding: 1.35rem;
-  }
-.ld-stat strong {
+.lp-nav__marca img {
   display: block;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+  width: auto;
+  height: 22px;
 }
-  .ld-stat span {
-    font-size: var(--fs-sm);
-    color: rgb(from var(--ld-banda-ink) r g b / 0.68);
-    line-height: 1.45;
-    display: block;
-    margin-top: 0.35rem;
-  }
 
-/* ---------------------------------------------------------
-   Precios
-   --------------------------------------------------------- */
-.ld-pricing {
-  max-width: 620px;
-  margin: 0 auto;
-  background: var(--blink-bg-main);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgb(from var(--tinta) r g b / 0.12);
-  box-shadow: 0 24px 60px rgb(from var(--negro) r g b / 0.1);
-  padding: clamp(2rem, 4.5vw, 3rem);
-  text-align: center;
+/* Una sola marca visible: la oscura sobre la barra clara y viceversa. */
+.lp-nav__marca .lp-nav__marca--oscura {
+  display: none;
 }
-.ld-pricing h3 {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  margin: 0 0 0.9rem;
-  color: var(--blink-text-muted);
+
+.lp-nav--oscura .lp-nav__marca--clara {
+  display: none;
 }
-.ld-pricing__price {
+
+.lp-nav--oscura .lp-nav__marca--oscura {
+  display: block;
+}
+
+.lp-nav__marca:hover {
+  opacity: 0.72;
+}
+
+.lp-nav__enlaces {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-}
-.ld-pricing__price strong {
-  font-size: clamp(3rem, 8vw, 4.5rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--blink-dark);
-}
-.ld-pricing__price span {
-  font-size: var(--fs-lg);
-  color: var(--blink-text-muted);
-  font-weight: 600;
-}
-.ld-pricing__hint {
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-  margin: 0 0 2rem;
-}
-.ld-pricing__list {
-  list-style: none;
-  margin: 0 0 2rem;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  text-align: left;
-  max-width: 400px;
+  align-items: center;
+  gap: 1.5rem;
   margin-inline: auto;
 }
-.ld-pricing__list li {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: var(--fs-sm);
-  color: var(--blink-dark);
-}
-.ld-pricing__list .icon {
-  color: var(--blink-success);
-  flex: none;
-}
 
-/* ---------------------------------------------------------
-   Footer
-   --------------------------------------------------------- */
-.ld-footer {
-  border-top: 1px solid rgb(from var(--tinta) r g b / 0.12);
-  padding: clamp(2.5rem, 5vw, 3.5rem) var(--ld-gutter);
-}
-.ld-footer__inner {
-  max-width: var(--ld-max);
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-.ld-footer__legal {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-}
-.ld-footer__legal a {
-  color: var(--blink-text-muted);
-  text-decoration: none;
-}
-.ld-footer__legal a:hover {
-  color: var(--blink-primary);
-}
-.ld-footer__copy {
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-  margin: 0;
-}
-
-/* ---------------------------------------------------------
-   Páginas legales (públicas)
-   --------------------------------------------------------- */
-.ld-legal {
-  background: var(--blink-bg-main);
-  color: var(--blink-dark);
-  min-height: 100%;
-  padding-bottom: 4rem;
-}
-  /* Mismo lenguaje que la landing: barra de cristal con el logo, los
-     enlaces de siempre y una sola llamada a la accion. */
-  .ld-legal__bar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.85rem var(--ld-gutter);
-    background: rgb(from var(--papel) r g b / 0.72);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid var(--ld-glass-edge);
-    box-shadow: inset 0 -1px 0 rgb(from var(--halo) r g b / 0.12);
-  }
-  .ld-legal__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-  .ld-legal__main {
-    max-width: min(var(--ld-measure), calc(var(--ld-max) - 2 * var(--ld-gutter)));
-    margin: 0 auto;
-    padding: clamp(2.5rem, 6vw, 4.5rem) var(--ld-gutter) 0;
-  }
-  /* La lectura larga pide una medida corta: ~68 caracteres. */
-  .ld-legal__main > * {
-    max-width: 100%;
-  }
-  .ld-legal__main h1 {
-    font-family: var(--font-display);
-    font-size: clamp(2.1rem, 4.6vw, 3rem);
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.08;
-    margin: 0 0 0.6rem;
-  }
-.ld-legal__sub {
-  font-size: var(--fs-lg);
-  color: var(--blink-text-muted);
-  margin: 0 0 2.75rem;
-}
-  .ld-legal__main section {
-    margin-bottom: 2.25rem;
-    padding-bottom: 2.25rem;
-    border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.09);
-  }
-  .ld-legal__main section:last-of-type {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-.ld-legal__main h2 {
-  font-size: var(--fs-base);
-  font-weight: 700;
-  margin: 0 0 0.6rem;
-  color: var(--blink-dark);
-}
-.ld-legal__main section p {
-  font-size: var(--fs-sm);
-  line-height: 1.75;
-  color: var(--blink-text-muted);
-  margin: 0;
-}
-  /* Sin marco duro: un bloque de cristal con el texto de entrada. */
-  .ld-legal__intro {
-    position: relative;
-    font-size: var(--fs-base);
-    line-height: 1.75;
-    color: var(--blink-dark);
-    margin: 0 0 3rem;
-    padding: 1.35rem 1.5rem;
-    background: rgb(from var(--papel) r g b / 0.6);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--ld-glass-edge);
-    border-radius: 18px;
-    box-shadow: inset 0 1px 0 var(--ld-glass-highlight);
-  }
-.ld-legal__item {
-  margin-top: 1.1rem;
-}
-.ld-legal__item h3 {
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--blink-dark);
-  margin: 0 0 0.3rem;
-}
-.ld-legal__foot {
-  margin-top: 3rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgb(from var(--tinta) r g b / 0.12);
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-}
-.ld-legal__foot a {
-  color: var(--blink-primary);
-}
-
-
-/* ============================================================
-   Secciones — estructura de pagina tipo Apple
-   ============================================================ */
-
-/* ---------------------------------------------------------
-   Momentos: una idea por bloque, con su visual al lado.
-   Se alternan como en las paginas de producto de Apple.
-   --------------------------------------------------------- */
-.ld-moments {
-  padding: clamp(3.5rem, 9vw, 7rem) 0;
-}
-.ld-moment {
-  max-width: var(--ld-max);
-  margin: 0 auto;
-  padding: 0 var(--ld-gutter);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  align-items: center;
-  gap: clamp(2rem, 6vw, 5rem);
-}
-.ld-moment + .ld-moment {
-  margin-top: clamp(3.5rem, 8vw, 6.5rem);
-}
-.ld-moment--flip .ld-moment__body {
-  order: 2;
-}
-.ld-moment__num {
-  display: inline-block;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--blink-primary);
-  margin-bottom: 0.85rem;
-}
-.ld-moment h2 {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3.6vw, 2.75rem);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
-  margin: 0 0 0.85rem;
-  color: var(--blink-dark);
-}
-.ld-moment p {
-  font-size: clamp(1rem, 1.6vw, 1.15rem);
-  line-height: 1.6;
-  color: var(--blink-text-muted);
-  margin: 0;
-  max-width: 46ch;
-}
-
-/* ---------------------------------------------------------
-   Escenas: los visuales de cada momento (sin imagenes).
-   --------------------------------------------------------- */
-.ld-scene {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 340px;
-  border-radius: 26px;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgb(from var(--acento) r g b / 0.1), transparent 62%),
-    linear-gradient(180deg, rgb(from var(--papel) r g b / 0.5), rgb(from var(--papel) r g b / 0.9));
-  border: 1px solid var(--ld-glass-edge);
-  overflow: hidden;
-}
-
-/* Escena 1 · el celular escaneando */
-.ld-scene__phone {
-  position: relative;
-  width: 186px;
-  border-radius: 30px;
-  padding: 9px;
-  background: var(--ld-marco);
-  box-shadow: 0 22px 46px rgb(from var(--negro) r g b / 0.22);
-}
-.ld-scene__view {
-  position: relative;
-  aspect-ratio: 9 / 14;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #1c1c1e, #000);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-.ld-scene__bars {
-  width: 62%;
-  height: 34%;
-  background: repeating-linear-gradient(
-    90deg,
-    #fff 0 2px,
-    transparent 2px 4px,
-    #fff 4px 6px,
-    transparent 6px 9px
-  );
-  opacity: 0.9;
-}
-.ld-scene__mark {
-  position: absolute;
-  inset: 22% 16%;
-  border: 2px solid rgb(from var(--acento) r g b / 0.9);
-  border-radius: 14px;
-}
-.ld-scene__mark::before,
-.ld-scene__mark::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--blink-primary);
-}
-.ld-scene__mark::before {
-  top: -2px;
-  left: -2px;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: 12px;
-}
-.ld-scene__mark::after {
-  bottom: -2px;
-  right: -2px;
-  border-left: none;
-  border-top: none;
-  border-bottom-right-radius: 12px;
-}
-.ld-scene__toast {
-  position: absolute;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--blink-primary);
-  background: rgb(from var(--halo) r g b / 0.92);
-  color: #007aff;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  box-shadow: 0 6px 16px rgb(from var(--negro) r g b / 0.16);
-}
-
-/* Escena 2 · el cobro en dos monedas */
-.ld-scene__card {
-  width: min(330px, 82%);
-  padding: 1.35rem 1.5rem;
-  border-radius: 22px;
-  background: rgb(from var(--papel) r g b / 0.86);
-  border: 1px solid var(--ld-glass-edge);
-  box-shadow:
-    inset 0 1px 0 var(--ld-glass-highlight),
-    0 18px 40px rgb(from var(--negro) r g b / 0.1);
-}
-.ld-scene__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.08);
-  font-size: var(--fs-sm);
-  color: var(--blink-text-muted);
-}
-.ld-scene__row:last-child {
-  border-bottom: none;
-}
-.ld-scene__row b {
-  font-size: var(--fs-base);
-  font-weight: 600;
-  color: var(--blink-dark);
-  font-variant-numeric: tabular-nums;
-}
-.ld-scene__row--hi b {
-  color: var(--blink-primary);
-}
-.ld-scene__chip {
-  position: absolute;
-  right: 8%;
-  bottom: 12%;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--blink-text-muted);
-  background: rgb(from var(--papel) r g b / 0.9);
-  border: 1px solid var(--ld-glass-edge);
-  border-radius: 999px;
-  padding: 0.35rem 0.8rem;
-  box-shadow: 0 8px 20px rgb(from var(--negro) r g b / 0.1);
-}
-
-/* Escena 3 · vendiendo sin conexion */
-.ld-scene__status {
+.lp-nav__enlaces a {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--blink-text-muted);
-  margin-bottom: 0.9rem;
-}
-.ld-scene__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--blink-warning);
-  box-shadow: 0 0 0 4px rgb(from var(--acento) r g b / 0.12);
-}
-
-/* ---------------------------------------------------------
-   Beneficios: tarjetas de cristal.
-   --------------------------------------------------------- */
-.ld-benefits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 0.9rem;
-}
-.ld-benefit {
-  padding: 1.5rem 1.6rem 1.7rem;
-  border-radius: 22px;
-}
-  .ld-benefit__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
-    display: grid;
-    place-items: center;
-    background: rgb(from var(--acento) r g b / 0.12);
-    color: var(--blink-primary);
-    margin-bottom: 1rem;
-  }
-.ld-benefit h3 {
-  font-size: var(--fs-base);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.35rem;
-}
-.ld-benefit p {
-  font-size: var(--fs-sm);
-  line-height: 1.6;
-  color: var(--blink-text-muted);
-  margin: 0;
-}
-
-/* ---------------------------------------------------------
-   Preguntas frecuentes.
-   --------------------------------------------------------- */
-.ld-faq {
-  max-width: 820px;
-  margin: 0 auto;
-  display: grid;
-  gap: 0.6rem;
-}
-.ld-faq details {
-  border-radius: 18px;
-  padding: 0;
-  overflow: hidden;
-}
-.ld-faq summary {
-  cursor: pointer;
-  list-style: none;
-  padding: 1.05rem 1.4rem;
-  font-size: var(--fs-base);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--blink-dark);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.ld-faq summary::-webkit-details-marker {
-  display: none;
-}
-.ld-faq__indicator {
-  display: flex;
-  flex: none;
-  color: var(--blink-text-muted);
-  transform: rotate(45deg);
-  transition: transform var(--transition-speed);
-}
-.ld-faq details[open] .ld-faq__indicator {
-  transform: none;
-}
-.ld-faq p {
-  margin: 0;
-  padding: 0 1.4rem 1.2rem;
-  font-size: var(--fs-sm);
-  line-height: 1.65;
-  color: var(--blink-text-muted);
-  max-width: 62ch;
-}
-
-/* ---------------------------------------------------------
-   Cierre: banda de cristal a todo el ancho.
-   --------------------------------------------------------- */
-.ld-cta {
-  padding: clamp(3.5rem, 9vw, 6.5rem) 0;
-  text-align: center;
-}
-.ld-cta__inner {
-  max-width: 620px;
-  margin: 0 auto;
-  padding: 0 var(--ld-gutter);
-}
-.ld-cta h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4.2vw, 3.25rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.06;
-  margin: 0 0 0.75rem;
-  color: var(--blink-dark);
-}
-.ld-cta p {
-  font-size: clamp(1rem, 1.6vw, 1.15rem);
-  color: var(--blink-text-muted);
-  margin: 0 0 1.75rem;
-}
-.ld-cta__actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* Pie de las paginas legales. */
-.ld-legal__foot-bar {
-  max-width: calc(var(--ld-max) - 2 * var(--ld-gutter));
-  margin: 0 auto;
-  padding: 1.5rem var(--ld-gutter) 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: var(--fs-xs);
-  color: var(--blink-text-muted);
-}
-.ld-legal__foot-bar nav {
-  display: flex;
-  gap: 1.1rem;
-  flex-wrap: wrap;
-}
-.ld-legal__foot-bar a {
-  color: var(--blink-text-muted);
+  min-height: 44px;
+  color: var(--lp-texto-2);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
   text-decoration: none;
 }
-.ld-legal__foot-bar a:hover {
-  color: var(--blink-dark);
+
+.lp-nav__enlaces a:hover {
+  color: var(--lp-texto);
+}
+
+.lp-nav__cta {
+  min-height: 44px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Sobre una sección oscura el cristal blanco se lee gris: la barra se tiñe
+   de negro y el contenido pasa a claro, como hace Apple. */
+.lp-nav--oscura {
+  background: rgb(0 0 0 / 0.72);
+  border-bottom-color: rgb(255 255 255 / 0.16);
+}
+
+.lp-nav--oscura .lp-nav__enlaces a {
+  color: rgb(255 255 255 / 0.76);
+}
+
+.lp-nav--oscura .lp-nav__enlaces a:hover {
+  color: #fff;
+}
+
+/* --- Portada --- */
+
+.lp-hero {
+  padding-block: clamp(1.5rem, 4vw, 2.5rem) 0;
+  text-align: center;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgb(0 122 255 / 0.07) 0%, rgb(0 122 255 / 0) 62%),
+    var(--lp-fondo);
+}
+
+.lp-cinta {
+  margin-bottom: clamp(1.75rem, 4vw, 2.75rem);
+  padding: 0.35rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--lp-fondo-alt);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--lp-texto-2);
+}
+
+.lp-cinta p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.lp-cinta .lp-enlace {
+  font-size: 0.9375rem;
+}
+
+.lp-hero__marca {
+  display: block;
+  width: clamp(220px, 34vw, 372px);
+  height: auto;
+  margin: 0 auto clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.lp-hero__titular {
+  font-size: var(--lp-fs-hero);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+  color: var(--lp-texto);
+}
+
+.lp-hero__sub {
+  display: block;
+  margin-top: 0.35em;
+  font-size: 0.42em;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--lp-texto-2);
+}
+
+.lp-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: clamp(1.5rem, 3.5vw, 2.25rem);
+}
+
+.lp-hero__hardware {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: clamp(2.25rem, 5.5vw, 3.5rem);
+  padding-bottom: clamp(2.5rem, 6vw, 4rem);
+}
+
+/* La portada usa la ventana de escritorio; en el celular, el teléfono. */
+.lp-hero__movil {
+  display: none;
+}
+
+.lp-hero__escritorio {
+  width: 100%;
+}
+
+.lp-nota-visual {
+  font-size: var(--lp-fs-nota);
+  color: var(--lp-texto-3);
+  text-align: center;
+}
+
+/* --- Ventana de escritorio con la captura real --- */
+
+.lp-ventana {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(29, 29, 31, 0.12);
+  box-shadow:
+    0 2px 6px rgba(29, 29, 31, 0.08),
+    0 30px 70px -24px rgba(29, 29, 31, 0.38);
+  text-align: left;
+}
+
+.lp-ventana__barra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  background: #f6f6f8;
+  border-bottom: 1px solid rgba(29, 29, 31, 0.08);
+}
+
+.lp-ventana__punto {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.lp-ventana__punto--rojo {
+  background: #ff5f57;
+}
+
+.lp-ventana__punto--ambar {
+  background: #febc2e;
+}
+
+.lp-ventana__punto--verde {
+  background: #28c840;
+}
+
+.lp-ventana__url {
+  margin-inline: auto;
+  padding: 2px 40px;
+  border-radius: 6px;
+  background: rgba(29, 29, 31, 0.06);
+  color: #6e6e6e;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.lp-ventana img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top left;
+}
+
+/* --- Beneficios (oscuro) --- */
+
+.lp-beneficios__rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2.25rem, 5vw, 3.5rem) clamp(2rem, 6vw, 5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-beneficio__check {
+  display: block;
+  margin-bottom: 0.9rem;
+  color: var(--lp-acento);
+}
+
+.lp-beneficio__check .icon {
+  width: 28px;
+  height: 28px;
+}
+
+.lp-beneficio__titulo {
+  font-size: var(--lp-fs-beneficio);
+  font-weight: 650;
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  color: var(--lp-texto);
+}
+
+.lp-disponibilidad {
+  margin-top: clamp(2.75rem, 6vw, 4rem);
+  font-size: var(--lp-fs-cuerpo);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--lp-texto-2);
+}
+
+.lp-disponibilidad strong {
+  font-weight: 700;
+  color: var(--lp-texto);
+}
+
+/* --- Pasos con el visual pegajoso --- */
+
+.lp-configurar .lp-titulo-seccion {
+  margin-bottom: clamp(2rem, 5vw, 3.25rem);
+}
+
+.lp-pegajoso {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+
+.lp-pegajoso__hardware {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+
+.lp-pegajoso__escena {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease-in-out,
+    visibility 0.4s ease-in-out;
+}
+
+.lp-pegajoso__escena--activa {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lp-pegajoso__texto .lp-paso {
+  display: flex;
+  align-items: center;
+  min-height: 62vh;
+}
+
+.lp-paso__titulo {
+  font-size: clamp(1.375rem, 2.6vw, 2rem);
+  font-weight: 650;
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+  margin-bottom: 0.85rem;
+  color: var(--lp-texto);
+  text-wrap: balance;
+}
+
+/* Apilado (tableta): el párrafo no debe cruzar toda la pantalla. */
+.lp-pasos .lp-paso__texto {
+  max-width: 60ch;
+}
+
+.lp-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.75rem, 8vw, 4rem);
+}
+
+.lp-paso__hardware {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* El detalle de la cuenta, recortado de la captura real. */
+.lp-cuenta {
+  width: min(340px, 78%);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--lp-borde);
+  box-shadow:
+    0 2px 6px rgba(29, 29, 31, 0.06),
+    0 24px 60px -22px rgba(29, 29, 31, 0.38);
+}
+
+.lp-cuenta img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* --- Teléfono con la captura real --- */
+
+.lp-telefono {
+  width: min(288px, 78vw);
+  flex: none;
+}
+
+.lp-telefono__marco {
+  position: relative;
+  aspect-ratio: 393 / 852;
+  padding: 9px;
+  border-radius: 42px;
+  background: #1c1c1e;
+  border: 1px solid rgba(235, 235, 245, 0.24);
+  box-shadow: var(--shadow-pop);
+}
+
+.lp-telefono__pantalla {
+  position: absolute;
+  inset: 9px;
+  border-radius: 33px;
+  overflow: hidden;
+  background: #f2f2f7;
+}
+
+.lp-telefono__pantalla img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.lp-telefono__isla {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  z-index: 3;
+  width: 27%;
+  height: 11px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-pill);
+  background: #000000;
+}
+
+.lp-telefono__barra {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  z-index: 3;
+  width: 32%;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-pill);
+  background: rgba(29, 29, 31, 0.3);
+}
+
+/* --- Fila 5/12 + 8/12 (escáner móvil) --- */
+
+.lp-simple {
+  background: var(--lp-fondo-alt);
+}
+
+.lp-cuerpo-icono {
+  max-width: 44ch;
+  margin: clamp(1.25rem, 3vw, 1.75rem) auto 0;
+  font-size: var(--lp-fs-parrafo);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--lp-texto-2);
+  text-wrap: balance;
+}
+
+.lp-fila {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0 1.5rem;
+  align-items: center;
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+}
+
+.lp-fila__visual {
+  grid-column: 1 / span 5;
+  display: flex;
+  justify-content: center;
+}
+
+.lp-fila__texto {
+  grid-column: 8 / span 5;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+/* --- Confianza (oscuro) --- */
+
+.lp-seguridad__rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(2rem, 4vw, 3rem);
+  margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-pieza {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--lp-borde);
+}
+
+.lp-pieza__titulo {
+  margin-bottom: 0.7rem;
+  font-size: clamp(1.125rem, 1.9vw, 1.375rem);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--lp-texto);
+  text-wrap: balance;
+}
+
+.lp-pieza .lp-dos-tonos {
+  font-size: var(--lp-fs-cuerpo);
+  line-height: 1.5;
+}
+
+/* --- Plan --- */
+
+.lp-precios {
+  background: var(--lp-fondo-alt);
+}
+
+.lp-plan {
+  max-width: 640px;
+  margin: clamp(2.5rem, 6vw, 3.5rem) auto 0;
+  padding: clamp(2rem, 5vw, 3.25rem);
+  border-radius: 28px;
+  background: var(--lp-fondo);
+  border: 1px solid var(--lp-borde);
+  box-shadow: var(--shadow-ios-card);
+  text-align: center;
+}
+
+.lp-plan__etiqueta {
+  display: inline-block;
+  margin-bottom: 0.85rem;
+  padding: 0.25rem 0.85rem;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--lp-enlace);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.lp-plan__precio {
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--lp-texto);
+}
+
+.lp-plan__moneda {
+  letter-spacing: 0;
+  margin-right: 0.012em;
+}
+
+.lp-plan__periodo {
+  font-size: 0.3em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--lp-texto-2);
+}
+
+.lp-plan__nota {
+  margin-top: 0.6rem;
+  font-size: var(--lp-fs-cuerpo);
+  color: var(--lp-texto-2);
+}
+
+.lp-plan__lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1.5rem;
+  margin: clamp(1.75rem, 4vw, 2.25rem) 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.lp-plan__lista li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--lp-texto-2);
+}
+
+.lp-plan__lista .icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--lp-acento);
+}
+
+.lp-plan__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: clamp(1.75rem, 4vw, 2.25rem);
+}
+
+/* --- Preguntas --- */
+
+.lp-acordeon {
+  margin: clamp(2rem, 5vw, 3rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--lp-borde);
+}
+
+.lp-acordeon__item {
+  border-bottom: 1px solid var(--lp-borde);
+}
+
+.lp-acordeon__titulo {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.lp-acordeon__boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  width: 100%;
+  min-height: 64px;
+  padding: 1.05rem 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--lp-texto);
+  font-family: inherit;
+  font-size: clamp(1.0625rem, 1.9vw, 1.3125rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lp-acordeon__boton:hover .lp-acordeon__texto {
+  color: var(--lp-enlace);
+}
+
+.lp-acordeon__chevron {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--lp-texto-3);
+  transition: transform 0.32s var(--lp-curva);
+}
+
+.lp-acordeon__chevron .icon {
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.lp-acordeon__item--abierto .lp-acordeon__chevron {
+  transform: rotate(90deg);
+}
+
+.lp-acordeon__bandeja {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s var(--lp-curva);
+}
+
+.lp-acordeon__item--abierto .lp-acordeon__bandeja {
+  grid-template-rows: 1fr;
+}
+
+.lp-acordeon__contenido {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.lp-acordeon__respuesta {
+  max-width: 62ch;
+  padding: 0 0.25rem;
+  font-size: var(--lp-fs-cuerpo);
+  line-height: 1.55;
+  color: var(--lp-texto-2);
+}
+
+.lp-acordeon__item--abierto .lp-acordeon__respuesta {
+  padding-bottom: 0.5rem;
+}
+
+/* --- Notas al pie --- */
+
+.lp-notas {
+  padding-block: clamp(2rem, 4vw, 2.75rem);
+  border-top: 1px solid var(--lp-borde);
+}
+
+.lp-notas__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.35rem;
+  font-size: var(--lp-fs-nota);
+  line-height: 1.5;
+  color: var(--lp-texto-3);
+}
+
+/* --- Pie --- */
+
+.lp-pie {
+  padding-block: clamp(2rem, 4vw, 2.75rem);
+  background: var(--lp-fondo-alt);
+  color: var(--lp-texto-2);
+}
+
+.lp-pie__marca {
+  display: block;
+  width: 148px;
+  height: auto;
+  margin-bottom: 1.25rem;
+}
+
+.lp-pie__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--lp-borde);
+}
+
+.lp-pie__legal {
+  font-size: var(--lp-fs-nota);
+  color: var(--lp-texto-2);
+}
+
+.lp-pie__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-pie__enlaces .lp-enlace {
+  font-size: var(--lp-fs-nota);
+  color: var(--lp-texto-2);
+}
+
+.lp-pie__enlaces .lp-enlace:hover {
+  color: var(--lp-texto);
+}
+
+/* ============================================================
+   Adaptaciones
+   ============================================================ */
+
+@media (max-width: 1068px) {
+  .lp-seguridad__rejilla {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    max-width: 620px;
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 900px) {
-  .ld-moment,
-  .ld-moment--flip {
+  .lp-pegajoso {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .ld-moment--flip .ld-moment__body {
-    order: 0;
   }
 }
 
-/* ---------------------------------------------------------
-   Responsive
-   --------------------------------------------------------- */
-@media (max-width: 1000px) {
-  .ld-hero__inner {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 767px) {
+  .lp-nav__enlaces {
+    display: none;
   }
-  .ld-mock {
-    min-height: 340px;
-    --ld-mock-gap: 96px;
-  }
-}
 
-@media (max-width: 860px) {
-  .ld-header__inner {
-    gap: 0.75rem;
+  .lp-nav__fila {
+    justify-content: space-between;
   }
-  .ld-logo .brand-logo {
-    width: 112px;
+
+  .lp-nav__cta {
+    padding-inline: 0.9rem;
+    font-size: 0.875rem;
   }
-  .ld-nav__login {
+
+  .lp-ventana__url {
+    display: none;
+  }
+
+  .lp-hero__escritorio {
+    display: none;
+  }
+
+  .lp-hero__movil {
     display: block;
   }
-  .ld-nav {
-    position: fixed;
-    inset: 64px 0 auto 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    background: var(--blink-bg-main);
-    border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.12);
-    padding: 0.5rem var(--ld-gutter) 1rem;
-    box-shadow: 0 18px 30px rgb(from var(--negro) r g b / 0.1);
-    display: none;
-  }
-  .ld-nav--open {
-    display: flex;
-  }
-  .ld-nav__link {
-    padding: 0.85rem 0;
-    border-bottom: 1px solid rgb(from var(--tinta) r g b / 0.08);
-  }
-  .ld-burger {
-    display: grid;
-  }
-  /* El nav desplegable no ocupa sitio: la llamada a la accion se
-     pega al boton de menu, a la derecha. */
-  .ld-header__actions {
-    margin-left: auto;
-  }
-  .ld-header__actions .ld-btn--glass {
-    display: none;
-  }
-}
 
-@media (max-width: 860px) {
-  .ld-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .lp-hero__movil .lp-telefono {
+    width: min(300px, 82vw);
   }
-}
 
-@media (max-width: 560px) {
-  .ld-hero__cta {
-    flex-direction: column;
-    align-items: stretch;
+  .lp-beneficios__rejilla {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
   }
-  .ld-btn--lg {
-    width: 100%;
+
+  .lp-fila {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
   }
-  .ld-mock {
-    min-height: 290px;
-    --ld-mock-gap: 84px;
+
+  .lp-fila__visual,
+  .lp-fila__texto {
+    grid-column: 1 / -1;
   }
-  .ld-mock__phone {
-    bottom: -1.25rem;
+
+  .lp-hero__sub {
+    font-size: 0.5em;
   }
-  .ld-footer__inner {
+
+  .lp-plan__lista {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lp-cuenta {
+    width: min(320px, 88%);
+  }
+
+  .lp-pie__fila {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .lp-contenido {
+    width: min(100% - 2rem, var(--lp-ancho));
+  }
+
+  .lp-nav__fila {
+    width: min(100% - 2rem, var(--lp-ancho));
+    gap: 0.75rem;
+  }
+
+  .lp-hero__cta,
+  .lp-plan__cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lp-hero__cta .lp-boton,
+  .lp-plan__cta .lp-boton {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   Movimiento reducido: versiones estáticas
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-pegajoso__escena,
+  .lp-acordeon__bandeja,
+  .lp-acordeon__chevron {
+    transition: none;
   }
 }
