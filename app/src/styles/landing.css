@@ -1131,3 +1131,367 @@
     transition: none;
   }
 }
+
+/* ============================================================
+   Aviso de cookies
+   ------------------------------------------------------------
+   Solo en la landing pública. Se apoya en el material de la
+   hoja del sistema (mismo radio y sombra que la tarjeta de
+   instalación) y se queda sobre el pie hasta que la persona
+   responde. La decisión vive en lib/cookies.ts.
+   ============================================================ */
+
+.cookies {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: calc(100% - 1.6rem);
+  max-width: 440px;
+  padding: 1rem 1.05rem 1.05rem;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-panel), 0 12px 32px rgb(0 0 0 / 0.14);
+  transform: translateX(-50%);
+  animation: cookies-subir 0.28s ease-out;
+}
+
+.cookies__titulo {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--fs-base);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.cookies__texto {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.cookies__enlace {
+  color: var(--color-accent-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cookies__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+/* La landing no carga app.css: estos botones se visten aquí, con el mismo
+   material HIG que el resto de la app (cápsula de 40 pt, pulsación tenue). */
+.cookies__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), opacity var(--transition-speed);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cookies__boton:active {
+  opacity: 0.72;
+}
+
+.cookies__boton--primario {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.cookies__boton--secundario {
+  background: var(--color-neutral-soft);
+  color: var(--color-text-primary);
+}
+
+.cookies__boton--fantasma {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+@keyframes cookies-subir {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* En pantallas angostas las tres respuestas no caben en una fila:
+   «Aceptar todas» ocupa todo el ancho y las otras dos se reparten
+   debajo, sin cambiar el orden en que se leen. */
+@media (max-width: 420px) {
+  .cookies__acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cookies__acciones .cookies__boton--primario {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .cookies {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+    animation: cookies-subir-escritorio 0.28s ease-out;
+  }
+
+  @keyframes cookies-subir-escritorio {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookies {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Páginas legales públicas (términos y privacidad)
+   ------------------------------------------------------------
+   Legal.tsx importa este archivo, pero el rediseño de la landing
+   se llevó por delante sus clases. Se restituyen con los tokens
+   actuales: barra pegajosa, medida de lectura corta y bloques
+   separados por una línea tenue.
+   ============================================================ */
+
+.ld-legal {
+  min-height: 100dvh;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+.ld-legal__bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem clamp(1rem, 4vw, 2.5rem);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.ld-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  flex: none;
+  text-decoration: none;
+}
+
+.ld-logo .brand-logo {
+  width: 128px;
+}
+
+.ld-legal__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Botones de la barra: cápsula HIG, como en la landing. */
+.ld-btn,
+.ld-btn--glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), opacity var(--transition-speed);
+}
+
+.ld-btn--glass {
+  background: var(--color-neutral-soft);
+  color: var(--color-text-primary);
+}
+
+.ld-btn--glass:hover {
+  background: var(--color-border);
+}
+
+.ld-btn--primary {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.ld-btn--primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.ld-btn:active,
+.ld-btn--glass:active {
+  opacity: 0.72;
+}
+
+.ld-legal__main {
+  max-width: min(46rem, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 3.5rem) 0 0;
+}
+
+.ld-legal__main h1 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.ld-legal__sub {
+  margin: 0 0 2rem;
+  font-size: var(--fs-base);
+  color: var(--color-text-secondary);
+}
+
+.ld-legal__intro {
+  margin: 0 0 2.5rem;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-panel);
+  font-size: var(--fs-base);
+  line-height: 1.7;
+}
+
+.ld-legal__main section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ld-legal__main section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ld-legal__main h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+
+.ld-legal__main section p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.75;
+  color: var(--color-text-secondary);
+}
+
+.ld-legal__item {
+  margin-top: 1rem;
+}
+
+.ld-legal__item h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.ld-legal__foot {
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+
+.ld-legal__foot a {
+  color: var(--color-accent-text);
+}
+
+.ld-legal__foot-bar {
+  max-width: min(46rem, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 1.5rem 0 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+}
+
+.ld-legal__foot-bar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+}
+
+.ld-legal__foot-bar a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.ld-legal__foot-bar a:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 600px) {
+  .ld-legal__bar {
+    flex-wrap: wrap;
+  }
+
+  .ld-logo .brand-logo {
+    width: 108px;
+  }
+
+  .ld-legal__foot-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

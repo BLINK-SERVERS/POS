@@ -15,6 +15,31 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
+### Aviso de cookies
+
+- **pos.blink.com.ve** pregunta una sola vez con tres respuestas —«Aceptar
+  todas», «Solo las necesarias» y «Rechazar»— en una tarjeta con el material de
+  la hoja del sistema. La decisión se guarda en `blink.pos.cookies`
+  (`src/lib/cookies.ts`, versión 1 con fecha) y no vuelve a pedirse hasta borrar
+  los datos del sitio o cambiar la versión.
+- Los botones se visten en `landing.css` (`cookies__boton`): la landing no
+  carga `app.css`, así que no puede depender de `.btn`. Cápsula de 40 pt y el
+  azul de marca, igual que el resto de la interfaz.
+- El enlace «Política de privacidad» lleva a `/app/privacidad`, que estrena el
+  apartado **4. Cookies y consentimiento** y renumera los siguientes.
+- Alcance: solo la landing pública. La app con sesión no muestra el aviso y no
+  hay cookies publicitarias ni de seguimiento.
+- Pruebas: `src/lib/cookies.test.ts` (5 casos) y verificación en Chromium
+  (móvil y escritorio, claro y oscuro, sin errores de consola).
+
+### Páginas legales con sus estilos
+
+- El rediseño de la landing (`7792632`) borró las clases `.ld-*` de
+  `landing.css`, pero `Legal.tsx` seguía usándolas: términos y privacidad se
+  servían como HTML sin maquetar. Se restituyen en `landing.css` con los tokens
+  actuales: barra pegajosa con el lockup, medida de lectura corta, bloque de
+  entrada y bloques separados por una línea tenue.
+
 ### Marca «Blink POS» sin ondas
 
 - El lockup `marca/blink-pos.svg` (y su variante blanca) queda solo texto: las

@@ -65,6 +65,25 @@ conversión que explica el producto en menos de 3 segundos y deriva al registro.
 - **Responsive:** 3 columnas → 1 columna bajo 860px; header con hamburguesa; CTA a ancho
   completo bajo 560px.
 
+## Aviso de cookies
+
+La landing pública pregunta una sola vez cómo se usan las cookies
+(`src/components/AvisoCookies.tsx`). La tarjeta usa el material de la hoja del
+sistema —20 px de radio, superficie elevada, borde de 1 px y sombra suave—,
+centrada abajo en móvil y anclada abajo a la derecha desde 768 px.
+
+- **Tres respuestas:** «Aceptar todas», «Solo las necesarias» y «Rechazar».
+  Bajo 420 px, «Aceptar todas» ocupa el ancho completo y las otras dos se
+  reparten debajo.
+- **Persistencia:** `localStorage` (`blink.pos.cookies`, versión 1 con fecha)
+  en `src/lib/cookies.ts`; el aviso no vuelve a salir hasta borrar los datos del
+  sitio o cambiar la versión.
+- **Enlace:** «Política de privacidad» lleva a `/app/privacidad`, cuyo apartado
+  4 describe cookies y consentimiento.
+- **Botones:** clases `cookies__boton*` en `landing.css`. La landing no carga
+  `app.css`, así que `.btn` no existe aquí y los botones se visten aparte.
+- **Alcance:** solo la landing; la app con sesión nunca lo muestra.
+
 ## Verificación
 
 - `npx tsc --noEmit` → sin errores

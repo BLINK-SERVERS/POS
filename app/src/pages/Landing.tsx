@@ -10,6 +10,7 @@
 // iconos SF Symbols del núcleo (los únicos del chunk público) y toda la
 // tipografía y los materiales salen de tokens.css.
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { AvisoCookies } from "../components/AvisoCookies";
 import { Icon } from "../components/Icon";
 import { Link } from "react-router-dom";
 import ventaSrc from "../assets/landing/pos-venta.webp";
@@ -698,6 +699,8 @@ export function Landing() {
           </div>
         </div>
       </footer>
+
+      <AvisoCookies />
     </div>
   );
 }

@@ -105,19 +105,23 @@ const PRIVACIDAD: { intro: string; blocks: (Block | Section)[] } = {
       p: "Los datos de operación se guardan primero en el dispositivo para que el POS siga funcionando sin conexión. Se sincronizan de forma cifrada con la nube cuando la señal regresa. La información de cada tienda se mantiene privada y separada de las demás.",
     },
     {
-      h: "4. Terceros",
+      h: "4. Cookies y consentimiento",
+      p: "Blink POS no usa cookies publicitarias ni de seguimiento de terceros. En el navegador solo queda lo necesario para operar la caja: la sesión y la copia local de los datos de la tienda. La landing pública muestra un aviso con tres respuestas —aceptar todas, solo las necesarias o rechazar—; la decisión se guarda en el dispositivo y puedes cambiarla borrando los datos del sitio desde tu navegador.",
+    },
+    {
+      h: "5. Terceros",
       p: "Solo compartimos información con proveedores estrictamente necesarios para operar el servicio: Supabase (alojamiento de base de datos y sincronización) y la fuente de la tasa oficial de cambio. No vendemos, alquilamos ni compartimos tus datos internos con terceros con fines publicitarios.",
     },
     {
-      h: "5. Retención y eliminación",
+      h: "6. Retención y eliminación",
       p: "Conservamos los registros contables durante el tiempo que la normativa aplicable exija. Puedes solicitar la eliminación de tu cuenta y de los datos no sujetos a obligación de conservación desde el correo de soporte.",
     },
     {
-      h: "6. Tus derechos",
+      h: "7. Tus derechos",
       p: "Puedes acceder, corregir, exportar o eliminar tus datos escribiendo a soporte@blink.com.ve. Responderemos dentro de los plazos previstos por la ley de protección de datos aplicable en Venezuela.",
     },
     {
-      h: "7. Cambios",
+      h: "8. Cambios",
       p: "Esta política puede actualizarse. Publicaremos la versión vigente en esta misma página y, ante cambios sustanciales, avisaremos al correo registrado de la cuenta.",
     },
   ],
