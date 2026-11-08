@@ -285,7 +285,8 @@
 .lp-nav__marca img {
   display: block;
   width: auto;
-  height: 22px;
+  /* El lockup es solo texto: el recuadro mide la altura de las mayúsculas. */
+  height: 16px;
 }
 
 /* Una sola marca visible: la oscura sobre la barra clara y viceversa. */

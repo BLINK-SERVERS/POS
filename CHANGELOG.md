@@ -13,6 +13,34 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [No publicado]
+
+### Marca «Blink POS» sin ondas
+
+- El lockup `marca/blink-pos.svg` (y su variante blanca) queda solo texto: las
+  ondas NFC son exclusivas de Blink Pay. «POS» iguala el grosor de «Pay», y la
+  altura de mayúsculas coincide con el lockup de Pay (26 × 192,85 / 321 =
+  15,62 px en la landing del ecosistema).
+- `BrandLogo`, el cargador de marca, la landing comercial, la imagen Open Graph
+  y los textos alternativos usan el lockup nuevo.
+
+### Tarjeta de instalación propia
+
+- **General** (`/app/inicio` y `/app/general`) ofrece «Lleva Blink POS contigo»
+  con la sesión abierta. `src/lib/instalacion.ts` cancela
+  `beforeinstallprompt` al arrancar —Chrome no enseña su cartel— y guarda el
+  evento para «Instalar». «Ahora no» pospone 30 días; en iOS/Android sin
+  diálogo la tarjeta explica los pasos. No aparece en la landing pública ni
+  fuera de General.
+- **Service worker** mínimo (`app/public/sw.js`, caché `blink-pos-v1`): hace la
+  app instalable y permite abrirla sin conexión. Navegaciones a red primero y
+  respaldo del armazón; recursos con hash desde caché. Se registra solo en
+  producción.
+- Pruebas: `src/lib/instalacion.test.ts` (7 casos), suite completa (76) y
+  verificación en Chromium en móvil y escritorio, claro y oscuro.
+
+---
+
 ## [1.19.0] · 2026-10-22
 
 **Saludo dinámico: por la hora del día y por la fecha.**

@@ -90,7 +90,7 @@ body{width:1200px;height:630px;overflow:hidden;background:${PAPEL};
 .brand svg{width:44px;height:44px;display:block}
 .brand b{font-size:31px;font-weight:800;font-style:italic;letter-spacing:-.03em;
   text-transform:uppercase;color:${AZUL};line-height:1}
-.brand i{font-size:31px;font-weight:300;font-style:normal;letter-spacing:-.01em;
+.brand i{font-size:31px;font-weight:500;font-style:normal;letter-spacing:-.01em;
   text-transform:uppercase;color:${TINTA};line-height:1}
 h1{font-size:53px;line-height:1.08;letter-spacing:-.034em;font-weight:700;max-width:600px}
 h1 em{font-style:normal;color:${AZUL}}
@@ -215,7 +215,9 @@ h1 em{font-style:normal;color:${AZUL}}
 
 </div></body></html>`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}
+);
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: "load" });
 await page.evaluate(() => document.fonts.ready);

@@ -15,6 +15,7 @@ import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { BrandLogo } from "./BrandLogo";
+import { AvisoInstalacion } from "./AvisoInstalacion";
 import { ScannerProvider } from "../lib/scanner/ScannerProvider";
 import { type Modulo } from "../lib/modulos";
 
@@ -243,6 +244,7 @@ function BarraInferior({ izquierda, derecha }: { izquierda: Modulo[]; derecha: M
 
 export function Shell({ children }: { children: ReactNode }) {
   const { state, openCash, closeCash } = useStore();
+  const { pathname } = useLocation();
   const [cashOpen, setCashOpen] = useState(false);
   const [usd, setUsd] = useState("0");
   const [bs, setBs] = useState("0");
@@ -364,6 +366,10 @@ export function Shell({ children }: { children: ReactNode }) {
           content beneath to peek through." → Glass de Konsta, separado del
           borde y con el contenido asomando por debajo. */}
       <BarraInferior izquierda={BAR_IZQUIERDA} derecha={derecha} />
+
+      {/* Solo en la pantalla de inicio y con sesión: la landing y el resto
+          de módulos no ofrecen la instalación. */}
+      <AvisoInstalacion visible={pathname === "/app/inicio" || pathname === "/app/general"} />
 
       {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
       <div id="printable-report" aria-hidden="true" />

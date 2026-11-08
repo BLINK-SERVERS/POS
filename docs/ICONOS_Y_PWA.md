@@ -283,7 +283,26 @@ cambia el `viewBox`. **No hay que tocar ningún *call site*.**
 
 ## Instalar la PWA
 
-- **Android/Chrome:** menú ⋮ → *Instalar aplicación* / *Añadir a pantalla de inicio*.
-- **iOS/Safari:** botón Compartir → *Añadir a pantalla de inicio* (usa
+La app se ofrece a sí misma la instalación; el cartel que Chrome muestra por su
+cuenta queda cancelado.
+
+- **Dónde aparece:** tarjeta flotante **Lleva Blink POS contigo**, solo en
+  **General** (`/app/inicio` y `/app/general`) y con sesión abierta. La landing
+  pública y el resto de módulos no la muestran.
+- **Cómo funciona:** `src/lib/instalacion.ts` intercepta
+  `beforeinstallprompt` al arrancar (antes de montar React) y guarda el evento;
+  «Instalar» lo abre con `prompt()`. Si el sistema lo rechaza o se pulsa
+  «Ahora no», el descarte se recuerda 30 días
+  (`localStorage: blink.pos.instalacion`). En iOS/Safari y Android sin diálogo
+  la tarjeta explica los pasos manuales; en escritorio sin diálogo no aparece.
+- **Estilo:** hoja elevada de 20 px de radio con el icono de la app a 44 px;
+  en móvil flota sobre la barra inferior, en escritorio se ancla abajo a la
+  derecha.
+- **Service worker:** `public/sw.js` (caché `blink-pos-v1`) hace la app
+  instalable y permite abrirla sin conexión. Las navegaciones van a red primero
+  y caen al armazón guardado; los recursos con hash se sirven de caché. Solo se
+  registra en producción (`src/main.tsx`).
+- **Android/Chrome:** «Instalar» o menú ⋮ → *Añadir a pantalla de inicio*.
+- **iOS/Safari:** Compartir → *Añadir a pantalla de inicio* (usa
   `apple-touch-icon.png`).
 - La app se abre en modo `standalone` (sin barra de navegador) y arranca en `/`.

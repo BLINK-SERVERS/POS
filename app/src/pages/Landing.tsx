@@ -392,16 +392,16 @@ export function Landing() {
             <img
               className="lp-nav__marca--clara"
               src={LOCKUP}
-              width="1206"
-              height="281"
+              width="1055.42"
+              height="192.85"
               alt=""
               draggable={false}
             />
             <img
               className="lp-nav__marca--oscura"
               src={LOCKUP_BLANCO}
-              width="1206"
-              height="281"
+              width="1055.42"
+              height="192.85"
               alt=""
               draggable={false}
             />
@@ -436,7 +436,7 @@ export function Landing() {
             <h1 className="visualmente-oculto" id="hero-titulo">
               Blink POS
             </h1>
-            <img className="lp-hero__marca" src={LOCKUP} width="1206" height="281" alt="Blink POS" />
+            <img className="lp-hero__marca" src={LOCKUP} width="1055.42" height="192.85" alt="Blink POS" />
             <h2 className="lp-hero__titular">
               El punto de venta hecho para Venezuela.
               <span className="lp-hero__sub">
@@ -670,7 +670,7 @@ export function Landing() {
 
       <footer className="lp-pie">
         <div className="lp-contenido">
-          <img className="lp-pie__marca" src={LOCKUP} width="1206" height="281" alt="Blink POS" />
+          <img className="lp-pie__marca" src={LOCKUP} width="1055.42" height="192.85" alt="Blink POS" />
           <div className="lp-pie__fila">
             <p className="lp-pie__legal">Copyright © 2026 Blink POS. Maracaibo, Venezuela.</p>
             <ul className="lp-pie__enlaces">

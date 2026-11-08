@@ -30,7 +30,8 @@
 }
 .blink-pos-title .wordmark__pos {
   color: var(--color-text-primary); /* var(--color-text-secondary) */
-  font-weight: 300;
+  /* Mismo peso que «Pay» en el lockup: Medium, no ligera. */
+  font-weight: 500;
   font-style: normal;
   letter-spacing: -0.01em;
 }
@@ -53,7 +54,7 @@
 }
 .brand__pos {
   color: var(--color-text-primary); /* var(--color-text-secondary) */
-  font-weight: 300;
+  font-weight: 500;
 }
 .brand--lg {
   font-size: 1.4rem;
@@ -2520,6 +2521,134 @@ table.data td {
     background: var(--color-bg-primary) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* ============================================================
+   Tarjeta de instalación (PWA)
+   ------------------------------------------------------------
+   Aparece solo en la pantalla de inicio, con sesión abierta, y
+   sustituye al cartel que Chrome enseña por su cuenta (el evento
+   `beforeinstallprompt` se cancela al arrancar · lib/instalacion.ts).
+
+   HIG (Sheets · iOS): esquinas continuas, superficie elevada con
+   borde tenue, icono de la app a 44 pt y acciones alineadas a la
+   derecha. En móvil flota sobre la barra inferior; en escritorio
+   se ancla abajo a la derecha para no tapar la barra lateral.
+   ============================================================ */
+.instalacion {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: calc(100% - 20px);
+  max-width: 420px;
+  padding: 0.85rem 0.9rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-ios-panel), 0 12px 32px rgb(0 0 0 / 0.14);
+  transform: translateX(-50%);
+  animation: instalacion-subir 0.28s ease-out;
+}
+
+.instalacion__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.instalacion__icono {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.08);
+}
+
+.instalacion__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.instalacion__texto strong {
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.instalacion__texto span {
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.instalacion__glifo {
+  width: 1em;
+  height: 1em;
+  margin-inline: 0.15em;
+  vertical-align: -0.13em;
+  color: var(--color-accent);
+}
+
+.instalacion__glifo-texto {
+  color: var(--color-text-secondary);
+}
+
+.instalacion__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.instalacion__acciones .btn {
+  min-height: 40px;
+  padding: 0.4rem 0.95rem;
+  font-size: var(--fs-sm);
+}
+
+@keyframes instalacion-subir {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (min-width: 861px) {
+  .instalacion {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+    animation: instalacion-subir-escritorio 0.28s ease-out;
+  }
+
+  @keyframes instalacion-subir-escritorio {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .instalacion {
+    animation: none;
   }
 }
 

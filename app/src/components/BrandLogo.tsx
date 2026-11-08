@@ -17,8 +17,8 @@ export function BrandLogo({ className = "" }: { className?: string }) {
     <img
       className={`brand-logo ${className}`.trim()}
       src={useBrandSource()}
-      width="1206"
-      height="281"
+      width="1055.42"
+      height="192.85"
       alt="Blink POS"
       draggable={false}
     />

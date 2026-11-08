@@ -16,11 +16,11 @@ describe("marca compartida", () => {
   it.each([false, true])("usa el SVG oficial en oscuro=%s y respeta BASE_URL", (dark) => {
     theme.esOscuro = dark;
     vi.stubEnv("BASE_URL", "/pos/");
-    const source = `/pos/brand/${dark ? "blink-blanco.svg" : "blink.svg"}`;
+    const source = `/pos/brand/${dark ? "blink-pos-blanco.svg" : "blink-pos.svg"}`;
     const logo = renderToStaticMarkup(createElement(BrandLogo));
     expect(logo).toContain(`src="${source}"`);
     expect(logo).toContain('alt="Blink POS"');
-    expect(logo).toContain('width="869" height="194"');
+    expect(logo).toContain('width="1055.42" height="192.85"');
   });
 
   it("incrusta el marcado en el cargador, sin `use` externo", () => {

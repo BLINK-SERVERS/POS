@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="1206" height="281" viewBox="0 0 1206 281" version="1.1" shape-rendering="geometricPrecision" fill="currentColor">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="1055.42" height="192.85" viewBox="0 88 1055.42 192.85" version="1.1" shape-rendering="geometricPrecision" fill="currentColor">
   <title>Blink POS</title>
-  <desc>«Blink» en SF Pro Display Heavy Italic reconstruido sobre el logotipo oficial (ascendentes l/k elevados, espaciado clavado), «POS» en SF Pro Display Medium con el mismo apriete de Pay, y tres ondas de pago sin contacto.</desc>
+  <desc>«Blink» en SF Pro Display Heavy Italic reconstruido sobre el logotipo oficial (ascendentes l/k elevados, espaciado clavado), «POS» en SF Pro Display Medium con el mismo apriete de Pay.</desc>
   <g inkscape:groupmode="layer" inkscape:label="Marca" id="capa-marca">
     <g id="wordmark" transform="translate(-0 277.9)" fill="currentColor">
       <path d="M90.87 0C129.53 0 157.09 -23.42 157.09 -56.11C157.09 -74.16 143.8 -87.7 125.02 -91.72L125.14 -92.57C148.92 -97.33 165.88 -114.89 165.88 -138.19C165.88 -159.78 147.83 -176 114.53 -176H37.44L0 0ZM75.01 -146.97H98.67C113.43 -146.97 121.11 -140.39 121.11 -130.02C121.11 -116.24 109.41 -106.23 91.72 -106.23H66.47ZM50.62 -31.71 60.25 -77.33H87.21C103.79 -77.33 112.33 -70.13 112.33 -58.18C112.33 -42.32 99.89 -31.71 80.62 -31.71Z"/>
@@ -14,13 +14,6 @@
         <path d="M231.27 2.93C282.13 2.93 313.72 -32.08 313.72 -87.94V-88.18C313.72 -143.92 282 -178.93 231.27 -178.93C180.65 -178.93 148.81 -144.04 148.81 -88.18V-87.94C148.81 -31.96 180.53 2.93 231.27 2.93ZM231.27 -21.22C197.85 -21.22 176.62 -46.96 176.62 -87.94V-88.18C176.62 -129.16 197.97 -154.78 231.27 -154.78C264.68 -154.78 285.78 -129.04 285.78 -88.18V-87.94C285.78 -47.32 265.05 -21.22 231.27 -21.22Z"/>
         <path d="M390.81 2.93C432.53 2.93 457.9 -17.44 457.9 -49.52V-49.64C457.9 -76.84 442.28 -91.6 405.94 -99.28L386.67 -103.31C364.71 -108.06 354.71 -116.11 354.71 -129.29V-129.41C354.71 -144.78 368.62 -155.14 390.45 -155.27C411.3 -155.27 425.45 -145.39 427.89 -129.04L428.01 -127.33H454.6L454.48 -129.41C452.65 -158.92 427.53 -178.93 390.81 -178.93C353.61 -178.93 327.15 -158.31 327.02 -128.31V-128.19C327.02 -102.09 343.73 -86.23 378.25 -78.91L397.4 -74.89C420.7 -69.77 430.33 -62.08 430.33 -47.93V-47.81C430.33 -31.35 415.45 -20.73 391.91 -20.73C368.37 -20.73 352.15 -30.86 349.71 -47.08L349.47 -48.67H322.88L323 -46.84C325.19 -15.86 351.3 2.93 390.81 2.93Z"/>
       </g>
-    </g>
-  </g>
-  <g inkscape:groupmode="layer" inkscape:label="Ondas NFC" id="capa-ondas">
-    <g id="nfc" transform="translate(-0 277.9)">
-      <path id="nfc-1" d="M 1099.52 -111 A 61 61 0 0 0 1038.52 -172" fill="none" stroke="currentColor" stroke-width="24.4" stroke-linecap="round"/>
-      <path id="nfc-2" d="M 1146.62 -111 A 108.1 108.1 0 0 0 1038.52 -219.1" fill="none" stroke="currentColor" stroke-width="24.4" stroke-linecap="round"/>
-      <path id="nfc-3" d="M 1193.22 -111 A 154.7 154.7 0 0 0 1038.52 -265.7" fill="none" stroke="currentColor" stroke-width="24.4" stroke-linecap="round"/>
     </g>
   </g>
 </svg>
