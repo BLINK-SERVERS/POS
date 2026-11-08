@@ -257,7 +257,7 @@ export function Receipt({
         <div className="receipt__footer">
           <p>{business.receiptFooter?.trim() || "¡Gracias por su compra!"}</p>
           <p className="dim" style={{ fontSize: "0.7rem", marginTop: 4 }}>
-            Sistema BLINK POS · blink.com.ve
+            Sistema BLINK POS · pos.blink.com.ve
           </p>
         </div>
       </div>

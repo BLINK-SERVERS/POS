@@ -18,8 +18,11 @@
 |---|---|---|---|---|
 | CNAME | `blink.com.ve` (raíz) | `blink-servers.github.io` | Proxied (naranja) | Auto |
 | CNAME | `www.blink.com.ve` | `blink-servers.github.io` | Proxied (naranja) | Auto |
+| CNAME | `pos.blink.com.ve` | `blink-servers.github.io` | DNS only (gris) | Auto |
 
-Ambos resuelven a las IPs de proxy de Cloudflare (`172.67.184.170`, `104.21.43.194`).
+La raíz y `www` resuelven a las IPs de proxy de Cloudflare (`172.67.184.170`,
+`104.21.43.194`). `pos` resuelve directo a las IPs de GitHub Pages
+(`185.199.108-111.153`).
 
 ## Regla de redirección (Single Redirect)
 
@@ -59,11 +62,12 @@ Fase: `http_request_dynamic_redirect` · Zona: `2234ba7bcd3fe793c8d5f6e04198a19a
 ## GitHub Pages
 
 - Repositorio: `BLINK-SERVERS/POS` (rama `main` → deployment en rama `gh-pages`)
-- Dominio personalizado: `www.blink.com.ve` (declarado en `app/public/CNAME`)
+- Dominio personalizado: `pos.blink.com.ve` (declarado en `app/public/CNAME`)
+- `www.blink.com.ve` pertenece a `BLINK-SERVERS/blink.com.ve`, la landing del ecosistema
 - `base: "/"` en `app/vite.config.ts` — assets y rutas served desde la raíz del dominio
 - `app/package.json` → `build:pages` **sin** `--base=/POS/` (sobrescribía la config)
 - `404.html` generado como fallback SPA (recarga de rutas profundas funciona)
-- GitHub redirige automáticamente `blink-servers.github.io/POS/` → `www.blink.com.ve`
+- GitHub redirige automáticamente `blink-servers.github.io/POS/` → `pos.blink.com.ve`
 
 ## Automatización con MCP de Cloudflare
 

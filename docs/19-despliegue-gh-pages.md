@@ -1,12 +1,12 @@
 # 19 · Despliegue en GitHub Pages
 
-**Sitio en vivo:** **https://www.blink.com.ve**
+**Sitio en vivo:** **https://pos.blink.com.ve**
 **Repositorio:** https://github.com/BLINK-SERVERS/POS (público)
 **Último despliegue:** v1.11.0 · 2026-10-21 — verificado en vivo (consola sin
 errores).
 
-> La URL pública es el **dominio propio**, no la de GitHub. `blink.com.ve`
-> redirige con 301 a `www.blink.com.ve`. Ver
+> La URL pública es **`pos.blink.com.ve`**, no la de GitHub. La raíz y `www`
+> sirven la landing del ecosistema (`BLINK-SERVERS/blink.com.ve`). Ver
 > [`DNS_CLOUDFLARE_GITHUB_PAGES.md`](./DNS_CLOUDFLARE_GITHUB_PAGES.md).
 
 ## Cómo está armado
@@ -16,10 +16,10 @@ errores).
 | Base del build | `app/vite.config.ts` | `base: "/"` — el dominio propio sirve desde la raíz. **No** se usa `--base=/POS/`: el subdirectorio del repositorio es solo la fuente, no la URL pública. |
 | `basename` del router | `app/src/App.tsx` | `<BrowserRouter basename={import.meta.env.BASE_URL}>` → funciona igual en local (`/`) y en producción (`/`). |
 | Fallback 404 | `app/scripts/postbuild-pages.mjs` | Copia `dist/index.html` a `dist/404.html` y crea `.nojekyll`. Así las rutas profundas de la SPA (p. ej. `/app/catalogo`) cargan la app en vez de dar 404. |
-| Dominio propio | `app/public/CNAME` | `www.blink.com.ve` — GitHub Pages lo usa para el certificado. |
+| Dominio propio | `app/public/CNAME` | `pos.blink.com.ve` — GitHub Pages lo usa para el certificado. |
 | Publicación | `gh-pages` (devDependency) | `npm run deploy` = build + push de `dist/` a la rama `gh-pages`. |
 | Pages | Config del repo | Fuente = rama `gh-pages`, carpeta `/`. HTTPS forzado. |
-| CDN | Cloudflare | Proxy sobre `blink-servers.github.io`, con purga de caché desde el panel. |
+| DNS | Cloudflare | `pos` resuelve directo a `blink-servers.github.io` (DNS-only, sin proxy). |
 
 ## Comandos
 

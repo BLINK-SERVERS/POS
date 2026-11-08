@@ -4,7 +4,7 @@
 
 ## Objetivo
 
-La raíz del dominio (`https://www.blink.com.ve/`) es ahora la **portada pública** de BLINK.
+La raíz de `https://pos.blink.com.ve/` es la **portada pública** de BLINK POS.
 Antes redirigía a `/inicio` (que terminaba en el login). Ahora muestra una landing de
 conversión que explica el producto en menos de 3 segundos y deriva al registro.
 

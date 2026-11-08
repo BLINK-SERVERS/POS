@@ -20,7 +20,7 @@ BLINK POS/
 │   │   ├── icons/           Iconos del PWA (SVG + PNG any/maskable)
 │   │   ├── manifest.json    Manifiesto de la PWA
 │   │   ├── og-image.png     Imagen Open Graph 1200×630
-│   │   └── CNAME            www.blink.com.ve
+│   │   └── CNAME            pos.blink.com.ve
 │   ├── scripts/             Generadores y verificadores (Node)
 │   ├── src/
 │   │   ├── components/      Piezas de interfaz

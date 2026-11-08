@@ -1,6 +1,6 @@
 # Estado Actual BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.16.0 · **Dominio:** www.blink.com.ve
+**Fecha:** 2026-10-21 · **Versión:** 1.16.0 · **Dominio:** pos.blink.com.ve
 
 ## Estado General
 
@@ -16,8 +16,8 @@
 | Stress test (`npm run qa:e2e`) | 93 botones en 10 vistas · 0 fallos · 0 diálogos atascados |
 | Funcional (`npm run qa:funcional`) | 8/8 (ticket, IVA, venta, compra, abono, arqueo) |
 | Responsive (`npm run qa:responsive`) | 36 combinaciones resolución×vista · 0 fallos · SF Pro en uso |
-| Dominio `www.blink.com.ve` | 200 OK, 0 errores de consola |
-| Dominio `blink.com.ve` | 301 → www (path y query preservados) |
+| Dominio `pos.blink.com.ve` | 200 OK, 0 errores de consola |
+| Dominio `blink.com.ve` | 301 → www · landing del ecosistema (path y query preservados) |
 | Landing `/` | Renderiza sin sesión, 0 errores de consola |
 | Tipografía | Una sola pila en toda la app: SF Pro (local) → Inter (OFL, servido) → sistema |
 | Navegación móvil (`npm run qa:navegacion`) | 37/37 en verde: sin hamburguesa, barra inferior de 5 con Vender centrado, menú de avatar, sin escalado al pulsar, bento de General |
@@ -197,9 +197,9 @@ Detalle en [`LANDING_PAGE.md`](./LANDING_PAGE.md) e [`ICONOS_Y_PWA.md`](./ICONOS
 | Componente | Configuración |
 |---|---|
 | Cloudflare | Zona `2234ba7bcd3fe793c8d5f6e04198a19a` (activa) |
-| DNS | 2 CNAME proxiados → `blink-servers.github.io` |
+| DNS | `pos` directo a GitHub Pages; raíz y `www` proxiados |
 | Redirect | Ruleset `62d0778365be4e699f9833ca23ce29c7` (apex → www, 301) |
-| GitHub Pages | Dominio `www.blink.com.ve`, `Enforce HTTPS` |
+| GitHub Pages | Dominio `pos.blink.com.ve`, `Enforce HTTPS` |
 | MCP | `cloudflare` + `cloudflare-docs` conectados (global) |
 
 Detalle completo en [`DNS_CLOUDFLARE_GITHUB_PAGES.md`](./DNS_CLOUDFLARE_GITHUB_PAGES.md).

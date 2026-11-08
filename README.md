@@ -4,7 +4,7 @@ Punto de venta web para el comercio venezolano. Vende, cobra en **dólares y
 bolívares a tasa BCV**, controla inventario, caja, contactos y finanzas desde un
 solo lugar — con la cámara del teléfono como escáner de códigos de barras.
 
-**Estado:** v1.12.0 · en vivo en **<https://www.blink.com.ve>** ·
+**Estado:** v1.12.0 · en vivo en **<https://pos.blink.com.ve>** ·
 typecheck / build / **50 pruebas** en verde · Supabase (auth + datos) en producción.
 
 - Landmarks del diseño: [`docs/INDEX.md`](docs/INDEX.md)
@@ -68,7 +68,7 @@ npm run dev -- --host 0.0.0.0   # para probar desde el móvil en la misma Wi-Fi
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Pruebas unitarias (Vitest) |
 | `npm run test:migrations` | Integración de migraciones (PostgreSQL embebido) |
-| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/`. Con `VERIFY_BASE=https://www.blink.com.ve` corre contra **producción** |
+| `npm run verify:ui` | Verifica 15 rutas en **escritorio y móvil** + onboarding, acceso sin sesión y diálogos (render, iconos, overflow, layout, consola) y deja capturas en `verify-shots/`. Con `VERIFY_BASE=https://pos.blink.com.ve` corre contra **producción** |
 | `npm run docs:check` | Verifica que no haya enlaces rotos en la documentación |
 | `npm run qa:seed` | Siembra el comercio de pruebas en Supabase (usuario con correo confirmado) |
 | `npm run qa:e2e` | Stress test: pulsa todos los botones y comprueba diálogos, foco y doble ejecución |
@@ -95,7 +95,8 @@ npm run docs:check       # enlaces de la documentación sin rotos
 
 ## Publicación
 
-El sitio vive en **<https://www.blink.com.ve>** (Cloudflare → GitHub Pages).
+El sitio vive en **<https://pos.blink.com.ve>** (Cloudflare → GitHub Pages). La raíz
+`www.blink.com.ve` es la landing del ecosistema.
 
 ```bash
 cd app

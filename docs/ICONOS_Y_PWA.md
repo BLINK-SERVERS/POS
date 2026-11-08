@@ -130,12 +130,12 @@ sistema.
 ### Metadatos en `app/index.html`
 
 ```html
-<meta property="og:image" content="https://www.blink.com.ve/og-image.png" />
+<meta property="og:image" content="https://pos.blink.com.ve/og-image.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="BLINK POS — El punto de venta más rápido…" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://www.blink.com.ve/og-image.png" />
+<meta name="twitter:image" content="https://pos.blink.com.ve/og-image.png" />
 ```
 
 > Las URL de `og:image` son **absolutas** (con dominio). Las plataformas de social
