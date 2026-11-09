@@ -366,7 +366,9 @@ declare
   v_ids   uuid[];
   v_total integer;
 begin
-  -- El cron corre sin JWT; un usuario solo puede pedir la purga si es admin.
+  -- El cron y las tareas internas corren sin JWT (auth.uid() nulo). Toda
+  -- llamada con sesión debe ser de un administrador: mirar `auth.uid()` no
+  -- depende de cómo PostgREST publique los claims en cada versión.
   if auth.uid() is not null and not public.es_admin_plataforma() then
     raise exception 'Solo un administrador puede purgar cuentas.' using errcode = '42501';
   end if;
@@ -424,6 +426,14 @@ alter table public.admins_plataforma enable row level security;
 alter table public.activaciones enable row level security;
 alter table public.pagos_activacion enable row level security;
 
+-- Supabase concede CRUD a anon y authenticated en las tablas nuevas. Aquí
+-- solo se lee la fila propia (o de todos, si es admin) y todo lo demás pasa
+-- por funciones. La seguridad no depende solo de RLS.
+revoke all on public.admins_plataforma from anon, authenticated;
+revoke all on public.activaciones, public.pagos_activacion from anon;
+revoke insert, update, delete, truncate, references, trigger
+  on public.activaciones, public.pagos_activacion from authenticated;
+
 drop policy if exists activaciones_select on public.activaciones;
 create policy activaciones_select
   on public.activaciones for select
@@ -440,16 +450,20 @@ create policy pagos_activacion_select
 
 grant select on public.activaciones, public.pagos_activacion to authenticated;
 
-revoke all on function public.reportar_pago(text, text, numeric, numeric, text, text) from public;
-revoke all on function public.decidir_pago(uuid, boolean, text) from public;
-revoke all on function public.eliminar_cuenta(uuid) from public;
-revoke all on function public.purgar_activaciones() from public;
+-- `public` no incluye a `anon`: Supabase concede EXECUTE por defecto a ese
+-- rol, y sin sesión `purgar_activaciones()` borraría cuentas.
+revoke all on function public.reportar_pago(text, text, numeric, numeric, text, text) from public, anon;
+revoke all on function public.decidir_pago(uuid, boolean, text) from public, anon;
+revoke all on function public.eliminar_cuenta(uuid) from public, anon;
+revoke all on function public.purgar_activaciones() from public, anon;
+revoke all on function public.es_admin_plataforma() from public, anon;
+revoke all on function public.puede_operar() from public, anon;
 
 grant execute on function public.reportar_pago(text, text, numeric, numeric, text, text) to authenticated;
 grant execute on function public.decidir_pago(uuid, boolean, text) to authenticated;
 grant execute on function public.eliminar_cuenta(uuid) to authenticated;
 grant execute on function public.purgar_activaciones() to authenticated;
-grant execute on function public.es_admin_plataforma() to authenticated, anon;
+grant execute on function public.es_admin_plataforma() to authenticated;
 grant execute on function public.puede_operar() to authenticated;
 
 -- ------------------------------------------------------------------

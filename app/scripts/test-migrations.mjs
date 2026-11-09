@@ -367,13 +367,38 @@ async function run() {
   const sigue = await c.query(`select 1 from auth.users where id = $1`, [revId]);
   ok('0005: la purga respeta los pagos en revisión', sigue.rowCount === 1);
 
+  // Un usuario normal con sesión tampoco puede purgar (solo el cron o un admin).
+  await c.query(`select set_config('blink_test.uid', $1, false)`, [rechId]);
+  let purgaAjena = false;
+  try {
+    await c.query(`select public.purgar_activaciones()`);
+  } catch {
+    purgaAjena = true;
+  }
+  ok('0005: un usuario normal no puede purgar', purgaAjena);
+
   // Purga real de una cuenta rechazada y vencida.
+  await c.query(`select set_config('blink_test.uid', $1, false)`, [adminId]);
   await c.query(`update public.activaciones set purge_en = now() - interval '1 hour' where user_id = $1`, [rechId]);
   await c.query(`select public.purgar_activaciones()`);
   const borrada = await c.query(`select 1 from auth.users where id = $1`, [rechId]);
   const sinAct = await c.query(`select 1 from public.activaciones where user_id = $1`, [rechId]);
   ok('0005: la purga borra la cuenta vencida y su activación',
     borrada.rowCount === 0 && sinAct.rowCount === 0);
+
+  // Supabase concede EXECUTE y CRUD a anon/authenticated por defecto: la
+  // migración debe quitarlos para que la seguridad no dependa solo de RLS.
+  const priv = (await c.query(`
+    select has_function_privilege('anon', 'public.purgar_activaciones()', 'execute') as anon_purga,
+           has_function_privilege('anon', 'public.reportar_pago(text,text,numeric,numeric,text,text)', 'execute') as anon_reporta,
+           has_function_privilege('authenticated', 'public.reportar_pago(text,text,numeric,numeric,text,text)', 'execute') as auth_reporta,
+           has_table_privilege('anon', 'public.activaciones', 'select') as anon_lee,
+           has_table_privilege('authenticated', 'public.activaciones', 'insert') as auth_inserta
+  `)).rows[0];
+  ok('0005: anon no puede purgar ni reportar', !priv.anon_purga && !priv.anon_reporta && priv.auth_reporta,
+    `(got ${JSON.stringify(priv)})`);
+  ok('0005: solo se lee con sesión y nadie inserta a mano', !priv.anon_lee && !priv.auth_inserta,
+    `(got ${JSON.stringify(priv)})`);
 
   await rls2.query(`reset role`);
   await rls2.end();

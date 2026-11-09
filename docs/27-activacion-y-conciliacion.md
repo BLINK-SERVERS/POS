@@ -66,7 +66,7 @@ Estados de `activaciones.estado`: `pendiente`, `en_revision`, `activo`,
 
 | Función | Quién | Qué hace |
 |---|---|---|
-| `es_admin_plataforma()` | cualquiera | Compara el correo de `auth.users` con `admins_plataforma` |
+| `es_admin_plataforma()` | autenticado | Compara el correo de `auth.users` con `admins_plataforma` |
 | `puede_operar()` | autenticado | Hay activación `activo` y sin vencer |
 | `reportar_pago(...)` | autenticado | Valida y registra el pago; deja la activación `en_revision` |
 | `decidir_pago(pago, aprobar, motivo)` | admin | Aprueba (30 días) o rechaza (24 h de gracia) |
@@ -80,6 +80,12 @@ Estados de `activaciones.estado`: `pendiente`, `en_revision`, `activo`,
 - `admins_plataforma`: RLS activa, sin políticas de lectura.
 - `businesses`: `insert` y `update` exigen
   `auth.uid() = owner_id and public.puede_operar()`. La lectura se mantiene.
+- Privilegios explícitos: Supabase concede CRUD y `execute` a `anon` y
+  `authenticated` en los objetos nuevos, así que la migración los revoca. `anon`
+  no toca nada; `authenticated` solo hace `select` (RLS decide qué filas) y
+  ejecuta las RPC. `purgar_activaciones()` además rechaza cualquier llamada con
+  sesión (`auth.uid()` no nulo) que no sea de un administrador: solo el cron
+  (sin sesión) entra sin JWT.
 
 ### 3.4 Purga automática
 

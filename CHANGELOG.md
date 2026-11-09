@@ -41,9 +41,12 @@ del producto, no una omisión (ver BUG-12 en
   tablas `admins_plataforma`, `activaciones` y `pagos_activacion`, RPCs
   `reportar_pago` / `decidir_pago` / `purgar_activaciones` /
   `eliminar_cuenta`, y `businesses` solo escribible con `puede_operar()`.
-  Los usuarios anteriores quedan activos sin vencimiento. Detalle en
+  Revoca además los privilegios que Supabase concede por defecto a `anon` y
+  `authenticated` (sin sesión no se lee ni se purga nada) y la purga solo
+  acepta al cron o a un administrador con sesión. Los usuarios
+  anteriores quedan activos sin vencimiento. Detalle en
   [`docs/27-activacion-y-conciliacion.md`](docs/27-activacion-y-conciliacion.md).
-- Pruebas: 17 casos nuevos en `npm run test:migrations`, Vitest de
+- Pruebas: 20 casos nuevos en `npm run test:migrations`, Vitest de
   `activacion.ts` y `tasa.ts` (caché, fallback y sin tasa).
 
 ### Enlace de confirmación del correo
