@@ -65,6 +65,38 @@ del producto, no una omisión (ver BUG-12 en
   *Redirect URLs* `https://pos.blink.com.ve/**` y
   `http://localhost:5173/**`.
 
+### Registro: correos duplicados, límite de envíos y enlaces autorizados
+
+- **Causa raíz medida en producción:** el proyecto tenía *Site URL* en
+  `https://blink-servers.github.io/POS/` y un *Redirect URL* solo con la raíz
+  del dominio, sin `/**`. GoTrue aceptaba el alta y **redirigía en silencio**
+  el enlace de confirmación a la GitHub Pages, que no carga el cliente: el
+  enlace nunca iniciaba sesión. Corregido por API de configuración
+  (`site_url` → `https://pos.blink.com.ve/` y `uri_allow_list` con `/` y `/**`).
+- **Correo duplicado:** Supabase responde 200 con `identities: []` y **no envía
+  correo**. `authSignUp` ahora devuelve `outcome` (`verificacion` / `sesion` /
+  `duplicado`) y `/app/registro` muestra «Ese correo ya tiene una cuenta» con
+  tres salidas (entrar, recuperar la contraseña, usar otro correo) en vez de
+  dejar a la persona esperando un enlace que no llega.
+- **Textos de error:** se traducen `is invalid`, `invalid code challenge`,
+  `signups not allowed`, `user not found`, `not in allow list` y el 429
+  `over_email_send_rate_limit`; este último avisa que **la cuenta no se creó**,
+  porque es un límite del proyecto y no un error de quien escribe el formulario.
+  Sin usuario y sin error en la respuesta tampoco se promete un enlace.
+- **Bypass de pruebas:** `?bypass=1` queda confinado a `import.meta.env.DEV`
+  en el módulo y en sus cuatro usos del store, así que `temp-bypass-user` y
+  `blink-temp-bypass` desaparecen del bundle publicado.
+- **Cerrar sesión espera el guardado:** `logout()` fuerza el escrito pendiente y
+  lo espera con un tope de 4 s antes de cerrar la sesión; `flushSaves()` hace lo
+  mismo al terminar el alta guiada, cuyo botón ahora dice «Guardando…».
+- **Zoom accesible:** `index.html` deja de bloquear el zoom (`maximum-scale`,
+  `user-scalable`), exigencia de WCAG 1.4.4.
+- **Pruebas:** `src/lib/__tests__/auth.test.ts` (15) cubre los destinos de los
+  enlaces, los tres desenlaces del alta y las traducciones de error. Suite
+  completa 126/126, tipos sin errores, `qa:e2e`/`qa:navegacion`/`qa:apariencia`/
+  `qa:preview` sin fallos y `qa:responsive` solo con el aviso conocido de la
+  fuente del sistema.
+
 ### Aviso de cookies
 
 - **pos.blink.com.ve** pregunta una sola vez con tres respuestas —«Aceptar

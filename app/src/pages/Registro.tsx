@@ -9,7 +9,7 @@ import { BrandLogo } from "../components/BrandLogo";
 export function Registro() {
   const { signUp, resendCode } = useStoreActions();
 
-  const [step, setStep] = useState<"datos" | "link">("datos");
+  const [step, setStep] = useState<"datos" | "link" | "duplicado">("datos");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -54,7 +54,7 @@ export function Registro() {
       return;
     }
     setBusy(true);
-    const err = await signUp({
+    const resultado = await signUp({
       email: email.trim(),
       password,
       firstName: firstName.trim(),
@@ -62,8 +62,22 @@ export function Registro() {
       phone: phone.trim(),
     });
     setBusy(false);
-    if (err) {
-      setError(err);
+    if (resultado.error) {
+      setError(resultado.error);
+      return;
+    }
+    // El alta duplicada responde 200 sin crear nada ni enviar correo: si se
+    // tratara como un alta normal, la persona se queda esperando un enlace que
+    // nunca llega (BLINK-046/063.1).
+    if (resultado.outcome === "sesion") {
+      // Confirmación de correo desactivada: ya hay sesión, así que el guardia
+      // de rutas lleva al usuario a su POS. No se le pide que abra un enlace
+      // que no existe.
+      setInfo("Cuenta activa. Entrando…");
+      return;
+    }
+    if (resultado.outcome === "duplicado") {
+      setStep("duplicado");
       return;
     }
     // Se recuerda el correo para poder reenviar el enlace si caduca
@@ -202,6 +216,12 @@ export function Registro() {
 
               {error && <p className="field__error">{error}</p>}
 
+              {info && !error && (
+                <p className="muted" style={{ marginBottom: "0.75rem" }}>
+                  {info}
+                </p>
+              )}
+
               <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
                 {busy ? "Enviando enlace…" : "Continuar"}
               </button>
@@ -215,6 +235,57 @@ export function Registro() {
                 ¿Ya tienes cuenta? <Link to="/app/entrar">Entrar</Link>
               </p>
             </form>
+          ) : step === "duplicado" ? (
+            <div>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  setStep("datos");
+                  setError("");
+                }}
+                style={{ marginBottom: "0.75rem" }}
+              >
+                <Icon name="arrowLeft" /> Cambiar datos
+              </button>
+              <h1>Ese correo ya tiene una cuenta</h1>
+              <p className="muted" style={{ marginBottom: "1rem" }}>
+                <strong>{email.trim()}</strong> ya está registrado, así que no creamos una
+                cuenta nueva ni enviamos otro enlace. Puede ser un comercio que abriste antes.
+              </p>
+              {error && (
+                <p className="field__error" style={{ marginBottom: "0.75rem" }}>
+                  {error}
+                </p>
+              )}
+
+              <Link className="btn btn--primary btn--block" to="/app/entrar">
+                Entrar con esa cuenta
+              </Link>
+              <Link
+                className="btn btn--ghost btn--block"
+                to="/app/recuperar"
+                style={{ marginTop: "0.5rem" }}
+              >
+                <Icon name="lock" /> No recuerdo la contraseña
+              </Link>
+              <button
+                type="button"
+                className="btn btn--ghost btn--block"
+                style={{ marginTop: "0.5rem" }}
+                onClick={() => {
+                  setStep("datos");
+                  setError("");
+                }}
+              >
+                <Icon name="mail" /> Usar otro correo
+              </button>
+
+              <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
+                Cada comercio necesita su propio correo. Si este ya tiene un POS, entra y
+                añade el comercio desde dentro.
+              </p>
+            </div>
           ) : (
             <div>
               <button

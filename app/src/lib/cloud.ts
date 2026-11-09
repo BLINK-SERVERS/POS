@@ -14,20 +14,54 @@ export interface SessionUser {
   phone: string;
 }
 
-/** Traduce los errores frecuentes de Supabase Auth al español. */
+/** Qué pasó realmente al intentar crear la cuenta (BLINK-046/063.1). */
+export type SignUpOutcome =
+  /** Alta creada; hay que abrir el enlace del correo. */
+  | "verificacion"
+  /** Alta creada y ya con sesión (confirmación de correo desactivada). */
+  | "sesion"
+  /** El correo ya existía: Supabase no crea nada ni envía correo. */
+  | "duplicado";
+
+/** Traduce los errores frecuentes de Supabase Auth al español.
+ *  Cada rama existe porque el mensaje de GoTrue se vio en producción; ver
+ *  BLINK-063 del expediente de hallazgos. */
 export function authError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("invalid login credentials")) return "Correo o contraseña incorrectos.";
+  if (m.includes("invalid login credentials"))
+    return "Correo o contraseña incorrectos. Si te acabas de registrar, primero abre el enlace de verificación que llegó a tu correo.";
   if (m.includes("email not confirmed"))
     return "Tu correo aún no está verificado. Abre el enlace que te enviamos (revisa Spam) o pide uno nuevo.";
   if (m.includes("user already registered")) return "Ese correo ya tiene una cuenta. Inicia sesión.";
   if (m.includes("password should be at least"))
     return "La contraseña es muy corta (mínimo 6 caracteres).";
-  if (m.includes("unable to validate email")) return "El correo no es válido.";
+  // GoTrue responde dos textos distintos para el mismo problema: la rama corta
+  // («unable to validate email») es la que ya estaba; `is invalid` es el literal
+  // que se vio en pantalla en producción con un correo mal escrito (BLINK-063.3).
+  if (m.includes("unable to validate email") || m.includes("is invalid"))
+    return "El correo no es válido. Revisa que el dominio esté bien escrito (por ejemplo, nombre@gmail.com).";
   if (m.includes("token has expired") || m.includes("invalid token") || m.includes("otp expired"))
     return "El código no es válido o ya venció. Pide uno nuevo.";
-  if (m.includes("signups not allowed") || m.includes("user not found"))
+  if (m.includes("invalid code") || m.includes("code challenge"))
+    return "Este enlace de verificación ya se usó o perdió el código. Pide uno nuevo desde el mismo navegador.";
+  // `signups not allowed` y `user not found` son problemas distintos: el primero
+  // es del servidor, el segundo del correo que escribió la persona.
+  if (m.includes("signups not allowed"))
+    return "El registro de cuentas está desactivado en el servidor.";
+  if (m.includes("user not found"))
     return "Ese correo no tiene una cuenta. Regístrate primero.";
+  // Configuración de Supabase (Redirect URLs / site_url): sin esta rama el
+  // comercio veía un texto en inglés incomprensible (BLINK-063.4 y BLINK-059).
+  if (m.includes("not in allow list") || m.includes("external redirect"))
+    return "La dirección de este sitio no está autorizada en Supabase para los enlaces de correo. " +
+      "Avisa a quien administró el proyecto para agregarla a Redirect URLs y Site URL.";
+  // El 429 `over_email_send_rate_limit` NO es culpa de quien intenta registrarse:
+  // es el límite del proyecto, y al saltar la cuenta no se crea. Decir
+  // «demasiados intentos» mandaba a la persona a reintentar un formulario que
+  // nunca había dejado cuenta alguna (BLINK-063.2).
+  if (m.includes("email rate limit") || m.includes("over_email_send_rate_limit"))
+    return "El servicio de correo está saturado en este momento. Espera unos minutos e inténtalo de nuevo; " +
+      "si no llega el enlace de verificación, la cuenta no se creó.";
   if (m.includes("for security purposes") || m.includes("rate limit"))
     return "Demasiados intentos. Espera unos segundos y vuelve a intentar.";
   if (m.includes("failed to fetch") || m.includes("network"))
@@ -86,9 +120,9 @@ export async function authSignUp(input: {
   firstName: string;
   lastName: string;
   phone: string;
-}): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.signUp({
-    email: input.email,
+}): Promise<{ error: string | null; outcome: SignUpOutcome | null }> {
+  const { data, error } = await supabase.auth.signUp({
+    email: input.email.trim(),
     password: input.password,
     options: {
       emailRedirectTo: redirectConfirmar(),
@@ -99,7 +133,27 @@ export async function authSignUp(input: {
       },
     },
   });
-  return { error: error ? authError(error.message) : null };
+  if (error) return { error: authError(error.message), outcome: null };
+
+  // Supabase responde 200 sin avisar cuando el correo ya estaba registrado:
+  // devuelve un usuario con `identities: []` y NO envía correo. Si se da por
+  // bueno, la persona se queda esperando un enlace que nunca llega y al intentar
+  // entrar le sale «correo o contraseña incorrectos» (BLINK-046/063.1).
+  if (data.session) return { error: null, outcome: "sesion" };
+  const identities = (data.user as { identities?: unknown[] } | null)?.identities;
+  if (data.user && Array.isArray(identities) && identities.length === 0) {
+    return { error: null, outcome: "duplicado" };
+  }
+  // Sin usuario y sin error tampoco se envió correo: decir «te enviamos el
+  // enlace» sería mentir. Se avisa en vez de dejar a la persona esperando.
+  if (!data.user)
+    return {
+      error:
+        "No pudimos crear la cuenta. Revisa el correo e inténtalo otra vez; si sigue sin funcionar, " +
+        "avísanos por WhatsApp y creamos el comercio nosotros.",
+      outcome: null,
+    };
+  return { error: null, outcome: "verificacion" };
 }
 
 /** Verificación por enlace: ya no usamos código OTP de 6 dígitos. */

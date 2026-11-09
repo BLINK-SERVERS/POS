@@ -69,6 +69,7 @@ import {
   cloudSaveBusiness,
   userFromSession,
   type SessionUser,
+  type SignUpOutcome,
 } from "./cloud";
 import { supabase, consumeLinkAuthType } from "./supabase";
 import {
@@ -83,6 +84,12 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 const STORAGE_KEY = "blink-pos-state-v3";
 const LEGACY_KEYS = ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"];
 const WRITE_DELAY = 250;
+/**
+ * Tope de espera del guardado al cerrar sesión (BLINK-055). Sin él, `logout`
+ * cortaba la petición de `cloudSaveBusiness` por delante y el último cambio
+ * (la venta de hace dos segundos) no llegaba a Supabase.
+ */
+const FLUSH_SALIDA_MS = 4000;
 
 /**
  * Nombre del usuario de la sesión para firmar movimientos.
@@ -619,7 +626,7 @@ type StoreActions = {
     firstName: string;
     lastName: string;
     phone: string;
-  }) => Promise<string | null>;
+  }) => Promise<{ error: string | null; outcome: SignUpOutcome | null }>;
   verifyEmail: (email: string, code: string, trust?: boolean) => Promise<string | null>;
   resendCode: (email: string) => Promise<string | null>;
   /** Envía un código de acceso al correo (verificación del equipo al entrar). */
@@ -726,6 +733,8 @@ type StoreActions = {
   setBaseCurrency: (baseCurrency: "USD" | "EUR") => void;
   /** Marca el alta guiada como terminada. */
   completeOnboarding: () => void;
+  /** Escribe ahora (local + nube) y espera la confirmación de la nube. */
+  flushSaves: () => Promise<void>;
   /** Borra todos los datos del comercio y vuelve al alta. */
   clearAll: () => void;
   /** Reintenta cargar el comercio desde la nube. */
@@ -756,13 +765,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const persistCloud = useCallback(() => {
+  const persistCloud = useCallback((): Promise<void> => {
     // No pisar la nube antes de terminar de cargarla ni tras cerrar sesión.
-    if (!currentAuthed || !hydrated) return;
-    if (isBypassActive()) return; // TEMP-BYPASS: sin sesión real en la nube
+    if (!currentAuthed || !hydrated) return Promise.resolve();
+    if (import.meta.env.DEV && isBypassActive()) return Promise.resolve(); // TEMP-BYPASS: sin sesión real en la nube
     // Sin pago conciliado no se escribe: el comercio aún no debe existir.
-    if (!puedeOperar(currentActivacion)) return;
-    cloudSaveBusiness(currentState)
+    if (!puedeOperar(currentActivacion)) return Promise.resolve();
+    return cloudSaveBusiness(currentState)
       .then(() => setCloudError(false))
       .catch(() => {
         setCloudError(true);
@@ -770,18 +779,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Guardado con *debounce*: copia local + sincronización con Supabase.
+  const timerDebounce = useRef(0);
   useEffect(() => {
-    const id = window.setTimeout(() => {
+    timerDebounce.current = window.setTimeout(() => {
       persistLocal();
-      persistCloud();
+      void persistCloud();
     }, WRITE_DELAY);
-    return () => window.clearTimeout(id);
+    return () => window.clearTimeout(timerDebounce.current);
   }, [state, persistLocal, persistCloud]);
+
+  /**
+   * Escribe ahora (local + nube) y espera la confirmación de la nube.
+   * Se usa al terminar el alta guiada y al cerrar sesión: salir de ahí con el
+   * guardado pendiente hacía que la recarga hidratara la fila vieja y el
+   * usuario volviera al principio del asistente con el comercio perdido
+   * (BLINK-048), o que el último cambio no llegara a Supabase (BLINK-055).
+   */
+  const flushSaves = useCallback(async () => {
+    if (timerDebounce.current) {
+      window.clearTimeout(timerDebounce.current);
+      timerDebounce.current = 0;
+    }
+    persistLocal();
+    await persistCloud();
+  }, [persistLocal, persistCloud]);
 
   useEffect(() => {
     const flush = () => {
       persistLocal();
-      persistCloud();
+      void persistCloud();
     };
     const onHidden = () => {
       if (document.visibilityState === "hidden") flush();
@@ -854,7 +880,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     // TEMP-BYPASS: sesión local falsa; ni getSession ni nube.
-    if (isBypassActive()) {
+    if (import.meta.env.DEV && isBypassActive()) {
       const fake = bypassUser();
       setUser(fake);
       setAuthed(true);
@@ -898,7 +924,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (isBypassActive()) return; // TEMP-BYPASS: eventos reales no aplican
+      if (import.meta.env.DEV && isBypassActive()) return; // TEMP-BYPASS: eventos reales no aplican
       if (event === "INITIAL_SESSION") return; // ya lo resolvió getSession()
       const user = userFromSession(session);
       setUser(user);
@@ -943,7 +969,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    if (isBypassActive()) clearBypass(); // TEMP-BYPASS: salir vuelve al Login real
+    if (import.meta.env.DEV && isBypassActive()) clearBypass(); // TEMP-BYPASS: salir vuelve al Login real
+    // El guardado va con *debounce* y `authSignOut()` corta la petición en
+    // vuelo: sin esperar, el último cambio (la venta de hace dos segundos) se
+    // queda en memoria y el comercio vuelve a abrir con los datos viejos.
+    await Promise.race([
+      flushSaves(),
+      new Promise<void>((resolver) => window.setTimeout(resolver, FLUSH_SALIDA_MS)),
+    ]);
     await authSignOut();
     setUser(null);
     setAuthed(false);
@@ -952,12 +985,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEsAdmin(false);
     hydrated = true;
     setAppState(emptyState());
-  }, []);
+  }, [flushSaves]);
 
+  // Devuelve el resultado completo: `error` para las pantalla de formulario y
+  // `outcome` para distinguir alta nueva / sesión directa / correo duplicado
+  // (BLINK-046/063.1: un duplicado no es un error, pero tampoco es un alta).
   const signUp = useCallback(
     async (input: { email: string; password: string; firstName: string; lastName: string; phone: string }) => {
-      const { error } = await authSignUp(input);
-      return error;
+      const { error, outcome } = await authSignUp(input);
+      return { error, outcome } as const;
     },
     []
   );
@@ -2250,6 +2286,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       resetPassword,
       updatePassword,
       completeOnboarding,
+      flushSaves,
       clearAll,
       reloadCloud,
       refrescarActivacion,
@@ -2275,7 +2312,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBusiness, setRate, syncRate,
       signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
       resetPassword, updatePassword,
-      completeOnboarding, clearAll, reloadCloud, refrescarActivacion,
+      completeOnboarding, flushSaves, clearAll, reloadCloud, refrescarActivacion,
     ]
   );
 

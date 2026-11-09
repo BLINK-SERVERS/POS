@@ -136,8 +136,21 @@ export function Onboarding() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function finish() {
+  // `terminando` deshabilita el botón mientras la nube confirma. Sin ese
+  // paso intermedio, recargar justo después de «Terminar» hidrataba un
+  // comercio todavía sin completar y el asistente volvía a empezar
+  // (BLINK-048).
+  const [terminando, setTerminando] = useState(false);
+
+  async function finish() {
+    if (terminando) return;
     actions.completeOnboarding();
+    setTerminando(true);
+    try {
+      await actions.flushSaves();
+    } finally {
+      setTerminando(false);
+    }
     nav("/app/inicio", { replace: true });
   }
 
@@ -625,8 +638,12 @@ export function Onboarding() {
                 <Icon name="arrowRight" />
               </button>
             ) : (
-              <button className="btn btn--primary" onClick={finish} disabled={!canFinish}>
-                Terminar <Icon name="check" />
+              <button
+                className="btn btn--primary"
+                onClick={finish}
+                disabled={!canFinish || terminando}
+              >
+                {terminando ? "Guardando…" : <>Terminar <Icon name="check" /></>}
               </button>
             )}
           </div>

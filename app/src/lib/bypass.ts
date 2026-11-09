@@ -1,7 +1,9 @@
 // TEMP-BYPASS — sesión falsa local para pruebas manuales SIN cuenta real.
 //
-// ⚠️ TEMPORAL: se elimina este archivo y sus 3 usos en store.tsx cuando
-// termine la ronda de pruebas (el usuario lo pedirá explícitamente).
+// ⚠️ SOLO DESARROLLO (BLINK-001/057): Vite fija `import.meta.env.DEV` a false en
+// el build de producción, así que las llamadas se podan y este módulo nunca debe
+// llegar a `dist`. Antes de esta guarda el bundle publicado leía `?bypass=1` en
+// pos.blink.com.ve y entraba al POS sin credenciales.
 //
 // Uso:
 //   · Activar:  abrir /entrar?bypass=1  (quita el parámetro de la URL)
@@ -11,6 +13,7 @@
 // el estado vive en localStorage igual que en producción y las rutas
 // protegidas se comportan normalmente.
 
+const DEV = import.meta.env.DEV;
 const KEY = "blink-temp-bypass";
 
 let cached: boolean | null = null;
@@ -46,13 +49,15 @@ function consumeParam(): void {
   }
 }
 
-consumeParam();
+if (DEV) consumeParam();
 
 export function isBypassActive(): boolean {
-  return readFlag();
+  // En producción `DEV` es false literal: la función se podan y el flag no se lee.
+  return DEV && readFlag();
 }
 
 export function clearBypass(): void {
+  if (!DEV) return;
   try {
     window.localStorage.removeItem(KEY);
   } catch {
