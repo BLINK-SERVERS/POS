@@ -5,8 +5,9 @@
 // día, caja abierta— que se inyecta en localStorage para fotografiar
 // la aplicación real sin cuenta ni Supabase.
 //
-// Lo consume `scripts/capturar-landing.mjs`, que guarda las capturas
-// en `public/landing/` para la landing comercial.
+// Lo consume `scripts/capturar-landing.mjs` (`npm run landing:shots`),
+// que fotografía la app y deja las nueve piezas de `src/assets/landing/`
+// que importan los `<img>` de la landing comercial.
 //
 // No toca ninguna base de datos: es un dato local, efímero.
 // ============================================================

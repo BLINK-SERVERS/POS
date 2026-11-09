@@ -2,6 +2,10 @@
 node_modules/
 dist/
 
+# Borrador de las capturas de la landing (scripts/capturar-landing.mjs):
+# solo se versiona lo que se aplica a src/assets/landing/.
+.capturas-landing/
+
 # Variables de entorno con secretos: nunca versionar
 .env
 .env.local

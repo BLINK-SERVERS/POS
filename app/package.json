@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "icons": "node scripts/build-icons.mjs",
     "og": "node scripts/build-og-image.mjs",
+    "landing:shots": "node scripts/capturar-landing.mjs",
     "icons:sf": "node scripts/build-sf-symbols.mjs",
     "tokens:ios": "node scripts/build-ios-tokens.mjs",
     "verify:ui": "node scripts/verify-ui.mjs",
