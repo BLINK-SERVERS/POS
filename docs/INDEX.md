@@ -1,6 +1,6 @@
 # Índice de documentación · BLINK POS
 
-**Actualizado:** 2026-10-21 · **Versión del proyecto:** 1.8.3
+**Actualizado:** 2026-11-08 · **Versión del proyecto:** 1.19.0
 
 Toda la documentación vive en `docs/`. Este índice dice qué hay en cada sitio y
 cuál es el vigente.
@@ -59,6 +59,7 @@ cuál es el vigente.
 | [`03-rutas-arquitectura.md`](./03-rutas-arquitectura.md) | Rutas, guardas de acceso y flujo de navegación |
 | [`14-estructura-general.md`](./14-estructura-general.md) | Árbol del proyecto, módulo por módulo |
 | [`20-supabase-auth-y-datos.md`](./20-supabase-auth-y-datos.md) | Supabase: auth, esquema, RLS y migraciones |
+| [`27-activacion-y-conciliacion.md`](./27-activacion-y-conciliacion.md) | **Cobro del POS**: $25 cada 30 días, tasa Binance P2P, datos de pago, alta en dos fases con borrado a las 24 h y panel de conciliación |
 | [`15-rendimiento-escalabilidad.md`](./15-rendimiento-escalabilidad.md) | Rendimiento, caché y escalabilidad |
 | [`FIGMA_MCP.md`](./FIGMA_MCP.md) | Cómo se conectó el MCP de Figma (OAuth, puente propio) |
 

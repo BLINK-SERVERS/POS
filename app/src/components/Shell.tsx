@@ -9,7 +9,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Glass } from "konsta/react";
-import { useStore } from "../lib/store";
+import { useActivacion, useStore } from "../lib/store";
+import { estadoReal, fechaCorta, restante, restanteTexto } from "../lib/activacion";
 import { formatBsDirect, formatTasaCabecera, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
@@ -80,6 +81,28 @@ function AvatarMenu({
   cajaAbierta: boolean;
 }) {
   const { user, logout } = useStore();
+  const activacion = useActivacion();
+  const plan = estadoReal(activacion);
+  const porVencerDias = restante(activacion?.vigenteHasta);
+  // Aviso discreto: solo en los últimos tres días de vigencia.
+  const planPorVencer =
+    plan === "activo" &&
+    porVencerDias !== null &&
+    !porVencerDias.vencido &&
+    porVencerDias.ms <= 3 * 86_400_000;
+  const planTexto =
+    plan === "activo"
+      ? activacion?.vigenteHasta
+        ? `Hasta ${fechaCorta(activacion.vigenteHasta)}`
+        : "Sin corte"
+      : plan === "en_revision"
+        ? "En revisión"
+        : plan === "rechazado"
+          ? "Rechazada"
+          : plan === "vencido"
+            ? "Vencida"
+            : "Pendiente";
+
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -172,6 +195,17 @@ function AvatarMenu({
             <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/ajustes?tab=Perfil")}>
               <Icon name="person" />
               <span>Tu perfil</span>
+            </button>
+            <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/activacion")}>
+              <Icon name="seal" />
+              <span>Suscripción</span>
+              <span
+                className={"avatarmenu__meta" + (planPorVencer || plan === "vencido" ? " avatarmenu__meta--warn" : "")}
+              >
+                {planPorVencer
+                  ? `Vence en ${restanteTexto(activacion?.vigenteHasta)}`
+                  : planTexto}
+              </span>
             </button>
             <button type="button" role="menuitem" className="avatarmenu__item" onClick={() => ir("/app/ajustes")}>
               <Icon name="settings" />

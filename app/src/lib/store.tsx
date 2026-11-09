@@ -71,6 +71,12 @@ import {
   type SessionUser,
 } from "./cloud";
 import { supabase, consumeLinkAuthType } from "./supabase";
+import {
+  cloudEsAdmin,
+  cloudLoadActivacion,
+  puedeOperar,
+  type Activacion,
+} from "./activacion";
 // TEMP-BYPASS (pruebas manuales sin cuenta) — se retira con el archivo bypass.ts.
 import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 
@@ -322,6 +328,10 @@ let booting = true;
 let hydrated = false;
 /** true cuando el equipo ya está verificado por código (o es de confianza). */
 let currentDeviceVerified = false;
+/** Activación y pago de la cuenta (migración 0005). */
+let currentActivacion: Activacion | null = null;
+/** true si el correo figura en `admins_plataforma`. */
+let currentEsAdmin = false;
 
 // --- Equipos de confianza -----------------------------------------
 // El usuario puede marcar «Confiar en este dispositivo» para no volver a
@@ -423,6 +433,28 @@ function getBooting(): boolean {
 
 function getDeviceVerified(): boolean {
   return currentDeviceVerified;
+}
+
+function getActivacion(): Activacion | null {
+  return currentActivacion;
+}
+
+function getEsAdmin(): boolean {
+  return currentEsAdmin;
+}
+
+function setActivacion(value: Activacion | null): void {
+  const igual =
+    value === currentActivacion ||
+    (!!value && !!currentActivacion && JSON.stringify(value) === JSON.stringify(currentActivacion));
+  currentActivacion = value;
+  if (!igual) emit();
+}
+
+function setEsAdmin(value: boolean): void {
+  if (value === currentEsAdmin) return;
+  currentEsAdmin = value;
+  emit();
 }
 
 function setDeviceVerified(value: boolean): void {
@@ -542,6 +574,10 @@ type StoreState = {
   booting: boolean;
   /** true cuando el equipo está verificado (de confianza o con código). */
   deviceVerified: boolean;
+  /** Activación de pago de la cuenta (null = cuenta anterior a 0005). */
+  activacion: Activacion | null;
+  /** true si el correo de la sesión es administrador de plataforma. */
+  esAdmin: boolean;
 };
 
 export interface CheckoutInput {
@@ -694,6 +730,8 @@ type StoreActions = {
   clearAll: () => void;
   /** Reintenta cargar el comercio desde la nube. */
   reloadCloud: () => Promise<void>;
+  /** Vuelve a leer la activación (tras reportar un pago o al aprobarse). */
+  refrescarActivacion: () => Promise<void>;
 };
 
 export type StoreValue = StoreState & StoreActions;
@@ -722,6 +760,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // No pisar la nube antes de terminar de cargarla ni tras cerrar sesión.
     if (!currentAuthed || !hydrated) return;
     if (isBypassActive()) return; // TEMP-BYPASS: sin sesión real en la nube
+    // Sin pago conciliado no se escribe: el comercio aún no debe existir.
+    if (!puedeOperar(currentActivacion)) return;
     cloudSaveBusiness(currentState)
       .then(() => setCloudError(false))
       .catch(() => {
@@ -772,9 +812,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Carga el comercio del usuario autenticado desde Supabase.
+  // Sin pago conciliado no se crea ni se lee el comercio: la cuenta vive
+  // en la pantalla de activación hasta que un admin aprueba el pago.
   const hydrate = useCallback(async (user: SessionUser | null) => {
     hydrated = false;
-    if (!user) {
+    if (!user || !puedeOperar(currentActivacion)) {
       setAppState(emptyState());
       hydrated = true;
       return;
@@ -790,6 +832,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Lee la activación y el rol de administrador de la sesión actual.
+  const cargarActivacion = useCallback(async (user: SessionUser | null) => {
+    if (!user) {
+      setActivacion(null);
+      setEsAdmin(false);
+      return null;
+    }
+    const [act, admin] = await Promise.all([
+      // Si la red falla, no se bloquea la cuenta: el RLS sigue siendo la
+      // última palabra y `puede_operar()` decide del lado del servidor.
+      cloudLoadActivacion().catch(() => null),
+      cloudEsAdmin(),
+    ]);
+    setActivacion(act);
+    setEsAdmin(admin);
+    return act;
+  }, []);
+
   // Observa la sesión de Supabase (alta, verificación, login, logout).
   useEffect(() => {
     let cancelled = false;
@@ -801,11 +861,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markVerified(fake.id);
       trustDevice(fake.id);
       setDeviceVerified(true);
+      // TEMP-BYPASS: la demo se considera una cuenta activa.
+      setActivacion(null);
+      setEsAdmin(false);
       hydrated = true;
       setBooting(false);
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (cancelled) return;
       const user = userFromSession(data.session);
       setUser(user);
@@ -819,12 +882,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setDeviceVerified(false);
       }
       if (!user) {
+        setActivacion(null);
+        setEsAdmin(false);
         setBooting(false);
         hydrated = true;
         setAppState(emptyState());
         return;
       }
       setBooting(true);
+      await cargarActivacion(user);
+      if (cancelled) return;
       void hydrate(user).finally(() => {
         if (!cancelled) setBooting(false);
       });
@@ -845,20 +912,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setDeviceVerified(false);
       }
       if (!user) {
+        setActivacion(null);
+        setEsAdmin(false);
         setBooting(false);
         hydrated = true;
         setAppState(emptyState());
         return;
       }
       setBooting(true);
-      void hydrate(user).finally(() => setBooting(false));
+      void cargarActivacion(user)
+        .then(() => hydrate(user))
+        .finally(() => setBooting(false));
     });
 
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [hydrate]);
+  }, [hydrate, cargarActivacion]);
 
   const login = useCallback(async (email: string, password: string) => {
     const { error, userId } = await authSignIn(email.trim(), password);
@@ -877,6 +948,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAuthed(false);
     clearSessionVerified();
+    setActivacion(null);
+    setEsAdmin(false);
     hydrated = true;
     setAppState(emptyState());
   }, []);
@@ -959,6 +1032,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setBooting(false);
     }
   }, [hydrate]);
+
+  /** Relee la activación (pago recién reportado o aprobado por el admin). */
+  const refrescarActivacion = useCallback(async () => {
+    if (!currentUser) return;
+    const act = await cargarActivacion(currentUser);
+    // Si el pago acaba de aprobarse y el comercio aún no está montado,
+    // se carga ahora: así el usuario sigue al onboarding sin recargar.
+    if (puedeOperar(act) && !currentState.onboarding.completed) {
+      await hydrate(currentUser);
+    }
+  }, [cargarActivacion, hydrate]);
 
   // ---- Catálogo -------------------------------------------------
   const addProduct = useCallback((p: Omit<Product, "id">) => {
@@ -2168,6 +2252,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       completeOnboarding,
       clearAll,
       reloadCloud,
+      refrescarActivacion,
     }),
     [
       login, logout, addProduct, updateProduct, removeProduct, setStock,
@@ -2190,7 +2275,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBusiness, setRate, syncRate,
       signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
       resetPassword, updatePassword,
-      completeOnboarding, clearAll, reloadCloud,
+      completeOnboarding, clearAll, reloadCloud, refrescarActivacion,
     ]
   );
 
@@ -2250,6 +2335,18 @@ export function useDeviceVerified(): boolean {
   return useSyncExternalStore(subscribe, getDeviceVerified, getDeviceVerified);
 }
 
+/** Activación de pago de la cuenta (null = cuenta anterior a 0005). */
+export function useActivacion(): Activacion | null {
+  useMounted();
+  return useSyncExternalStore(subscribe, getActivacion, getActivacion);
+}
+
+/** true si el correo de la sesión es administrador de plataforma. */
+export function useEsAdmin(): boolean {
+  useMounted();
+  return useSyncExternalStore(subscribe, getEsAdmin, getEsAdmin);
+}
+
 /** Suscripción solo al estado (cambia cuando cambia el estado). */
 export function useStoreState(): StoreState {
   useMounted();
@@ -2258,9 +2355,11 @@ export function useStoreState(): StoreState {
   const user = useSyncExternalStore(subscribe, getUser, getUser);
   const booting = useSyncExternalStore(subscribe, getBooting, getBooting);
   const deviceVerified = useSyncExternalStore(subscribe, getDeviceVerified, getDeviceVerified);
+  const activacion = useSyncExternalStore(subscribe, getActivacion, getActivacion);
+  const esAdmin = useSyncExternalStore(subscribe, getEsAdmin, getEsAdmin);
   return useMemo(
-    () => ({ state, authed, user, booting, deviceVerified }),
-    [state, authed, user, booting, deviceVerified]
+    () => ({ state, authed, user, booting, deviceVerified, activacion, esAdmin }),
+    [state, authed, user, booting, deviceVerified, activacion, esAdmin]
   );
 }
 
@@ -2273,10 +2372,10 @@ export function useStoreActions(): StoreActions {
 
 /** API combinada (compatibilidad). */
 export function useStore(): StoreValue {
-  const { state, authed, user, booting, deviceVerified } = useStoreState();
+  const { state, authed, user, booting, deviceVerified, activacion, esAdmin } = useStoreState();
   const actions = useStoreActions();
   return useMemo(
-    () => ({ state, authed, user, booting, deviceVerified, ...actions }),
-    [state, authed, user, booting, deviceVerified, actions]
+    () => ({ state, authed, user, booting, deviceVerified, activacion, esAdmin, ...actions }),
+    [state, authed, user, booting, deviceVerified, activacion, esAdmin, actions]
   );
 }

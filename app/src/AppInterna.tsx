@@ -16,7 +16,8 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { KonstaProvider } from "konsta/react";
-import { StoreProvider, useAuth, useBooting, useDeviceVerified, useStoreState } from "./lib/store";
+import { StoreProvider, useActivacion, useAuth, useBooting, useDeviceVerified, useEsAdmin, useStoreState } from "./lib/store";
+import { puedeOperar } from "./lib/activacion";
 import { Shell } from "./components/Shell";
 import { ConfirmProvider } from "./components/ui";
 import { BrandLoader as PageLoader } from "./components/BrandLoader";
@@ -28,6 +29,7 @@ import { Login } from "./pages/Login";
 import { Registro } from "./pages/Registro";
 import { Recuperar } from "./pages/Recuperar";
 import { Onboarding } from "./pages/Onboarding";
+import { Confirmar } from "./pages/Confirmar";
 import { Legal } from "./pages/Legal";
 
 // El juego completo de iconos (182 KB) se registra aqui: la landing solo
@@ -40,6 +42,7 @@ registrarIconos(ICONOS_BLINK);
 // chunk lazy, de modo que la landing no lo descarga.
 import "./styles/konsta.css";
 import "./styles/app.css";
+import "./styles/activacion.css";
 
 const General = lazy(() => import("./pages/General").then((m) => ({ default: m.General })));
 const Vender = lazy(() => import("./pages/Vender").then((m) => ({ default: m.Vender })));
@@ -50,15 +53,22 @@ const Contactos = lazy(() => import("./pages/Contactos").then((m) => ({ default:
 const Finanzas = lazy(() => import("./pages/Finanzas").then((m) => ({ default: m.Finanzas })));
 const Informes = lazy(() => import("./pages/Informes").then((m) => ({ default: m.Informes })));
 const Ajustes = lazy(() => import("./pages/Ajustes").then((m) => ({ default: m.Ajustes })));
+const Activacion = lazy(() => import("./pages/Activacion").then((m) => ({ default: m.Activacion })));
+const AdminConciliacion = lazy(() =>
+  import("./pages/AdminConciliacion").then((m) => ({ default: m.AdminConciliacion }))
+);
 
 function Protected({ children }: { children: ReactNode }) {
   const authed = useAuth();
   const verified = useDeviceVerified();
   const booting = useBooting();
+  const activacion = useActivacion();
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
   // Con sesión pero sin equipo verificado se vuelve a /entrar para pedir el código.
   if (!authed || !verified) return <Navigate to="/app/entrar" replace />;
+  // Sin pago conciliado no hay POS: todo lleva a la pantalla de activación.
+  if (!puedeOperar(activacion)) return <Navigate to="/app/activacion" replace />;
   if (!onboarded) return <Navigate to="/app/onboarding" replace />;
   return (
     <Shell>
@@ -82,10 +92,19 @@ function OnboardingGate({ children }: { children: ReactNode }) {
   const authed = useAuth();
   const verified = useDeviceVerified();
   const booting = useBooting();
+  const activacion = useActivacion();
   const onboarded = useStoreState().state.onboarding.completed;
   if (booting) return <PageLoader />;
   if (!authed || !verified) return <Navigate to="/app/entrar" replace />;
+  if (!puedeOperar(activacion)) return <Navigate to="/app/activacion" replace />;
   if (onboarded) return <Navigate to="/app/inicio" replace />;
+  return <>{children}</>;
+}
+
+/** Solo el administrador de plataforma concilia pagos. */
+function AdminGate({ children }: { children: ReactNode }) {
+  const esAdmin = useEsAdmin();
+  if (!esAdmin) return <Navigate to="/app/inicio" replace />;
   return <>{children}</>;
 }
 
@@ -99,6 +118,12 @@ function AppRoutes() {
       {/* --- Acceso --- */}
       <Route path="entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="registro" element={<PublicOnly><Registro /></PublicOnly>} />
+      {/* Enlace del correo: sin PublicOnly, porque la sesión nace justo al
+          abrirlo y hay que dejarla entrar a la activación. */}
+      <Route path="confirmar" element={<Confirmar />} />
+      {/* Activación del pago: sin Shell, móvil primero. Se entra con sesión;
+          si no hay, la propia pantalla manda a /entrar. */}
+      <Route path="activacion" element={<Suspense fallback={<PageLoader />}><Activacion /></Suspense>} />
       {/* Recuperar contraseña: sin PublicOnly, porque el enlace del correo crea
           una sesión de recuperación y hay que poder fijar la nueva clave. */}
       <Route path="recuperar" element={<Recuperar />} />
@@ -123,6 +148,17 @@ function AppRoutes() {
       <Route path="finanzas" element={<Protected><Finanzas /></Protected>} />
       <Route path="informes" element={<Protected><Informes /></Protected>} />
       <Route path="ajustes" element={<Protected><Ajustes /></Protected>} />
+      {/* Conciliación manual de pagos (solo admin de plataforma). */}
+      <Route
+        path="admin/conciliacion"
+        element={
+          <Protected>
+            <AdminGate>
+              <AdminConciliacion />
+            </AdminGate>
+          </Protected>
+        }
+      />
       <Route path="*" element={<Navigate to="/app/inicio" replace />} />
     </Routes>
   );

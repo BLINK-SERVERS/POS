@@ -15,6 +15,53 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
+### Activación de pago y conciliación
+
+- **Alta en dos fases**: crear la cuenta ya no crea el comercio. El registro
+  solo crea el usuario en Supabase; la fila de `businesses` nace cuando un pago
+  queda aprobado. Sin pago conciliado en 24 h, el usuario y sus datos se borran
+  (`pg_cron` cada 15 min + botón «Purgar vencidos» en el panel).
+- **Precio**: **$25 cada 30 días** por tienda. La tasa de bolívares se lee de
+  Binance P2P vía CriptoYa (`ask`), con caché de 5 min y reintento manual; si no
+  hay tasa no se inventa un monto. Los equivalentes cripto usan el precio spot
+  de Binance (USDT, USDC, BTC, ETH).
+- **Cobro**: Pago Móvil (`CI 34201580 · 0424 6603660 · BNC 0102`) y Binance Pay
+  ID `1130279410`, en una sola constante `PAGO` (`src/lib/activacion.ts`).
+- **Pantalla `/app/activacion`** (móvil primero): importe en dólares y
+  bolívares con chip de tasa y hora, pago móvil con copiado por fila, cripto con
+  QR del Binance Pay ID, «Ya pagué» con referencia/nota y estados pendiente /
+  en revisión / rechazado / vencido / activo con cuenta atrás de borrado.
+- **Panel `/app/admin/conciliacion`** (solo `admin@blink.com.ve`): filtros por
+  revisar / sin pago / activos / rechazados / todos, aprobar (libera el
+  onboarding y crea el comercio), rechazar con motivo (reinicia la ventana de
+  24 h), eliminar cuenta y purgar vencidos.
+- **Suscripción** en Ajustes y en el menú del avatar, con estado, fecha de
+  corte, aviso a ≤ 3 días e historial de pagos.
+- Migración [`0005_activacion.sql`](supabase/migrations/0005_activacion.sql):
+  tablas `admins_plataforma`, `activaciones` y `pagos_activacion`, RPCs
+  `reportar_pago` / `decidir_pago` / `purgar_activaciones` /
+  `eliminar_cuenta`, y `businesses` solo escribible con `puede_operar()`.
+  Los usuarios anteriores quedan activos sin vencimiento. Detalle en
+  [`docs/27-activacion-y-conciliacion.md`](docs/27-activacion-y-conciliacion.md).
+- Pruebas: 17 casos nuevos en `npm run test:migrations`, Vitest de
+  `activacion.ts` y `tasa.ts` (caché, fallback y sin tasa).
+
+### Enlace de confirmación del correo
+
+- El enlace de Supabase apuntaba a la raíz del sitio y el POS descartaba los
+  tokens: el usuario volvía a la landing sin sesión. Ahora apunta a
+  `/app/confirmar`, que canjea `token_hash` (`verifyOtp`) o `code`
+  (`exchangeCodeForSession`) y entra a `/app/activacion`.
+- `authSignUp` usa `signUp` con contraseña y metadatos (antes `signInWithOtp`
+  descartaba la contraseña y el acceso con contraseña fallaba); se conserva el
+  enlace mágico. `authResendCode` reenvía el alta con `resend`.
+- `index.html` reescribe a `/app/confirmar` si el hash o el query traen los
+  tokens, y el service worker (`blink-pos-v2`) deja de cachear navegaciones
+  fallidas.
+- Requiere configurar en Supabase *Site URL* `https://pos.blink.com.ve` y
+  *Redirect URLs* `https://pos.blink.com.ve/**` y
+  `http://localhost:5173/**`.
+
 ### Aviso de cookies
 
 - **pos.blink.com.ve** pregunta una sola vez con tres respuestas —«Aceptar

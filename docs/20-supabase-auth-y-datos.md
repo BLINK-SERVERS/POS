@@ -108,15 +108,16 @@ está bloqueada, ver 2.2).
 - **Authentication → Providers → Email**: activado; «Confirm email» **activado** (así el código
   es obligatorio).
 - **Providers → Google / Phone**: **desactivados** (BLINK no usa Google).
-- **URL Configuration**: *Site URL* = `https://www.blink.com.ve` y *Redirect URLs* =
-  `https://www.blink.com.ve/**`, `https://www.blink.com.ve/app/**` y
-  `https://blink.com.ve/**` (más `http://localhost:5173/**` para desarrollo).
-  Antes el *Site URL* seguía en `http://localhost:3000`, y por eso los enlaces de los correos
-  apuntaban a **localhost**; y durante un tiempo apuntaron a
-  `https://blink-servers.github.io/POS/`, que ya no es la URL pública.
-  > Si los correos de verificación siguen llegando con la URL antigua, actualiza
-  > *Site URL* y *Redirect URLs* en el panel de Supabase y añade la nueva URL;
-  > no hace falta regenerar las claves.
+- **URL Configuration**: *Site URL* = `https://pos.blink.com.ve` y *Redirect URLs* =
+  `https://pos.blink.com.ve/**`, `https://pos.blink.com.ve/app/**` y
+  `http://localhost:5173/**` para desarrollo. `www.blink.com.ve` sigue admitido
+  solo por compatibilidad con enlaces antiguos.
+  Los correos de **alta, reenvío y recuperación** apuntan a `/app/confirmar` y
+  `/app/recuperar`. Si el destino no figura en *Redirect URLs*, Supabase lo
+  sustituye por el *Site URL* y el enlace cae en la landing, que no procesa los
+  tokens (`access_token`, `code` o `token_hash`): el usuario vuelve sin sesión.
+  > Si los correos siguen llegando con una URL antigua, actualiza *Site URL* y
+  > *Redirect URLs* en el panel de Supabase; no hace falta regenerar las claves.
 
 ### 2.5 Variables de entorno del cliente
 
@@ -195,6 +196,24 @@ with check (auth.uid() = owner_id)
 ```
 
 Nadie —ni con la clave pública— puede leer ni escribir filas de otro comercio.
+Desde la migración `0005`, `insert` y `update` exigen además
+`public.puede_operar()`: sin un pago conciliado no se crea ni se modifica el
+comercio. La lectura se mantiene para que nadie pierda sus datos al vencer.
+
+### 3.4 Activación y conciliación (migración `0005`)
+
+Blink POS se cobra a **$25 cada 30 días**. El alta crea solo la cuenta; el
+comercio (`businesses`) no existe hasta que un administrador concilia el primer
+pago. Las tablas y funciones viven en `supabase/migrations/0005_activacion.sql`:
+
+- `admins_plataforma` (correos de administración, hoy `admin@blink.com.ve`);
+- `activaciones` (una por usuario: estado, importe, vigencia y `purge_en`);
+- `pagos_activacion` (historial de pagos reportados y su conciliación).
+
+Funciones `security definer`: `reportar_pago`, `decidir_pago`,
+`purgar_activaciones`, `eliminar_cuenta`, `es_admin_plataforma` y
+`puede_operar`. El detalle operativo está en
+[`27-activacion-y-conciliacion.md`](./27-activacion-y-conciliacion.md).
 
 ---
 

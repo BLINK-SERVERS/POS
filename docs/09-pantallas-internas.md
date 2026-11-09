@@ -123,13 +123,16 @@ Ancho de sidebar según tokens: 13rem / 11rem / 4.5rem (colapsable).
 - **Desglose del resultado** y **Efecto cambiario (informativo)**.
 
 ### `/ajustes` — Ajustes
-- Pestañas: **Negocio** / **Moneda e impuestos** / **Canales** / **Ubicaciones** /
-  **Comportamiento** / **Usuarios y roles** / **Bitácora**.
+- Pestañas: **Negocio** / **Perfil** / **Moneda e impuestos** / **Recibo** /
+  **Exportar** / **Dispositivos** / **Apariencia** / **Suscripción** / **Cuenta**.
 - **Negocio** → *Datos del comercio*: Nombre del comercio (*), Razón social, RIF, Teléfono, Dirección.
 - **Recibo**: Título del recibo (default "Comprobante de venta"), Formato de impresión
   (**Ticket 58 mm / 80 mm / Carta**), Pie del recibo (máx. 300 caracteres), "Datos que se muestran",
   **Vista previa**.
 - **Moneda principal: Dólares (USD)** → "Ir a Moneda e impuestos".
+- **Suscripción**: estado (`Activa`, `En revisión`, `Rechazada`, `Vencida`),
+  fecha de corte, importe ($25 cada 30 días), botón **Renovar ahora** (lleva a
+  `/app/activacion`) e historial de pagos con su referencia y motivo de rechazo.
 - Estado de cambios: "Sin cambios — Aún no has realizado cambios en esta sección" → **Guardar**.
 
 ---
@@ -143,3 +146,37 @@ Ancho de sidebar según tokens: 13rem / 11rem / 4.5rem (colapsable).
 
 > La captura de sub-rutas navegó por enlaces del menú; muchas pestañas son **estado interno**
 > (no cambian la URL), por lo que su contenido está en el DOM/HTML capturado de cada pantalla.
+
+---
+
+## 9.4 `/app/activacion` — Activación y renovación
+
+Pantalla **sin Shell**, móvil primero, para quien acaba de registrarse o
+necesita renovar:
+
+- **Importe**: `$25,00` y su equivalente en bolívares con la tasa Binance P2P
+  vigente; chip con hora de la lectura y botón de refresco. Sin red o sin tasa
+  no se inventa un monto: se muestra el error y «Reintentar».
+- **Pago Móvil**: cédula, teléfono, banco y monto exacto en Bs, cada dato con
+  su botón de copiar y un «Copiar datos» que arma el mensaje completo.
+- **Cripto**: USDT, USDC, BTC y ETH con su equivalente, destino Binance Pay
+  `1130279410`, QR y botón de copiar.
+- **Ya pagué**: hoja con monto, referencia y nota; el pago queda *en revisión*
+  y la pantalla se actualiza sola cada 20 s mientras espera conciliación.
+- **Estados**: pendiente (con cuenta atrás de borrado a 24 h), en revisión,
+  rechazado (motivo y reintento), vencido (renovar) y activo («Ir al POS»).
+- Acceso: «Salir» cierra sesión; el menú de cuenta y Ajustes → Suscripción
+  enlazan aquí para renovar.
+
+## 9.5 `/app/admin/conciliacion` — Conciliación (administración)
+
+Solo visible para correos de `admins_plataforma` (`admin@blink.com.ve`):
+
+- Pestañas **Por revisar** / **Sin pago** / **Activos** / **Rechazados** / **Todos**.
+- Cada fila: nombre y correo, estado, alta (con antigüedad), cuenta atrás de
+  purga, vigencia, y el último pago con método, monto en su moneda, referencia,
+  tasa aplicada, nota y motivo si fue rechazado.
+- Acciones **Aprobar** (extiende 30 días y habilita el comercio), **Rechazar**
+  (pide motivo y reinicia la ventana de 24 h) y **Eliminar cuenta**
+  (confirmación destructiva). **Purgar vencidas** ejecuta la misma limpieza que
+  el cron.

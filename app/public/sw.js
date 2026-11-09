@@ -5,7 +5,7 @@
    Solo se guardan recursos propios del alcance del worker; las llamadas a
    Supabase son de otro origen y nunca pasan por aquí. Al cambiar la lógica,
    subir CACHE para borrar la versión anterior. */
-const CACHE = "blink-pos-v1";
+const CACHE = "blink-pos-v2";
 const RAIZ = new URL("./", self.location).href;
 const ARMAZON = [
   RAIZ,
@@ -59,8 +59,14 @@ self.addEventListener("fetch", (evento) => {
     evento.respondWith(
       fetch(peticion)
         .then((respuesta) => {
-          const copia = respuesta.clone();
-          void caches.open(CACHE).then((cache) => cache.put(RAIZ + "index.html", copia));
+          // Solo se guarda el armazón REAL (respuesta 200). En GitHub Pages
+          // una ruta profunda devuelve `404.html` con estatus 404: guardarla
+          // envenenaría el arranque sin conexión con la página de
+          // redirección.
+          if (respuesta.ok && respuesta.headers.get("content-type")?.includes("text/html")) {
+            const copia = respuesta.clone();
+            void caches.open(CACHE).then((cache) => cache.put(RAIZ + "index.html", copia));
+          }
           return respuesta;
         })
         .catch(() => caches.match(RAIZ + "index.html").then((guardada) => guardada ?? caches.match(RAIZ)))

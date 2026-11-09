@@ -22,6 +22,33 @@
         }
       })();
     </script>
+    <!-- Enlaces de correo (confirmación, recuperación, magic link).
+         Supabase puede devolver al usuario a la raíz; la landing no carga
+         el cliente de Supabase y el hash con los tokens se perdería. Se
+         reescribe la URL a `/app/confirmar` ANTES de montar React, sin
+         recargar: el router resuelve esa pantalla y ella consume el enlace. -->
+    <script>
+      (function () {
+        try {
+          var hash = location.hash || "";
+          var search = location.search || "";
+          var params = new URLSearchParams(
+            (hash.replace(/^#/, "") + "&" + search.replace(/^\?/, "")).trim()
+          );
+          var esEnlace =
+            params.has("access_token") ||
+            params.has("refresh_token") ||
+            params.has("code") ||
+            params.has("token_hash") ||
+            params.has("error_code");
+          if (!esEnlace) return;
+          if (/\/app\/confirmar\/?$/.test(location.pathname)) return;
+          history.replaceState(null, "", "/app/confirmar" + search + hash);
+        } catch (e) {
+          /* sin URL API: React igual intentará procesar el enlace */
+        }
+      })();
+    </script>
     <!-- Se aplica la apariencia ANTES del primer pintado para que no haya
          destello. Debe ser synchronous y no depender de la red. -->
     <script>

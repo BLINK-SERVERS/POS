@@ -54,7 +54,12 @@ async function run() {
   // --- Stub de Supabase: roles + esquema auth ---
   await c.query(`create role anon nologin; create role authenticated nologin; create role service_role nologin;`);
   await c.query(`create schema if not exists auth;`);
-  await c.query(`create table if not exists auth.users (id uuid primary key default gen_random_uuid(), email text);`);
+  await c.query(`create table if not exists auth.users (
+    id uuid primary key default gen_random_uuid(),
+    email text,
+    raw_user_meta_data jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default now()
+  );`);
   await c.query(`create or replace function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('blink_test.uid', true), '')::uuid $$;`);
 
   // --- Migraciones reales, en el orden de una BD ya en producción ---
@@ -232,6 +237,146 @@ async function run() {
   ok('catálogo global: nombre en MAYÚSCULAS', pan?.name === 'PAN', `(got ${pan?.name})`);
   await c.query(read('0004_catalogo_global.sql'));
   ok('catálogo global: 0004 idempotente', (await c.query(`select count(*)::int n from public.catalogo_global`)).rows[0].n === 3);
+
+  // --- 0005 · Activación de pago y conciliación ---
+  console.log('· running 0005_activacion.sql');
+  await c.query(read('0005_activacion.sql'));
+  ok('0005: la migración se ejecuta sin error', true);
+
+  const actViejo = (await c.query(`select estado, vigente_hasta, purge_en from public.activaciones where user_id = $1`, [userId])).rows[0];
+  ok('0005: BACKFILL deja las cuentas previas activas y sin vencimiento',
+    actViejo?.estado === 'activo' && actViejo?.vigente_hasta === null && actViejo?.purge_en === null,
+    `(got ${JSON.stringify(actViejo)})`);
+
+  const adminRow = await c.query(`insert into auth.users (email) values ('admin@blink.com.ve') returning id`);
+  const adminId = adminRow.rows[0].id;
+  const actAdmin = (await c.query(`select estado, purge_en, vigente_hasta from public.activaciones where user_id = $1`, [adminId])).rows[0];
+  ok('0005: el administrador nace activo y sin purga',
+    actAdmin?.estado === 'activo' && actAdmin?.purge_en === null && actAdmin?.vigente_hasta === null,
+    `(got ${JSON.stringify(actAdmin)})`);
+
+  const nuevoRow = await c.query(
+    `insert into auth.users (email, raw_user_meta_data) values ('nuevo@t.com', '{"first_name":"Ana","last_name":"Pérez"}'::jsonb) returning id, created_at`
+  );
+  const nuevoId = nuevoRow.rows[0].id;
+  const actNuevo = (await c.query(`select estado, purge_en, nombre from public.activaciones where user_id = $1`, [nuevoId])).rows[0];
+  const horas = (new Date(actNuevo.purge_en) - new Date(nuevoRow.rows[0].created_at)) / 3600000;
+  ok('0005: TRIGGER deja la cuenta nueva pendiente con 24 h',
+    actNuevo.estado === 'pendiente' && Math.abs(horas - 24) < 0.01, `(got ${actNuevo.estado}, ${horas} h)`);
+  ok('0005: copia el nombre de los metadatos', actNuevo.nombre === 'Ana Pérez', `(got ${actNuevo.nombre})`);
+
+  // El cliente solo tiene acceso a lo suyo; sin pago, el comercio no existe.
+  await c.query(`grant all on all tables in schema public to testuser`);
+  const rls2 = new Client({ host: 'localhost', port: PORT, user: 'testuser', password: 'x', database: 'blink' });
+  await rls2.connect();
+  await rls2.query(`set role authenticated`);
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [nuevoId]);
+
+  let sinComercio = false;
+  try {
+    await rls2.query(`insert into public.businesses (owner_id, name, data) values ($1, 'Impaga', '{}'::jsonb)`, [nuevoId]);
+  } catch { sinComercio = true; }
+  ok('0005: sin pago conciliado NO se puede crear el comercio', sinComercio);
+
+  const pago = (await rls2.query(
+    `select public.reportar_pago('pago_movil', 'VES', 26250, 1050, '123456789') as id`
+  )).rows[0].id;
+  ok('0005: el usuario reporta su pago', !!pago);
+
+  const actRevision = (await c.query(`select estado, metodo, tasa_ves from public.activaciones where user_id = $1`, [nuevoId])).rows[0];
+  ok('0005: reportar deja la activación en revisión',
+    actRevision.estado === 'en_revision' && actRevision.metodo === 'pago_movil' && Number(actRevision.tasa_ves) === 1050,
+    `(got ${JSON.stringify(actRevision)})`);
+
+  let duplicado = false;
+  try {
+    await rls2.query(`select public.reportar_pago('pago_movil', 'VES', 26250, 1050, '123456789')`);
+  } catch { duplicado = true; }
+  ok('0005: no se duplica un reporte en revisión', duplicado);
+
+  let usuarioConcilia = false;
+  try {
+    await rls2.query(`select public.decidir_pago($1, true, null)`, [pago]);
+  } catch { usuarioConcilia = true; }
+  ok('0005: un usuario normal NO puede conciliar', usuarioConcilia);
+
+  await rls2.query(`reset role`);
+  await rls2.query(`set role authenticated`);
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [adminId]);
+  await rls2.query(`select public.decidir_pago($1, true, null)`, [pago]);
+
+  const actAprob = (await c.query(`select estado, vigente_hasta, purge_en from public.activaciones where user_id = $1`, [nuevoId])).rows[0];
+  const dias = (new Date(actAprob.vigente_hasta) - Date.now()) / 86400000;
+  ok('0005: aprobar activa 30 días y cancela la purga',
+    actAprob.estado === 'activo' && actAprob.purge_en === null && Math.abs(dias - 30) < 0.01,
+    `(got ${actAprob.estado}, ${dias} días)`);
+
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [nuevoId]);
+  const comercio = await rls2.query(
+    `insert into public.businesses (owner_id, name, data) values ($1, 'Ya paga', '{}'::jsonb) returning id`,
+    [nuevoId]
+  );
+  ok('0005: tras aprobar SÍ se crea el comercio', comercio.rowCount === 1);
+
+  // Renovación anticipada: el POS sigue operativo mientras el admin revisa.
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [nuevoId]);
+  const pagoRenov = (await rls2.query(
+    `select public.reportar_pago('binance_pay', 'USDT', 25, null, 'TX-RENOV-1') as id`
+  )).rows[0].id;
+  const actRenov = (await c.query(
+    `select estado, purge_en from public.activaciones where user_id = $1`, [nuevoId]
+  )).rows[0];
+  ok('0005: una renovación anticipada no apaga el POS',
+    actRenov.estado === 'activo' && actRenov.purge_en === null,
+    `(got ${JSON.stringify(actRenov)})`);
+
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [adminId]);
+  await rls2.query(`select public.decidir_pago($1, true, null)`, [pagoRenov]);
+  const actExt = (await c.query(
+    `select estado, vigente_hasta from public.activaciones where user_id = $1`, [nuevoId]
+  )).rows[0];
+  const diasExt = (new Date(actExt.vigente_hasta) - Date.now()) / 86400000;
+  ok('0005: aprobar la renovación suma 30 días a la vigencia',
+    actExt.estado === 'activo' && Math.abs(diasExt - 60) < 0.02,
+    `(got ${actExt.estado}, ${diasExt} días)`);
+
+  // Rechazo: vuelve a quedar pendiente y gana 24 h nuevas.
+  const rechRow = await c.query(`insert into auth.users (email) values ('rechazado@t.com') returning id`);
+  const rechId = rechRow.rows[0].id;
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [rechId]);
+  const pagoRech = (await rls2.query(
+    `select public.reportar_pago('binance_pay', 'USDT', 25, null, 'TX-998877') as id`
+  )).rows[0].id;
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [adminId]);
+  await rls2.query(`select public.decidir_pago($1, false, 'Comprobante ilegible')`, [pagoRech]);
+
+  const actRech = (await c.query(`select a.estado, a.purge_en, p.motivo from public.activaciones a join public.pagos_activacion p on p.user_id = a.user_id where a.user_id = $1`, [rechId])).rows[0];
+  const horasRech = (new Date(actRech.purge_en) - Date.now()) / 3600000;
+  ok('0005: rechazar deja 24 h nuevas para reintentar',
+    actRech.estado === 'rechazado' && Math.abs(horasRech - 24) < 0.01 && actRech.motivo === 'Comprobante ilegible',
+    `(got ${actRech.estado}, ${horasRech} h)`);
+
+  // Un pago en revisión no se purga aunque el reloj venza.
+  const revRow = await c.query(`insert into auth.users (email) values ('revision@t.com') returning id`);
+  const revId = revRow.rows[0].id;
+  await rls2.query(`select set_config('blink_test.uid', $1, false)`, [revId]);
+  await rls2.query(`select public.reportar_pago('pago_movil', 'VES', 26000, 1040, 'REF-1')`);
+  await c.query(`update public.activaciones set purge_en = now() - interval '1 hour' where user_id = $1`, [revId]);
+  await c.query(`select set_config('blink_test.uid', $1, false)`, [adminId]);
+  await c.query(`select public.purgar_activaciones()`);
+  const sigue = await c.query(`select 1 from auth.users where id = $1`, [revId]);
+  ok('0005: la purga respeta los pagos en revisión', sigue.rowCount === 1);
+
+  // Purga real de una cuenta rechazada y vencida.
+  await c.query(`update public.activaciones set purge_en = now() - interval '1 hour' where user_id = $1`, [rechId]);
+  await c.query(`select public.purgar_activaciones()`);
+  const borrada = await c.query(`select 1 from auth.users where id = $1`, [rechId]);
+  const sinAct = await c.query(`select 1 from public.activaciones where user_id = $1`, [rechId]);
+  ok('0005: la purga borra la cuenta vencida y su activación',
+    borrada.rowCount === 0 && sinAct.rowCount === 0);
+
+  await rls2.query(`reset role`);
+  await rls2.end();
 
   await c.end();
   await pg.stop();

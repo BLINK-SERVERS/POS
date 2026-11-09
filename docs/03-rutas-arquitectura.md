@@ -1,6 +1,6 @@
 # 03 · Rutas y arquitectura de navegación · BLINK POS
 
-**Fecha:** 2026-10-21 · **Versión:** 1.8.3
+**Fecha:** 2026-11-08 · **Versión:** 1.19.0
 
 > El mapa de rutas de **WINK** está en
 > [`wink/03-rutas-arquitectura.md`](./wink/03-rutas-arquitectura.md), como
@@ -21,6 +21,9 @@ Definido en `app/src/App.tsx`.
 | `/app/entrar` | `Login` | `PublicOnly` | Acceso con correo + contraseña, o enlace mágico |
 | `/app/registro` | `Registro` | `PublicOnly` | Alta del comercio |
 | `/app/recuperar` | `Recuperar` | **Libre** | Restablecer contraseña |
+| `/app/confirmar` | `Confirmar` | **Libre** | Consume el enlace del correo (alta, reenvío o equipo) y abre sesión |
+| `/app/activacion` | `Activacion` | Sesión (sin Shell) | Pago, estado y renovación de la suscripción ($25 cada 30 días) |
+| `/app/admin/conciliacion` | `AdminConciliacion` | `Protected` + `AdminGate` | Conciliar pagos, aprobar, rechazar y eliminar cuentas |
 | `/app/onboarding` | `Onboarding` | `OnboardingGate` | Alta guiada (moneda base, datos) |
 | `/app/inicio` | `Inicio` | `Protected` | Resumen del negocio |
 | `/app/ventas` | `Vender` | `Protected` | El POS: buscar, escanear, cobrar |
@@ -48,8 +51,10 @@ comparte por WhatsApp o se imprime en el mostrador, así que:
 
 | Guarda | Condición | Redirección |
 |---|---|---|
-| `Protected` | hay sesión **y** equipo verificado **y** onboarding completado | → `/app/entrar` o `/app/onboarding` |
+| `Protected` | hay sesión, equipo verificado, pago activo **y** onboarding completado | → `/app/entrar`, `/app/activacion` o `/app/onboarding` |
+| `AdminGate` | la cuenta figura en `admins_plataforma` | → `/app/inicio` |
 | `PublicOnly` | **no** hay sesión verificada | → `/app/inicio` |
+| `OnboardingGate` | sesión con pago activo, pero onboarding incompleto | → `/app/activacion` o `/app/entrar` |
 | `OnboardingGate` | hay sesión, pero el onboarding no está completo | → `/app/entrar` o `/app/inicio` |
 
 ```tsx

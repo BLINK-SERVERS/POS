@@ -66,9 +66,16 @@ export function Registro() {
       setError(err);
       return;
     }
+    // Se recuerda el correo para poder reenviar el enlace si caduca
+    // (lo usa la pantalla /app/confirmar). Es un dato del propio usuario.
+    try {
+      localStorage.setItem("blink-pos-ultimo-correo", email.trim());
+    } catch {
+      /* sin almacenamiento */
+    }
     setStep("link");
     setCooldown(45);
-    setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo equipo o dispositivo para continuar.`);
+    setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo equipo o dispositivo: al confirmarlo pasarás a la activación del pago.`);
   }
 
   async function reenviar() {
@@ -91,7 +98,7 @@ export function Registro() {
         <BrandLogo className="brand-logo--auth" />
         <h2>Empecemos por lo básico.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
-          Crea tu cuenta, verifica tu correo y arma tu punto de venta a tu medida.
+          Crea tu cuenta, verifica tu correo y activa tu comercio. Son $25 cada 30 días.
         </p>
       </div>
 
@@ -199,7 +206,12 @@ export function Registro() {
                 {busy ? "Enviando enlace…" : "Continuar"}
               </button>
 
-              <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>
+              <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center", lineHeight: 1.5 }}>
+                Son $25 cada 30 días. Tras verificar el correo tendrás 24 h para
+                reportar el pago; si no se concilia, la cuenta y sus datos se eliminan.
+              </p>
+
+              <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.75rem", textAlign: "center" }}>
                 ¿Ya tienes cuenta? <Link to="/app/entrar">Entrar</Link>
               </p>
             </form>
@@ -242,7 +254,8 @@ export function Registro() {
               </button>
 
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
-                Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión automáticamente.
+                Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión
+                y podrás activar tu comercio con el pago.
               </p>
             </div>
           )}

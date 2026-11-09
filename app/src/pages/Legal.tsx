@@ -36,11 +36,15 @@ const TERMINOS: { intro: string; blocks: (Block | Section)[] } = {
       items: [
         {
           h: "El costo del servicio",
-          p: "Blink funciona mediante una suscripción mensual por tienda de $25 USD (o su equivalente en los métodos de pago aceptados).",
+          p: "Blink funciona mediante una suscripción de $25 USD cada 30 días por tienda (o su equivalente en bolívares a la tasa de referencia de Binance P2P vigente al momento del pago).",
+        },
+        {
+          h: "Alta y plazo de activación",
+          p: "Al registrarte se crea tu cuenta, pero el comercio no se habilita hasta que un administrador concilie tu primer pago. Tienes 24 horas desde el registro para reportarlo. Si no se concilia en ese plazo, la cuenta se elimina junto con los datos que hayas cargado. Mientras un pago esté en revisión, la cuenta no se borra.",
         },
         {
           h: "Métodos de pago autorizados",
-          p: "Los pagos se realizan y se reportan a través de los canales oficiales habilitados en la plataforma (como Pago Móvil o Binance Pay).",
+          p: "Los pagos se realizan por Pago Móvil a la cédula 34201580, teléfono 0424 6603660, banco BNC (0102), o por Binance Pay al ID 1130279410. Después de pagar, reportas el monto y la referencia desde la pantalla de activación; el pago queda «en revisión» hasta que se concilia.",
         },
         {
           h: "Vigencia y suspensión",
@@ -110,7 +114,7 @@ const PRIVACIDAD: { intro: string; blocks: (Block | Section)[] } = {
     },
     {
       h: "5. Terceros",
-      p: "Solo compartimos información con proveedores estrictamente necesarios para operar el servicio: Supabase (alojamiento de base de datos y sincronización) y la fuente de la tasa oficial de cambio. No vendemos, alquilamos ni compartimos tus datos internos con terceros con fines publicitarios.",
+      p: "Solo compartimos información con proveedores estrictamente necesarios para operar el servicio: Supabase (alojamiento de base de datos y sincronización) y la fuente de la tasa de referencia de Binance P2P (CriptoYa), que solo se consulta para mostrar el equivalente en bolívares. No vendemos, alquilamos ni compartimos tus datos internos con terceros con fines publicitarios.",
     },
     {
       h: "6. Retención y eliminación",
@@ -130,13 +134,13 @@ const PRIVACIDAD: { intro: string; blocks: (Block | Section)[] } = {
 const CONTENT: Record<LegalKind, { title: string; subtitle: string; intro: string; blocks: (Block | Section)[] }> = {
   terminos: {
     title: "Términos y Condiciones de Uso",
-    subtitle: "Blink · Última actualización: Octubre de 2026",
+    subtitle: "Blink · Última actualización: Noviembre de 2026",
     intro: TERMINOS.intro,
     blocks: TERMINOS.blocks,
   },
   privacidad: {
     title: "Política de Privacidad",
-    subtitle: "Blink · Última actualización: Octubre de 2026",
+    subtitle: "Blink · Última actualización: Noviembre de 2026",
     intro: PRIVACIDAD.intro,
     blocks: PRIVACIDAD.blocks,
   },

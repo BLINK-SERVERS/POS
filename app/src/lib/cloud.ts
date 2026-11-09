@@ -19,7 +19,7 @@ export function authError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) return "Correo o contraseña incorrectos.";
   if (m.includes("email not confirmed"))
-    return "Tu correo aún no está verificado. Revisa el código que te enviamos.";
+    return "Tu correo aún no está verificado. Abre el enlace que te enviamos (revisa Spam) o pide uno nuevo.";
   if (m.includes("user already registered")) return "Ese correo ya tiene una cuenta. Inicia sesión.";
   if (m.includes("password should be at least"))
     return "La contraseña es muy corta (mínimo 6 caracteres).";
@@ -35,8 +35,12 @@ export function authError(message: string): string {
   return message;
 }
 
-/** URL base de la app (para los enlaces que llegan por correo).
- *  En producción es la URL publicada; en local, el servidor de desarrollo. */
+/** URL de la app para los enlaces que llegan por correo.
+ *  En producción es la URL publicada; en local, el servidor de desarrollo.
+ *  Todos los enlaces de sesión apuntan a `app/confirmar`, una pantalla
+ *  pública que recoge los tokens y solo entonces entra al POS. Antes
+ *  apuntaban a la raíz: la landing no carga el cliente de Supabase, así
+ *  que el hash se perdía y el usuario volvía sin sesión. */
 function appRedirectUrl(path = ""): string | undefined {
   try {
     return `${window.location.origin}${import.meta.env.BASE_URL}${path}`;
@@ -44,6 +48,9 @@ function appRedirectUrl(path = ""): string | undefined {
     return undefined;
   }
 }
+
+/** Destino de los enlaces de correo (confirmación, reenvío y equipo). */
+const redirectConfirmar = () => appRedirectUrl("app/confirmar");
 
 function nameFromUser(user: {
   email?: string | null;
@@ -66,7 +73,13 @@ export function userFromSession(session: {
   return nameFromUser(session?.user ?? null);
 }
 
-/** Registro con datos personales (nombre, apellido, teléfono, correo, clave). */
+/** Registro con datos personales (nombre, apellido, teléfono, correo, clave).
+ *
+ *  Se da de alta la CUENTA con su contraseña real y se envía el enlace de
+ *  confirmación. Antes se usaba `signInWithOtp`, que descartaba la clave:
+ *  el alta «funcionaba» pero `signInWithPassword` fallaba después.
+ *  La cuenta nace sin comercio: el POS solo se habilita cuando el pago se
+ *  concilia (migración 0005). */
 export async function authSignUp(input: {
   email: string;
   password: string;
@@ -74,12 +87,11 @@ export async function authSignUp(input: {
   lastName: string;
   phone: string;
 }): Promise<{ error: string | null }> {
-  // Usamos enlace mágico (link) en lugar de código de 6 dígitos.
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signUp({
     email: input.email,
+    password: input.password,
     options: {
-      shouldCreateUser: true,
-      emailRedirectTo: appRedirectUrl(),
+      emailRedirectTo: redirectConfirmar(),
       data: {
         first_name: input.firstName,
         last_name: input.lastName,
@@ -101,11 +113,12 @@ export async function authVerifyCode(
   };
 }
 
-/** Reenvía el enlace mágico para alta de cuenta. */
+/** Reenvía el enlace de confirmación del alta. */
 export async function authResendCode(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.resend({
+    type: "signup",
     email,
-    options: { shouldCreateUser: true, emailRedirectTo: appRedirectUrl() },
+    options: { emailRedirectTo: redirectConfirmar() },
   });
   return { error: error ? authError(error.message) : null };
 }
@@ -114,7 +127,7 @@ export async function authResendCode(email: string): Promise<{ error: string | n
 export async function authSendDeviceCode(email: string): Promise<{ error: string | null }> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: false, emailRedirectTo: appRedirectUrl() },
+    options: { shouldCreateUser: false, emailRedirectTo: redirectConfirmar() },
   });
   return { error: error ? authError(error.message) : null };
 }
@@ -145,8 +158,8 @@ export async function authSignOut(): Promise<void> {
 /** Envía el enlace de recuperación de contraseña al correo. */
 export async function authResetPassword(email: string): Promise<{ error: string | null }> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    // El enlace lleva a la pantalla de nueva contraseña.
-    redirectTo: appRedirectUrl("recuperar"),
+    // El enlace lleva a la pantalla de nueva contraseña (bajo /app).
+    redirectTo: appRedirectUrl("app/recuperar"),
   });
   return { error: error ? authError(error.message) : null };
 }

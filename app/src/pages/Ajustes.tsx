@@ -1,8 +1,18 @@
-// Ajustes · Negocio, perfil, moneda, recibo, exportación y cuenta.
+// Ajustes · Negocio, perfil, moneda, recibo, exportación, suscripción y cuenta.
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useStoreState, useStoreActions } from "../lib/store";
-import { Card, Field, PageHead, Tabs, useConfirm } from "../components/ui";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useStoreState, useStoreActions, useActivacion } from "../lib/store";
+import { Badge, Card, EmptyState, Field, PageHead, Tabs, useConfirm } from "../components/ui";
+import {
+  cloudListarPagos,
+  estadoReal,
+  fechaCorta,
+  nombreMetodo,
+  restante,
+  restanteTexto,
+  type PagoActivacion,
+} from "../lib/activacion";
+import { decimalesDe, formatearNumero } from "../lib/tasa";
 import { ThemeSlider } from "../components/ThemeSlider";
 import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
@@ -20,6 +30,7 @@ const TABS = [
   "Exportar",
   "Dispositivos",
   "Apariencia",
+  "Suscripción",
   "Cuenta",
 ] as const;
 
@@ -523,6 +534,8 @@ export function Ajustes() {
         </Card>
       )}
 
+      {tab === "Suscripción" && <Suscripcion />}
+
       {tab === "Cuenta" && (
         <Card title="Tu cuenta" hint="Sesión y datos del comercio.">
           <p className="muted" style={{ marginBottom: "0.75rem" }}>
@@ -556,5 +569,226 @@ export function Ajustes() {
 
       {qrOpen && <MobileScannerModal onClose={() => setQrOpen(false)} />}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Suscripción                                                         */
+/* ------------------------------------------------------------------ */
+
+/** «Bs 25.875,00» o «25,00 USDT». */
+function montoPagoTexto(p: PagoActivacion): string {
+  return p.moneda === "VES"
+    ? `Bs ${formatearNumero(p.monto)}`
+    : `${formatearNumero(p.monto, decimalesDe(p.moneda))} ${p.moneda}`;
+}
+
+/**
+ * Estado de la suscripción, historial de pagos y acceso a la renovación.
+ * El historial sale de `pagos_activacion` (RLS: solo los propios).
+ */
+function Suscripcion() {
+  const activacion = useActivacion();
+  const nav = useNavigate();
+  const { refrescarActivacion } = useStoreActions();
+
+  const [pagos, setPagos] = useState<PagoActivacion[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  const real = estadoReal(activacion);
+  const rest = restante(activacion?.vigenteHasta);
+  const porVencer =
+    real === "activo" && rest !== null && !rest.vencido && rest.ms <= 3 * 86_400_000;
+
+  async function cargar() {
+    setCargando(true);
+    setError("");
+    try {
+      setPagos(await cloudListarPagos());
+      await refrescarActivacion();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo leer el historial de pagos.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  useEffect(() => {
+    let vivo = true;
+    void (async () => {
+      try {
+        const p = await cloudListarPagos();
+        if (vivo) setPagos(p);
+      } catch (e) {
+        if (vivo) setError(e instanceof Error ? e.message : "No se pudo leer el historial.");
+      } finally {
+        if (vivo) setCargando(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const estadoTexto =
+    real === "activo"
+      ? "Activa"
+      : real === "en_revision"
+        ? "En revisión"
+        : real === "rechazado"
+          ? "Rechazada"
+          : real === "vencido"
+            ? "Vencida"
+            : "Pendiente de pago";
+
+  const detalle =
+    real === "activo"
+      ? activacion?.vigenteHasta
+        ? `Tu comercio está al día. El acceso cubre hasta el ${fechaCorta(activacion.vigenteHasta)}.`
+        : "Tu cuenta está activa y sin fecha de corte."
+      : real === "en_revision"
+        ? "Recibimos tu pago y lo estamos verificando. En cuanto se apruebe, la vigencia se extiende 30 días."
+        : real === "rechazado"
+          ? "El último pago no se pudo conciliar. Revisa el motivo y reporta uno nuevo."
+          : real === "vencido"
+            ? "La suscripción venció. Renueva para volver a operar y registrar ventas."
+            : "Falta el pago de activación para empezar a usar el POS.";
+
+  return (
+    <>
+      <Card
+        title="Suscripción"
+        hint="Blink POS cuesta $25 cada 30 días."
+        action={
+          <button
+            type="button"
+            className="btn btn--plain btn--sm"
+            onClick={() => void cargar()}
+            disabled={cargando}
+          >
+            <Icon name="refresh" size="sm" /> Actualizar
+          </button>
+        }
+      >
+        <div className="sub__estado">
+          <div>
+            <div className="sub__label">Estado</div>
+            <Badge
+              tone={
+                real === "activo"
+                  ? "accent"
+                  : real === "en_revision"
+                    ? "warning"
+                    : real === "rechazado" || real === "vencido"
+                      ? "danger"
+                      : "neutral"
+              }
+            >
+              {estadoTexto}
+            </Badge>
+          </div>
+          <div className="sub__corte">
+            <div className="sub__label">
+              {real === "activo" ? "Fecha de corte" : "Importe"}
+            </div>
+            <strong className="tabular">
+              {real === "activo"
+                ? fechaCorta(activacion?.vigenteHasta)
+                : `$ ${formatearNumero(activacion?.montoUsd ?? 25)} · 30 días`}
+            </strong>
+          </div>
+        </div>
+
+        <p className="muted" style={{ margin: "0.9rem 0", fontSize: "var(--fs-sm)" }}>
+          {detalle}
+        </p>
+
+        {porVencer && rest && (
+          <p className="act__aviso" style={{ marginBottom: "0.9rem" }}>
+            <Icon name="clock" size="sm" /> Tu suscripción vence en{" "}
+            <strong>{restanteTexto(activacion?.vigenteHasta)}</strong>. Renueva para no
+            interrumpir la caja.
+          </p>
+        )}
+
+        {error && (
+          <p className="act__aviso act__aviso--bad" style={{ marginBottom: "0.9rem" }} role="alert">
+            <Icon name="alert" size="sm" /> {error}
+          </p>
+        )}
+
+        <button
+          type="button"
+          className={"btn btn--block " + (real === "activo" ? "btn--soft" : "btn--primary")}
+          onClick={() => nav("/app/activacion")}
+        >
+          <Icon name="seal" size="sm" />
+          {real === "activo"
+            ? "Renovar ahora"
+            : real === "en_revision"
+              ? "Ver el estado del pago"
+              : real === "rechazado"
+                ? "Reportar un pago nuevo"
+                : "Activar o renovar"}
+        </button>
+        <p className="act__nota" style={{ marginTop: "0.6rem", textAlign: "center" }}>
+          Pagas por Pago Móvil o Binance Pay y reportas el pago; un administrador lo concilia.
+        </p>
+      </Card>
+
+      <Card title="Historial de pagos" hint="Los últimos reportes de esta cuenta.">
+        {cargando ? (
+          <p className="muted">Leyendo…</p>
+        ) : pagos.length === 0 ? (
+          <EmptyState
+            icon="receipt"
+            title="Sin pagos todavía"
+            hint="Cuando reportes un pago aparecerá aquí con su estado."
+          />
+        ) : (
+          <div className="row-list">
+            {pagos.slice(0, 24).map((p) => (
+              <div className="row-list__row" key={p.id}>
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ fontSize: "var(--fs-sm)" }}>
+                    {montoPagoTexto(p)} · {nombreMetodo(p.metodo)}
+                  </strong>
+                  <div className="muted" style={{ fontSize: "var(--fs-xs)" }}>
+                    {fechaCorta(p.creadoEn)} · Ref. <span className="mono">{p.referencia}</span>
+                  </div>
+                  {p.motivo && (
+                    <div
+                      style={{
+                        fontSize: "var(--fs-xs)",
+                        color: p.estado === "rechazado" ? "var(--color-danger-text)" : undefined,
+                      }}
+                    >
+                      {p.estado === "rechazado" ? "Motivo: " : ""}
+                      {p.motivo}
+                    </div>
+                  )}
+                </div>
+                <Badge
+                  tone={
+                    p.estado === "aprobado"
+                      ? "accent"
+                      : p.estado === "rechazado"
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {p.estado === "aprobado"
+                    ? "Aprobado"
+                    : p.estado === "rechazado"
+                      ? "Rechazado"
+                      : "En revisión"}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </>
   );
 }
