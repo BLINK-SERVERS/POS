@@ -96,6 +96,14 @@ del producto, no una omisión (ver BUG-12 en
   completa 126/126, tipos sin errores, `qa:e2e`/`qa:navegacion`/`qa:apariencia`/
   `qa:preview` sin fallos y `qa:responsive` solo con el aviso conocido de la
   fuente del sistema.
+- **Nota sobre `qa:funcional`:** informaba 6 fallos al ejecutarlo contra un
+  servidor Vite recién levantado, porque la primera navegación cae mientras
+  Rolldown aún está pre-empaquetando dependencias. Con el servidor precalentado
+  sale en verde (0 fallos, 1 aviso del arqueo) **también sobre el árbol sin
+  estos cambios**, así que eran del entorno del runner, no de la app. Queda
+  pendiente convertir esas esperas en sondeos.
+- **Documentación:** `README.md` declara este repositorio como única fuente de
+  `pos.blink.com.ve` y corrige su línea de estado (v1.19.0, 126 pruebas).
 
 ### Aviso de cookies
 

@@ -4,12 +4,36 @@ Punto de venta web para el comercio venezolano. Vende, cobra en **dólares y
 bolívares a tasa BCV**, controla inventario, caja, contactos y finanzas desde un
 solo lugar — con la cámara del teléfono como escáner de códigos de barras.
 
-**Estado:** v1.12.0 · en vivo en **<https://pos.blink.com.ve>** ·
-typecheck / build / **50 pruebas** en verde · Supabase (auth + datos) en producción.
+**Estado:** v1.19.0 · en vivo en **<https://pos.blink.com.ve>** ·
+typecheck / build / **126 pruebas** en verde · Supabase (auth + datos) en producción.
 
 - Landmarks del diseño: [`docs/INDEX.md`](docs/INDEX.md)
 - Estado y hoja de ruta: [`docs/ESTADO_ACTUAL_PROYECTO.md`](docs/ESTADO_ACTUAL_PROYECTO.md)
 - Historial completo: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+## Fuente de producción (declaración, 2026-11-09)
+
+**Este repositorio, `BLINK-SERVERS/POS`, es la única fuente de `pos.blink.com.ve`.** Lo
+publica la rama `gh-pages` (GitHub Pages con CNAME); `npm run deploy` construye con
+`npm run build:pages` → `dist` y lo empuja ahí. Nada de este sitio se construye desde
+otra copia.
+
+Existe otra línea con el mismo número de versión —`/home/prodz/BLINK_POS_Project`, la
+copia sobre la que se corrió la auditoría de accesibilidad y HIG de 2026-10-28—, con
+**2 commits, sin remoto y sin los módulos de activación, cookies, instalación, tasa,
+confirmación y conciliación** que viven aquí. Esa copia queda declarada **archivo
+histórico de la auditoría**: sus correcciones se traen a este árbol como port revisado,
+archivo por archivo (no existen cherry-picks limpios: `app/src/lib/store.tsx` difiere en
+711 líneas), y **nunca** se publica su `dist` sobre este dominio.
+
+Los hallazgos portados desde esa copia el 2026-11-09 (commit `938ce42`) son el registro
+(con correo duplicado, 429, `is invalid` y allow-list traducidos), el confinamiento del
+bypass de desarrollo a `import.meta.env.DEV`, el viewport sin zoom bloqueado y el
+guardado pendiente antes de cerrar sesión y de terminar el asistente guiado. El detalle
+de su verificación está en `CHANGELOG.md` y en el expediente
+`BLINK_POS_Hallazgos/05_REPORTE_PRUEBAS.md` §21.
 
 ---
 
