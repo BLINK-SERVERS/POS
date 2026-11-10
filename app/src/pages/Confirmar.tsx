@@ -5,16 +5,15 @@
 // el cliente de Supabase, así que el hash con los tokens se quedaba sin leer
 // y el usuario «volvía» sin sesión. Aquí el cliente ya está montado, se
 // verifica el enlace y se encamina a la activación del pago.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { authResendCode } from "../lib/cloud";
+import { authResendCode, authError } from "../lib/cloud";
+import { borrarCorreoRegistro, leerCorreoRegistro } from "../lib/session-storage";
 import { useAuth, useStoreActions } from "../lib/store";
 import { BrandLogo } from "../components/BrandLogo";
 import { Icon } from "../components/Icon";
 import { BrandLoader } from "../components/BrandLoader";
-
-const CORREO_KEY = "blink-pos-ultimo-correo";
 
 type Estado = "verificando" | "listo" | "vencido";
 
@@ -40,15 +39,21 @@ export function Confirmar() {
 
   const [estado, setEstado] = useState<Estado>("verificando");
   const [detalle, setDetalle] = useState("");
-  const [correo, setCorreo] = useState(() => {
-    try {
-      return localStorage.getItem(CORREO_KEY) || "";
-    } catch {
-      return "";
-    }
-  });
+  // BLINK-079: el correo de la sesión de registro caduca a los 30 min; ya no
+  // queda precargado para el siguiente usuario del mismo equipo.
+  const [correo, setCorreo] = useState(() => leerCorreoRegistro());
   const [aviso, setAviso] = useState("");
   const [busy, setBusy] = useState(false);
+  // BLINK-078: el reenvío respeta el mismo cooldown de 45 s que Login y
+  // Registro; ráfagas seguidas chocan con el 429 del proyecto.
+  const [cooldown, setCooldown] = useState(0);
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    timer.current = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(timer.current);
+  }, [cooldown]);
 
   // 1) Verificación del enlace (token_hash, code o hash implícito).
   useEffect(() => {
@@ -68,7 +73,16 @@ export function Confirmar() {
             token_hash: enlace.tokenHash,
             type: enlace.type as "signup" | "magiclink" | "email" | "recovery",
           });
-          if (error && !vivo) return;
+          // BLINK-077: la condición estaba invertida (`error && !vivo`) y se
+          // tragaba el error cuando la vista SÍ estaba viva (el caso real):
+          // el usuario esperaba 6 s de sondeo y un «vencido» genérico. Con
+          // error se muestra la traducción específica de inmediato.
+          if (!vivo) return;
+          if (error) {
+            setDetalle(authError(error.message));
+            setEstado("vencido");
+            return;
+          }
         } else if (enlace.code) {
           await supabase.auth.exchangeCodeForSession(enlace.code);
         }
@@ -104,25 +118,30 @@ export function Confirmar() {
   //    termine de registrar la sesión y el equipo verificado.
   useEffect(() => {
     if (estado !== "listo" || !authed) return;
+    // BLINK-079: el enlace se consumió: el correo de registro ya no hace
+    // falta y no debe quedar en el equipo para el siguiente usuario.
+    borrarCorreoRegistro();
     const t = window.setTimeout(() => nav("/app/activacion", { replace: true }), 700);
     return () => window.clearTimeout(t);
   }, [estado, authed, nav]);
 
   async function reenviar() {
+    if (cooldown > 0 || busy) return; // BLINK-078: mismo cooldown que Login.
     const destino = correo.trim();
     if (!destino) return;
     setBusy(true);
     const { error: err } = await authResendCode(destino);
     setBusy(false);
-    setAviso(err ?? `Te enviamos un enlace nuevo a ${destino}.`);
+    if (err) {
+      setAviso(err);
+      return;
+    }
+    setCooldown(45);
+    setAviso(`Te enviamos un enlace nuevo a ${destino}.`);
   }
 
   async function otraCuenta() {
-    try {
-      localStorage.removeItem(CORREO_KEY);
-    } catch {
-      /* sin almacenamiento */
-    }
+    borrarCorreoRegistro();
     await logout();
     nav("/app/entrar", { replace: true });
   }
@@ -189,9 +208,10 @@ export function Confirmar() {
                     className="btn btn--primary btn--block"
                     type="button"
                     onClick={reenviar}
-                    disabled={busy}
+                    disabled={busy || cooldown > 0}
                   >
-                    <Icon name="mail" /> {busy ? "Enviando…" : "Reenviar enlace"}
+                    <Icon name="mail" />{" "}
+                    {busy ? "Enviando…" : cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
                   </button>
                 </>
               ) : (

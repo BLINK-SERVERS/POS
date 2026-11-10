@@ -20,10 +20,16 @@ function esc(v: CsvCell): string {
   return seguro;
 }
 
-/** Convierte encabezados + filas a texto CSV (con BOM para Excel en UTF-8). */
+/**
+ * Convierte encabezados + filas a texto CSV (con BOM para Excel en UTF-8).
+ *
+ * BLINK-087: separador `;`. Excel en español (es-VE incluido) espera punto y
+ * coma — con coma abre todo en una sola columna. El `;` también es válido en
+ * LibreOffice y Google Sheets, que lo aceptan automáticamente con el BOM.
+ */
 export function toCsv(headers: string[], rows: CsvCell[][]): string {
-  const lines = [headers.map(esc).join(",")];
-  for (const row of rows) lines.push(row.map(esc).join(","));
+  const lines = [headers.map(esc).join(";")];
+  for (const row of rows) lines.push(row.map(esc).join(";"));
   return BOM + lines.join("\r\n") + "\r\n";
 }
 

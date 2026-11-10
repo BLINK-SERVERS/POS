@@ -41,7 +41,8 @@ export function isCountable(s: Sale): boolean {
   return s.status !== "anulada" && s.status !== "cotizacion";
 }
 
-function inRange(iso: string, from: Date, to: Date): boolean {
+/** ¿El instante ISO cae dentro del rango [from, to]? (BLINK-082) */
+export function inRange(iso: string, from: Date, to: Date): boolean {
   const t = new Date(iso).getTime();
   return t >= from.getTime() && t <= to.getTime();
 }

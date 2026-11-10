@@ -49,7 +49,7 @@ import type {
   Tax,
   Transfer,
 } from "./types";
-import { UNIT_OPTIONS } from "./types";
+import { migrateProduct } from "./migrate";
 import { MissingRateError, requireRate, round2 } from "./money";
 import { cachedRate, fetchOfficialRate, isCacheFresh } from "./exchange";
 import { diaLocal, expectedCash } from "./metrics";
@@ -66,6 +66,7 @@ import {
   authVerifyLoginCode,
   cloudLoadBusiness,
   cloudSaveBusiness,
+  cloudSaveBusinessKeepalive,
   userFromSession,
   type SessionUser,
   type SignUpOutcome,
@@ -85,7 +86,7 @@ import { findStockShortage, reversePendingAbonos } from "./ledger";
 import { cacheAdelantada, mergeTabState } from "./sync";
 import { rehidrataComercio } from "./auth-events";
 import { addAuditLog } from "./audit";
-import { STATE_KEY, clearUserStorage, pendingKeyFor, setLogoutAviso, stateKeyFor } from "./session-storage";
+import { STATE_KEY, clearUserStorage, pendingKeyFor, respaldarYBorrarLegacy, respaldarCorrupto, setLogoutAviso, stateKeyFor } from "./session-storage";
 const WRITE_DELAY = 250;
 /**
  * Tope de espera del guardado al cerrar sesión (BLINK-055). Sin él, `logout`
@@ -250,23 +251,7 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
     ...a,
     inCashClose: a.inCashClose ?? true,
   }));
-  merged.products = (merged.products ?? []).map((p) => {
-    // Migración de esquema (Fase B): se elimina `type` y se normaliza la
-    // presentación a cantidad + unidad de la lista cerrada.
-    const legacy = p as typeof p & { type?: "simple" | "servicio" };
-    const unit = UNIT_OPTIONS.includes(legacy.unit as (typeof UNIT_OPTIONS)[number])
-      ? legacy.unit
-      : "unidad";
-    return {
-      ...p,
-      brand: p.brand ?? "",
-      archived: p.archived ?? false,
-      channelPrices: p.channelPrices ?? { ch_principal: p.price },
-      presentationQty: p.presentationQty ?? 1,
-      unit,
-      trackStock: legacy.type === "servicio" ? false : (p.trackStock ?? true),
-    };
-  });
+  merged.products = (merged.products ?? []).map(migrateProduct);
   merged.contacts = (merged.contacts ?? []).map((c) => {
     const legacy = c as Contact & { kind?: "cliente" | "proveedor" | "ambos" };
     return {
@@ -320,8 +305,9 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
  */
 function loadForUser(userId: string): AppState | null {
   const base = emptyState();
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(stateKeyFor(userId));
+    raw = localStorage.getItem(stateKeyFor(userId));
     if (raw) return normalize(base, JSON.parse(raw) as Partial<AppState>);
     const legacyRaw = localStorage.getItem(STATE_KEY);
     if (!legacyRaw) return null;
@@ -330,9 +316,20 @@ function loadForUser(userId: string): AppState | null {
     localStorage.removeItem(STATE_KEY);
     return adopted;
   } catch {
-    // Datos corruptos o almacenamiento no disponible: se regenera.
+    // BLINK-083: JSON corrupto: antes se regeneraba vacío sin aviso ni
+    // respaldo. La copia cruda se guarda y se avisa en pantalla.
+    if (raw) {
+      respaldarCorrupto(userId, raw);
+      cacheCorrupta = true;
+    }
     return null;
   }
+}
+
+/** BLINK-083: true cuando la caché local estaba corrupta y se respaldó. */
+let cacheCorrupta = false;
+export function getCacheCorrupta(): boolean {
+  return cacheCorrupta;
 }
 
 function saveForUser(userId: string, state: AppState): void {
@@ -411,9 +408,9 @@ function downloadStateBackup(): void {
 // una sola vez como caché del primer usuario que entre, para no tirar datos
 // que la nube aún no tiene.
 try {
-  for (const k of ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"]) {
-    localStorage.removeItem(k);
-  }
+  // BLINK-083: v1/v2 se respaldan bajo "blink-pos-legacy-respaldo-v1:*"
+  // antes de borrarse; antes se perdían sin migración ni rastro.
+  respaldarYBorrarLegacy();
 } catch {
   /* almacenamiento no disponible */
 }
@@ -906,6 +903,7 @@ const MountedCtx = createContext(false);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const state = useSyncExternalStore(subscribe, getState, getState);
   const rateBlocked = useSyncExternalStore(subscribe, getRateBlocked, getRateBlocked);
+  const cacheCorrupta = useSyncExternalStore(subscribe, getCacheCorrupta, getCacheCorrupta);
   const [storageError, setStorageError] = useState(false);
   const [cloudError, setCloudError] = useState(false);
 
@@ -980,7 +978,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const flush = () => {
       persistLocal();
-      void persistCloud();
+      // BLINK-080: al descargar la página el fetch normal se aborta: el
+      // último vuelo va con keepalive para que el cambio llegue a la nube.
+      const aplica =
+        currentAuthed &&
+        hydrated &&
+        !(import.meta.env.DEV && isBypassActive()) &&
+        puedeOperar(currentActivacion);
+      if (aplica) {
+        void cloudSaveBusinessKeepalive(currentState)
+          .then((ok) => {
+            if (ok && currentUser) borrarPendiente(currentUser.id);
+          })
+          .catch(() => {
+            /* sin red al cerrar: la marca de pendiente queda para el rescate */
+          });
+      } else {
+        void persistCloud();
+      }
     };
     const onHidden = () => {
       if (document.visibilityState === "hidden") flush();
@@ -1627,6 +1642,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         channelId: input.channelId ?? s.channels.find((c) => c.isDefault)?.id,
         locationId,
         userId: USER,
+        // BLINK-090: nombre legible para el ticket («Cajero: Ana»), nunca un UUID.
+        userName: USER || undefined,
         rate: s.rate,
         amountReceived: input.amountReceived ? round2(input.amountReceived) : undefined,
         changeUsd: input.changeUsd ? round2(input.changeUsd) : undefined,
@@ -1721,13 +1738,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Revierte a cada cuenta el monto NETO realmente acreditado (no el bruto)
       // y registra el asiento inverso para que el libro cuadre con el saldo.
       const reverseMovements: Movement[] = [];
+      // BLINK-081: los pagos legacy sin `creditedNative` se revierten con la
+      // tasa del DÍA DE LA VENTA (guardada en el registro), no la de hoy.
+      const tasaVenta = sale.rate && sale.rate > 0 ? sale.rate : s.rate;
       const accounts = s.accounts.map((a) => {
         const paymentsToAccount = sale.payments.filter((p) => p.accountId === a.id);
         if (!paymentsToAccount.length) return a;
         let reversed = 0;
         for (const p of paymentsToAccount) {
           const netUsd = round2(p.amountUsd - (p.commission ?? 0));
-          const native = p.creditedNative ?? toNative(netUsd, a.currency, s.rate);
+          const native = p.creditedNative ?? toNative(netUsd, a.currency, tasaVenta);
           reversed += native;
           reverseMovements.push({
             id: uid("mov"),
@@ -1744,10 +1764,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return { ...a, balance: round2(a.balance - reversed) };
       });
+      // BLINK-081: anular la venta también revierte los ABONOS posteriores
+      // del pendiente que generó: antes quedaban acreditados en la cuenta de
+      // una venta anulada. (Si el pendiente ya estaba anulado, sus abonos ya
+      // se revirtieron y `reversePendingAbonos` no toca nada doble.)
+      const pendingDeVenta = s.pendings.find(
+        (p) => p.subject === `Venta ${sale.code}` && p.status !== "anulado"
+      );
+      const abonos = pendingDeVenta
+        ? reversePendingAbonos({
+            accounts,
+            movements: s.movements,
+            pending: pendingDeVenta,
+            at,
+            origin: "Anulación venta",
+            note: `Anulación venta ${sale.code}`,
+            userId: USER,
+          })
+        : null;
+      const accountsFinal = abonos ? abonos.accounts : accounts;
+      const movementsFinales = abonos ? abonos.movements : s.movements;
       // Anula la cuenta por cobrar asociada.
       const pendings = s.pendings.map((p) =>
         p.subject === `Venta ${sale.code}` && p.status !== "saldado"
-          ? { ...p, status: "anulado" as const }
+          ? { ...p, status: "anulado" as const, paidUsd: 0 }
           : p
       );
       // Libera el uso del descuento aplicado.
@@ -1759,10 +1799,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return {
         ...s,
         products,
-        accounts,
+        accounts: accountsFinal,
         pendings,
         discounts,
-        movements: [...reverseMovements, ...s.movements],
+        movements: [...reverseMovements, ...movementsFinales],
         inventoryMoves: [...moves, ...s.inventoryMoves],
         sales: s.sales.map((x) =>
           x.id === id ? { ...x, status: "anulada" as const, voidedAt: at, voidReason: reason } : x
@@ -2715,6 +2755,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             <span>
               Configura la tasa de cambio en Ajustes para operar con bolívares. La operación
               no se realizó.
+            </span>
+          </div>
+        )}
+        {cacheCorrupta && (
+          <div className="storage-alert" role="alert">
+            <span>
+              La copia local de este dispositivo estaba dañada y no se pudo leer. Se guardó un
+              respaldo crudo en el almacenamiento y los datos actuales vienen de la nube.
             </span>
           </div>
         )}

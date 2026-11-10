@@ -280,6 +280,40 @@ export async function cloudSaveBusiness(state: AppState): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Variante con `keepalive` (BLINK-080): en `beforeunload`/`pagehide` el fetch
+ * normal se aborta al descargar la página y el último cambio quedaba solo en
+ * localStorage. Este vuelo directo a la API REST (mismo upsert por owner_id)
+ * sobrevive a la descarga, así `hydrate` no descarta la venta al re-entrar.
+ */
+export async function cloudSaveBusinessKeepalive(state: AppState): Promise<boolean> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return false;
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/businesses`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+      // Mismo upsert que cloudSaveBusiness (onConflict owner_id).
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify([
+      {
+        owner_id: session.user.id,
+        name: state.business.name ?? "",
+        data: state,
+        updated_at: new Date().toISOString(),
+      },
+    ]),
+    keepalive: true,
+  });
+  return res.ok;
+}
+
 // ------------------------------------------------------------------
 // Catálogo global colaborativo (migración 0004).
 // Nivel 1 compartido: ficha descriptiva universal, clave = código de barras.

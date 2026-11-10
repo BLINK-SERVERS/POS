@@ -40,6 +40,14 @@ describe("Auditoría 2026-11-10 · inyección de fórmulas en CSV (export.ts)", 
     expect(csv).toContain("'@SUM");
     expect(csv).not.toContain('"@SUM');
   });
+
+  it("separa con ';' para Excel en español (BLINK-087 corregido)", () => {
+    const csv = toCsv(["Producto", "Total"], [["Papel", 2.5]]);
+    // Excel es-VE abre ';' como columnas; con ',' todo caía en una sola.
+    expect(csv).toContain("Producto;Total");
+    expect(csv).toContain("Papel;2.5");
+    expect(csv).not.toMatch(/Producto,Total/);
+  });
 });
 
 describe("Auditoría 2026-11-10 · arqueo con tasa actual (metrics.expectedCash)", () => {
@@ -129,16 +137,17 @@ describe("Auditoría 2026-11-10 · gasto recurrente fechado un día antes (BLINK
   });
 });
 
-describe("Auditoría 2026-11-10 · monthSalesCount ignora el año (exportData.ts)", () => {  it("cuenta una venta de noviembre del año pasado como 'del mes en curso'", () => {
+describe("Auditoría 2026-11-10 · monthSalesCount ignoraba el año (exportData.ts)", () => {
+  it("cuenta solo las ventas del mes en curso de ESTE año (BLINK-091 corregido)", () => {
     const estatal = base({
       sales: [
         { id: "v1", at: "2025-11-10T12:00:00", status: "pagada" },
         { id: "v2", at: "2026-11-10T12:00:00", status: "pagada" },
       ] as unknown as AppState["sales"],
     });
-    // Hoy es noviembre de 2026: deberían contar 1 (solo la de este año).
+    // Hoy es noviembre de 2026: cuenta 1 (la de este año), no la de 2025.
     const total = monthSalesCount(estatal);
-    expect(total).toBeGreaterThanOrEqual(2); // cuenta las dos: el bug
+    expect(total).toBe(1);
     expect(new Date().getMonth()).toBe(10); // guarda: la prueba solo aplica en noviembre
   });
 });

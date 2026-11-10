@@ -15,7 +15,9 @@ import {
   cloneElement,
   isValidElement,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactElement,
   type ReactNode,
@@ -104,6 +106,33 @@ export function DataTable<T>({
   const count = items.length;
   const active = count > threshold;
   const [scrollTop, setScrollTop] = useState(0);
+  const tbodyRef = useRef<HTMLTableSectionElement | null>(null);
+  // BLINK-086: en móvil cada fila es una tarjeta apilada mucho más alta que
+  // los 45 px por defecto: los espaciadores quedaban cortos y la ventana
+  // subestimaba el contenido (saltos y filas que «bailan» al hacer scroll).
+  // Se mide el alto real de las filas renderizadas y se re-mide al cambiar
+  // el layout (ResizeObserver sobre el tbody).
+  const [altoFila, setAltoFila] = useState(rowHeight);
+
+  useEffect(() => {
+    if (!active) return;
+    const tbody = tbodyRef.current;
+    if (!tbody || typeof ResizeObserver !== "function") return;
+    const medir = () => {
+      const filas = Array.from(
+        tbody.querySelectorAll<HTMLElement>("tr:not([aria-hidden])")
+      );
+      if (!filas.length) return;
+      const muestra = filas.slice(0, 12);
+      const total = muestra.reduce((a, f) => a + f.offsetHeight, 0);
+      const alto = total / muestra.length;
+      if (alto > 0) setAltoFila(Math.round(alto));
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(tbody);
+    return () => ro.disconnect();
+  }, [active]);
 
   const rotulos = useMemo(() => rotulosDe(head), [head]);
 
@@ -114,14 +143,14 @@ export function DataTable<T>({
   let start = 0;
   let end = count;
   if (active) {
-    start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    const visibleCount = Math.ceil(height / rowHeight) + overscan * 2;
+    start = Math.max(0, Math.floor(scrollTop / altoFila) - overscan);
+    const visibleCount = Math.ceil(height / altoFila) + overscan * 2;
     end = Math.min(count, start + visibleCount);
   }
 
   const visible = active ? items.slice(start, end) : items;
-  const topHeight = start * rowHeight;
-  const bottomHeight = (count - end) * rowHeight;
+  const topHeight = start * altoFila;
+  const bottomHeight = (count - end) * altoFila;
 
   const spacer = (h: number, key: string) =>
     h > 0 ? (
@@ -138,7 +167,7 @@ export function DataTable<T>({
     >
       <table className="data">
         <thead>{head}</thead>
-        <tbody>
+        <tbody ref={tbodyRef}>
           {spacer(topHeight, "__spacer_top")}
           {visible.map((item, i) => (
             <Fragment key={rowKey(item, start + i)}>

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
+import { guardarCorreoRegistro } from "../lib/session-storage";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { BrandLogo } from "../components/BrandLogo";
@@ -81,12 +82,9 @@ export function Registro() {
       return;
     }
     // Se recuerda el correo para poder reenviar el enlace si caduca
-    // (lo usa la pantalla /app/confirmar). Es un dato del propio usuario.
-    try {
-      localStorage.setItem("blink-pos-ultimo-correo", email.trim());
-    } catch {
-      /* sin almacenamiento */
-    }
+    // (lo usa la pantalla /app/confirmar). BLINK-079: con caducidad de 30
+    // min, no una clave global que quedaba para el siguiente usuario.
+    guardarCorreoRegistro(email.trim());
     setStep("link");
     setCooldown(45);
     setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo equipo o dispositivo: al confirmarlo pasarás a la activación del pago.`);

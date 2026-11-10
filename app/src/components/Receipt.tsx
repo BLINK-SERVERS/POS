@@ -38,6 +38,15 @@ export function Receipt({
   const effectiveRate = sale.rate || rate || 0;
   const total = round2(saleTotal(sale));
   const totalBs = round2(total * effectiveRate);
+  // BLINK-090: «Cajero» solo con nombre legible. `userId` históricamente
+  // portó UUIDs/correos crudos: un ticket nunca debe imprimir un
+  // identificador de máquina.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const cajero =
+    sale.userName?.trim() ||
+    (sale.userId && !UUID_RE.test(sale.userId) && !sale.userId.includes("@")
+      ? sale.userId.trim()
+      : "");
 
   const handlePrint = () => {
     window.print();
@@ -98,10 +107,10 @@ export function Receipt({
             <span>Fecha:</span>
             <span>{new Date(sale.at).toLocaleString("es-VE")}</span>
           </div>
-          {sale.userId && (
+          {cajero && (
             <div className="receipt__row">
               <span>Cajero:</span>
-              <span>{sale.userId}</span>
+              <span>{cajero}</span>
             </div>
           )}
           {fields.customer && sale.customerName && (

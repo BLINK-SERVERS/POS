@@ -276,8 +276,16 @@ export function buildDatasets(state: AppState): Dataset[] {
   return out;
 }
 
-/** Ventas netas del mes en curso (para el KPI de la pestaña). */
+/** Ventas netas del mes en curso (para el KPI de la pestaña).
+ *  BLINK-091: se compara mes Y año; antes solo el mes y las ventas de
+ *  noviembre de cualquier año contaban como «del mes en curso». */
 export function monthSalesCount(state: AppState): number {
-  const m = new Date().getMonth();
-  return state.sales.filter((s) => isCountable(s) && new Date(s.at).getMonth() === m).length;
+  const ahora = new Date();
+  const m = ahora.getMonth();
+  const y = ahora.getFullYear();
+  return state.sales.filter((s) => {
+    if (!isCountable(s)) return false;
+    const at = new Date(s.at);
+    return at.getMonth() === m && at.getFullYear() === y;
+  }).length;
 }

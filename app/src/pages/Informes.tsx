@@ -4,7 +4,7 @@ import { useStoreState, USER } from "../lib/store";
 import { auditExport } from "../lib/audit";
 import { Card, Money, PageHead, Tabs, DualInline } from "../components/ui";
 import { Icon } from "../components/Icon";
-import { capital, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal } from "../lib/metrics";
+import { capital, inRange, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal } from "../lib/metrics";
 import { formatUsd, round2 } from "../lib/money";
 import {
   downloadText,
@@ -47,10 +47,13 @@ export function Informes() {
   const businessName = state.business.legalName || state.business.name || "Mi negocio";
 
   // ---- Datos de exportación por pestaña (memorizados) ----
-  const monthSales = useMemo(
-    () => state.sales.filter((s) => isCountable(s) && new Date(s.at).getMonth() === new Date().getMonth()),
-    [state.sales]
-  );
+  // BLINK-082: mismo rango que los KPI de la pantalla (mes CON año). Antes
+  // comparaba solo getMonth() y el CSV/PDF incluía ventas del mismo mes de
+  // años anteriores sin cuadrar con lo mostrado.
+  const monthSales = useMemo(() => {
+    const [desde, hasta] = monthRange();
+    return state.sales.filter((s) => isCountable(s) && inRange(s.at, desde, hasta));
+  }, [state.sales]);
 
   const buildResultados = () => {
     const headers: string[] = ["Concepto", "USD"];

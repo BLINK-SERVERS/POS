@@ -8,7 +8,26 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { beepOk, primeBeeper } from "../audio";
 
-type CamStatus = "starting" | "running" | "no-sensor" | "denied" | "unsupported";
+type CamStatus =
+  | "starting"
+  | "running"
+  | "no-sensor"
+  | "denied"
+  | "no-camera"
+  | "busy"
+  | "unsupported";
+
+/** Clasifica un error de getUserMedia por su `name` (BLINK-084): antes todo
+ *  se reportaba como «denied» («da permiso») aunque la cámara estuviera
+ *  ocupada por otra app o no existiera. */
+function clasificarErrorCamara(err: unknown): CamStatus {
+  const name = err instanceof DOMException ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "denied";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "no-camera";
+  // Cámara ocupada por otra app o el sensor no entrega fotogramas.
+  if (name === "NotReadableError" || name === "AbortError" || name === "TrackStartError") return "busy";
+  return "denied";
+}
 
 const PREFERRED_FORMATS = [
   "ean_13",
@@ -62,6 +81,8 @@ export function CameraScanner({
   const [status, setStatus] = useState<CamStatus>("starting");
   // true = esperando a que el cajero pulse "Continuar".
   const [paused, setPaused] = useState(false);
+  // BLINK-084: reintentar sin cerrar el modal (bump del efecto de cámara).
+  const [attempt, setAttempt] = useState(0);
 
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
@@ -146,8 +167,8 @@ export function CameraScanner({
           video: { facingMode: { ideal: "environment" } },
           audio: false,
         });
-      } catch {
-        setStatus("denied");
+      } catch (err) {
+        setStatus(clasificarErrorCamara(err));
         return;
       }
 
@@ -262,7 +283,13 @@ export function CameraScanner({
       stream?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, [attempt]);
+
+  /** BLINK-084: reintenta abrir la cámara sin cerrar el modal. */
+  const reintentar = () => {
+    setStatus("starting");
+    setAttempt((a) => a + 1);
+  };
 
   const resume = () => {
     pausedRef.current = false;
@@ -288,7 +315,20 @@ export function CameraScanner({
 
       {status === "denied" && (
         <p className="cam__note">
-          No se pudo abrir la cámara. Da permiso al navegador o usa el lector USB.
+          El navegador no tiene permiso para usar la cámara. Habilítalo en el candado de la
+          barra de direcciones y reintenta, o usa el lector USB.
+        </p>
+      )}
+      {status === "no-camera" && (
+        <p className="cam__note">
+          No se encontró una cámara en este equipo. Conecta una o usa el lector USB o el
+          celular remoto.
+        </p>
+      )}
+      {status === "busy" && (
+        <p className="cam__note">
+          La cámara está ocupada por otra aplicación. Ciérrala y reintenta, o usa el lector
+          USB.
         </p>
       )}
       {status === "unsupported" && (
@@ -301,6 +341,12 @@ export function CameraScanner({
           Este navegador no puede decodificar códigos con la cámara. Usa el lector USB o el
           celular remoto.
         </p>
+      )}
+
+      {(status === "denied" || status === "no-camera" || status === "busy") && (
+        <button type="button" className="btn btn--soft btn--sm" onClick={reintentar}>
+          <Icon name="refresh" /> Reintentar
+        </button>
       )}
     </div>
   );

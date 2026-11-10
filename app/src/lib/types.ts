@@ -190,6 +190,12 @@ export interface Sale {
   channelId?: string;
   locationId?: string;
   userId: string;
+  /**
+   * Nombre legible del cajero que cobró (BLINK-090): el ticket lo imprime
+   * como «Cajero». Históricamente `userId` llegó a portar identificadores
+   * crudos (UUID/email), que nunca debieron verse en un ticket impreso.
+   */
+  userName?: string;
   rate?: number; // Tasa BCV aplicada al momento de la venta
   amountReceived?: number; // Total entregado por el cliente en USD
   changeUsd?: number; // Vuelto entregado en USD

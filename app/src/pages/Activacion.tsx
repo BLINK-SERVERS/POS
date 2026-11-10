@@ -44,7 +44,7 @@ type MonedaCripto = "USDT" | "USDC" | "BTC" | "ETH";
 
 const MONEDAS: MonedaCripto[] = ["USDT", "USDC", "BTC", "ETH"];
 
-/** Acepta «25875», «25.875,00» y «25,875.00». */
+/** Acepta «25875», «25.875,00», «25,875.00» y «25.875» (miles venezolanos). */
 export function parseMonto(texto: string): number {
   const limpio = texto.replace(/\s/g, "").replace(/[^\d.,-]/g, "");
   if (!limpio) return NaN;
@@ -59,6 +59,12 @@ export function parseMonto(texto: string): number {
         : limpio.replace(/,/g, "");
   } else if (tieneComa) {
     normal = limpio.replace(",", ".");
+  } else if (tienePunto && /^\d{1,3}(\.\d{3})+$/.test(limpio)) {
+    // BLINK-085: «25.875» en la convención venezolana de miles es 25875;
+    // antes se interpretaba como decimal (25.875) y el reporte se enviaba
+    // con un monto 1000 veces menor. Solo se quita el punto cuando separa
+    // grupos exactos de 3 (25.875.500); «25.87» sigue siendo decimal.
+    normal = limpio.replace(/\./g, "");
   }
   const n = Number(normal);
   return Number.isFinite(n) ? n : NaN;
@@ -276,6 +282,16 @@ export function Activacion() {
     }
     if (ref.trim().length < 3) {
       setError("Escribe el número de referencia o de transacción (mínimo 3 caracteres).");
+      return;
+    }
+    // BLINK-085: el botón deshabilitado durante el request no basta (refresh
+    // fallido, otra pestaña): la referencia ya reportada y no rechazada no
+    // se re-envía y no se crea un pago «en revisión» duplicado.
+    const duplicada = pagos.find(
+      (p) => p.referencia === ref.trim() && p.estado !== "rechazado"
+    );
+    if (duplicada) {
+      setError("Esa referencia ya fue reportada y sigue en proceso. Espera la conciliación.");
       return;
     }
     setEnviando(true);

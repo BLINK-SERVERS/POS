@@ -97,6 +97,10 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   // Oyentes de eventos del teléfono (p. ej. "names"), por nombre de evento.
   const remoteListenersRef = useRef<Map<string, Set<(payload: any) => void>>>(new Map());
+  // BLINK-088: el emparejamiento puede vencer mientras la caja sigue abierta.
+  // El receptor de Realtime consulta esta ref para revalidar cada mensaje.
+  const pairingRef = useRef<Pairing | null>(null);
+  pairingRef.current = pairing;
 
   const register = useCallback((fn: ScanHandler) => {
     handlersRef.current.push(fn);
@@ -196,9 +200,22 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
     });
     channelRef.current = channel;
 
+    // BLINK-088: el canal quedó suscrito con el secreto del emparejamiento,
+    // pero ese emparejamiento puede vencer mientras la caja sigue abierta.
+    // Cada mensaje se revalida: si ya venció, se ignora y se aviva la UI
+    // (se baja el estado para que el QR pida re-emparejar).
+    const vencio = (): boolean => {
+      const p = pairingRef.current;
+      if (p && !isExpired(p)) return false;
+      setPairing(null);
+      setRemoteActive(false);
+      return true;
+    };
+
     channel.on("broadcast", { event: "hello" }, (msg) => {
       const payload = msg.payload as { token?: string } | undefined;
       if (payload?.token !== pairingToken) return;
+      if (vencio()) return;
       lastSeenRef.current = Date.now();
       setRemoteActive(true);
       void channel?.send({ type: "broadcast", event: "pong", payload: { token: pairingToken } });
@@ -207,6 +224,7 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
     channel.on("broadcast", { event: "barcode" }, (msg) => {
       const payload = msg.payload as { token?: string; code?: string } | undefined;
       if (payload?.token !== pairingToken || !payload.code) return;
+      if (vencio()) return;
       lastSeenRef.current = Date.now();
       setRemoteActive(true);
       dispatchRef.current(payload.code, "remote");
@@ -216,6 +234,7 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
     channel.on("broadcast", { event: "names" }, (msg) => {
       const payload = msg.payload as { token?: string } | undefined;
       if (!payload || payload.token !== pairingToken) return;
+      if (vencio()) return;
       lastSeenRef.current = Date.now();
       setRemoteActive(true);
       remoteListenersRef.current.get("names")?.forEach((fn) => fn(payload));
@@ -255,6 +274,14 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
   // Marca al teléfono como inactivo si deja de dar señales.
   useEffect(() => {
     const t = window.setInterval(() => {
+      // BLINK-088: si el emparejamiento venció con la caja abierta, se baja
+      // el estado aunque el teléfono no mande más mensajes (aviva la UI).
+      const p = pairingRef.current;
+      if (p && isExpired(p)) {
+        setPairing(null);
+        setRemoteActive(false);
+        return;
+      }
       setRemoteActive((prev) => {
         const next = Date.now() - lastSeenRef.current < REMOTE_TIMEOUT_MS;
         return prev === next ? prev : next;

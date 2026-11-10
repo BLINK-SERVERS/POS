@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorBoundary, reportarErrorGlobal } from "./components/ErrorBoundary";
 import { prepararInstalacion } from "./lib/instalacion";
 
 // Solo lo que necesita CUALQUIER página (reset, iconos, utilidades).
@@ -34,6 +34,19 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
       .catch(() => undefined);
   });
 }
+
+// BLINK-089: captura de fallas FUERA del render (promesas rechazadas sin
+// manejar y errores en manejadores de eventos), que los límites de React no
+// ven. Se reportan al ErrorBoundary para que el comerciante vea la pantalla
+// de rescate en vez de un fallo silencioso. Se instalan antes de montar.
+window.addEventListener("unhandledrejection", (e) => {
+  reportarErrorGlobal(e.reason);
+});
+window.addEventListener("error", (e) => {
+  // Los "error" de recursos (img/script que no carga) no rompen la app:
+  // solo se reportan los de script con excepción asociada.
+  if (e.error) reportarErrorGlobal(e.error);
+});
 
 createRoot(el).render(
   <StrictMode>
