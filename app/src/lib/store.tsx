@@ -82,7 +82,8 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 // Reglas puras portadas de la copia auditada (BLINK-069): reversión de
 // abonos y reconciliación caché↔nube (BLINK-047).
 import { findStockShortage, reversePendingAbonos } from "./ledger";
-import { cacheAdelantada } from "./sync";
+import { cacheAdelantada, mergeTabState } from "./sync";
+import { rehidrataComercio } from "./auth-events";
 import { STATE_KEY, clearUserStorage, pendingKeyFor, stateKeyFor } from "./session-storage";
 const WRITE_DELAY = 250;
 /**
@@ -431,6 +432,10 @@ let currentActivacion: Activacion | null = null;
 let currentEsAdmin = false;
 /** Una operación se bloqueó por falta de tasa de cambio (BLINK-066). */
 let rateBlocked = false;
+// BLINK-067: última escritura propia en localStorage y la anterior. Su
+// diferencia son los cambios locales aún no propagados a otras pestañas.
+let writtenLast: string | null = null;
+let writtenPrev: string | null = null;
 
 // --- Equipos de confianza -----------------------------------------
 // El usuario puede marcar «Confiar en este dispositivo» para no volver a
@@ -888,6 +893,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const persistLocal = useCallback(() => {
     if (!currentAuthed || !currentUser) return;
     try {
+      // BLINK-067: recordar qué escribió esta pestaña (y qué escribió antes)
+      // para poder mezclar —no reemplazar— lo que llegue de otra pestaña.
+      const snapshot = JSON.stringify(currentState);
+      if (snapshot !== writtenLast) {
+        writtenPrev = writtenLast;
+        writtenLast = snapshot;
+      }
       saveForUser(currentUser.id, currentState);
       // BLINK-047: marca la escritura como «aún no confirmada por la nube».
       marcarPendiente(currentUser.id);
@@ -961,13 +973,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [persistLocal, persistCloud]);
 
   // Sincronización entre pestañas del mismo navegador (solo del usuario actual).
+  // BLINK-067: se MEZCLA lo que llega con los cambios locales aún no
+  // propagados; el reemplazo completo perdía la venta de la otra pestaña.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       const userId = currentUser?.id;
       if (!userId || e.key !== stateKeyFor(userId) || !e.newValue) return;
       if (e.newValue === JSON.stringify(currentState)) return;
       try {
-        setAppState(normalize(emptyState(), JSON.parse(e.newValue) as Partial<AppState>));
+        const incoming = normalize(
+          emptyState(),
+          JSON.parse(e.newValue) as Partial<AppState>
+        );
+        const prev = writtenPrev
+          ? (normalize(emptyState(), JSON.parse(writtenPrev) as Partial<AppState>))
+          : null;
+        setAppState(mergeTabState(incoming, currentState, prev));
       } catch {
         /* ignore */
       }
@@ -1113,6 +1134,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setBooting(false);
         hydrated = true;
         setAppState(emptyState());
+        return;
+      }
+      // BLINK-070: solo las entradas reales re-hidratan el comercio.
+      // `TOKEN_REFRESHED` (≈ cada hora) y `USER_UPDATED` no tocan el estado
+      // del comercio: reemplazarlo con la fila remota mostraba el loader a
+      // pantalla completa de forma intermitente y podía borrar ventas locales
+      // aún no confirmadas en la nube.
+      if (!rehidrataComercio(event)) {
+        void cargarActivacion(user);
         return;
       }
       setBooting(true);
