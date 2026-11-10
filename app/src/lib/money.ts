@@ -54,3 +54,20 @@ export function formatTasaCabecera(rate: number): string {
 export function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
+
+/** La operación requiere convertir bolívares y no hay tasa válida. */
+export class MissingRateError extends Error {
+  constructor() {
+    super("Configura la tasa de cambio antes de operar en bolívares.");
+    this.name = "MissingRateError";
+  }
+}
+
+/**
+ * Tasa obligatoria para conversiones monetarias: nunca se asume 1 Bs = 1 USD.
+ * Lanza `MissingRateError` si falta o no es válida.
+ */
+export function requireRate(rate: number): number {
+  if (!Number.isFinite(rate) || rate <= 0) throw new MissingRateError();
+  return rate;
+}

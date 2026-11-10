@@ -50,7 +50,7 @@ import type {
   Transfer,
 } from "./types";
 import { UNIT_OPTIONS } from "./types";
-import { round2 } from "./money";
+import { MissingRateError, requireRate, round2 } from "./money";
 import { cachedRate, fetchOfficialRate, isCacheFresh } from "./exchange";
 import { expectedCash } from "./metrics";
 import {
@@ -81,7 +81,7 @@ import {
 import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 // Reglas puras portadas de la copia auditada (BLINK-069): reversión de
 // abonos y reconciliación caché↔nube (BLINK-047).
-import { reversePendingAbonos } from "./ledger";
+import { findStockShortage, reversePendingAbonos } from "./ledger";
 import { cacheAdelantada } from "./sync";
 import { STATE_KEY, clearUserStorage, pendingKeyFor, stateKeyFor } from "./session-storage";
 const WRITE_DELAY = 250;
@@ -429,6 +429,8 @@ let currentDeviceVerified = false;
 let currentActivacion: Activacion | null = null;
 /** true si el correo figura en `admins_plataforma`. */
 let currentEsAdmin = false;
+/** Una operación se bloqueó por falta de tasa de cambio (BLINK-066). */
+let rateBlocked = false;
 
 // --- Equipos de confianza -----------------------------------------
 // El usuario puede marcar «Confiar en este dispositivo» para no volver a
@@ -561,10 +563,32 @@ function setDeviceVerified(value: boolean): void {
 }
 
 function setAppState(next: AppState | ((s: AppState) => AppState)): void {
-  const value =
-    typeof next === "function" ? (next as (s: AppState) => AppState)(currentState) : next;
+  let value: AppState;
+  try {
+    value = typeof next === "function" ? (next as (s: AppState) => AppState)(currentState) : next;
+  } catch (err) {
+    // BLINK-066: una conversión Bs/USD sin tasa no debe romper la app: se
+    // cancela la operación y se muestra el aviso de tasa no configurada.
+    if (err instanceof MissingRateError) {
+      setRateBlocked(true);
+      return;
+    }
+    throw err;
+  }
   if (Object.is(value, currentState)) return;
   currentState = value;
+  // Configurar la tasa despeja el aviso de operación bloqueada.
+  if (rateBlocked && currentState.rate > 0) setRateBlocked(false);
+  emit();
+}
+
+function getRateBlocked(): boolean {
+  return rateBlocked;
+}
+
+function setRateBlocked(value: boolean): void {
+  if (value === rateBlocked) return;
+  rateBlocked = value;
   emit();
 }
 
@@ -653,12 +677,14 @@ function commission(base: number, pct: number): number {
 
 /** Convierte un monto en USD a la moneda nativa de la cuenta. */
 function toNative(usd: number, currency: "USD" | "VES", rate: number): number {
-  return currency === "USD" ? round2(usd) : round2(usd * (rate || 1));
+  // BLINK-066: nunca se asume 1 Bs = 1 USD; sin tasa válida se lanza.
+  return currency === "USD" ? round2(usd) : round2(usd * requireRate(rate));
 }
 
 /** Convierte un monto en la moneda nativa de la cuenta a USD. */
 function toUsd(native: number, currency: "USD" | "VES", rate: number): number {
-  return currency === "USD" ? round2(native) : round2(native / (rate || 1));
+  // BLINK-066: nunca se asume 1 Bs = 1 USD; sin tasa válida se lanza.
+  return currency === "USD" ? round2(native) : round2(native / requireRate(rate));
 }
 
 // ------------------------------------------------------------------
@@ -693,6 +719,16 @@ export interface CheckoutInput {
   amountReceived?: number;
   changeUsd?: number;
   changeBs?: number;
+}
+
+/**
+ * Resultado del checkout (BLINK-066): la venta registrada o, si un control
+ * previo la rechazó, un mensaje listo para mostrar en la interfaz.
+ */
+export interface CheckoutResult {
+  sale: Sale | null;
+  /** Mensaje para la interfaz; `null` si la venta se registró. */
+  error: string | null;
 }
 
 export interface PurchaseInput {
@@ -763,7 +799,7 @@ type StoreActions = {
   updateContact: (id: string, patch: Partial<Contact>) => void;
   removeContact: (id: string) => void;
   // Ventas
-  checkout: (input: CheckoutInput) => Sale;
+  checkout: (input: CheckoutInput) => CheckoutResult;
   voidSale: (id: string, reason: string) => void;
   // Caja
   openCash: (openingUsd: number, openingBs: number) => void;
@@ -845,6 +881,7 @@ const MountedCtx = createContext(false);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const state = useSyncExternalStore(subscribe, getState, getState);
+  const rateBlocked = useSyncExternalStore(subscribe, getRateBlocked, getRateBlocked);
   const [storageError, setStorageError] = useState(false);
   const [cloudError, setCloudError] = useState(false);
 
@@ -1387,6 +1424,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // ---- Vender (POS) ---------------------------------------------
   const checkout = useCallback<StoreActions["checkout"]>((input) => {
+    if (!input.quote) {
+      // BLINK-076: no se vende más de lo disponible ni se recorta el stock
+      // en silencio (el viejo `Math.max(0, …)` escondía el descuadre).
+      const shortage = findStockShortage(currentState.products, input.lines);
+      if (shortage) {
+        return {
+          sale: null,
+          error:
+            `No hay existencias suficientes de «${shortage.product.name}»: ` +
+            `disponible ${shortage.product.stock}, pedido ${shortage.line.qty}.`,
+        };
+      }
+      // BLINK-066: cobrar en bolívares exige una tasa válida (nunca 1 Bs = 1 USD).
+      const needsRate = input.payments.some((p) => {
+        const account = currentState.accounts.find((a) => a.id === p.accountId);
+        return account?.currency === "VES";
+      });
+      if (needsRate && !(currentState.rate > 0)) {
+        return {
+          sale: null,
+          error: "Configura la tasa de cambio antes de cobrar en bolívares.",
+        };
+      }
+    }
     let createdSale: Sale | null = null;
     setAppState((s) => {
       const base = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
@@ -1496,7 +1557,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         moves.push(
           inventoryMove(p, "salida", line.qty, p.cost, `Venta #${code}`, locationId, at)
         );
-        return { ...p, stock: Math.max(0, round2(p.stock - line.qty)) };
+        return { ...p, stock: round2(p.stock - line.qty) };
       });
 
       // Si queda saldo, genera una cuenta por cobrar del cliente.
@@ -1535,7 +1596,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         nextSaleNumber: nextNumber + 1,
       };
     });
-    return createdSale!;
+    return createdSale
+      ? { sale: createdSale, error: null }
+      : { sale: null, error: "No se pudo registrar la venta. Intenta de nuevo." };
   }, []);
 
   const voidSale = useCallback((id: string, reason: string) => {
@@ -1687,7 +1750,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const moveAccount = useCallback((accountId: string, delta: number, note: string) => {
     setAppState((s) => {
       const acc = s.accounts.find((a) => a.id === accountId);
-      if (!acc || !delta) return s;
+      if (!acc || !Number.isFinite(delta) || !delta) return s;
       const usd = toUsd(delta, acc.currency, s.rate);
       return {
         ...s,
@@ -2505,6 +2568,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           <div className="storage-alert" role="alert">
             <span>
               No se pudo sincronizar con el servidor. Revisa tu conexión; seguiremos intentando.
+            </span>
+          </div>
+        )}
+        {rateBlocked && (
+          <div className="storage-alert" role="alert">
+            <span>
+              Configura la tasa de cambio en Ajustes para operar con bolívares. La operación
+              no se realizó.
             </span>
           </div>
         )}

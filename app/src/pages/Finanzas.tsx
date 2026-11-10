@@ -40,6 +40,11 @@ function dayLabel(iso: string): string {
   return d.toLocaleDateString();
 }
 
+/** Importe en la moneda de la cuenta (nunca se rotula Bs como USD). */
+function moneyIn(currency: "USD" | "VES", value: number): string {
+  return currency === "VES" ? formatBsDirect(value) : formatUsd(value);
+}
+
 /* --- Filas memoizadas ------------------------------------------- */
 
 /** Fila de cuenta. */
@@ -69,8 +74,12 @@ const AccountRow = memo(function AccountRow({
         {account.currency === "USD" ? formatUsd(account.balance) : formatBsDirect(account.balance)}
         <div className="dim" style={{ fontSize: "0.72rem" }}>
           {account.currency === "USD"
-            ? rate > 0 && formatBsDirect(account.balance * rate)
-            : formatUsd(round2(account.balance / (rate || 1)))}
+            ? rate > 0
+              ? formatBsDirect(account.balance * rate)
+              : "—"
+            : rate > 0
+              ? formatUsd(round2(account.balance / rate))
+              : "Requiere tasa"}
         </div>
       </td>
       <td>
@@ -369,6 +378,13 @@ export function Finanzas() {
   const [moveId, setMoveId] = useState("");
   const [moveAmount, setMoveAmount] = useState("0");
   const [moveSign, setMoveSign] = useState<1 | -1>(1);
+  const [moveError, setMoveError] = useState("");
+  const moveTarget = useMemo(
+    () => state.accounts.find((a) => a.id === moveId) ?? null,
+    [state.accounts, moveId]
+  );
+  const moveValue = Math.abs(Number(moveAmount) || 0);
+  const moveAfter = moveTarget ? round2(moveTarget.balance + moveSign * moveValue) : 0;
 
   /* Gastos */
   const [expOpen, setExpOpen] = useState(false);
@@ -444,6 +460,7 @@ export function Finanzas() {
     setMoveId(id);
     setMoveSign(sign);
     setMoveAmount("0");
+    setMoveError("");
     setMoveOpen(true);
   }, []);
 
@@ -1028,33 +1045,80 @@ export function Finanzas() {
 
       {moveOpen && (
         <Modal title="Movimiento de cuenta" onClose={() => setMoveOpen(false)}>
-          <Field label={`Monto (${moveSign === 1 ? "entrada" : "salida"})`}>
+          {/* BLINK-068: el monto se declara en la MONEDA DE LA CUENTA. El
+              modal viejo rotulaba en USD un movimiento que acreditaba Bs. */}
+          {moveTarget && (
+            <div className="breakdown" style={{ marginBottom: "0.75rem" }}>
+              <div className="breakdown__row">
+                <span>
+                  {moveTarget.name} · {moveTarget.currency}
+                </span>
+                <span className="tabular">{moneyIn(moveTarget.currency, moveTarget.balance)}</span>
+              </div>
+              <div className="breakdown__row dim">
+                <span>Saldo después</span>
+                <span className="tabular">{moneyIn(moveTarget.currency, moveAfter)}</span>
+              </div>
+            </div>
+          )}
+          <Field
+            label={`Monto en ${moveTarget?.currency === "VES" ? "Bs" : "USD"} (${moveSign === 1 ? "entrada" : "salida"})`}
+          >
             <input
               className="input"
               type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
               value={moveAmount}
-              onChange={(e) => setMoveAmount(e.target.value)}
+              onChange={(e) => {
+                setMoveAmount(e.target.value);
+                setMoveError("");
+              }}
             />
           </Field>
           <div className="breakdown">
             <div className="breakdown__row breakdown__row--strong">
               <span>{moveSign === 1 ? "Entrada" : "Salida"}</span>
-              <span className="tabular">{formatUsd(Number(moveAmount) || 0)}</span>
+              <span className="tabular">
+                {moneyIn(moveTarget?.currency ?? "USD", moveValue)}
+              </span>
             </div>
           </div>
+          {moveTarget?.currency === "VES" && rate <= 0 && (
+            <div className="form-error" role="alert">
+              Configura la tasa BCV para poder mover bolívares.
+            </div>
+          )}
+          {moveError && (
+            <div className="form-error" role="alert">
+              {moveError}
+            </div>
+          )}
           <button
             className="btn btn--primary btn--block"
             style={{ marginTop: "1rem" }}
+            disabled={!moveTarget || moveValue <= 0 || (moveTarget.currency === "VES" && rate <= 0)}
             onClick={() => {
-              const amount = Number(moveAmount) || 0;
+              if (!moveTarget) return;
+              if (!Number.isFinite(moveValue) || moveValue <= 0) {
+                setMoveError("Escribe un monto mayor que cero.");
+                return;
+              }
+              if (moveSign === -1 && moveValue > moveTarget.balance) {
+                setMoveError(
+                  `Fondos insuficientes: la cuenta tiene ${moneyIn(moveTarget.currency, moveTarget.balance)}.`
+                );
+                return;
+              }
               moveAccount(
-                moveId,
-                moveSign * amount,
-                moveSign === 1 ? `Ingreso manual · ${formatUsd(amount)}` : `Retiro manual · ${formatUsd(amount)}`
+                moveTarget.id,
+                moveSign * moveValue,
+                `${moveSign === 1 ? "Ingreso" : "Retiro"} manual · ${moneyIn(moveTarget.currency, moveValue)}`
               );
               setMoveOpen(false);
             }}
-          ><Icon name="check" /> 
+          ><Icon name="check" />
             Confirmar
           </button>
         </Modal>

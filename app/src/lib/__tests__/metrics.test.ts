@@ -217,6 +217,7 @@ describe("expectedCash (arqueo)", () => {
     expect(expectedCash(state({ cashSession: null as unknown as CashSession }))).toEqual({
       usd: 0,
       bs: 0,
+      rateMissing: false,
     });
   });
 });

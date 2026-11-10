@@ -294,7 +294,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const derecha = BAR_DERECHA.filter((m) => !m.feature || features[m.feature]).slice(0, 2);
 
   const session = state.cashSession;
-  const expected = session ? expectedCash(state) : { usd: 0, bs: 0 };
+  const expected = session ? expectedCash(state) : { usd: 0, bs: 0, rateMissing: false };
   const countedUsd = Number(cUsd) || 0;
   const countedBs = Number(cBs) || 0;
   const diffUsd = round2(countedUsd - expected.usd);
@@ -495,6 +495,14 @@ export function Shell({ children }: { children: ReactNode }) {
               </span>
             </div>
           </div>
+          {/* BLINK-066: los asientos viejos sin monto nativo y sin tasa no
+              fabrican un esperado en Bs: se avisa antes de cerrar el turno. */}
+          {expected.rateMissing && (
+            <p className="muted" style={{ fontSize: "var(--fs-xs)", marginTop: "0.5rem" }}>
+              Hay movimientos en bolívares sin tasa oficial y el esperado en Bs puede estar
+              incompleto. Configura la tasa en Ajustes antes de cerrar el turno.
+            </p>
+          )}
           {hasDiff && (
             <Field label="Motivo de la diferencia" hint="Obligatorio cuando no cuadra.">
               <input

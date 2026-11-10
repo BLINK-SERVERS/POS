@@ -83,7 +83,7 @@ describe("Auditoría 2026-11-10 · arqueo con tasa actual (metrics.expectedCash)
     expect(expectedCash(estatal).bs).toBe(-8000);
   });
 
-  it("con rate=0 usa 1:1 en silencio (misma familia que toNative del store)", () => {
+  it("con rate=0 omite el movimiento viejo y marca rateMissing (BLINK-066 corregido)", () => {
     const estatal = base({
       rate: 0,
       cashSession: {
@@ -108,8 +108,10 @@ describe("Auditoría 2026-11-10 · arqueo con tasa actual (metrics.expectedCash)
         },
       ],
     });
-    // Bs 10 acreditados por un movimiento de 10 USD: tasa 1:1 inventada.
-    expect(expectedCash(estatal).bs).toBe(10);
+    // CORREGIDO (BLINK-066): el movimiento viejo sin monto nativo y sin tasa
+    // NO se convierte 1:1: se omite del esperado y se marca rateMissing.
+    expect(expectedCash(estatal).bs).toBe(0);
+    expect(expectedCash(estatal).rateMissing).toBe(true);
   });
 });
 

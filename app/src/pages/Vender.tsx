@@ -319,6 +319,9 @@ export function Vender() {
   const [payAccId, setPayAccId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payRef, setPayRef] = useState("");
+  // BLINK-066: mensajería de los rechazos del checkout en el modal de cobro.
+  const [payError, setPayError] = useState("");
+  const [quoteError, setQuoteError] = useState("");
 
   const paid = useMemo(() => round2(payments.reduce((a, p) => a + p.amountUsd, 0)), [payments]);
   const paidIgtf = useMemo(() => round2(payments.reduce((a, p) => a + (p.igtf ?? 0), 0)), [payments]);
@@ -336,7 +339,10 @@ export function Vender() {
   const exactAmount = payAccount
     ? inUsd
       ? round2(missing / (1 - IGTF_RATE))
-      : round2(missing * (rate || 1))
+      : // BLINK-066: sin tasa válida no hay "monto exacto" en bolívares.
+        rate > 0
+        ? round2(missing * rate)
+        : 0
     : 0;
 
   // Cálculo en vivo del vuelto según lo tecleado
@@ -349,7 +355,7 @@ export function Vender() {
       return round2(typedAmount - exactAmount);
     }
     const changeBs = typedAmount - exactAmount;
-    return round2(changeBs / (rate || 1));
+    return rate > 0 ? round2(changeBs / rate) : 0;
   }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, rate]);
 
   const liveChangeBs = useMemo(() => {
@@ -357,24 +363,29 @@ export function Vender() {
     if (!inUsd) {
       return round2(typedAmount - exactAmount);
     }
-    return round2(liveChangeUsd * (rate || 1));
+    return rate > 0 ? round2(liveChangeUsd * rate) : 0;
   }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, liveChangeUsd, rate]);
 
-  const amountUsd = payAccount
-    ? round2(
-        (isOverpaying ? exactAmount : typedAmount) / (inUsd ? 1 : rate || 1)
-      )
-    : 0;
+  const amountUsd =
+    payAccount && (inUsd || rate > 0)
+      ? round2((isOverpaying ? exactAmount : typedAmount) / (inUsd ? 1 : rate))
+      : 0;
 
   const addPayment = useCallback(() => {
     if (!payAccount) return;
+    // BLINK-066: cobrar en bolívares sin tasa no puede asumir 1 Bs = 1 USD.
+    if (!inUsd && !(rate > 0)) {
+      setPayError("Configura la tasa de cambio antes de cobrar en bolívares.");
+      return;
+    }
     const typed = round2(Number(payAmount) || 0);
     if (typed <= 0) return;
 
     // Si el cliente paga de más, el monto que acredita a la venta se acota a exactAmount
     const chargedInput = typed > exactAmount && exactAmount > 0 ? exactAmount : typed;
-    const value = round2(chargedInput / (inUsd ? 1 : rate || 1));
+    const value = round2(chargedInput / (inUsd ? 1 : rate));
     if (value <= 0) return;
+    setPayError("");
 
     const changeVal = typed > exactAmount && exactAmount > 0 ? round2(typed - exactAmount) : 0;
 
@@ -402,22 +413,27 @@ export function Vender() {
     if (!credit && !settled) return;
     // Wink: una venta a crédito exige cliente.
     if (credit && !draft.customerId) return;
+    // BLINK-066: un cobro en bolívares exige tasa; sin ella no hay equivalencia en USD.
+    if (payments.some((p) => p.currency === "VES") && !(rate > 0)) {
+      setPayError("Configura la tasa de cambio antes de cobrar en bolívares.");
+      return;
+    }
 
     const totalReceivedUsd = round2(
       payments.reduce((a, p) => {
         const rec = p.amountReceived ?? p.amountInput ?? p.amountUsd;
-        return a + (p.currency === "USD" ? rec : rec / (rate || 1));
+        return a + (p.currency === "USD" ? rec : rec / rate);
       }, 0)
     );
     const totalChangeUsd = round2(
       payments.reduce((a, p) => {
         if (!p.change) return a;
-        return a + (p.currency === "USD" ? p.change : p.change / (rate || 1));
+        return a + (p.currency === "USD" ? p.change : p.change / rate);
       }, 0)
     );
-    const totalChangeBs = round2(totalChangeUsd * (rate || 1));
+    const totalChangeBs = round2(totalChangeUsd * rate);
 
-    const sale = checkout({
+    const { sale, error } = checkout({
       lines,
       customerId: draft.customerId || undefined,
       discount: discountValue,
@@ -431,6 +447,12 @@ export function Vender() {
       changeUsd: totalChangeUsd > 0 ? totalChangeUsd : undefined,
       changeBs: totalChangeBs > 0 ? totalChangeBs : undefined,
     });
+    // BLINK-066/076: si el checkout rechazó (tasa o existencias), el modal
+    // sigue abierto con el mensaje para corregir y volver a intentar.
+    if (!sale) {
+      setPayError(error ?? "No se pudo registrar la venta.");
+      return;
+    }
 
     // Reinicia la cuenta activa.
     const fresh = emptyDraft();
@@ -438,6 +460,7 @@ export function Vender() {
     setActiveId(fresh.id);
     setPayments([]);
     setCredit(false);
+    setPayError("");
     setPayOpen(false);
     setSuccessSale(sale);
   }, [
@@ -447,7 +470,8 @@ export function Vender() {
 
   const saveQuote = useCallback(() => {
     if (!lines.length) return;
-    checkout({
+    setQuoteError("");
+    const { sale, error } = checkout({
       lines,
       customerId: draft.customerId || undefined,
       discount: discountValue,
@@ -459,6 +483,10 @@ export function Vender() {
       payments: [],
       quote: true,
     });
+    if (!sale) {
+      setQuoteError(error ?? "No se pudo generar la cotización.");
+      return;
+    }
     const fresh = emptyDraft();
     setDrafts((ds) => ds.map((d) => (d.id === draft.id ? fresh : d)));
     setActiveId(fresh.id);
@@ -688,10 +716,13 @@ export function Vender() {
               <button className="btn btn--soft btn--sm" onClick={() => setNoteOpen(true)}><Icon name="note" /> 
                 Nota
               </button>
-              <button className="btn btn--ghost btn--sm" onClick={saveQuote} disabled={!lines.length}><Icon name="receipt" /> 
+              <button className="btn btn--ghost btn--sm" onClick={saveQuote} disabled={!lines.length}><Icon name="receipt" />
                 Generar cotización
               </button>
             </div>
+            {quoteError && (
+              <p className="form-error" role="alert">{quoteError}</p>
+            )}
 
             <button
               className="btn btn--primary btn--block"
@@ -867,7 +898,9 @@ export function Vender() {
             </div>
             <div className="breakdown__row">
               <span className="dim">En bolívares</span>
-              <span className="tabular dim">{formatBsDirect(missing * rate)}</span>
+              <span className="tabular dim">
+                {rate > 0 ? formatBsDirect(missing * rate) : "Configura la tasa"}
+              </span>
             </div>
           </div>
 
@@ -901,6 +934,7 @@ export function Vender() {
                     onClick={() => {
                       setPayAccId(a.id);
                       setCredit(false);
+                      setPayError("");
                     }}
                   >
                     {a.name}
@@ -912,6 +946,7 @@ export function Vender() {
                 onClick={() => {
                   setCredit(true);
                   setPayAccId("");
+                  setPayError("");
                 }}
               >
                 A crédito
@@ -921,6 +956,13 @@ export function Vender() {
 
           {payAccount && !credit && (
             <>
+              {/* BLINK-066: sin tasa no se puede cobrar en bolívares. */}
+              {!inUsd && !(rate > 0) && (
+                <p className="form-error" role="alert">
+                  No hay tasa oficial configurada: sin ella no se puede cobrar en
+                  bolívares. Configúrala en Ajustes → Moneda e impuestos.
+                </p>
+              )}
               <Field
                 label={`Monto (${payAccount.currency})`}
                 hint={inUsd ? "Al cobrar en dólares se suma el IGTF (3%)." : undefined}
@@ -944,7 +986,8 @@ export function Vender() {
                   type="button"
                   className="btn btn--ghost btn--sm"
                   onClick={() => setPayAmount(String(exactAmount))}
-                ><Icon name="cash" /> 
+                  disabled={!(inUsd || rate > 0)}
+                ><Icon name="cash" />
                   Monto exacto
                 </button>
               </div>
@@ -996,7 +1039,12 @@ export function Vender() {
                 />
               </Field>
 
-              <button className="btn btn--soft btn--block" onClick={addPayment} style={{ marginBottom: "0.75rem" }}>
+              <button
+                className="btn btn--soft btn--block"
+                onClick={addPayment}
+                disabled={!inUsd && !(rate > 0)}
+                style={{ marginBottom: "0.75rem" }}
+              >
                 <Icon name="plus" />
                 Agregar cobro
               </button>
@@ -1018,11 +1066,17 @@ export function Vender() {
             </p>
           )}
 
+          {payError && (
+            <p className="form-error" role="alert" style={{ marginBottom: "0.5rem" }}>
+              {payError}
+            </p>
+          )}
+
           <button
             className="btn btn--primary btn--block"
             onClick={finish}
             disabled={!lines.length || (!credit && !settled) || needsCustomer}
-          ><Icon name="check" /> 
+          ><Icon name="check" />
             Confirmar venta
           </button>
         </Modal>

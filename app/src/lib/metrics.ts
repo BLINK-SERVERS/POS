@@ -268,10 +268,14 @@ export function openPendings(state: AppState) {
  * gastos pagados en efectivo, retiros, transferencias, abonos y compras; no solo
  * las ventas.
  */
-export function expectedCash(state: AppState): { usd: number; bs: number } {
+export function expectedCash(state: AppState): {
+  usd: number;
+  bs: number;
+  rateMissing: boolean;
+} {
   const session = state.cashSession;
-  if (!session) return { usd: 0, bs: 0 };
-  const rate = state.rate || 1;
+  if (!session) return { usd: 0, bs: 0, rateMissing: false };
+  const rate = state.rate;
   const cash = new Map(
     state.accounts
       .filter((a) => a.type === "efectivo" && a.inCashClose !== false)
@@ -280,15 +284,23 @@ export function expectedCash(state: AppState): { usd: number; bs: number } {
   const openedAt = new Date(session.openedAt).getTime();
   let usd = session.openingUsd;
   let bs = session.openingBs;
+  let rateMissing = false;
   for (const m of state.movements) {
     const acc = cash.get(m.accountId);
     if (!acc) continue;
     if (new Date(m.at).getTime() < openedAt) continue;
+    // BLINK-066/071: los asientos antiguos pueden no traer monto nativo. Sin
+    // tasa no se puede derivar un importe en Bs: se avisa en lugar de asumir 1:1.
     const native =
-      m.amountInput ?? (acc.currency === "USD" ? m.amountUsd : round2(m.amountUsd * rate));
+      m.amountInput ??
+      (acc.currency === "USD" ? m.amountUsd : rate > 0 ? round2(m.amountUsd * rate) : null);
+    if (native === null) {
+      rateMissing = true;
+      continue;
+    }
     const sign = m.direction === "entrada" ? 1 : -1;
     if (acc.currency === "USD") usd += sign * native;
     else bs += sign * native;
   }
-  return { usd: round2(usd), bs: round2(bs) };
+  return { usd: round2(usd), bs: round2(bs), rateMissing };
 }
