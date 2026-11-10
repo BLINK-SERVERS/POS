@@ -34,6 +34,29 @@ export function pendingKeyFor(userId: string): string {
   return `${PENDING_KEY}:${userId}`;
 }
 
+/** Aviso de que al cerrar sesión el último guardado en la nube no confirmó
+ *  (BLINK-073): la copia local quedó como única y se rescata al re-entrar. */
+export const LOGOUT_AVISO_KEY = "blink-logout-aviso-v1";
+
+export function setLogoutAviso(mensaje: string, storage: Storage | null = safeStorage()): void {
+  try {
+    if (storage) storage.setItem(LOGOUT_AVISO_KEY, mensaje);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+export function takeLogoutAviso(storage: Storage | null = safeStorage()): string | null {
+  try {
+    if (!storage) return null;
+    const v = storage.getItem(LOGOUT_AVISO_KEY);
+    if (v) storage.removeItem(LOGOUT_AVISO_KEY);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
 function safeStorage(): Storage | null {
   try {
     return window.localStorage;

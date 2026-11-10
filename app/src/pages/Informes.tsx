@@ -1,6 +1,7 @@
 // Informes · Resultados.
 import { useMemo, useState } from "react";
-import { useStoreState } from "../lib/store";
+import { useStoreState, USER } from "../lib/store";
+import { auditExport } from "../lib/audit";
 import { Card, Money, PageHead, Tabs, DualInline } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { capital, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal } from "../lib/metrics";
@@ -122,6 +123,8 @@ export function Informes() {
   const exportCsv = () => {
     const { headers, rows } = builders[tab]();
     downloadText(`${reportName(`informe-${tab.toLowerCase()}`)}.csv`, toCsv(headers, rows));
+    // BLINK-074: auditoría de la exportación.
+    auditExport(state.business, USER, `Informe ${tab} exportado a CSV (${rows.length} filas)`);
   };
 
   const exportPdf = () => {
@@ -165,6 +168,8 @@ export function Informes() {
     }
 
     printReport({ title, subtitle, business: businessName, bodyHtml });
+    // BLINK-074: auditoría de la exportación.
+    auditExport(state.business, USER, `Informe ${tab} exportado a PDF (impresión)`);
   };
 
   return (

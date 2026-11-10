@@ -136,7 +136,7 @@ export function buildDatasets(state: AppState): Dataset[] {
     label: "Gastos recurrentes",
     headers: ["Nombre", "Monto USD", "Frecuencia", "Próximo vencimiento", "Activo"],
     rows: state.recurringExpenses.map((r) => [
-      r.name, r.amountUsd, r.frequency, d(r.firstDue), r.active,
+      r.name, r.amountUsd, r.frequency, r.firstDue.slice(0, 10), r.active,
     ]),
   });
 

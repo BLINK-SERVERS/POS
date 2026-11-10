@@ -6,12 +6,18 @@ export type CsvCell = string | number | boolean | null | undefined;
 
 const BOM = "\uFEFF";
 
-/** Escapa un valor para CSV (comillas, comas, saltos de línea). */
+/** Escapa un valor para CSV (comillas, comas, saltos de línea, fórmulas). */
 function esc(v: CsvCell): string {
   if (v === null || v === undefined) return "";
   const s = typeof v === "boolean" ? (v ? "Sí" : "No") : String(v);
-  if (/[",;\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+  // BLINK-072: una celda que EMPIEZA por = + - @ (o tab/CR) se ejecuta como
+  // fórmula en Excel/LibreOffice aunque vaya entrecomillada. Se prefija con
+  // apóstrofo — como hace Excel al importar — ANTES de entrecomillar, de modo
+  // que el contenido de la celda nunca arranque con un operador de fórmula.
+  // Los números ya tipificados pasan tal cual: no son inyectables.
+  const seguro = typeof v === "string" && /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  if (/[",;\n\r]/.test(seguro)) return `"${seguro.replace(/"/g, '""')}"`;
+  return seguro;
 }
 
 /** Convierte encabezados + filas a texto CSV (con BOM para Excel en UTF-8). */

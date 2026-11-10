@@ -27,3 +27,18 @@ export function addAuditLog(entry: Omit<AuditLogEntry, "id" | "at">): void {
     // ignore
   }
 }
+
+/** BLINK-074: asiento de auditoría de una exportación de datos fuera del
+ *  store (las páginas de Informes/Ajustes llaman a downloadText directamente). */
+export function auditExport(
+  business: { name: string; rif: string },
+  userId: string,
+  detalle: string
+): void {
+  addAuditLog({
+    businessId: `${business.name}${business.rif ? ` · ${business.rif}` : ""}`,
+    userId,
+    action: "exportacion",
+    details: detalle,
+  });
+}

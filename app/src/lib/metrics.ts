@@ -2,6 +2,14 @@
 import type { AppState, Sale } from "./types";
 import { round2 } from "./money";
 
+/** Día local como "YYYY-MM-DD" (BLINK-075): `toISOString()` desplaza la
+ *  medianoche local al día anterior en husos con offset (UTC-4) y los gastos
+ *  recurrentes salían fechados 24 h antes de lo programado. */
+export function diaLocal(fecha: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${fecha.getFullYear()}-${p(fecha.getMonth() + 1)}-${p(fecha.getDate())}`;
+}
+
 export interface Metrics {
   net: number;
   count: number;
@@ -275,7 +283,9 @@ export function expectedCash(state: AppState): {
 } {
   const session = state.cashSession;
   if (!session) return { usd: 0, bs: 0, rateMissing: false };
-  const rate = state.rate;
+  // BLINK-071: la tasa de APERTURA del turno es la que valoriza los asientos
+  // antiguos; la tasa actual solo aplica a asientos nuevos (ya traen amountInput).
+  const rate = session.rate && session.rate > 0 ? session.rate : state.rate;
   const cash = new Map(
     state.accounts
       .filter((a) => a.type === "efectivo" && a.inCashClose !== false)

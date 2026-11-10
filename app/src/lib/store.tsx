@@ -52,7 +52,7 @@ import type {
 import { UNIT_OPTIONS } from "./types";
 import { MissingRateError, requireRate, round2 } from "./money";
 import { cachedRate, fetchOfficialRate, isCacheFresh } from "./exchange";
-import { expectedCash } from "./metrics";
+import { diaLocal, expectedCash } from "./metrics";
 import {
   authResendCode,
   authResetPassword,
@@ -84,7 +84,8 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 import { findStockShortage, reversePendingAbonos } from "./ledger";
 import { cacheAdelantada, mergeTabState } from "./sync";
 import { rehidrataComercio } from "./auth-events";
-import { STATE_KEY, clearUserStorage, pendingKeyFor, stateKeyFor } from "./session-storage";
+import { addAuditLog } from "./audit";
+import { STATE_KEY, clearUserStorage, pendingKeyFor, setLogoutAviso, stateKeyFor } from "./session-storage";
 const WRITE_DELAY = 250;
 /**
  * Tope de espera del guardado al cerrar sesión (BLINK-055). Sin él, `logout`
@@ -420,6 +421,24 @@ try {
 let currentState: AppState = emptyState();
 let currentAuthed = false;
 let currentUser: SessionUser | null = null;
+
+// ------------------------------------------------------------------
+// BLINK-074: la política de privacidad (Legal.tsx) promete «registros de
+// auditoría de las acciones críticas». `addAuditLog` existía sin ningún
+// llamador; aquí se firma cada acción crítica DESPUÉS de setAppState
+// (nunca dentro del updater: en dev, StrictMode lo invoca dos veces y
+// duplicaría el registro).
+// ------------------------------------------------------------------
+function auditar(accion: string, detalles: string): void {
+  const b = currentState.business;
+  addAuditLog({
+    businessId: `${b.name}${b.rif ? ` · ${b.rif}` : ""}`,
+    userId: USER,
+    action: accion,
+    details: detalles,
+  });
+}
+
 /** true hasta que se resuelve la sesión y se carga el comercio remoto. */
 let booting = true;
 /** true cuando ya se cargó (o creó) el comercio remoto; evita pisarlo. */
@@ -750,7 +769,7 @@ export interface PurchaseInput {
 type StoreActions = {
   // Autenticación (Supabase). Devuelven un mensaje de error o null si fue bien.
   login: (email: string, password: string) => Promise<string | null>;
-  logout: () => Promise<void>;
+  logout: () => Promise<string | null>;
   signUp: (input: {
     email: string;
     password: string;
@@ -870,7 +889,7 @@ type StoreActions = {
   /** Marca el alta guiada como terminada. */
   completeOnboarding: () => void;
   /** Escribe ahora (local + nube) y espera la confirmación de la nube. */
-  flushSaves: () => Promise<void>;
+  flushSaves: () => Promise<boolean>;
   /** Borra todos los datos del comercio y vuelve al alta. */
   clearAll: () => void;
   /** Reintenta cargar el comercio desde la nube. */
@@ -911,20 +930,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const persistCloud = useCallback((): Promise<void> => {
+  const persistCloud = useCallback((): Promise<boolean> => {
     // No pisar la nube antes de terminar de cargarla ni tras cerrar sesión.
-    if (!currentAuthed || !hydrated) return Promise.resolve();
-    if (import.meta.env.DEV && isBypassActive()) return Promise.resolve(); // TEMP-BYPASS: sin sesión real en la nube
+    if (!currentAuthed || !hydrated) return Promise.resolve(true);
+    if (import.meta.env.DEV && isBypassActive()) return Promise.resolve(true); // TEMP-BYPASS: sin sesión real en la nube
     // Sin pago conciliado no se escribe: el comercio aún no debe existir.
-    if (!puedeOperar(currentActivacion)) return Promise.resolve();
+    // BLINK-073: ese estado de «nada que subir» también cuenta como no
+    // confirmado: la caché local es la única copia y no se borra al salir.
+    if (!puedeOperar(currentActivacion)) return Promise.resolve(false);
     return cloudSaveBusiness(currentState)
       .then(() => {
         setCloudError(false);
         // BLINK-047: la nube confirmó; la caché ya no está «por delante».
         if (currentUser) borrarPendiente(currentUser.id);
+        return true;
       })
       .catch(() => {
         setCloudError(true);
+        return false;
       });
   }, []);
 
@@ -945,13 +968,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
    * usuario volviera al principio del asistente con el comercio perdido
    * (BLINK-048), o que el último cambio no llegara a Supabase (BLINK-055).
    */
-  const flushSaves = useCallback(async () => {
+  const flushSaves = useCallback(async (): Promise<boolean> => {
     if (timerDebounce.current) {
       window.clearTimeout(timerDebounce.current);
       timerDebounce.current = 0;
     }
     persistLocal();
-    await persistCloud();
+    return persistCloud();
   }, [persistLocal, persistCloud]);
 
   useEffect(() => {
@@ -1168,17 +1191,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (): Promise<string | null> => {
     if (import.meta.env.DEV && isBypassActive()) clearBypass(); // TEMP-BYPASS: salir vuelve al Login real
     const userId = currentUser?.id ?? "";
     // El guardado va con *debounce* y `authSignOut()` corta la petición en
     // vuelo: sin esperar, el último cambio (la venta de hace dos segundos) se
     // queda en memoria y el comercio vuelve a abrir con los datos viejos.
+    let guardado = false;
     await Promise.race([
-      flushSaves(),
+      flushSaves().then((ok) => {
+        guardado = ok;
+      }),
       new Promise<void>((resolver) => window.setTimeout(resolver, FLUSH_SALIDA_MS)),
     ]);
     await authSignOut();
+    // BLINK-073: si la nube NO confirmó (falló, sin red, timeout o activación
+    // sin conciliar), la copia local es la única que existe: se conserva
+    // junto con la marca de pendiente para que `cacheAdelantada` la rescate
+    // al volver a entrar. En un equipo compartido eso deja datos en disco:
+    // se devuelve un aviso en lugar de perderlos en silencio.
+    if (userId && !guardado) {
+      marcarPendiente(userId);
+      const aviso =
+        "El último guardado en la nube no se confirmó. Los datos quedaron guardados en este equipo y se sincronizarán cuando vuelvas a entrar.";
+      setLogoutAviso(aviso);
+      setUser(null);
+      setAuthed(false);
+      clearSessionVerified();
+      setActivacion(null);
+      setEsAdmin(false);
+      hydrated = true;
+      setAppState(emptyState());
+      return aviso;
+    }
     // El equipo puede ser compartido: tras subir (o agotar el intento) no se
     // dejan datos del comercio en disco (BLINK-047/069).
     clearUserStorage(userId);
@@ -1189,6 +1234,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEsAdmin(false);
     hydrated = true;
     setAppState(emptyState());
+    return null;
   }, [flushSaves]);
 
   // Devuelve el resultado completo: `error` para las pantalla de formulario y
@@ -1302,6 +1348,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const adjustStock = useCallback<StoreActions["adjustStock"]>(
     ({ productId, newStock, motive, note }) => {
+      const product = currentState.products.find((p) => p.id === productId);
+      // BLINK-074: se captura el delta antes de mutar para el asiento de
+      // auditoría (fuera del updater: StrictMode lo invocaría dos veces).
+      const antes = product?.stock ?? null;
+      const delta =
+        product && Number.isFinite(newStock) && newStock >= 0 ? round2(round2(newStock) - product.stock) : 0;
       setAppState((s) => {
         const product = s.products.find((p) => p.id === productId);
         if (!product) return s;
@@ -1330,6 +1382,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           inventoryMoves: [move, ...s.inventoryMoves],
         };
       });
+      // BLINK-074: asiento de auditoría del ajuste (fuera del updater).
+      if (product && antes !== null && delta !== 0) {
+        auditar(
+          "ajuste_stock",
+          `${product.name}: ${antes} → ${round2(newStock)} ` +
+            `(${delta > 0 ? "+" : ""}${delta})${motive ? ` · ${motive}` : ""}${note ? ` · ${note}` : ""}`
+        );
+      }
     },
     []
   );
@@ -1626,12 +1686,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         nextSaleNumber: nextNumber + 1,
       };
     });
+    if (createdSale) {
+      // TS no rastrea la asignación hecha dentro del updater: se re-tipa.
+      const registrada = createdSale as Sale;
+      // BLINK-074: asiento de auditoría fuera del updater (StrictMode).
+      auditar(
+        input.quote ? "cotizacion" : "venta",
+        `${input.quote ? "Cotización" : "Venta"} ${registrada.code} · ` +
+          `${registrada.lines.length} líneas · ${registrada.paymentMethod} · estado ${registrada.status}`
+      );
+    }
     return createdSale
       ? { sale: createdSale, error: null }
       : { sale: null, error: "No se pudo registrar la venta. Intenta de nuevo." };
   }, []);
 
   const voidSale = useCallback((id: string, reason: string) => {
+    const sale = currentState.sales.find((x) => x.id === id);
+    const aplica = !!sale && sale.status !== "anulada" && sale.status !== "cotizacion";
     setAppState((s) => {
       const sale = s.sales.find((x) => x.id === id);
       if (!sale || sale.status === "anulada" || sale.status === "cotizacion") return s;
@@ -1697,6 +1769,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ),
       };
     });
+    // BLINK-074: asiento de auditoría de la anulación (fuera del updater).
+    if (aplica && sale) {
+      auditar("anulacion_venta", `Anulación venta ${sale.code}${reason ? ` · ${reason}` : ""}`);
+    }
   }, []);
 
   // ---- Caja -----------------------------------------------------
@@ -1707,11 +1783,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openingBs,
       userId: USER,
       locationId: currentState.locations.find((l) => l.defaultSales)?.id ?? "",
+      // BLINK-071: congela la tasa vigente al abrir turno para valorizar
+      // asientos antiguos sin monto nativo (ver metrics.expectedCash).
+      rate: currentState.rate,
     };
     setAppState((s) => ({ ...s, cashSession: session }));
   }, []);
 
   const closeCash = useCallback((countedUsd: number, countedBs: number, note: string) => {
+    // BLINK-074: se captura el turno y su esperado ANTES de mutar (fuera del
+    // updater) para el asiento de auditoría del arqueo.
+    const turno = currentState.cashSession;
+    const esperado = turno ? expectedCash(currentState) : null;
     setAppState((s) => {
       if (!s.cashSession) return s;
       const session = s.cashSession;
@@ -1738,6 +1821,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       return { ...s, cashSession: null, cashClosures: [closure, ...s.cashClosures] };
     });
+    if (turno && esperado) {
+      auditar(
+        "cierre_caja",
+        `Arqueo del turno abierto ${turno.openedAt} · ` +
+          `diferencia USD ${round2(countedUsd - esperado.usd)}, Bs ${round2(countedBs - esperado.bs)}` +
+          `${note ? ` · ${note}` : ""}`
+      );
+    }
   }, []);
 
   // ---- Finanzas -------------------------------------------------
@@ -2048,24 +2139,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       let expenses = s.expenses;
       const recurringExpenses = s.recurringExpenses.map((r) => {
         if (!r.active) return r;
-        const first = new Date(r.firstDue);
-        const dueDay = first.getDate();
-        // Último vencimiento <= hoy.
+        // BLINK-075: `firstDue` es un DÍA local ("YYYY-MM-DD", con tolerancia a
+        // ISOs viejos). Parsearlo como UTC (`new Date("2026-11-05")`) y
+        // re-serializar con `toISOString()` desplazaba el vencimiento al día
+        // anterior en UTC-4, dos veces. Ahora todo va por día local y por
+        // comparación de cadenas "YYYY-MM-DD".
+        const first = r.firstDue.slice(0, 10);
+        const dueDay = Number(first.slice(8, 10));
+        if (!Number.isFinite(dueDay) || dueDay < 1 || dueDay > 31) return r;
+        // Último vencimiento <= hoy (local; el 31 auto-ajusta como antes).
         const candidate = new Date(now.getFullYear(), now.getMonth(), dueDay);
         if (candidate.getTime() > now.getTime()) candidate.setMonth(candidate.getMonth() - 1);
-        if (candidate.getTime() < first.getTime()) return r;
-        const dueIso = candidate.toISOString();
-        if (r.lastGenerated && r.lastGenerated >= dueIso.slice(0, 10)) return r;
+        const dueStr = diaLocal(candidate);
+        if (dueStr < first) return r;
+        if (r.lastGenerated && r.lastGenerated >= dueStr) return r;
         changed = true;
         const cat = s.expenseCategories.find((c) => c.id === r.categoryId);
         const already = expenses.some(
-          (e) => e.category === (cat?.name ?? "") && e.name === r.name && e.at.slice(0, 10) === dueIso.slice(0, 10)
+          (e) => e.category === (cat?.name ?? "") && e.name === r.name && e.at.slice(0, 10) === dueStr
         );
         if (!already) {
           expenses = [
             {
               id: uid("exp"),
-              at: dueIso,
+              // Fecha local del vencimiento, sin desfase de huso.
+              at: `${dueStr}T00:00:00`,
               name: r.name,
               category: cat?.name ?? "Otros",
               note: "Generado por gasto recurrente",
@@ -2077,7 +2175,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ...expenses,
           ];
         }
-        return { ...r, lastGenerated: dueIso.slice(0, 10) };
+        return { ...r, lastGenerated: dueStr };
       });
       return changed ? { ...s, expenses, recurringExpenses } : s;
     });
@@ -2162,6 +2260,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const voidPending = useCallback((id: string) => {
+    const pendiente = currentState.pendings.find((p) => p.id === id);
+    const aplica = !!pendiente && pendiente.status !== "anulado";
     setAppState((s) => {
       const pending = s.pendings.find((p) => p.id === id);
       // Ya anulado: no se revierte dos veces.
@@ -2188,6 +2288,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ),
       };
     });
+    // BLINK-074: asiento de auditoría de la anulación (fuera del updater).
+    if (aplica && pendiente) {
+      auditar("anulacion_pendiente", `Anulación pendiente: ${pendiente.subject}`);
+    }
   }, []);
 
   // ---- Impuestos / descuentos / recargos ------------------------
@@ -2430,7 +2534,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setRate = useCallback((rate: number) => {
     // Una tasa no válida (0, negativa o NaN) rompería las conversiones Bs/USD.
     if (!Number.isFinite(rate) || rate <= 0) return;
+    // BLINK-074: sin cambio de valor no hay asiento (evita ruido del auto-sync
+    // cuando la tasa oficial no se movió).
+    if (currentState.rate === rate) return;
+    const previa = currentState.rate;
     setAppState((s) => ({ ...s, rate, rateUpdatedAt: new Date().toISOString() }));
+    auditar("tasa", `Tasa de cambio ${previa} → ${rate}`);
   }, []);
 
   const setBaseCurrency = useCallback(

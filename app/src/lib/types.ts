@@ -320,7 +320,7 @@ export interface RecurringExpense {
   categoryId: string;
   amountUsd: number;
   frequency: "mensual";
-  firstDue: string; // ISO (día del mes)
+  firstDue: string; // "YYYY-MM-DD" día local (BLINK-075: sin toISOString)
   active: boolean;
   lastGenerated?: string; // ISO del último pendiente creado
 }
@@ -404,6 +404,9 @@ export interface CashSession {
   openingBs: number;
   userId: string;
   locationId: string;
+  /** Tasa con la que abrió el turno (BLINK-071): congela la conversión de
+   *  asientos antiguos sin monto nativo aunque la tasa actual cambie. */
+  rate?: number;
 }
 
 /** Registro de cierre de caja (arqueo). */

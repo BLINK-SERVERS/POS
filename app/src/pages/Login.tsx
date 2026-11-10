@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStoreActions } from "../lib/store";
+import { takeLogoutAviso } from "../lib/session-storage";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { BrandLogo } from "../components/BrandLogo";
@@ -13,6 +14,7 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [step, setStep] = useState<"cred" | "link">("cred");
@@ -23,6 +25,13 @@ export function Login() {
     timer.current = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => window.clearTimeout(timer.current);
   }, [cooldown]);
+
+  // BLINK-073: si la sesión anterior se cerró sin confirmación de la nube,
+  // la copia local quedó como única: se avisa aquí, donde aterriza el usuario.
+  useEffect(() => {
+    const avisoSalida = takeLogoutAviso();
+    if (avisoSalida) setAviso(avisoSalida);
+  }, []);
 
   async function onSubmitCredenciales(e: FormEvent) {
     e.preventDefault();
@@ -95,6 +104,11 @@ export function Login() {
 
       <div className="auth__panel">
         <div className="auth__card">
+          {aviso && (
+            <p className="muted" role="status" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
+              {aviso}
+            </p>
+          )}
           {step === "link" ? (
             <div>
               <button

@@ -1,7 +1,8 @@
 // Ajustes · Negocio, perfil, moneda, recibo, exportación, suscripción y cuenta.
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useStoreState, useStoreActions, useActivacion } from "../lib/store";
+import { useStoreState, useStoreActions, useActivacion, USER } from "../lib/store";
+import { auditExport } from "../lib/audit";
 import { Badge, Card, EmptyState, Field, PageHead, Tabs, useConfirm } from "../components/ui";
 import {
   cloudListarPagos,
@@ -141,8 +142,11 @@ export function Ajustes() {
   // Todos los conjuntos exportables, memorizados.
   const datasets = useMemo(() => buildDatasets(state), [state]);
 
-  const exportOneCsv = (ds: Dataset) =>
+  const exportOneCsv = (ds: Dataset) => {
     downloadText(`${reportName(ds.kind)}.csv`, toCsv(ds.headers, ds.rows));
+    // BLINK-074: auditoría de la exportación.
+    auditExport(state.business, USER, `${ds.label} exportado a CSV (${ds.rows.length} filas)`);
+  };
 
   const exportOnePdf = (ds: Dataset) =>
     printReport({
@@ -179,6 +183,8 @@ export function Ajustes() {
       JSON.stringify(state, null, 2),
       "application/json"
     );
+    // BLINK-074: auditoría de la exportación.
+    auditExport(state.business, USER, "Copia de seguridad completa exportada a JSON");
   }
 
   const totalRows = datasets.reduce((a, ds) => a + ds.rows.length, 0);

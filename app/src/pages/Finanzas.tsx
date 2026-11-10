@@ -4,6 +4,7 @@ import { useStoreActions, useStoreState } from "../lib/store";
 import { Icon } from "../components/Icon";
 import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
+import { diaLocal } from "../lib/metrics";
 import type {
   Account,
   CashClosure,
@@ -276,7 +277,7 @@ const RecurringRow = memo(function RecurringRow({
       <td style={{ fontWeight: 600 }}>{recurring.name}</td>
       <td>{categoryName || "—"}</td>
       <td className="tabular" style={{ textAlign: "right" }}>{formatUsd(recurring.amountUsd)}</td>
-      <td>Mensual · día {new Date(recurring.firstDue).getDate()}</td>
+      <td>Mensual · día {Number(recurring.firstDue.slice(8, 10))}</td>
       <td>
         {recurring.lastGenerated ? (
           <span className="dim">Generado {dayLabel(recurring.lastGenerated)}</span>
@@ -433,7 +434,7 @@ export function Finanzas() {
     name: "",
     categoryId: "",
     amountUsd: "0",
-    firstDue: new Date().toISOString().slice(0, 10),
+    firstDue: diaLocal(new Date()),
   });
 
   /* Filtro de movimientos */
@@ -836,7 +837,7 @@ export function Finanzas() {
                   name: "",
                   categoryId: state.expenseCategories.find((c) => c.active)?.id ?? "",
                   amountUsd: "0",
-                  firstDue: new Date().toISOString().slice(0, 10),
+                  firstDue: diaLocal(new Date()),
                 });
                 setRecurOpen(true);
               }}
@@ -1506,7 +1507,9 @@ export function Finanzas() {
                 categoryId: recurForm.categoryId,
                 amountUsd: Number(recurForm.amountUsd) || 0,
                 frequency: "mensual",
-                firstDue: new Date(`${recurForm.firstDue}T00:00:00`).toISOString(),
+                // BLINK-075: se persiste el día local tal cual ("YYYY-MM-DD");
+                // pasarlo por `toISOString()` lo fechaba un día antes (UTC-4).
+                firstDue: recurForm.firstDue,
                 active: true,
               });
               setRecurOpen(false);
