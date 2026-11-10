@@ -22,12 +22,15 @@ export function Inventario() {
   const locations = useStoreSelector((s) => s.locations);
   const purchases = useStoreSelector((s) => s.purchases);
   const inventoryMoves = useStoreSelector((s) => s.inventoryMoves);
-  const { setStock, addPurchase } = useStoreActions();
+  const { adjustStock, addPurchase } = useStoreActions();
   const providers = useMemo(() => contacts.filter((c) => c.isProvider), [contacts]);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Existencias");
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState("");
   const [qty, setQty] = useState("0");
+  const [adjustMotive, setAdjustMotive] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustError, setAdjustError] = useState("");
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchaseError, setPurchaseError] = useState("");
   const [purchase, setPurchase] = useState({
@@ -53,6 +56,9 @@ export function Inventario() {
   const openAdjust = useCallback((id: string, stock: number) => {
     setTarget(id);
     setQty(String(stock));
+    setAdjustMotive("");
+    setAdjustNote("");
+    setAdjustError("");
     setOpen(true);
   }, []);
 
@@ -66,8 +72,27 @@ export function Inventario() {
   });
 
   function applyAdjust() {
-    if (!target) return;
-    setStock(target, Number(qty) || 0);
+    if (!target) {
+      setAdjustError("Elige un producto.");
+      return;
+    }
+    const n = Number(qty);
+    if (!Number.isFinite(n) || n < 0) {
+      setAdjustError("La existencia debe ser un número mayor o igual a 0.");
+      return;
+    }
+    const motivo = adjustMotive.trim();
+    if (!motivo) {
+      setAdjustError("Indica el motivo del ajuste.");
+      return;
+    }
+    const producto = products.find((p) => p.id === target);
+    // Sin diferencia no hay asiento que registrar: se cierra sin tocar el libro.
+    if (producto && round2(n) === producto.stock) {
+      setOpen(false);
+      return;
+    }
+    adjustStock({ productId: target, newStock: n, motive: motivo, note: adjustNote.trim() });
     setOpen(false);
   }
 
@@ -314,29 +339,41 @@ export function Inventario() {
 
       {open && (
         <Modal title="Ajustar existencia" onClose={() => setOpen(false)}>
-          
-            
-              
-                <div className="form-group">
-                  <Field label="Producto">
-                                                                                <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
-                                                                                  <option value="">Selecciona…</option>
-                                                                                  {products.map((p) => (
-                                                                                    <option key={p.id} value={p.id}>
-                                                                                      {p.name}
-                                                                                    </option>
-                                                                                  ))}
-                                                                                </select>
-                                                                              </Field>
-                                                                              <Field label="Nueva existencia">
-                                                                                <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
-                                                                              </Field>
-                </div>
-              
-            
-          
-          <button className="btn btn--primary btn--block" onClick={applyAdjust}><Icon name="check" /> 
-            Guardar ajuste
+          <div className="stack gap-8">
+            <Field label="Producto" required>
+              <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
+                <option value="">Selecciona…</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Nueva existencia" hint="Número finito mayor o igual a 0 (admite decimales para kg/L).">
+              <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+            </Field>
+            {/* BLINK-033: sin motivo no hay ajuste; el asiento queda firmado con él. */}
+            <Field label="Motivo" required hint="Conteo físico, daño, robo, devolución… Se registra en el libro.">
+              <input
+                className="input"
+                value={adjustMotive}
+                onChange={(e) => setAdjustMotive(e.target.value)}
+                placeholder="Conteo físico"
+              />
+            </Field>
+            <Field label="Nota (opcional)">
+              <input
+                className="input"
+                value={adjustNote}
+                onChange={(e) => setAdjustNote(e.target.value)}
+                placeholder="Detalle del conteo, responsable…"
+              />
+            </Field>
+            {adjustError && <p className="field__hint" role="alert">{adjustError}</p>}
+          </div>
+          <button className="btn btn--primary btn--block" onClick={applyAdjust}>
+            <Icon name="check" /> Guardar ajuste
           </button>
         </Modal>
       )}

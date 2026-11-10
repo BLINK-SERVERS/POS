@@ -90,6 +90,7 @@ export function Vender() {
   const surcharges = useStoreSelector((s) => s.surcharges);
   const accounts = useStoreSelector((s) => s.accounts);
   const business = useStoreSelector((s) => s.business);
+  const taxes = useStoreSelector((s) => s.taxes);
   const { checkout, openCash, syncRate } = useStoreActions();
 
   const [initial] = useState(loadInitialDrafts);
@@ -273,6 +274,17 @@ export function Vender() {
   const discountValue = discount ? discountAmount(discount, base) : 0;
   const net = round2(Math.max(0, base - discountValue));
   const tax = useMemo(() => saleTax(lines, discountValue), [lines, discountValue]);
+  // La etiqueta del IVA depende de las tasas reales del ticket: no se afirma
+  // 16 % cuando hay líneas al 8 %, exentas o mixtas (BLINK-016). `null` = sin
+  // impuestos, la fila no se muestra.
+  const ivaLabel = useMemo(() => {
+    const rates = [...new Set(lines.map((l) => l.taxRate ?? 0))].filter((r) => r > 0);
+    if (rates.length === 0) return null;
+    if (rates.length > 1) return "IVA";
+    const r = rates[0];
+    const def = taxes.find((t) => Math.abs(t.rate - r) < 1e-9);
+    return def?.name ?? `IVA (${round2(r * 100)}%)`;
+  }, [lines, taxes]);
   const surchargeValue = useMemo(
     () => round2(appliedSurcharges.reduce((a, s) => a + surchargeAmount(s, net), 0)),
     [appliedSurcharges, net]
@@ -651,10 +663,12 @@ export function Vender() {
               <span>Recargos</span>
               <span className="tabular">+ {formatUsd(surchargeValue)}</span>
             </div>
-            <div className="total-row">
-              <span>IVA (16%)</span>
-              <span className="tabular">+ {formatUsd(tax)}</span>
-            </div>
+            {ivaLabel && (
+              <div className="total-row">
+                <span>{ivaLabel}</span>
+                <span className="tabular">+ {formatUsd(tax)}</span>
+              </div>
+            )}
             <div className="total-row total-row--grand">
               <span>Total</span>
               <span className="tabular">{formatUsd(totalPreIgtf)}</span>

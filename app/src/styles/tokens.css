@@ -117,6 +117,18 @@
   --color-danger-text: #c4272b;
   --color-danger-text: light-dark(#c4272b, #ff4245);
 
+  /* Velos y textos semánticos para insignias de advertencia y peligro
+     (BLINK-038/069): mismo patrón del acento — velo suave del color de
+     marca con texto oscurecido para sostener 4,5:1 en la apariencia clara. */
+  --color-warning-soft: rgba(255, 204, 0, 0.18);
+  --color-warning-soft: light-dark(rgba(255, 204, 0, 0.18), rgba(255, 214, 0, 0.2));
+  --color-warning-text: #6e5200;
+  --color-warning-text: light-dark(#6e5200, #ffd600);
+  --color-danger-soft: rgba(255, 56, 60, 0.12);
+  --color-danger-soft: light-dark(rgba(255, 56, 60, 0.12), rgba(255, 66, 69, 0.16));
+  --color-danger-soft-text: #b32025;
+  --color-danger-soft-text: light-dark(#b32025, #ff6b6e);
+
   /* --- Bordes derivados del texto --- */
   --color-border: rgba(66, 66, 66, 0.16);
   --color-border: light-dark(rgba(66, 66, 66, 0.16), rgba(235, 235, 245, 0.18));

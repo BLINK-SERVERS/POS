@@ -73,7 +73,22 @@ export function Ajustes() {
   });
   const [rate, setRateField] = useState(String(state.rate || ""));
   const [rateMsg, setRateMsg] = useState("");
+  const [rateError, setRateError] = useState("");
   const [rateBusy, setRateBusy] = useState(false);
+
+  /** Guarda la tasa tras validarla en la UI (BLINK-039): la guarda del store
+   * ya existía, pero fallaba en silencio y el usuario no sabía por qué. */
+  function guardarTasa() {
+    const value = Number(rate.replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) {
+      setRateError("La tasa debe ser un número mayor que 0.");
+      return;
+    }
+    setRateError("");
+    setRateMsg("Tasa guardada.");
+    setRate(value);
+    setRateField(String(value));
+  }
   const [profile, setProfile] = useState({
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
@@ -109,14 +124,16 @@ export function Ajustes() {
   async function onSyncRate() {
     setRateBusy(true);
     setRateMsg("");
+    setRateError("");
     const result = await syncRate();
     setRateBusy(false);
-    if (result === "error") {
+    if (result.status === "error" || result.rate === null) {
       setRateMsg("Sin conexión con la fuente oficial. Se mantiene la tasa guardada.");
       return;
     }
-    // Refleja en el campo la tasa recién aplicada al estado.
-    setRateMsg(result === "cached" ? "Tasa oficial vigente aplicada." : "Tasa oficial actualizada.");
+    // BLINK-035: refleja en el campo la tasa recién aplicada al estado.
+    setRateField(String(result.rate));
+    setRateMsg(result.status === "cached" ? "Tasa oficial vigente aplicada." : "Tasa oficial actualizada.");
   }
 
   const firstProduct = state.products[0];
@@ -331,14 +348,19 @@ export function Ajustes() {
           <div className="row gap-8" style={{ flexWrap: "wrap", marginTop: "0.25rem" }}>
             <button
               className="btn btn--primary"
-              onClick={() => setRate(Number(rate.replace(",", ".")) || 0)}
-            ><Icon name="refresh" /> 
+              onClick={guardarTasa}
+            ><Icon name="refresh" />
               Guardar tasa
             </button>
             <button className="btn btn--soft" onClick={onSyncRate} disabled={rateBusy}>
               <Icon name="download" /> {rateBusy ? "Consultando…" : "Actualizar desde la API"}
             </button>
           </div>
+          {rateError && (
+            <p className="field__hint" role="alert" style={{ marginTop: "0.6rem" }}>
+              <Icon name="alert" /> {rateError}
+            </p>
+          )}
           {rateMsg && (
             <p className="field__hint" style={{ marginTop: "0.6rem" }}>
               {rateMsg}

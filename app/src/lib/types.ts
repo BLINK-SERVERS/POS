@@ -229,6 +229,12 @@ export interface Movement {
   currency?: "USD" | "VES";
   /** Monto en la moneda nativa de la cuenta (la que realmente entró/salió). */
   amountInput?: number;
+  /** Abonos: pendiente que originó el asiento (reversión idempotente). */
+  pendingId?: string;
+  /** Marca del asiento ya revertido (no se revierte dos veces). */
+  reversedAt?: string;
+  /** Este asiento es la inversa del indicado (anulación de abono/venta). */
+  reversalOf?: string;
   origin: string; // Venta / Ajuste / Gasto / Compra / Transferencia / Abono
   note: string;
   userId: string;
@@ -325,7 +331,8 @@ export interface InventoryMove {
   at: string;
   productId: string;
   productName: string;
-  kind: "entrada" | "salida";
+  kind: "entrada" | "salida" | "ajuste";
+  /** En un ajuste, el signo indica si la existencia subió (+) o bajó (−). */
   qty: number;
   costUnit: number;
   origin: string; // Venta #000001 / Compra / Ajuste / Traslado / Devolución / Apertura
@@ -441,6 +448,8 @@ export interface AppState {
   business: Business;
   rate: number; // Bs por moneda base (tasa de referencia)
   rateUpdatedAt: string;
+  /** Contador monotónico de códigos de venta/cotización (BLINK-044). */
+  nextSaleNumber: number;
   taxes: Tax[];
   categories: Category[];
   channels: Channel[];

@@ -536,6 +536,16 @@
   color: var(--color-accent-text);
   border-color: transparent;
 }
+.badge--warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-color: transparent;
+}
+.badge--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-soft-text);
+  border-color: transparent;
+}
 
 /* Control segmentado de iOS 26/27 (Konsta).
    Con preflight de Tailwind activo, Konsta ya dibuja el patron completo:

@@ -439,8 +439,9 @@ export function useIsMobile(): boolean {
 }
 
 /* --- Badge ---
-   Paleta de 3 colores: acento (#007AFF) o neutro (#424242).
-   success/accent → acento · neutral/warning/danger → neutro. */
+   Paleta de 4 colores: acento (azul de marca), advertencia (ámbar) y
+   peligro (rojo) sobre velos semánticos con contraste AA; el resto, neutro
+   (BLINK-038/069). */
 export function Badge({
   children,
   tone = "neutral",
@@ -450,8 +451,14 @@ export function Badge({
   tone?: "neutral" | "success" | "warning" | "danger" | "accent";
   icon?: "check" | "alert";
 }) {
-  const accent = tone === "accent" || tone === "success";
-  const cls = accent ? "badge badge--accent" : "badge";
+  const cls =
+    tone === "warning"
+      ? "badge badge--warning"
+      : tone === "danger"
+        ? "badge badge--danger"
+        : tone === "accent" || tone === "success"
+          ? "badge badge--accent"
+          : "badge";
   return (
     <span className={cls}>
       {icon && <Icon name={icon} />}

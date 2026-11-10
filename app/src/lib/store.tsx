@@ -43,7 +43,6 @@ import type {
   Sale,
   SaleLine,
   SalePayment,
-  StockAdjustment,
   StockReturn,
   StockTransfer,
   Surcharge,
@@ -80,9 +79,11 @@ import {
 } from "./activacion";
 // TEMP-BYPASS (pruebas manuales sin cuenta) — se retira con el archivo bypass.ts.
 import { isBypassActive, bypassUser, clearBypass } from "./bypass";
-
-const STORAGE_KEY = "blink-pos-state-v3";
-const LEGACY_KEYS = ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"];
+// Reglas puras portadas de la copia auditada (BLINK-069): reversión de
+// abonos y reconciliación caché↔nube (BLINK-047).
+import { reversePendingAbonos } from "./ledger";
+import { cacheAdelantada } from "./sync";
+import { STATE_KEY, clearUserStorage, pendingKeyFor, stateKeyFor } from "./session-storage";
 const WRITE_DELAY = 250;
 /**
  * Tope de espera del guardado al cerrar sesión (BLINK-055). Sin él, `logout`
@@ -180,6 +181,7 @@ function emptyState(): AppState {
     },
     rate: 0,
     rateUpdatedAt: "",
+    nextSaleNumber: 1,
     taxes: [iva, exento],
     categories: [],
     channels: [canalPrincipal],
@@ -206,6 +208,14 @@ function emptyState(): AppState {
     openTabs: [],
     onboarding: { completed: false },
   };
+}
+
+/** Mayor código de venta/cotización ya emitido (BLINK-044). */
+function maxSaleNumber(sales: Sale[]): number {
+  return sales.reduce((max, sale) => {
+    const n = Number.parseInt(sale.code.replace(/^C-/, ""), 10);
+    return Number.isFinite(n) ? Math.max(max, n) : max;
+  }, 0);
 }
 
 /** Rellena arrays y campos nuevos para datos guardados con una versión previa. */
@@ -290,20 +300,87 @@ function normalize(base: AppState, raw: Partial<AppState>): AppState {
   if (!merged.taxes.some((t) => t.isDefault) && merged.taxes.length) {
     merged.taxes[0] = { ...merged.taxes[0], isDefault: true };
   }
+  // El contador de ventas nunca queda por detrás de los códigos emitidos (BLINK-044).
+  merged.nextSaleNumber = Math.max(
+    1,
+    merged.nextSaleNumber ?? 1,
+    maxSaleNumber(merged.sales) + 1
+  );
   return merged;
 }
 
-function load(): AppState {
+/**
+ * Caché local del comercio de un usuario concreto (nunca la de otro).
+ * Migración única: si este usuario aún no tiene clave propia pero existe la
+ * clave global de la versión anterior (`blink-pos-state-v3` sin sufijo), la
+ * adopta como su caché y elimina la global para que ningún otro usuario del
+ * mismo navegador pueda heredarla.
+ */
+function loadForUser(userId: string): AppState | null {
   const base = emptyState();
   try {
-    // Limpia claves antiguas (versiones con datos ficticios).
-    for (const k of LEGACY_KEYS) localStorage.removeItem(k);
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(stateKeyFor(userId));
     if (raw) return normalize(base, JSON.parse(raw) as Partial<AppState>);
+    const legacyRaw = localStorage.getItem(STATE_KEY);
+    if (!legacyRaw) return null;
+    const adopted = normalize(base, JSON.parse(legacyRaw) as Partial<AppState>);
+    localStorage.setItem(stateKeyFor(userId), JSON.stringify(adopted));
+    localStorage.removeItem(STATE_KEY);
+    return adopted;
   } catch {
-    /* datos corruptos: se regenera */
+    // Datos corruptos o almacenamiento no disponible: se regenera.
+    return null;
   }
-  return base;
+}
+
+function saveForUser(userId: string, state: AppState): void {
+  try {
+    localStorage.setItem(stateKeyFor(userId), JSON.stringify(state));
+  } catch {
+    /* el aviso de almacenamiento lo da persistLocal */
+  }
+}
+
+// ------------------------------------------------------------------
+// Marca de «pendiente de nube» (BLINK-047)
+// ------------------------------------------------------------------
+// Se pone cada vez que se escribe la caché local y se quita cuando la nube
+// confirma. Al volver a entrar, si la marca es más reciente que la fila, la
+// caché está por delante (el guardado remoto se cortó por recargar la página,
+// por quedarse sin red o por un error del servidor) y es ella la que manda.
+
+function marcarPendiente(userId: string): void {
+  try {
+    localStorage.setItem(pendingKeyFor(userId), new Date().toISOString());
+  } catch {
+    /* almacenamiento no disponible: solo se pierde la protección */
+  }
+}
+
+function borrarPendiente(userId: string): void {
+  try {
+    localStorage.removeItem(pendingKeyFor(userId));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+function horaPendiente(userId: string): number | null {
+  try {
+    const crudo = localStorage.getItem(pendingKeyFor(userId));
+    if (!crudo) return null;
+    const miles = Date.parse(crudo);
+    return Number.isNaN(miles) ? null : miles;
+  } catch {
+    return null;
+  }
+}
+
+/** Estado de una cuenta que todavía no ha montado nada (borrador vacío). */
+function sinContenido(s: AppState): boolean {
+  return (
+    !s.business.name.trim() && s.products.length === 0 && s.sales.length === 0 && s.accounts.length === 0
+  );
 }
 
 /** Descarga una copia del estado actual como JSON (rescate si falla el guardado). */
@@ -326,7 +403,20 @@ function downloadStateBackup(): void {
 // ------------------------------------------------------------------
 // Store externo (fuente única de verdad, independiente de React)
 // ------------------------------------------------------------------
-let currentState: AppState = load();
+// El estado sin usuario de versiones anteriores se descarta: la caché ahora
+// se guarda por usuario (BLINK-047/069) y la nube es la fuente de verdad al
+// iniciar sesión. La clave global v3 NO se borra aquí: loadForUser la adopta
+// una sola vez como caché del primer usuario que entre, para no tirar datos
+// que la nube aún no tiene.
+try {
+  for (const k of ["blink-pos-state-v1", "blink-pos-state-v2", "blink-pos-auth-v1"]) {
+    localStorage.removeItem(k);
+  }
+} catch {
+  /* almacenamiento no disponible */
+}
+
+let currentState: AppState = emptyState();
 let currentAuthed = false;
 let currentUser: SessionUser | null = null;
 /** true hasta que se resuelve la sesión y se carga el comercio remoto. */
@@ -646,7 +736,17 @@ type StoreActions = {
   addProduct: (p: Omit<Product, "id">) => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
   removeProduct: (id: string) => void;
-  setStock: (id: string, stock: number) => void;
+  /**
+   * Ajusta la existencia de un producto a un valor exacto y deja el asiento
+   * en el libro de inventario con su motivo (BLINK-033). Sustituye al viejo
+   * `setStock`, que solo cambiaba el número sin rastro.
+   */
+  adjustStock: (input: {
+    productId: string;
+    newStock: number;
+    motive: string;
+    note?: string;
+  }) => void;
   addCategory: (c: Omit<Category, "id">) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
   removeCategory: (id: string) => void;
@@ -709,12 +809,6 @@ type StoreActions = {
     reason: string;
     lines: { productId: string; qty: number; costUnit: number }[];
   }) => void;
-  addStockAdjustment: (input: {
-    locationId: string;
-    reason: string;
-    note: string;
-    lines: { productId: string; qty: number }[];
-  }) => void;
   addStockTransfer: (input: {
     fromId: string;
     toId: string;
@@ -726,9 +820,10 @@ type StoreActions = {
   setRate: (rate: number) => void;
   /**
    * Sincroniza la tasa oficial desde la API pública y la aplica si es válida.
-   * Nunca lanza: devuelve el resultado para que la UI informe sin romper nada.
+   * Nunca lanza: devuelve el resultado (con la tasa aplicada) para que la UI
+   * informe y refleje el valor en el campo sin releer el estado (BLINK-035).
    */
-  syncRate: () => Promise<"ok" | "cached" | "error">;
+  syncRate: () => Promise<{ status: "ok" | "cached" | "error"; rate: number | null }>;
   /** Fija la moneda base (USD/EUR). Inmutable tras el primer guardado. */
   setBaseCurrency: (baseCurrency: "USD" | "EUR") => void;
   /** Marca el alta guiada como terminada. */
@@ -754,9 +849,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [cloudError, setCloudError] = useState(false);
 
   const persistLocal = useCallback(() => {
-    if (!currentAuthed) return;
+    if (!currentAuthed || !currentUser) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+      saveForUser(currentUser.id, currentState);
+      // BLINK-047: marca la escritura como «aún no confirmada por la nube».
+      marcarPendiente(currentUser.id);
       setStorageError(false);
     } catch {
       // Cuota superada o almacenamiento no disponible: avisar en lugar de
@@ -772,7 +869,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Sin pago conciliado no se escribe: el comercio aún no debe existir.
     if (!puedeOperar(currentActivacion)) return Promise.resolve();
     return cloudSaveBusiness(currentState)
-      .then(() => setCloudError(false))
+      .then(() => {
+        setCloudError(false);
+        // BLINK-047: la nube confirmó; la caché ya no está «por delante».
+        if (currentUser) borrarPendiente(currentUser.id);
+      })
       .catch(() => {
         setCloudError(true);
       });
@@ -822,10 +923,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [persistLocal, persistCloud]);
 
-  // Sincronización entre pestañas del mismo navegador.
+  // Sincronización entre pestañas del mismo navegador (solo del usuario actual).
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      const userId = currentUser?.id;
+      if (!userId || e.key !== stateKeyFor(userId) || !e.newValue) return;
       if (e.newValue === JSON.stringify(currentState)) return;
       try {
         setAppState(normalize(emptyState(), JSON.parse(e.newValue) as Partial<AppState>));
@@ -849,10 +951,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     try {
       const remote = await cloudLoadBusiness();
-      setAppState(remote ? normalize(emptyState(), remote.data) : emptyState());
+      const cache = loadForUser(user.id);
+      const marca = horaPendiente(user.id);
+      // BLINK-047: la nube manda, salvo que la caché local tenga una escritura
+      // más reciente que nunca llegó a subirse (se recargó a media escritura,
+      // falló el guardado o se trabajó sin red). En ese caso la caché es la
+      // autoridad y se vuelve a subir; al revés, esas ventas o productos
+      // desaparecían al volver a entrar.
+      const cacheLocalAdelantada = cacheAdelantada({
+        pendiente: marca,
+        updatedAt: remote?.updatedAt ?? null,
+        tieneContenido: !!cache && !sinContenido(cache),
+      });
+      const next = cacheLocalAdelantada
+        ? (cache as AppState)
+        : remote
+          ? normalize(emptyState(), remote.data)
+          : emptyState();
+      setAppState(next);
+      saveForUser(user.id, next);
       setCloudError(false);
+      hydrated = true;
+      if (cacheLocalAdelantada) {
+        void cloudSaveBusiness(next)
+          .then(() => {
+            if (currentUser?.id === user.id) borrarPendiente(user.id);
+          })
+          .catch(() => setCloudError(true));
+      } else {
+        borrarPendiente(user.id);
+      }
     } catch {
       setCloudError(true);
+      // Sin red se conserva la caché de ESTE usuario, pero no se habilita el
+      // guardado remoto: al reintentar, la nube vuelve a ser la autoridad.
+      setAppState(loadForUser(user.id) ?? emptyState());
     } finally {
       hydrated = true;
     }
@@ -970,6 +1103,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (import.meta.env.DEV && isBypassActive()) clearBypass(); // TEMP-BYPASS: salir vuelve al Login real
+    const userId = currentUser?.id ?? "";
     // El guardado va con *debounce* y `authSignOut()` corta la petición en
     // vuelo: sin esperar, el último cambio (la venta de hace dos segundos) se
     // queda en memoria y el comercio vuelve a abrir con los datos viejos.
@@ -978,6 +1112,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       new Promise<void>((resolver) => window.setTimeout(resolver, FLUSH_SALIDA_MS)),
     ]);
     await authSignOut();
+    // El equipo puede ser compartido: tras subir (o agotar el intento) no se
+    // dejan datos del comercio en disco (BLINK-047/069).
+    clearUserStorage(userId);
     setUser(null);
     setAuthed(false);
     clearSessionVerified();
@@ -1096,22 +1233,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAppState((s) => ({ ...s, products: s.products.filter((x) => x.id !== id) }));
   }, []);
 
-  const setStock = useCallback((id: string, stock: number) => {
-    setAppState((s) => ({
-      ...s,
-      products: s.products.map((p) => (p.id === id ? { ...p, stock: round2(stock) } : p)),
-    }));
-  }, []);
+  const adjustStock = useCallback<StoreActions["adjustStock"]>(
+    ({ productId, newStock, motive, note }) => {
+      setAppState((s) => {
+        const product = s.products.find((p) => p.id === productId);
+        if (!product) return s;
+        // La existencia se maneja con decimales (kg, L): no se exige entero,
+        // pero sí un número finito y no negativo.
+        if (!Number.isFinite(newStock) || newStock < 0) return s;
+        const stock = round2(newStock);
+        const delta = round2(stock - product.stock);
+        if (delta === 0) return s;
+        const at = new Date().toISOString();
+        const locationId =
+          s.locations.find((l) => l.defaultSales)?.id ?? s.locations[0]?.id ?? "";
+        const move = inventoryMove(
+          product,
+          "ajuste",
+          delta,
+          product.cost,
+          motive || "Ajuste de existencia",
+          locationId,
+          at,
+          note
+        );
+        return {
+          ...s,
+          products: s.products.map((p) => (p.id === productId ? { ...p, stock } : p)),
+          inventoryMoves: [move, ...s.inventoryMoves],
+        };
+      });
+    },
+    []
+  );
 
   const addCategory = useCallback((c: Omit<Category, "id">) => {
     setAppState((s) => ({ ...s, categories: [...s.categories, { ...c, id: uid("cat") }] }));
   }, []);
 
   const updateCategory = useCallback((id: string, patch: Partial<Category>) => {
-    setAppState((s) => ({
-      ...s,
-      categories: s.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-    }));
+    setAppState((s) => {
+      const actual = s.categories.find((c) => c.id === id);
+      if (!actual) return s;
+      const nuevoNombre =
+        patch.name !== undefined ? patch.name.trim() || actual.name : actual.name;
+      const categories = s.categories.map((c) =>
+        c.id === id ? { ...c, ...patch, name: nuevoNombre } : c
+      );
+      // Los productos guardan el nombre de la categoría: al renombrarla se
+      // actualizan todos en la misma operación para no dejar referencias
+      // rotas (BLINK-043).
+      const products =
+        nuevoNombre !== actual.name
+          ? s.products.map((p) =>
+              p.category === actual.name ? { ...p, category: nuevoNombre } : p
+            )
+          : s.products;
+      return { ...s, categories, products };
+    });
   }, []);
 
   const removeCategory = useCallback((id: string) => {
@@ -1216,14 +1395,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const total = round2(net + input.tax + input.surcharge + igtf);
       const paid = round2(input.payments.reduce((a, p) => a + p.amountUsd, 0));
       const remaining = round2(Math.max(0, total - paid));
-      const nextNumber = s.sales.filter((x) => x.status !== "cotizacion").length + 1;
-      const seq = String(nextNumber).padStart(6, "0");
+      // Código monotónico persistido (BLINK-044): el correlativo por conteo
+      // reutilizaba códigos si se borraba una venta o si dos pestañas vendían
+      // a la vez. El contador nunca baja del máximo ya emitido y, si el
+      // código colisiona (p. ej. estado de otra pestaña), se avanza hasta
+      // encontrar uno libre.
+      const usedCodes = new Set(s.sales.map((x) => x.code));
+      let nextNumber = Math.max(1, s.nextSaleNumber ?? 1, maxSaleNumber(s.sales) + 1);
+      let seq = String(nextNumber).padStart(6, "0");
+      let code = input.quote ? `C-${seq}` : seq;
+      while (usedCodes.has(code)) {
+        nextNumber += 1;
+        seq = String(nextNumber).padStart(6, "0");
+        code = input.quote ? `C-${seq}` : seq;
+      }
       const status: Sale["status"] = input.quote
         ? "cotizacion"
         : remaining > 0
           ? "credito"
           : "cobrada";
-      const code = input.quote ? `C-${seq}` : seq;
       const at = new Date().toISOString();
       const methodLabel =
         input.payments.length === 0
@@ -1295,7 +1485,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createdSale = sale;
 
       if (input.quote) {
-        return { ...s, sales: [sale, ...s.sales] };
+        return { ...s, sales: [sale, ...s.sales], nextSaleNumber: nextNumber + 1 };
       }
 
       // Existencias + libro de inventario.
@@ -1342,6 +1532,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         pendings,
         discounts,
         sales: [sale, ...s.sales],
+        nextSaleNumber: nextNumber + 1,
       };
     });
     return createdSale!;
@@ -1864,6 +2055,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               amountUsd: net,
               currency: acc.currency,
               amountInput: native,
+              pendingId: p.id,
               origin: "Abono",
               note: note || p.subject,
               userId: USER,
@@ -1877,10 +2069,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const voidPending = useCallback((id: string) => {
-    setAppState((s) => ({
-      ...s,
-      pendings: s.pendings.map((p) => (p.id === id ? { ...p, status: "anulado" } : p)),
-    }));
+    setAppState((s) => {
+      const pending = s.pendings.find((p) => p.id === id);
+      // Ya anulado: no se revierte dos veces.
+      if (!pending || pending.status === "anulado") return s;
+      const at = new Date().toISOString();
+      // BLINK-069 (ledger.ts): anular un pendiente devuelve a cada cuenta los
+      // abonos que entraron por él, con su asiento inverso en el libro. Antes
+      // solo se cambiaba el estado y el dinero se quedaba acreditado.
+      const reversed = reversePendingAbonos({
+        accounts: s.accounts,
+        movements: s.movements,
+        pending,
+        at,
+        origin: "Anulación pendiente",
+        note: `Anulación pendiente: ${pending.subject}`,
+        userId: USER,
+      });
+      return {
+        ...s,
+        accounts: reversed.accounts,
+        movements: reversed.movements,
+        pendings: s.pendings.map((p) =>
+          p.id === id ? { ...p, status: "anulado" as const, paidUsd: 0 } : p
+        ),
+      };
+    });
   }, []);
 
   // ---- Impuestos / descuentos / recargos ------------------------
@@ -2073,52 +2287,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const addStockAdjustment = useCallback<StoreActions["addStockAdjustment"]>((input) => {
-    setAppState((s) => {
-      const at = new Date().toISOString();
-      const lines = input.lines
-        .filter((l) => l.qty !== 0)
-        .map((l) => ({
-          productId: l.productId,
-          name: s.products.find((p) => p.id === l.productId)?.name ?? "",
-          qty: round2(l.qty),
-          costUnit: round2(s.products.find((p) => p.id === l.productId)?.cost ?? 0),
-        }));
-      if (!lines.length) return s;
-      const adj: StockAdjustment = {
-        id: uid("ajuste"),
-        at,
-        locationId: input.locationId,
-        reason: input.reason,
-        note: input.note,
-        lines,
-        userId: USER,
-      };
-      const moves: InventoryMove[] = [];
-      const products = s.products.map((p) => {
-        const line = lines.find((l) => l.productId === p.id);
-        if (!line) return p;
-        moves.push(
-          inventoryMove(
-            p,
-            line.qty > 0 ? "entrada" : "salida",
-            Math.abs(line.qty),
-            p.cost,
-            `Ajuste · ${input.reason}`,
-            input.locationId,
-            at
-          )
-        );
-        return { ...p, stock: round2(Math.max(0, p.stock + line.qty)) };
-      });
-      return {
-        ...s,
-        products,
-        inventoryMoves: [...moves, ...s.inventoryMoves],
-        stockAdjustments: [adj, ...s.stockAdjustments],
-      };
-    });
-  }, []);
+  // (El viejo `addStockAdjustment` por lotes era código muerto — 0 llamadores —
+  // y duplicaba lo que ahora hace `adjustStock` con su asiento en el libro;
+  // se retira en el porteo de BLINK-033/069.)
 
   const addStockTransfer = useCallback<StoreActions["addStockTransfer"]>((input) => {
     setAppState((s) => {
@@ -2187,7 +2358,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const syncRate = useCallback(async (): Promise<"ok" | "cached" | "error"> => {
+  const syncRate = useCallback<StoreActions["syncRate"]>(async () => {
     // OJO: no llamar hooks aqui. Este callback se ejecuta fuera del render
     // (auto-sync al abrir el POS) y un hook fuera de un componente lanza
     // "Invalid hook call". Se lee el estado del modulo directamente.
@@ -2197,22 +2368,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const c = cachedRate(base);
       if (c) {
         setRate(c.rate);
-        return "cached";
+        return { status: "cached", rate: c.rate };
       }
     }
     const fresh = await fetchOfficialRate(base);
     if (fresh) {
       setRate(fresh.rate);
-      return "ok";
+      return { status: "ok", rate: fresh.rate };
     }
     // Sin red o API caída: si hay caché previa, se usa; si no, se respeta la
     // tasa que el comercio ya tenía y se reporta el fallo.
     const c = cachedRate(base);
     if (c) {
       setRate(c.rate);
-      return "cached";
+      return { status: "cached", rate: c.rate };
     }
-    return "error";
+    return { status: "error", rate: null };
   }, [setRate]);
 
   const actions = useMemo<StoreActions>(
@@ -2222,7 +2393,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addProduct,
       updateProduct,
       removeProduct,
-      setStock,
+      adjustStock,
       addCategory,
       updateCategory,
       removeCategory,
@@ -2271,7 +2442,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeSurcharge,
       addPurchase,
       addStockReturn,
-      addStockAdjustment,
       addStockTransfer,
       updateBusiness,
       setRate,
@@ -2292,7 +2462,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       refrescarActivacion,
     }),
     [
-      login, logout, addProduct, updateProduct, removeProduct, setStock,
+      login, logout, addProduct, updateProduct, removeProduct, adjustStock,
       addCategory, updateCategory, removeCategory,
       addChannel, updateChannel, removeChannel,
       addLocation, updateLocation, removeLocation,
@@ -2308,7 +2478,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addTax, updateTax, setDefaultTax,
       addDiscount, updateDiscount, removeDiscount,
       addSurcharge, updateSurcharge, removeSurcharge,
-      addPurchase, addStockReturn, addStockAdjustment, addStockTransfer,
+      addPurchase, addStockReturn, addStockTransfer,
       updateBusiness, setRate, syncRate,
       signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
       resetPassword, updatePassword,

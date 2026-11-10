@@ -237,19 +237,29 @@ export async function authUpdateProfile(input: {
 }
 
 /** Carga el comercio del usuario autenticado (o null si aún no existe). */
-export async function cloudLoadBusiness(): Promise<{ name: string; data: Partial<AppState> } | null> {
+export async function cloudLoadBusiness(): Promise<{
+  name: string;
+  data: Partial<AppState>;
+  /** Instantánea de la fila; sirve para saber si la caché local va por delante (BLINK-047). */
+  updatedAt: number | null;
+} | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data, error } = await supabase
     .from("businesses")
-    .select("name,data")
+    .select("name,data,updated_at")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  return { name: data.name ?? "", data: (data.data ?? {}) as Partial<AppState> };
+  const miles = Date.parse(String(data.updated_at ?? ""));
+  return {
+    name: data.name ?? "",
+    data: (data.data ?? {}) as Partial<AppState>,
+    updatedAt: Number.isNaN(miles) ? null : miles,
+  };
 }
 
 /** Guarda (crea o actualiza) el comercio del usuario autenticado. */
