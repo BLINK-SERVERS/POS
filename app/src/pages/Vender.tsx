@@ -1,5 +1,5 @@
 // Vender — punto de venta (POS).
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { uid, useStoreActions, useStoreSelector } from "../lib/store";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
@@ -19,6 +19,7 @@ import {
 } from "../lib/fiscal";
 import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
 import { presentationLabel } from "../lib/types";
+import { buscarProductos, detalleProducto } from "../lib/orden";
 
 /** Cuenta abierta (borrador) del POS. */
 interface Draft {
@@ -41,6 +42,8 @@ const emptyDraft = (): Draft => ({
 
 const DRAFTS_KEY = "blink-pos-drafts-v1";
 const ACTIVE_TAB_KEY = "blink-pos-active-tab-v1";
+/** Cuántos resultados se listan (y el tope que navegan las flechas). */
+const RESULTADOS_MAX = 20;
 
 function loadInitialDrafts(): { drafts: Draft[]; activeId: string } {
   try {
@@ -107,6 +110,8 @@ export function Vender() {
   const [openUsd, setOpenUsd] = useState("0");
   const [openBs, setOpenBs] = useState("0");
   const [successSale, setSuccessSale] = useState<Sale | null>(null);
+  // Fila resaltada de los resultados (se mueve con ↑ ↓ y la selecciona Enter).
+  const [sel, setSel] = useState(0);
 
   // Persistir cuentas abiertas en localStorage
   useEffect(() => {
@@ -134,21 +139,13 @@ export function Vender() {
   );
 
   // Búsqueda diferida: la UI sigue fluida aunque el catálogo crezca.
+  // El orden (relevancia y luego alfabético) vive en `lib/orden.ts`; antes
+  // salía en orden de alta, que es lo que se veía como "burbujas".
   const deferredQuery = useDeferredValue(query);
-  const matches = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    if (!q) return [];
-    return catalog.filter((p) => {
-      if (!p.active || p.archived) return false;
-      const byName = p.name.toLowerCase().includes(q);
-      const byBarcode = (p.barcode || "").toLowerCase().includes(q);
-      const bySku = (p.sku || "").toLowerCase().includes(q);
-      const byMeasure = String(p.presentationQty || "").toLowerCase().includes(q);
-      const byUnit = (p.unit || "").toLowerCase().includes(q);
-      const byBrand = (p.brand || "").toLowerCase().includes(q);
-      return byName || byBarcode || bySku || byMeasure || byUnit || byBrand;
-    });
-  }, [catalog, deferredQuery]);
+  const matches = useMemo(() => buscarProductos(catalog, deferredQuery), [catalog, deferredQuery]);
+
+  // El resaltado vuelve a la primera fila cada vez que cambia la lista.
+  useEffect(() => setSel(0), [deferredQuery]);
 
   const addLine = useCallback(
     (id: string) => {
@@ -296,6 +293,18 @@ export function Vender() {
     setDrafts((ds) => [...ds, d]);
     setActiveId(d.id);
   }, []);
+
+  /** Lo mismo que el botón grande: abrir caja si falta, si no, la ventana de cobro. */
+  const abrirCobro = useCallback(() => {
+    if (!lines.length) return;
+    if (!cashSession) {
+      setOpenCashModal(true);
+      return;
+    }
+    setPayments([]);
+    setCredit(false);
+    setPayOpen(true);
+  }, [lines.length, cashSession]);
 
   const closeTab = useCallback(
     (id: string) => {
@@ -493,6 +502,88 @@ export function Vender() {
     setPayOpen(false);
   }, [lines, draft, discountValue, discount, surchargeValue, appliedSurcharges, tax, checkout]);
 
+  // --- Teclado de caja (PC) ---
+  // F2 busca · F4 cuenta nueva · F8 cobra · ↑ ↓ recorren los resultados y Enter
+  // añade el resaltado · Esc cierra (o limpia la búsqueda). El Enter del teclado
+  // numérico llega con la misma `e.key === "Enter"`, así que recorre estos mismos
+  // caminos. Los atajos no se escriben en la pantalla: van en el `title` de los
+  // botones, que ya existían.
+  const selRef = useRef(sel);
+  selRef.current = sel;
+
+  useEffect(() => {
+    const visible = Math.min(matches.length, RESULTADOS_MAX);
+    const modalAbierto = camOpen || payOpen || openCashModal || discOpen || surOpen || noteOpen || Boolean(successSale);
+    const enCampo = (t: EventTarget | null) =>
+      t instanceof HTMLElement &&
+      (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+    const enfocarBusqueda = () => {
+      const campo = document.getElementById("pos-search") as HTMLInputElement | null;
+      campo?.focus();
+      campo?.select();
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === "F2") {
+        e.preventDefault();
+        enfocarBusqueda();
+        return;
+      }
+      if (e.key === "F4") {
+        e.preventDefault();
+        newTab();
+        return;
+      }
+      if (e.key === "F8") {
+        e.preventDefault();
+        if (!payOpen && !openCashModal && !successSale) abrirCobro();
+        return;
+      }
+      if (e.key === "Escape") {
+        if (camOpen) setCamOpen(false);
+        else if (payOpen) setPayOpen(false);
+        else if (openCashModal) setOpenCashModal(false);
+        else if (discOpen) setDiscOpen(false);
+        else if (surOpen) setSurOpen(false);
+        else if (noteOpen) setNoteOpen(false);
+        else if (successSale) setSuccessSale(null);
+        else if (query) setQuery("");
+        else return;
+        e.preventDefault();
+        return;
+      }
+
+      if (visible === 0) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        // Las flechas viven en la lista de resultados: con el buscador abierto
+        // son navegación, no desplazamiento de página.
+        e.preventDefault();
+        setSel((s) => {
+          const n = e.key === "ArrowDown" ? s + 1 : s - 1;
+          return (n + visible) % visible;
+        });
+        return;
+      }
+
+      if (e.key === "Enter") {
+        // Enter —incluido el del teclado numérico— añade el resaltado. Con la
+        // ventana de cobro abierta no interviene: ahí Enter es pagar.
+        if (modalAbierto) return;
+        const enBusqueda = e.target === document.getElementById("pos-search");
+        if (enCampo(e.target) && !enBusqueda) return;
+        e.preventDefault();
+        const p = matches[Math.min(selRef.current, visible - 1)];
+        if (p) addLine(p.id);
+      }
+    };
+
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [matches, query, camOpen, payOpen, openCashModal, discOpen, surOpen, noteOpen, successSale, newTab, abrirCobro, addLine]);
+
   const activeDiscounts = useMemo(
     () => discounts.filter((d) => isDiscountValid(d)),
     [discounts]
@@ -510,7 +601,7 @@ export function Vender() {
             ) : (
               <Badge tone="warning" icon="alert">Caja cerrada</Badge>
             )}
-            <button className="btn btn--primary" onClick={newTab}>
+            <button className="btn btn--primary" onClick={newTab} title="Cuenta nueva (F4)">
               <Icon name="plus" />
               Nueva cuenta
             </button>
@@ -567,7 +658,7 @@ export function Vender() {
               className="icon-btn icon-btn--accent"
               title="Escanear con la cámara"
               onClick={() => setCamOpen(true)}
-            ><Icon name="plus" /> 
+            >
               <Icon name="scan" />
             </button>
           </div>
@@ -586,22 +677,30 @@ export function Vender() {
             </div>
           )}
           {deferredQuery && matches.length > 0 && (
-            <div className="search-results" style={{ marginTop: "0.5rem" }}>
-              {matches.slice(0, 20).map((p: Product) => (
-                <button
-                  key={p.id}
-                  className="btn btn--soft btn--sm"
-                  style={{ justifyContent: "flex-start" }}
-                  onClick={() => addLine(p.id)}
-                >
-                  <span style={{ flex: 1, textAlign: "left" }}>
-                    {p.name}
-                    {p.presentationQty > 0 && p.unit ? ` ${p.presentationQty} ${p.unit}` : ""}
-                    {p.brand ? ` · ${p.brand}` : ""}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <ol className="search-results" role="listbox" aria-label="Resultados" onMouseLeave={() => setSel(0)}>
+              {matches.slice(0, RESULTADOS_MAX).map((p: Product, i: number) => {
+                const detalle = detalleProducto(p);
+                return (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      className={`search-results__item${i === sel ? " search-results__item--sel" : ""}`}
+                      role="option"
+                      aria-selected={i === sel}
+                      onMouseEnter={() => setSel(i)}
+                      onClick={() => addLine(p.id)}
+                    >
+                      <span className="search-results__key">{i + 1}</span>
+                      <span className="search-results__cell">
+                        <span className="search-results__name">{p.name}</span>
+                        {detalle && <span className="search-results__extra">{detalle}</span>}
+                      </span>
+                      <span className="search-results__price tabular">{formatUsd(p.price)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
           )}
           {!deferredQuery && (
             <div style={{ paddingTop: "1rem" }}>
@@ -727,15 +826,8 @@ export function Vender() {
             <button
               className="btn btn--primary btn--block"
               disabled={!lines.length}
-              onClick={() => {
-                if (!cashSession) {
-                  setOpenCashModal(true);
-                  return;
-                }
-                setPayments([]);
-                setCredit(false);
-                setPayOpen(true);
-              }}
+              onClick={abrirCobro}
+              title="Cobrar (F8)"
               style={{ marginTop: "0.5rem" }}
             ><Icon name="cash" /> 
               {cashSession ? "Cobrar" : "Abrir caja y cobrar"}
@@ -972,8 +1064,17 @@ export function Vender() {
                   type="number"
                   min={0}
                   step="0.01"
+                  inputMode="decimal"
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Teclado numérico: Enter añade el cobro; si no hay monto
+                    // escrito, Enter cierra la venta (lo que hace el botón).
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    if (round2(Number(payAmount) || 0) > 0) addPayment();
+                    else finish();
+                  }}
                   placeholder={inUsd ? "0.00" : "0"}
                 />
               </Field>

@@ -1433,6 +1433,73 @@ table.data tbody tr:hover {
   flex-direction: column;
   min-height: 0;
 }
+/* Resultados de búsqueda del POS: lista ordenada de una columna.
+   Antes eran chips `.btn--soft` sueltos que fluían inline y se envolvían con
+   anchos desiguales (el aspecto de "burbujas"); aquí cada producto es una
+   fila con sus columnas alineadas: índice, nombre y precio. */
+.search-results {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 46vh;
+}
+.search-results__item {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.search-results__item:hover {
+  background: var(--color-bg-inset);
+}
+.search-results__item--sel {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+.search-results__key {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  text-align: right;
+}
+.search-results__cell {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.search-results__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.search-results__extra {
+  color: var(--color-text-tertiary);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-results__price {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
 .pos__grid {
   overflow-y: auto;
   display: grid;

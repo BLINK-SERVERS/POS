@@ -1119,6 +1119,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // TEMP-BYPASS: la demo se considera una cuenta activa.
       setActivacion(null);
       setEsAdmin(false);
+      // Sin nube, la caché local del usuario falso es la única fuente: sin esta
+      // línea `bypass.ts` mentía («el estado vive en localStorage igual que en
+      // producción») y al recargar se perdía todo lo escrito.
+      setAppState(loadForUser(fake.id) ?? emptyState());
       hydrated = true;
       setBooting(false);
       return;
