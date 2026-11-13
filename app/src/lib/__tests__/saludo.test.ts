@@ -114,3 +114,33 @@ describe("saludoDe", () => {
     }
   });
 });
+
+describe("la bienvenida de la primera vez", () => {
+  it("usa la palabra marcada por el género", () => {
+    expect(saludoDe("Ana", en(2026, 6, 10, 9), "femenino").texto).toBe("Hola, Ana, bienvenida ;)");
+    expect(saludoDe("Luis", en(2026, 6, 10, 9), "masculino").texto).toBe("Hola, Luis, bienvenido ;)");
+  });
+
+  it("no inventa el género cuando el nombre no lo aclara", () => {
+    const s = saludoDe("Andrea", en(2026, 6, 10, 9), "sin_dato");
+    expect(s.motivo).toBe("bienvenida");
+    expect(s.texto).toBe("Hola, Andrea, este es tu primer día ;)");
+    expect(s.texto).not.toMatch(/bienvenid[oa]/i);
+  });
+
+  it("va delante del calendario: es un saludo que se da una sola vez", () => {
+    expect(saludoDe("Ana", en(2027, 1, 3, 9), "femenino").motivo).toBe("bienvenida");
+    expect(saludoDe("Ana", en(2026, 12, 25, 9), "femenino").motivo).toBe("bienvenida");
+  });
+
+  it("sin primera vez, el comportamiento de siempre queda intacto", () => {
+    expect(saludoDe(NOMBRE, en(2026, 6, 10, 9), null).motivo).toBe("manana");
+    // Y la firma vieja (dos argumentos) sigue funcionando.
+    expect(saludoDe(NOMBRE, en(2026, 6, 10, 9)).motivo).toBe("manana");
+  });
+
+  it("el saludo suelto no deja un hueco raro sin nombre", () => {
+    expect(saludoDe("", en(2026, 6, 10, 9), "masculino").texto).toBe("Hola, bienvenido ;)");
+    expect(saludoDe("", en(2026, 6, 10, 9), "sin_dato").texto).toBe("Hola, este es tu primer día ;)");
+  });
+});

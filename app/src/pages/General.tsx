@@ -6,7 +6,7 @@
 //
 // Convenciones: interfaz en español, paleta oficial Blink, iconos SVG
 // propios (sin emoji) y SF Pro (Display para cifras, Text para etiquetas).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreState } from "../lib/store";
 import { EmptyState, PageHead, Tabs } from "../components/ui";
@@ -27,6 +27,8 @@ import {
 import { formatUsd } from "../lib/money";
 import { modulosVisibles } from "../lib/modulos";
 import { saludoDe } from "../lib/saludo";
+import { generoDesdeNombre, type Genero } from "../lib/genero";
+import { marcarBienvenido, yaBienvenido } from "../lib/session-storage";
 
 /** Periodos del panel: el comparativo es el equivalente anterior. */
 const PERIODOS = ["Día", "Semana", "Mes"] as const;
@@ -163,17 +165,43 @@ function GraficoMensual({ puntos }: { puntos: MonthPoint[] }) {
   );
 }
 
+// StrictMode (solo DEV) desmonta y vuelve a montar el panel: si la decisión se
+// recalcula, la segunda pasada ya encuentra el marcador escrito y la
+// bienvenida desaparece antes de haberse visto. Una respuesta por carga.
+const bienvenidaDecidida = new Map<string, Genero | null>();
+
+/** El género con el que recibir a esta cuenta, o `null` si ya fue recibida. */
+function bienvenidaPara(userId: string, nombre: string): Genero | null {
+  if (!userId) {
+    // Cerrar sesión deja la memoria sucia: sin este borrado, volver a entrar
+    // como la misma cuenta en la misma pestaña repetiría la bienvenida.
+    bienvenidaDecidida.clear();
+    return null;
+  }
+  const guardada = bienvenidaDecidida.get(userId);
+  if (guardada !== undefined) return guardada;
+  const decision = yaBienvenido(userId) ? null : generoDesdeNombre(nombre);
+  bienvenidaDecidida.set(userId, decision);
+  return decision;
+}
+
 export function General() {
   const { state, user } = useStoreState();
   const [periodo, setPeriodo] = useState<Periodo>("Mes");
 
-  /** El saludo: por la hora del dia y por la fecha. */
-  const saludo = useMemo(
-    () =>
-      saludoDe(
-        user ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim() : "",
-      ),
+  /** El género de la bienvenida, o `null` si a esta cuenta ya se le dio. */
+  const primeraVez = useMemo(
+    () => bienvenidaPara(user?.id ?? "", user?.firstName ?? ""),
     [user]
+  );
+  useEffect(() => {
+    if (user && primeraVez !== null) marcarBienvenido(user.id);
+  }, [user, primeraVez]);
+
+  /** El saludo: por la hora del dia, por la fecha y la primera vez. */
+  const saludo = useMemo(
+    () => saludoDe(user?.firstName ?? "", new Date(), primeraVez),
+    [user, primeraVez]
   );
 
   const { actual, varVentas, varOrdenes, varTicket, varMargen } = useMemo(() => {

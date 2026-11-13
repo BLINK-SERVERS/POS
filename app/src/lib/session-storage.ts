@@ -39,6 +39,34 @@ export function pendingKeyFor(userId: string): string {
 export const LOGOUT_AVISO_KEY = "blink-logout-aviso-v1";
 
 // ---------------------------------------------------------------------
+// La bienvenida (BLINK-095): se da UNA vez por cuenta en este navegador. Es
+// un dato de presentación, no del comercio, así que no viaja a la nube ni
+// entra en `AppState` — no merece una migración ni puede desincronizarse.
+// ---------------------------------------------------------------------
+export const BIENVENIDA_KEY = "blink-pos-bienvenida-v1";
+
+export function bienvenidaKeyFor(userId: string): string {
+  return `${BIENVENIDA_KEY}:${userId}`;
+}
+
+/** Si esta cuenta ya recibió su saludo de bienvenida en este navegador. */
+export function yaBienvenido(userId: string, storage: Storage | null = safeStorage()): boolean {
+  try {
+    return Boolean(userId) && !!storage?.getItem(bienvenidaKeyFor(userId));
+  } catch {
+    return false;
+  }
+}
+
+export function marcarBienvenido(userId: string, storage: Storage | null = safeStorage()): void {
+  try {
+    if (userId && storage) storage.setItem(bienvenidaKeyFor(userId), String(Date.now()));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+// ---------------------------------------------------------------------
 // Correo del registro en curso (BLINK-079): antes era una clave GLOBAL sin
 // caducidad y el correo de quien se registró quedaba precargado para el
 // siguiente usuario del mismo equipo. Ahora viaja con marca de tiempo y

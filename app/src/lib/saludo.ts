@@ -4,13 +4,16 @@
 // El saludo de la pantalla principal se adapta al momento del día y
 // a la fecha. Las reglas, por orden de prioridad:
 //
-//   1. Del 1 al 10 de enero: "Hola, [Nombre], Feliz Año Nuevo !"
+//   1. La primera vez que esta cuenta abre el panel: "Hola, [Nombre],
+//      bienvenida ;)" — y sin marca de género si el nombre no lo aclara.
+//      Se da una sola vez; después empiezan las reglas de siempre.
+//   2. Del 1 al 10 de enero: "Hola, [Nombre], Feliz Año Nuevo !"
 //      (anula todos los demás saludos).
-//   2. Diciembre: los días obligatorios (24, 25 y 31) y, en el resto,
+//   3. Diciembre: los días obligatorios (24, 25 y 31) y, en el resto,
 //      un patrón de alternancia: los días impares (1, 3, 5...) llevan
 //      un saludo festivo y los pares, los saludos generales.
-//   3. Antes de las 06:00: "Hola, [Nombre], te levantaste temprano hoy ;)"
-//   4. El resto del año, por franja horaria: mañana, tarde o noche.
+//   4. Antes de las 06:00: "Hola, [Nombre], te levantaste temprano hoy ;)"
+//   5. El resto del año, por franja horaria: mañana, tarde o noche.
 //
 // La variante dentro de cada grupo se elige con una semilla estable
 // (el día del año): el mensaje no cambia cada vez que se repinta la
@@ -19,9 +22,11 @@
 // Convenciones: interfaz en español, sin emoji y con la puntuación
 // de la marca (el wink ";)".
 // ============================================================
+import { terminoBienvenida, type Genero } from "./genero";
 
 /** Por qué se eligió el saludo (para las pruebas y el QA). */
 export type MotivoSaludo =
+  | "bienvenida"
   | "anio-nuevo"
   | "navidad"
   | "fin-de-anio"
@@ -75,16 +80,32 @@ function diaDelAnio(d: Date): number {
 /**
  * El saludo del momento.
  *
- * @param nombre  Nombre del usuario (puede ir vacio).
+ * @param nombre  Nombre de pila del usuario (puede ir vacio). Sin apellido:
+ *                en el mostrador se saluda a la persona, no al documento.
  * @param ahora   Fecha y hora; por defecto, la del dispositivo.
+ * @param primeraVez  El género deducido del nombre, solo la primera vez que la
+ *                cuenta abre el panel. `null` cuando ya se le dio la bienvenida.
  */
-export function saludoDe(nombre: Nombre, ahora: Date = new Date()): Saludo {
+export function saludoDe(
+  nombre: Nombre,
+  ahora: Date = new Date(),
+  primeraVez: Genero | null = null
+): Saludo {
   const mes = ahora.getMonth() + 1;
   const dia = ahora.getDate();
   const hora = ahora.getHours();
   const semilla = diaDelAnio(ahora);
 
-  // 1 · Temporada de año nuevo: del 1 al 10 de enero, siempre igual.
+  // 1 · La bienvenida: un solo saludo por cuenta, antes que el calendario.
+  if (primeraVez !== null) {
+    const termino = terminoBienvenida(primeraVez);
+    return {
+      texto: hola(nombre, termino ? `${termino} ;)` : "este es tu primer día ;)"),
+      motivo: "bienvenida",
+    };
+  }
+
+  // 2 · Temporada de año nuevo: del 1 al 10 de enero, siempre igual.
   if (mes === 1 && dia <= 10) {
     return {
       texto: nombre ? `Hola, ${nombre}, Feliz Año Nuevo !` : "Hola, Feliz Año Nuevo !",
@@ -92,7 +113,7 @@ export function saludoDe(nombre: Nombre, ahora: Date = new Date()): Saludo {
     };
   }
 
-  // 2 · Diciembre: dias obligatorios y alternancia en el resto.
+  // 3 · Diciembre: dias obligatorios y alternancia en el resto.
   if (mes === 12) {
     if (dia === 24 || dia === 25) {
       return { texto: hola(nombre, "Feliz navidad ;)"), motivo: "navidad" };
@@ -107,12 +128,12 @@ export function saludoDe(nombre: Nombre, ahora: Date = new Date()): Saludo {
     }
   }
 
-  // 3 · Madrugada: apertura temprana.
+  // 4 · Madrugada: apertura temprana.
   if (hora < 6) {
     return { texto: hola(nombre, "te levantaste temprano hoy ;)"), motivo: "madrugada" };
   }
 
-  // 4 · El resto del año, por franja horaria.
+  // 5 · El resto del año, por franja horaria.
   if (hora < 12) {
     return { texto: elegir(deFranja(nombre, "buenos días"), semilla), motivo: "manana" };
   }
