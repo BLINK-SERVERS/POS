@@ -503,11 +503,11 @@ export function Vender() {
   }, [lines, draft, discountValue, discount, surchargeValue, appliedSurcharges, tax, checkout]);
 
   // --- Teclado de caja (PC) ---
-  // F2 busca · F4 cuenta nueva · F8 cobra · ↑ ↓ recorren los resultados y Enter
-  // añade el resaltado · Esc cierra (o limpia la búsqueda). El Enter del teclado
-  // numérico llega con la misma `e.key === "Enter"`, así que recorre estos mismos
-  // caminos. Los atajos no se escriben en la pantalla: van en el `title` de los
-  // botones, que ya existían.
+  // F2 busca · F4 cuenta nueva · F8 cobra · ↑ ↓ recorren los resultados, Enter
+  // añade el resaltado y 1-9 eligen la fila numerada · Esc cierra (o limpia la
+  // búsqueda). El Enter del teclado numérico llega con la misma `e.key`, así que
+  // recorre estos mismos caminos. Los atajos no se escriben en la pantalla: van
+  // en el `title` de los botones y de la lista.
   const selRef = useRef(sel);
   selRef.current = sel;
 
@@ -565,6 +565,20 @@ export function Vender() {
           const n = e.key === "ArrowDown" ? s + 1 : s - 1;
           return (n + visible) % visible;
         });
+        return;
+      }
+
+      if (/^[1-9]$/.test(e.key)) {
+        // La tecla coincide con el número que ya se ve en la fila. Se escribe
+        // con la lista abierta y el foco fuera del campo: dentro del buscador
+        // un «1» es el primer dígito de un SKU, no una orden.
+        if (modalAbierto || enCampo(e.target)) return;
+        const i = Number(e.key) - 1;
+        if (i >= visible) return;
+        e.preventDefault();
+        setSel(i);
+        const p = matches[i];
+        if (p) addLine(p.id);
         return;
       }
 
@@ -677,7 +691,7 @@ export function Vender() {
             </div>
           )}
           {deferredQuery && matches.length > 0 && (
-            <ol className="search-results" role="listbox" aria-label="Resultados" onMouseLeave={() => setSel(0)}>
+            <ol className="search-results" role="listbox" aria-label="Resultados" title="↑ ↓ recorrer · Enter o 1-9 añadir" onMouseLeave={() => setSel(0)}>
               {matches.slice(0, RESULTADOS_MAX).map((p: Product, i: number) => {
                 const detalle = detalleProducto(p);
                 return (
