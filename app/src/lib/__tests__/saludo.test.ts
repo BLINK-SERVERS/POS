@@ -131,6 +131,9 @@ describe("la bienvenida de la primera vez", () => {
   it("va delante del calendario: es un saludo que se da una sola vez", () => {
     expect(saludoDe("Ana", en(2027, 1, 3, 9), "femenino").motivo).toBe("bienvenida");
     expect(saludoDe("Ana", en(2026, 12, 25, 9), "femenino").motivo).toBe("bienvenida");
+    // Medido en navegador a las 04:37: abrir el POS de madrugada siendo la
+    // primera vez es bienvenida, no «te levantaste temprano».
+    expect(saludoDe("Ana", en(2026, 11, 14, 4, 37), "femenino").motivo).toBe("bienvenida");
   });
 
   it("sin primera vez, el comportamiento de siempre queda intacto", () => {
