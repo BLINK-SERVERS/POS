@@ -14,8 +14,8 @@ import {
 } from "../metrics";
 import type { Account, AppState, CashSession, Expense, Movement, Sale, SaleLine } from "../types";
 
-function line(price: number, cost: number, qty = 1, taxRate = 0): SaleLine {
-  return { productId: "p", name: "x", qty, price, cost, taxRate };
+function line(price: number, cost: number, qty = 1, taxRate = 0, cortesia = false): SaleLine {
+  return { productId: "p", name: "x", qty, price, cost, taxRate, cortesia };
 }
 
 function sale(over: Partial<Sale> = {}): Sale {
@@ -74,6 +74,41 @@ describe("saleNet / saleCost / saleTotal", () => {
     });
     expect(saleNet(s)).toBe(70);
     expect(saleTotal(s)).toBe(94);
+  });
+});
+
+describe("Cortesía en las métricas", () => {
+  it("lo regalado no suma al neto, pero el descuento sigue restando", () => {
+    const s = sale({ lines: [line(100, 40), line(20, 8, 1, 0, true)], discount: 10 });
+    expect(saleNet(s)).toBe(90);
+    expect(saleTotal(s)).toBe(90);
+  });
+
+  it("la cortesía sí cuesta: la mercancía salió del estante", () => {
+    const s = sale({ lines: [line(100, 40), line(20, 8, 1, 0, true)] });
+    expect(saleCost(s)).toBe(48);
+  });
+
+  it("venta íntegramente regalada no cobra nada y deja el costo puesto", () => {
+    const s = sale({ lines: [line(25, 15, 2, 0, true)] });
+    expect(saleNet(s)).toBe(0);
+    expect(saleCost(s)).toBe(30);
+    expect(saleTotal(s)).toBe(0);
+    // Utilidad de ese ticket: 0 − 30 = −30. El regalo se paga con margen.
+    expect(saleNet(s) - saleCost(s)).toBe(-30);
+  });
+
+  it("el reporte mezcla ventas cobradas y con cortesía sin inflar el ticket", () => {
+    const sales = [
+      sale({ lines: [line(100, 40)] }), // neto 100, costo 40
+      sale({ id: "s2", lines: [line(60, 25), line(40, 15, 1, 0, true)] }), // neto 60, costo 40
+    ];
+    const m = metrics(sales, [], new Date("2026-01-01T00:00:00Z"), new Date("2026-01-31T23:59:59Z"));
+    expect(m.count).toBe(2);
+    expect(m.net).toBe(160);
+    expect(m.cogs).toBe(80);
+    expect(m.gross).toBe(80);
+    expect(m.avgTicket).toBe(80);
   });
 });
 

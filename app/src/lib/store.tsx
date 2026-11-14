@@ -83,6 +83,7 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 // Reglas puras portadas de la copia auditada (BLINK-069): reversión de
 // abonos y reconciliación caché↔nube (BLINK-047).
 import { findStockShortage, reversePendingAbonos } from "./ledger";
+import { saleBase } from "./fiscal";
 import { cacheAdelantada, mergeTabState } from "./sync";
 import { rehidrataComercio } from "./auth-events";
 import { addAuditLog } from "./audit";
@@ -1559,7 +1560,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     let createdSale: Sale | null = null;
     setAppState((s) => {
-      const base = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
+      const base = saleBase(input.lines);
       const net = Math.max(0, base - input.discount);
       const igtf = input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0);
       const total = round2(net + input.tax + input.surcharge + igtf);

@@ -1,6 +1,7 @@
 // Comprobante de venta (ticket térmico 58mm / 80mm / carta)
 import { round2, formatBsDirect, formatRate, formatUsd } from "../lib/money";
 import { saleTotal } from "../lib/metrics";
+import { cortesiaValor, lineBase, saleBase } from "../lib/fiscal";
 import { Icon } from "./Icon";
 import type { Business, Sale } from "../lib/types";
 
@@ -38,6 +39,8 @@ export function Receipt({
   const effectiveRate = sale.rate || rate || 0;
   const total = round2(saleTotal(sale));
   const totalBs = round2(total * effectiveRate);
+  // Valor de lo regalado: se imprime como información, nunca suma al total.
+  const cortesias = cortesiaValor(sale.lines);
   // BLINK-090: «Cajero» solo con nombre legible. `userId` históricamente
   // portó UUIDs/correos crudos: un ticket nunca debe imprimir un
   // identificador de máquina.
@@ -141,7 +144,7 @@ export function Receipt({
             <span style={{ textAlign: "right" }}>Total</span>
           </div>
           {sale.lines.map((l, i) => {
-            const lineTotal = round2(l.price * l.qty);
+            const lineTotal = lineBase(l);
             return (
               <div key={i} className="receipt__item">
                 <div className="receipt__row">
@@ -150,7 +153,7 @@ export function Receipt({
                     {l.presentation && l.qty === 1 ? <> {l.presentation}</> : null}
                   </span>
                   <span className="receipt__item-price mono" style={{ textAlign: "right" }}>
-                    {formatUsd(lineTotal)}
+                    {l.cortesia ? "Cortesía" : formatUsd(lineTotal)}
                   </span>
                 </div>
                 <div className="receipt__item-unit dim">
@@ -169,8 +172,14 @@ export function Receipt({
         <div className="receipt__totals">
           <div className="receipt__row">
             <span>Subtotal:</span>
-            <span className="mono">{formatUsd(round2(sale.lines.reduce((a, l) => a + l.price * l.qty, 0)))}</span>
+            <span className="mono">{formatUsd(saleBase(sale.lines))}</span>
           </div>
+          {cortesias > 0 && (
+            <div className="receipt__row dim">
+              <span>Cortesías (no se cobran):</span>
+              <span className="mono">{formatUsd(cortesias)}</span>
+            </div>
+          )}
           {sale.discount > 0 && (
             <div className="receipt__row">
               <span>Descuento{sale.discountCode ? ` (${sale.discountCode})` : ""}:</span>

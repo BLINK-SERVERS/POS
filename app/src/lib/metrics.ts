@@ -1,6 +1,7 @@
 // Cálculos de negocio (ventas, utilidad, capital).
 import type { AppState, Sale } from "./types";
 import { round2 } from "./money";
+import { saleBase } from "./fiscal";
 
 /** Día local como "YYYY-MM-DD" (BLINK-075): `toISOString()` desplaza la
  *  medianoche local al día anterior en husos con offset (UTC-4) y los gastos
@@ -20,13 +21,13 @@ export interface Metrics {
   profit: number;
 }
 
-/** Venta neta (base − descuento), nunca negativa. Sin IVA ni recargos. */
+/** Venta neta (base − descuento), nunca negativa. Sin IVA ni recargos.
+ *  La cortesía no entra en la base: no se cobró, no es venta. */
 export function saleNet(s: Sale): number {
-  const gross = s.lines.reduce((a, l) => a + l.price * l.qty, 0);
-  return Math.max(0, gross - s.discount);
+  return Math.max(0, saleBase(s.lines) - s.discount);
 }
 
-/** Costo de lo vendido de una venta. */
+/** Costo de lo vendido de una venta. La cortesía SÍ cuesta: la mercancía salió. */
 export function saleCost(s: Sale): number {
   return s.lines.reduce((a, l) => a + l.cost * l.qty, 0);
 }

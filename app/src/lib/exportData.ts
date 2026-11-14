@@ -3,6 +3,7 @@
 import type { AppState } from "./types";
 import { round2 } from "./money";
 import { isCountable, saleNet, saleTotal, accountUsd } from "./metrics";
+import { cortesiaValor, lineBase } from "./fiscal";
 import type { CsvCell } from "./export";
 
 export interface Dataset {
@@ -54,10 +55,10 @@ export function buildDatasets(state: AppState): Dataset[] {
   out.push({
     kind: "ventas",
     label: "Ventas (resumen)",
-    headers: ["Código", "Fecha", "Estado", "Cliente", "Método", "Base USD", "Descuento", "IVA", "Recargo", "IGTF", "Total USD", "Tasa", "Notas"],
+    headers: ["Código", "Fecha", "Estado", "Cliente", "Método", "Base USD", "Descuento", "Cortesías USD", "IVA", "Recargo", "IGTF", "Total USD", "Tasa", "Notas"],
     rows: state.sales.map((s) => [
       s.code, d(s.at), s.status, s.customerName || "—", s.paymentMethod || "—",
-      round2(saleNet(s)), s.discount, s.tax, s.surcharge, s.igtf, round2(saleTotal(s)),
+      round2(saleNet(s)), s.discount, cortesiaValor(s.lines), s.tax, s.surcharge, s.igtf, round2(saleTotal(s)),
       s.rate || "—", s.notes,
     ]),
   });
@@ -66,11 +67,11 @@ export function buildDatasets(state: AppState): Dataset[] {
   out.push({
     kind: "ventas-detalle",
     label: "Ventas (detalle por producto)",
-    headers: ["Código venta", "Fecha", "Producto", "Cantidad", "Precio USD", "Costo USD", "Subtotal USD", "Margen USD"],
+    headers: ["Código venta", "Fecha", "Producto", "Cantidad", "Precio USD", "Costo USD", "Subtotal USD", "Margen USD", "Cortesía"],
     rows: state.sales.flatMap((s) =>
       s.lines.map((l) => [
         s.code, d(s.at), l.name, l.qty, l.price, l.cost,
-        round2(l.price * l.qty), round2((l.price - l.cost) * l.qty),
+        lineBase(l), round2(lineBase(l) - l.cost * l.qty), l.cortesia ? "Sí" : "No",
       ])
     ),
   });

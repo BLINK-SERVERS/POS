@@ -10,9 +10,11 @@ import { Searchbar } from "konsta/react";
 import { useScanHandler, useScanner } from "../lib/scanner/ScannerProvider";
 import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
 import {
+  cortesiaValor,
   discountAmount,
   IGTF_RATE,
   igtfFor,
+  lineBase,
   saleBase,
   saleTax,
   surchargeAmount,
@@ -258,6 +260,27 @@ export function Vender() {
     [catalog, draft.lines, setQty]
   );
 
+  // Cortesía: el cliente no paga esa línea. Se conserva `price` en la fila
+  // porque ese valor es lo que se imprime y lo que se reporta como regalado;
+  // quien quita la cortesía devuelve el precio a la venta sin tocar la cantidad.
+  const toggleCortesia = useCallback(
+    (id: string) => {
+      setDrafts((ds) =>
+        ds.map((d) =>
+          d.id === draft.id
+            ? {
+                ...d,
+                lines: d.lines.map((l) =>
+                  l.productId === id ? { ...l, cortesia: !l.cortesia } : l
+                ),
+              }
+            : d
+        )
+      );
+    },
+    [draft.id]
+  );
+
   const discount: Discount | undefined = useMemo(
     () => discounts.find((d) => d.id === draft.discountId && isDiscountValid(d)),
     [discounts, draft.discountId]
@@ -287,6 +310,9 @@ export function Vender() {
     [appliedSurcharges, net]
   );
   const totalPreIgtf = round2(net + tax + surchargeValue);
+  // Lo regalado, para mostrarlo en pantalla y en el pie del ticket. No suma al
+  // total: `base` ya excluye las líneas en cortesía.
+  const cortesias = useMemo(() => cortesiaValor(lines), [lines]);
 
   const newTab = useCallback(() => {
     const d = emptyDraft();
@@ -765,7 +791,7 @@ export function Vender() {
                     {l.presentation && l.qty === 1 ? <> {l.presentation}</> : ""}
                   </div>
                   <div className="tabular" style={{ textAlign: "right" }}>
-                    {formatUsd(round2(l.price * l.qty))}
+                    {l.cortesia ? "Cortesía" : formatUsd(lineBase(l))}
                   </div>
                   <div className="ticket__qty">
                     <span className="stepper row gap-4">
@@ -779,12 +805,21 @@ export function Vender() {
                         <Icon name="plus" />
                       </button>
                     </span>
+                    <button
+                      className={`btn btn--sm ${l.cortesia ? "btn--soft" : "btn--ghost"}`}
+                      title={l.cortesia ? "Quitar la cortesía y cobrar esta línea" : "Regalar esta línea (no se cobra)"}
+                      aria-pressed={Boolean(l.cortesia)}
+                      onClick={() => toggleCortesia(l.productId)}
+                    >
+                      <Icon name="tag" size="sm" />
+                      Cortesía
+                    </button>
                     <span className="dim" style={{ fontSize: "0.72rem" }}>
                       {formatUsd(l.price)} c/u
                     </span>
                   </div>
                   <div className="dim tabular" style={{ textAlign: "right", fontSize: "0.72rem" }}>
-                    {rate > 0 && formatBs(round2(l.price * l.qty), rate)}
+                    {rate > 0 && formatBs(lineBase(l), rate)}
                   </div>
                 </div>
               ))
@@ -796,6 +831,12 @@ export function Vender() {
               <span>Subtotal</span>
               <span className="tabular">{formatUsd(base)}</span>
             </div>
+            {cortesias > 0 && (
+              <div className="total-row dim">
+                <span>Cortesías (no se cobran)</span>
+                <span className="tabular">{formatUsd(cortesias)}</span>
+              </div>
+            )}
             <div className="total-row">
               <span>Descuento</span>
               <span className="tabular">− {formatUsd(discountValue)}</span>

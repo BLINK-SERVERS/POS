@@ -7,6 +7,7 @@ import { EmptyState, Field, Modal, Money, PageHead, Badge } from "../components/
 import { Icon } from "../components/Icon";
 import { Receipt } from "../components/Receipt";
 import { isCountable, saleNet, saleTotal } from "../lib/metrics";
+import { cortesiaValor } from "../lib/fiscal";
 import { formatUsd, round2 } from "../lib/money";
 import type { Sale } from "../lib/types";
 
@@ -112,6 +113,8 @@ export function Historial() {
           renderRow={(s) => {
             const st = saleStatus(s);
             const anulada = s.status === "anulada";
+            const compLines = s.lines.filter((l) => l.cortesia).length;
+            const compValor = cortesiaValor(s.lines);
             return (
               <tr style={anulada ? { opacity: 0.55 } : undefined}>
                 <td className="mono">{s.code}</td>
@@ -125,6 +128,11 @@ export function Historial() {
                   {anulada && s.voidReason && (
                     <div className="dim" style={{ fontSize: "0.72rem" }}>
                       {s.voidReason}
+                    </div>
+                  )}
+                  {compLines > 0 && (
+                    <div className="dim" style={{ fontSize: "0.72rem" }}>
+                      {compLines} {compLines === 1 ? "cortesía" : "cortesías"} · {formatUsd(compValor)}
                     </div>
                   )}
                 </td>

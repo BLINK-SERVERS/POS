@@ -2,14 +2,19 @@
 import type { SaleLine, Surcharge } from "./types";
 import { round2 } from "./money";
 
-/** Base (subtotal antes de IVA) de una línea. */
+/** Base (subtotal antes de IVA) de una línea. La cortesía no se cobra: 0. */
 export function lineBase(l: SaleLine): number {
-  return round2(l.price * l.qty);
+  return l.cortesia ? 0 : round2(l.price * l.qty);
 }
 
 /** Subtotal = suma de líneas, antes de descuento e IVA. */
 export function saleBase(lines: SaleLine[]): number {
-  return round2(lines.reduce((a, l) => a + l.price * l.qty, 0));
+  return round2(lines.reduce((a, l) => a + lineBase(l), 0));
+}
+
+/** Valor de lo regalado: lo que las cortesías habrían costado al cliente. */
+export function cortesiaValor(lines: SaleLine[]): number {
+  return round2(lines.reduce((a, l) => a + (l.cortesia ? l.price * l.qty : 0), 0));
 }
 
 /** IVA total: se aplica la tasa de cada producto sobre el neto (base − descuento). */
@@ -19,7 +24,8 @@ export function saleTax(lines: SaleLine[], discount: number): number {
   const taxable = Math.max(0, base - discount);
   let tax = 0;
   for (const l of lines) {
-    const share = (l.price * l.qty) / base;
+    // La línea regalada pesa 0 en el prorrateo: no se cobra, no se grava.
+    const share = lineBase(l) / base;
     tax += taxable * share * (l.taxRate || 0);
   }
   return round2(tax);

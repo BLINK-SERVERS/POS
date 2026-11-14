@@ -138,6 +138,12 @@ export interface SaleLine {
   cost: number; // USD
   taxRate: number; // fracción
   note?: string;
+  /**
+   * Cortesía: el cliente no paga esta línea. `price` y `cost` se conservan
+   * intactos — el precio es el valor regalado (ticket e informes) y el costo
+   * sigue pesando en la utilidad, porque la mercancía igual salió del estante.
+   */
+  cortesia?: boolean;
 }
 
 /**
