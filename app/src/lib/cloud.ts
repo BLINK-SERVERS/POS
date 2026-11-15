@@ -37,13 +37,15 @@ export function authError(message: string): string {
   if (m.includes("user already registered")) return "Ese correo ya tiene una cuenta. Inicia sesión.";
   if (m.includes("password should be at least"))
     return "La contraseña es muy corta (mínimo 6 caracteres).";
-  // GoTrue responde dos textos distintos para el mismo problema: la rama corta
-  // («unable to validate email») es la que ya estaba; `is invalid` es el literal
-  // que se vio en pantalla en producción con un correo mal escrito (BLINK-063.3).
-  if (m.includes("unable to validate email") || m.includes("is invalid"))
+  // GoTrue responde varios textos para el mismo problema: `unable to validate
+  // email` (alta), `invalid email format` (canje) y `Email address "…" is
+  // invalid` (BLINK-063.3). La rama exige la palabra «email» porque GoTrue
+  // también dice `Token has expired or is invalid` cuando el código está mal
+  // escrito, y ahí culpar al dominio era mentira (BLINK-098, medido 2026-11-15).
+  if (m.includes("unable to validate email") || (m.includes("email") && m.includes("invalid")))
     return "El correo no es válido. Revisa que el dominio esté bien escrito (por ejemplo, nombre@gmail.com).";
   if (m.includes("token has expired") || m.includes("invalid token") || m.includes("otp expired"))
-    return "El código o el enlace ya vencieron (duran una hora). Pide uno nuevo.";
+    return "El código no es válido o el enlace ya vencieron (duran una hora). Pide uno nuevo.";
   // `code challenge` es lo que responde GoTrue cuando el enlace se abre en un
   // navegador distinto del que lo pidió: el código de canje vive solo en ese
   // navegador. La salida no es «esperá en el mismo equipo», es escribir el
