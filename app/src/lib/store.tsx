@@ -64,6 +64,7 @@ import {
   authUpdateProfile,
   authVerifyCode,
   authVerifyLoginCode,
+  authVerifyRecoveryCode,
   cloudLoadBusiness,
   cloudSaveBusiness,
   cloudSaveBusinessKeepalive,
@@ -781,6 +782,8 @@ type StoreActions = {
   sendDeviceCode: (email: string) => Promise<string | null>;
   /** Verifica el código de acceso del equipo. */
   verifyDevice: (email: string, code: string, trust?: boolean) => Promise<string | null>;
+  /** Canjea el código de recuperación: abre la sesión de cambio de contraseña. */
+  verifyRecoveryCode: (email: string, code: string) => Promise<string | null>;
   /** Envía el enlace de recuperación de contraseña al correo. */
   resetPassword: (email: string) => Promise<string | null>;
   /** Establece la nueva contraseña (con sesión de recuperación activa). */
@@ -1298,6 +1301,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markVerified(userId);
       if (trust) trustDevice(userId);
     }
+    return null;
+  }, []);
+
+  /** Canjea el código de recuperación de contraseña en este equipo. */
+  const verifyRecoveryCode = useCallback(async (email: string, code: string) => {
+    const { error, userId } = await authVerifyRecoveryCode(email.trim(), code.trim());
+    if (error) return error;
+    if (userId) markVerified(userId);
     return null;
   }, []);
 
@@ -2699,6 +2710,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       resendCode,
       sendDeviceCode,
       verifyDevice,
+      verifyRecoveryCode,
       updateProfile,
       resetPassword,
       updatePassword,
@@ -2727,7 +2739,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addSurcharge, updateSurcharge, removeSurcharge,
       addPurchase, addStockReturn, addStockTransfer,
       updateBusiness, setRate, syncRate,
-      signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, updateProfile,
+      signUp, verifyEmail, resendCode, sendDeviceCode, verifyDevice, verifyRecoveryCode, updateProfile,
       resetPassword, updatePassword,
       completeOnboarding, flushSaves, clearAll, reloadCloud, refrescarActivacion,
     ]

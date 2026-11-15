@@ -1,7 +1,12 @@
-// Entrada de código de verificación (6 casillas). Soporta pegado.
+// Entrada de código de verificación (8 casillas). Soporta pegado.
+//
+// La longitud y la validación viven en `lib/otp.ts`: el servidor emite 8
+// dígitos (`mailer_otp_length`, medido el 2026-11-15) y no hay que mover dos
+// sitios si ese valor cambia.
 import { useRef, type ClipboardEvent, type KeyboardEvent, type ChangeEvent } from "react";
+import { CODIGO_LARGO } from "../lib/otp";
 
-const LEN = 6;
+const LEN = CODIGO_LARGO;
 
 export function OtpInput({
   value,
@@ -24,14 +29,18 @@ export function OtpInput({
   }
 
   function handleInput(index: number, e: ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    if (!raw) {
-      setAt(index, "");
+    const digitos = e.target.value.replace(/[^0-9]/g, "");
+    if (!digitos) {
+      // Sólo un borrado real deja el campo vacío. Un carácter que no es
+      // dígito no debe borrar lo que había en la casilla: si lo borramos,
+      // los demás dígitos se desplazan y el código queda mutilado.
+      if (e.target.value === "") setAt(index, "");
+      else e.target.value = chars[index];
       return;
     }
     const next = chars.slice();
     let cursor = index;
-    for (const ch of raw) {
+    for (const ch of digitos) {
       if (cursor >= LEN) break;
       next[cursor] = ch;
       cursor += 1;
@@ -47,15 +56,21 @@ export function OtpInput({
     }
     if (e.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
     if (e.key === "ArrowRight" && index < LEN - 1) refs.current[index + 1]?.focus();
+    // Ninguna tecla que no sea dígito llega a escribirse en la casilla.
+    if (
+      e.key.length === 1 &&
+      !/^\d$/.test(e.key) &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey
+    ) {
+      e.preventDefault();
+    }
   }
 
   function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    const raw = e.clipboardData
-      .getData("text")
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .toUpperCase()
-      .slice(0, LEN);
+    const raw = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, LEN);
     if (!raw) return;
     onChange(raw);
     refs.current[Math.min(raw.length, LEN - 1)]?.focus();
@@ -70,7 +85,8 @@ export function OtpInput({
             refs.current[i] = el;
           }}
           className="otp__box"
-          inputMode="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           autoComplete={i === 0 ? "one-time-code" : "off"}
           autoFocus={autoFocus && i === 0}
           maxLength={1}

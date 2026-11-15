@@ -6,9 +6,10 @@ import { takeLogoutAviso } from "../lib/session-storage";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { BrandLogo } from "../components/BrandLogo";
+import { CodigoCorreo } from "../components/CodigoCorreo";
 
 export function Login() {
-  const { login, sendDeviceCode, logout } = useStoreActions();
+  const { login, sendDeviceCode, verifyDevice, logout } = useStoreActions();
   const nav = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -121,7 +122,8 @@ export function Login() {
               </button>
               <h1>Verifica tu correo</h1>
               <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
-                Enviamos un enlace de verificación a <strong>{email.trim()}</strong>. Ábrelo desde este navegador para completar el inicio de sesión.
+                Enviamos un enlace de verificación a <strong>{email.trim()}</strong>. Ábrelo en este
+                dispositivo para completar el acceso; si te llegó en otro, usa el código de aquí abajo.
               </p>
               <p className="muted" style={{ fontSize: "0.9rem", marginBottom: "1.25rem" }}>
                 <Icon name="mail" /> Revisa Spam o Promociones si no lo ves.
@@ -140,8 +142,16 @@ export function Login() {
                 {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
               </button>
 
+              <CodigoCorreo
+                correo={email}
+                verificar={(e, c) => verifyDevice(e, c, true)}
+                onListo={() => nav("/app/inicio", { replace: true })}
+                boton="Entrar con este código"
+              />
+
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
-                Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión automáticamente.
+                Cada comercio usa un correo único. El enlace abre la sesión del dispositivo
+                donde se abre; el código abre la sesión de este equipo.
               </p>
             </div>
           ) : (

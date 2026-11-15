@@ -3005,12 +3005,17 @@ table.data td {
 }
 
 .otp {
+  /* Cuatro por fila, dos filas: con las 8 casillas del código de correo,
+     8 por fila dejaría cada casilla en ~36 px dentro de la tarjeta de
+     acceso (344 px útil) y se queda bajo el mínimo táctil de 44 px. */
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
 }
 .otp__box {
   width: 100%;
+  min-width: 44px;
+  min-height: 44px;
   text-align: center;
   font-size: 1.4rem;
   font-weight: 700;
@@ -3152,9 +3157,6 @@ table.data td {
 }
 
 @media (max-width: 860px) {
-  .otp {
-    gap: 0.35rem;
-  }
   .otp__box {
     font-size: 1.1rem;
   }

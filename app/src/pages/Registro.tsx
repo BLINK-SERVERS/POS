@@ -6,9 +6,10 @@ import { guardarCorreoRegistro } from "../lib/session-storage";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { BrandLogo } from "../components/BrandLogo";
+import { CodigoCorreo } from "../components/CodigoCorreo";
 
 export function Registro() {
-  const { signUp, resendCode } = useStoreActions();
+  const { signUp, resendCode, verifyEmail } = useStoreActions();
 
   const [step, setStep] = useState<"datos" | "link" | "duplicado">("datos");
 
@@ -87,7 +88,7 @@ export function Registro() {
     guardarCorreoRegistro(email.trim());
     setStep("link");
     setCooldown(45);
-    setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo equipo o dispositivo: al confirmarlo pasarás a la activación del pago.`);
+    setInfo(`Enviamos un enlace de verificación a ${email.trim()}. Puedes abrirlo en cualquier equipo o escribir aquí su código: al confirmarlo pasarás a la activación del pago.`);
   }
 
   async function reenviar() {
@@ -299,7 +300,7 @@ export function Registro() {
               </button>
               <h1>Verifica tu correo</h1>
               <p className="muted" style={{ marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
-                {info || `Enviamos un enlace de verificación a ${email.trim()}. Ábrelo desde el mismo navegador para continuar.`}
+                {info || `Enviamos un enlace de verificación a ${email.trim()}. Ábrelo en este equipo para continuar, o escribe su código aquí abajo.`}
               </p>
               <p className="muted" style={{ fontSize: "0.9rem", marginBottom: "1.25rem" }}>
                 <Icon name="mail" /> Revisa también Spam o Promociones si no lo ves.
@@ -321,6 +322,13 @@ export function Registro() {
                 <Icon name="mail" />
                 {cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
               </button>
+
+              <CodigoCorreo
+                correo={email}
+                verificar={(e, c) => verifyEmail(e, c, true)}
+                onListo={() => setInfo("Correo verificado. Pasando a la activación…")}
+                boton="Verificar con este código"
+              />
 
               <p className="muted" style={{ fontSize: "0.75rem", marginTop: "1rem", textAlign: "center" }}>
                 Cada comercio usa un correo único. Al abrir el enlace se iniciará sesión

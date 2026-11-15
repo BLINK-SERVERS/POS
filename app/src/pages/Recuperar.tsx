@@ -5,9 +5,10 @@ import { useAuth, useStoreActions } from "../lib/store";
 import { Field } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { BrandLogo } from "../components/BrandLogo";
+import { CodigoCorreo } from "../components/CodigoCorreo";
 
 export function Recuperar() {
-  const { resetPassword, updatePassword, logout } = useStoreActions();
+  const { resetPassword, updatePassword, verifyRecoveryCode, logout } = useStoreActions();
   const authed = useAuth();
   const nav = useNavigate();
 
@@ -52,7 +53,7 @@ export function Recuperar() {
       setError(err);
       return;
     }
-    setInfo("Si ese correo tiene una cuenta, te enviamos un enlace para crear una nueva contraseña. Ábrelo desde este navegador.");
+    setInfo("Si ese correo tiene una cuenta, te enviamos un enlace para crear una nueva contraseña. Puedes abrirlo en cualquier equipo o escribir aquí su código.");
     setCooldown(45);
   }
 
@@ -90,6 +91,7 @@ export function Recuperar() {
       return;
     }
     setCooldown(45);
+    setInfo("Te enviamos un enlace nuevo; el código anterior deja de servir.");
   }
 
   async function usarOtraCuenta() {
@@ -206,6 +208,16 @@ export function Recuperar() {
                 >
                   <Icon name="mail" /> Reenviar enlace
                 </button>
+              )}
+
+              {info && (
+                <CodigoCorreo
+                  correo={email}
+                  verificar={(e, c) => verifyRecoveryCode(e, c)}
+                  onListo={() => setMode("fijar")}
+                  boton="Restablecer con este código"
+                  pregunta="¿Pediste el cambio desde otro dispositivo?"
+                />
               )}
 
               <p className="muted" style={{ fontSize: "0.8rem", marginTop: "1.25rem", textAlign: "center" }}>

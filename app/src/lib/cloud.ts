@@ -4,6 +4,7 @@
 // Row Level Security en la base de datos: cada fila de `businesses` está
 // atada a `auth.uid()`, así que nadie puede leer ni escribir datos ajenos.
 import { supabase } from "./supabase";
+import { CODIGO_LARGO, esCodigoValido } from "./otp";
 import type { AppState } from "./types";
 
 export interface SessionUser {
@@ -31,7 +32,8 @@ export function authError(message: string): string {
   if (m.includes("invalid login credentials"))
     return "Correo o contraseña incorrectos. Si te acabas de registrar, primero abre el enlace de verificación que llegó a tu correo.";
   if (m.includes("email not confirmed"))
-    return "Tu correo aún no está verificado. Abre el enlace que te enviamos (revisa Spam) o pide uno nuevo.";
+    return "Tu correo aún no está verificado. Abre el enlace que te enviamos (revisa Spam), " +
+      `o pide uno nuevo y escribe su código de ${CODIGO_LARGO} dígitos en el equipo donde quieras entrar.`;
   if (m.includes("user already registered")) return "Ese correo ya tiene una cuenta. Inicia sesión.";
   if (m.includes("password should be at least"))
     return "La contraseña es muy corta (mínimo 6 caracteres).";
@@ -41,9 +43,14 @@ export function authError(message: string): string {
   if (m.includes("unable to validate email") || m.includes("is invalid"))
     return "El correo no es válido. Revisa que el dominio esté bien escrito (por ejemplo, nombre@gmail.com).";
   if (m.includes("token has expired") || m.includes("invalid token") || m.includes("otp expired"))
-    return "El código no es válido o ya venció. Pide uno nuevo.";
+    return "El código o el enlace ya vencieron (duran una hora). Pide uno nuevo.";
+  // `code challenge` es lo que responde GoTrue cuando el enlace se abre en un
+  // navegador distinto del que lo pidió: el código de canje vive solo en ese
+  // navegador. La salida no es «esperá en el mismo equipo», es escribir el
+  // código del correo (BLINK-097).
   if (m.includes("invalid code") || m.includes("code challenge"))
-    return "Este enlace de verificación ya se usó o perdió el código. Pide uno nuevo desde el mismo navegador.";
+    return `El enlace no se pudo canjear en este equipo: ya se usó o pertenece a otro navegador. ` +
+      `Si tienes el correo a la mano, escribe los ${CODIGO_LARGO} dígitos del código.`;
   // `signups not allowed` y `user not found` son problemas distintos: el primero
   // es del servidor, el segundo del correo que escribió la persona.
   if (m.includes("signups not allowed"))
@@ -156,15 +163,36 @@ export async function authSignUp(input: {
   return { error: null, outcome: "verificacion" };
 }
 
-/** Verificación por enlace: ya no usamos código OTP de 6 dígitos. */
-export async function authVerifyCode(
-  _email: string,
-  _token: string
+/** Canje del código del correo en el dispositivo que está delante.
+ *
+ *  Esta es la ruta que funciona entre equipos: el enlace lleva un token ya
+ *  hasheado (`auth.one_time_tokens.token_hash`), así que solo abre la sesión
+ *  del navegador que lo abrió; el código escrito por la persona viaja como
+ *  dígito a dígito y lo canjea el servidor, sin importar qué equipo lo pida.
+ *
+ *  `type` dice de qué correo se trata: `signup` (alta), `magiclink` (acceso)
+ *  o `recovery` (cambio de contraseña). */
+async function canjearCodigo(
+  email: string,
+  token: string,
+  type: "signup" | "magiclink" | "recovery"
 ): Promise<{ error: string | null; userId?: string }> {
-  return {
-    error:
-      "La verificación por enlace ya no usa código. Abre el enlace que recibiste en tu correo.",
-  };
+  const correo = email.trim();
+  const codigo = token.trim();
+  if (!correo) return { error: "Escribe el correo al que te llegó el código." };
+  if (!esCodigoValido(codigo))
+    return { error: `El código son ${CODIGO_LARGO} dígitos. Revísalo y vuelve a escribirlo.` };
+  const { data, error } = await supabase.auth.verifyOtp({ email: correo, token: codigo, type });
+  if (error) return { error: authError(error.message) };
+  return { error: null, userId: data.user?.id };
+}
+
+/** Verifica el alta escribiendo el código del correo (funciona en otro equipo). */
+export async function authVerifyCode(
+  email: string,
+  token: string
+): Promise<{ error: string | null; userId?: string }> {
+  return canjearCodigo(email, token, "signup");
 }
 
 /** Reenvía el enlace de confirmación del alta. */
@@ -186,15 +214,21 @@ export async function authSendDeviceCode(email: string): Promise<{ error: string
   return { error: error ? authError(error.message) : null };
 }
 
-/** No aplica: dejamos la verificación por enlace. */
+/** Verifica el acceso por enlace mágico escribiendo el código del correo. */
 export async function authVerifyLoginCode(
-  _email: string,
-  _token: string
+  email: string,
+  token: string
 ): Promise<{ error: string | null; userId?: string }> {
-  return {
-    error:
-      "Abre el enlace que recibiste en tu correo para verificar este equipo.",
-  };
+  return canjearCodigo(email, token, "magiclink");
+}
+
+/** Verifica la recuperación de contraseña escribiendo el código del correo,
+ *  sin abrir el enlace en el equipo donde se va a trabajar. */
+export async function authVerifyRecoveryCode(
+  email: string,
+  token: string
+): Promise<{ error: string | null; userId?: string }> {
+  return canjearCodigo(email, token, "recovery");
 }
 
 export async function authSignIn(

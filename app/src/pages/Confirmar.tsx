@@ -14,6 +14,7 @@ import { useAuth, useStoreActions } from "../lib/store";
 import { BrandLogo } from "../components/BrandLogo";
 import { Icon } from "../components/Icon";
 import { BrandLoader } from "../components/BrandLoader";
+import { CodigoCorreo } from "../components/CodigoCorreo";
 
 type Estado = "verificando" | "listo" | "vencido";
 
@@ -35,10 +36,13 @@ function leerEnlace() {
 export function Confirmar() {
   const nav = useNavigate();
   const authed = useAuth();
-  const { logout } = useStoreActions();
+  const { logout, verifyEmail } = useStoreActions();
 
   const [estado, setEstado] = useState<Estado>("verificando");
   const [detalle, setDetalle] = useState("");
+  // Si nadie abrió un enlace en esta URL no hay nada que haber vencido: la
+  // pantalla no debe mentir con «el enlace venció», sino ofrecer el código.
+  const [tieneEnlace, setTieneEnlace] = useState(true);
   // BLINK-079: el correo de la sesión de registro caduca a los 30 min; ya no
   // queda precargado para el siguiente usuario del mismo equipo.
   const [correo, setCorreo] = useState(() => leerCorreoRegistro());
@@ -59,6 +63,8 @@ export function Confirmar() {
   useEffect(() => {
     let vivo = true;
     const enlace = leerEnlace();
+    const hayEnlace = Boolean(enlace.tokenHash || enlace.code || enlace.tieneSesionEnUrl);
+    setTieneEnlace(hayEnlace);
 
     async function verificar() {
       if (enlace.errorCode || enlace.errorDescription) {
@@ -91,8 +97,9 @@ export function Confirmar() {
       }
 
       // 2) Espera a que exista sesión (el detector del cliente lee el hash
-      //    de forma asíncrona al arrancar).
-      for (let i = 0; i < 24; i++) {
+      //    de forma asíncrona al arrancar). Sin enlace en la URL no hay nada
+      //    que esperar: dos vueltas rápidas y se ofrece el código.
+      for (let i = 0; i < (hayEnlace ? 24 : 2); i++) {
         if (!vivo) return;
         const {
           data: { session },
@@ -183,9 +190,13 @@ export function Confirmar() {
 
           {estado === "vencido" && (
             <div>
-              <h1>El enlace venció</h1>
+              <h1>{tieneEnlace ? "El enlace venció" : "Verifica tu correo"}</h1>
               <p className="muted" style={{ marginBottom: "1rem" }}>
-                {detalle || "Los enlaces de correo caducan por seguridad o se consumen al abrirlos."} Puedes pedir uno nuevo.
+                {detalle ||
+                  (tieneEnlace
+                    ? "Los enlaces de correo caducan por seguridad o se consumen al abrirlos."
+                    : "No llegaste con un enlace en la dirección.")}{" "}
+                Puedes pedir uno nuevo o escribir el código aquí.
               </p>
 
               {correo ? (
@@ -213,6 +224,13 @@ export function Confirmar() {
                     <Icon name="mail" />{" "}
                     {busy ? "Enviando…" : cooldown > 0 ? `Reenviar en ${cooldown}s` : "Reenviar enlace"}
                   </button>
+
+                  <CodigoCorreo
+                    correo={correo}
+                    verificar={(e, c) => verifyEmail(e, c, true)}
+                    onListo={() => setEstado("listo")}
+                    boton="Verificar con este código"
+                  />
                 </>
               ) : (
                 <Link className="btn btn--primary btn--block" to="/app/registro">

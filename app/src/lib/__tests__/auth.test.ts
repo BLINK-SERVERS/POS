@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
   signInWithPassword: vi.fn(),
   resetPasswordForEmail: vi.fn(),
+  verifyOtp: vi.fn(),
 }));
 
 vi.mock("../supabase", () => ({
@@ -25,6 +26,9 @@ import {
   authSendDeviceCode,
   authSignIn,
   authSignUp,
+  authVerifyCode,
+  authVerifyLoginCode,
+  authVerifyRecoveryCode,
 } from "../cloud";
 
 const ORIGIN = "https://pos.ejemplo.com";
@@ -56,6 +60,10 @@ beforeEach(() => {
     error: null,
   });
   mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
+  mocks.verifyOtp.mockResolvedValue({
+    data: { user: usuario(), session: { access_token: "t" } },
+    error: null,
+  });
   // `appRedirectUrl` lee `window.location`; en Node no existe, así que se simula.
   vi.stubGlobal("window", { location: { origin: ORIGIN } });
 });
@@ -155,13 +163,63 @@ describe("authError", () => {
   });
 
   it("distingue el enlace ya usado del código vencido", () => {
-    expect(authError("invalid code challenge")).toMatch(/ya se usó o perdió el código/i);
+    expect(authError("invalid code challenge")).toMatch(/escribe los 8 dígitos/i);
+    // BLINK-097: decir «pídelo en el mismo navegador» era la frase que dejaba
+    // al dueño sin poder entrar en la PC mientras el correo llegaba al celular.
+    expect(authError("invalid code challenge")).not.toMatch(/mismo navegador/i);
+    expect(authError("Token has expired")).toMatch(/vencieron/i);
     expect(authError("Token has expired")).toMatch(/Pide uno nuevo/);
   });
 
   it("separa el registro desactivado del correo inexistente", () => {
     expect(authError("Signups not allowed for this project")).toMatch(/registro de cuentas está desactivado/i);
     expect(authError("User not found")).toMatch(/no tiene una cuenta/i);
+  });
+});
+
+describe("canje del código del correo entre dispositivos (BLINK-097)", () => {
+  it("canjea el alta con el tipo signup y devuelve el usuario", async () => {
+    const r = await authVerifyCode("  ana@ejemplo.com ", " 12345678 ");
+    expect(mocks.verifyOtp).toHaveBeenCalledWith({
+      email: "ana@ejemplo.com",
+      token: "12345678",
+      type: "signup",
+    });
+    expect(r).toEqual({ error: null, userId: "u-1" });
+  });
+
+  it("usa el tipo de cada correo: magiclink al entrar, recovery al cambiar la clave", async () => {
+    await authVerifyLoginCode("ana@ejemplo.com", "12345678");
+    expect(mocks.verifyOtp).toHaveBeenLastCalledWith({
+      email: "ana@ejemplo.com",
+      token: "12345678",
+      type: "magiclink",
+    });
+    await authVerifyRecoveryCode("ana@ejemplo.com", "12345678");
+    expect(mocks.verifyOtp).toHaveBeenLastCalledWith({
+      email: "ana@ejemplo.com",
+      token: "12345678",
+      type: "recovery",
+    });
+  });
+
+  it("no gasta un intento del servidor con un código incompleto", async () => {
+    const r = await authVerifyCode("ana@ejemplo.com", "1234567");
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(r.error).toMatch(/8 dígitos/);
+  });
+
+  it("no canjea nada si falta el correo al que llegó el código", async () => {
+    const r = await authVerifyLoginCode("   ", "12345678");
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(r.error).toMatch(/correo/i);
+  });
+
+  it("traduce el rechazo del servidor", async () => {
+    mocks.verifyOtp.mockResolvedValueOnce({ data: {}, error: { message: "invalid code" } });
+    const r = await authVerifyCode("ana@ejemplo.com", "12345678");
+    expect(r.error).toMatch(/escribe los 8 dígitos/i);
+    expect(r.userId).toBeUndefined();
   });
 });
 
