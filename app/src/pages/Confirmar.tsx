@@ -159,7 +159,9 @@ export function Confirmar() {
         <BrandLogo className="brand-logo--auth" />
         <h2>Un paso y entramos.</h2>
         <p style={{ maxWidth: "34ch", fontSize: "1.2rem", fontWeight: 600 }}>
-          Estamos comprobando tu enlace de correo para abrir tu punto de venta.
+          {tieneEnlace
+            ? "Estamos comprobando tu enlace de correo para abrir tu punto de venta."
+            : "Verifica tu correo de Blink para abrir tu punto de venta."}
         </p>
       </div>
 
