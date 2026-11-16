@@ -8,7 +8,7 @@ Fuente de verdad: `app/src/styles/tokens.css` (tokens) y
 
 > La **identidad de marca** (isotipo, logotipos, iconos de app, tarjeta y
 > movimiento de los cargadores) está en el documento maestro
-> [`../../Pay/docs/documento-maestro-estetica.md`](../../Pay/docs/documento-maestro-estetica.md)
+> [`../../BLINK/pay/docs/documento-maestro-estetica.md`](../../BLINK/pay/docs/documento-maestro-estetica.md)
 > (`BLINK-EST-001`). Este documento cubre los tokens y componentes del POS;
 > si hay discrepancia en la marca, manda el maestro.
 
@@ -481,8 +481,49 @@ propios:
 | `--color-success-text` | `#1e7a34` | `#30d158` | píldoras de variación |
 | `--color-danger-text` | `#c4272b` | `#ff4245` | píldoras de variación a la baja |
 
-El relleno de acento sigue siendo `#0088FF`: el token de texto es el que se
-oscurece, no el color de marca.
+El relleno de acento decorativo (puntos, barras, bordes tintados) sigue siendo
+`#0088FF`: el token de texto es el que se oscurece, no el color de marca. Donde
+el acento es el **fondo de un control con etiqueta clara** hay un token aparte,
+abajo.
+
+### Contraste del relleno de acento (botones primarios)
+
+Donde el acento es **el fondo** y encima va la etiqueta clara, `#0088FF`
+medía 3,49:1 con el texto y **1,59:1** al sumarle el velo de vidrio (`--ios-veil`,
+un degradado blanco de 0,62 de alfa arriba): los botones «Cobrar», «Continuar» o
+«Aceptar» se leían blancos. Mismo defecto en el estado deshabilitado:
+`.btn:disabled` llevaba `opacity: .4` sobre el azul y «Confirmar venta»
+quedaba en 1,48:1.
+
+Los cuatro tokens nuevos son solo para ese caso; el `--ios-veil` neutro de las
+superficies no cambió:
+
+| Token | Claro | Oscuro | Dónde |
+|---|---|---|---|
+| `--color-accent-solid` | `#0062c4` | `#0066cc` | relleno de `.btn--primary`, botón primario de las páginas legales, pastilla de cookies, moneda de activación, glifo del botón central, punto del asistente |
+| `--color-accent-solid-hover` | 88 % del anterior + negro | igual que el reposo | hover del botón primario |
+| `--ios-veil-on-accent` | blanco ≤ 0,10 de alfa | idem | velo **solo** sobre rellenos de acento |
+| `--accent-edge` | transparente | blanco al 30 % de alfa | canto del botón legal y de la pastilla de cookies |
+
+Medido sobre el píxel ya pintado (`scripts/sonda-botones.mjs`): etiqueta
+**5,02:1** en claro y **4,74:1** en oscuro; relleno contra la superficie
+5,47–5,59:1 y 3,28–3,95:1 (el umbral de componente es 3:1); deshabilitado con
+pastilla neutra 9,23:1 y 7,03:1. En las páginas públicas, 5,87:1 y 5,52:1 de
+etiqueta.
+
+Tres decisiones que no son obvias:
+
+- **En oscuro el hover no toca el relleno.** Oscurecerlo bajaba el botón a
+  2,75:1 contra el negro y aclararlo dejaba la etiqueta en 3,76:1: el hover se
+  dice con el canto más luminoso y la elevación de 1 px.
+- **El botón primario deshabilitado ya no usa `opacity`.** Poner `opacity: 1` y
+  cambiar a `--color-neutral-soft` con texto secundario es lo que mantiene la
+  legibilidad; las demás variantes siguen atenuándose con `opacity: .4`.
+- **Las páginas públicas llevan canto en oscuro.** Su panel es un gris más
+  claro que el fondo del POS y el solo relleno quedaba a 2,61:1, por debajo
+  del 3:1 de componente; con `--accent-edge` la frontera mide **3,93:1** sin
+  tocar el relleno. En claro el canto es transparente porque el relleno ya
+  separa 5,34:1.
 
 ### Forma
 

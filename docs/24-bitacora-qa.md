@@ -549,3 +549,73 @@ sí varia de un día a otro.
 El segmento activo del control segmentado usaba el azul de Konsta
 (`#007AFF`) en vez del de la marca (`#0088ff`). Ahora ambos son el mismo
 azul: el control forma parte de la interfaz de BLINK, no de la librería.
+
+## 12. Los botones de acción se veían blancos
+
+El aviso del dueño fue concreto: «Continuar», «Cobrar» y «Aceptar» se veían
+blancos. No era un color mal puesto: eran dos defectos sumados sobre el mismo
+píxel.
+
+- **El velo de vidrio sobre un relleno de acento.** `--ios-veil` es un degradado
+  blanco con 0,62 de alfa arriba. Sobre las superficies neutras es lo que da el
+  aspecto de vidrio; sobre el azul de marca (`#0088FF`) lavaba el relleno hasta
+  dejar la etiqueta clara en **1,59:1** (3,49:1 sin el velo).
+- **`opacity` en el estado deshabilitado.** `.btn:disabled` atenuaba el botón al
+  40 %: «Confirmar venta», con el modal de cobro abierto, medía **1,48:1**.
+
+Se resolvió con un token de relleno propio (`--color-accent-solid`) y un velo
+apenas perceptible para acentos (`--ios-veil-on-accent`), aplicados a los
+controles que llevan etiqueta clara sobre azul: botón primario del POS, botón
+primario de las páginas legales, pastilla de cookies, moneda de activación,
+glifo del botón central de la barra y punto del asistente. El deshabilitado
+pasó a pastilla neutra con texto secundario en vez de `opacity`.
+
+### 12.1 · Cómo se midió, no cómo se leyó
+
+`scripts/sonda-botones.mjs` (expediente de hallazgos) recorta franjas de 6 px
+del borde del botón en una captura real y calcula el contraste sobre el color
+que está pintado de verdad, con el DOM ya asentado: la transición de color dura
+0,2 s y leída a medias devuelve un valor interpolado que no existe. En cada
+escena avisa si el relleno salió blanco, si la etiqueta baja de 4,5:1 o si el
+componente baja de 3:1 contra su superficie, y distingue los botones que quedan
+tapados por el scrim de un modal abierto.
+
+| Medida | Claro | Oscuro |
+|---|---|---|
+| Etiqueta sobre relleno (antes) | 1,59:1 | lavado, sin medir |
+| Etiqueta sobre relleno (después) | **5,02:1** | **4,74:1** |
+| Relleno contra la superficie | 5,47–5,59:1 | 3,28–3,95:1 |
+| Etiqueta en hover | 5,94:1 | 4,74:1 |
+| Deshabilitado | 9,23:1 | 7,03:1 |
+
+En oscuro el hover **no** toca el relleno: oscurecerlo dejaba el botón a 2,75:1
+del negro y aclararlo bajaba la etiqueta a 3,76:1. Se expresa con el canto más
+luminoso y 1 px de elevación.
+
+### 12.2 · Las paginas publicas pedian un canto, no un color nuevo
+
+Al medir el botón «Crear mi comercio» de las páginas legales y la pastilla
+«Aceptar todas», la etiqueta pasó AA (5,87:1 claro, 5,52:1 oscuro) pero en
+oscuro el relleno solo separaba **2,61:1** del panel: ese panel es un gris más
+claro que el fondo negro del POS. No se tocó el azul —subirlo volvía a romper
+la etiqueta—; se añadió `--accent-edge`, un canto interior transparente en claro
+y blanco al 30 % en oscuro, que lleva la frontera a **3,93:1**. La moneda de
+activación usa el mismo relleno, pero ese tramo de la pantalla solo aparece con
+un pedido cripto en pie, así que no se pudo medir en vivo.
+
+### 12.3 · El falso positivo del `rgba(2,103,204,0.88)`
+
+Un botón mostraba un azul con alfa que no aparecía en ninguna regla. Era la
+transición de `background-color` pillada en vuelo. La sonda ahora espera siempre
+a que el color se asiente antes de leer el estilo computado.
+
+### 12.4 · Un fallo del arnés que tapaba todo lo demás
+
+`qa:apariencia` fallaba 4 de 5 comprobaciones desde antes de este cambio (se
+verificó apartando los estilos con `git stash` y repitiendo la ejecución: mismo
+resultado). El motivo no era la app: el arnés entraba con `/app/entrar?bypass=1`
+y esperaba 1,6 s, pero ese parámetro solo se consume cuando el *chunk* perezoso
+de la app ya cargó —en este equipo, con dos núcleos, tarda bastante más—, así
+que la navegación siguiente perdía el parámetro, el bypass nunca se armaba y
+Ajustes desviaba al login. Ahora el arnés escribe `blink-temp-bypass` en el init
+script y espera `.tabs button` en lugar de un tiempo fijo: pasa 5/5.

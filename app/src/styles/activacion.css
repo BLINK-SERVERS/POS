@@ -348,7 +348,7 @@
 }
 
 .act__coin--on {
-  background: var(--color-accent);
+  background: var(--color-accent-solid);
   border-color: transparent;
   color: var(--color-text-on-accent);
 }

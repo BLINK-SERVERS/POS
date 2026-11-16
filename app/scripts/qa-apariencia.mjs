@@ -43,26 +43,22 @@ const fondo = () =>
   });
 
 /* --- Sesion local (bypass) con el alta ya hecha --- */
+// Se escribe el flag directamente: `?bypass=1` solo lo consume cuando el
+// chunk de la app ya cargo, y aqui la navegacion siguiente partia antes
+// de ese momento, asi que el bypass nunca se armaba y Ajustes desviaba
+// al login. El estado vive por usuario (`blink-pos-state-v3:<id>`), y sin
+// `onboarding.completed` la app manda al alta guiada en vez de Ajustes.
 await page.addInitScript(() => {
-  const KEY = "blink-pos-state-v3";
-  const patch = () => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return;
-      const st = JSON.parse(raw);
-      st.onboarding = { ...(st.onboarding || {}), completed: true };
-      localStorage.setItem(KEY, JSON.stringify(st));
-    } catch {}
-  };
-  patch();
-  window.addEventListener("DOMContentLoaded", patch);
+  window.localStorage.setItem("blink-temp-bypass", "1");
+  window.localStorage.setItem(
+    "blink-pos-state-v3:temp-bypass-user",
+    JSON.stringify({ onboarding: { completed: true } })
+  );
 });
 
 /* --- Entrar con el bypass y abrir Ajustes > Apariencia --- */
-await page.goto(BASE + "/app/entrar?bypass=1", { waitUntil: "domcontentloaded" });
-await page.waitForTimeout(1600);
-await page.goto(BASE + "/app/ajustes", { waitUntil: "networkidle" });
-await page.waitForTimeout(900);
+await page.goto(BASE + "/app/ajustes", { waitUntil: "domcontentloaded" });
+await page.waitForSelector(".tabs button", { timeout: 60000 });
 
 const abierta = await page.evaluate(() => {
   const b = [...document.querySelectorAll(".tabs button")].find((x) =>
@@ -101,14 +97,16 @@ if (!oscuro.clase.includes("dark")) {
 
 /* --- La preferencia se recuerda al recargar --- */
 await page.reload({ waitUntil: "networkidle" });
-await page.waitForTimeout(1200);
+await page.waitForSelector(".tabs button", { timeout: 45000 }).catch(() => {});
+await page.waitForTimeout(400);
 const trasRecarga = await fondo();
 if (!trasRecarga.oscuro) Add("FALLO", "la preferencia no se recuerda al recargar");
 else Add("ok", "la preferencia se recuerda al recargar");
 
 /* --- Volver a "Automático" --- */
 await page.goto(BASE + "/app/ajustes", { waitUntil: "networkidle" });
-await page.waitForTimeout(800);
+await page.waitForSelector(".tabs button", { timeout: 45000 }).catch(() => {});
+await page.waitForTimeout(400);
 await page.evaluate(() => {
   const t = [...document.querySelectorAll(".tabs button")].find((x) =>
     (x.textContent || "").trim() === "Apariencia"

@@ -15,6 +15,32 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
+### Botones de acción que se veían blancos
+
+- **Causa medida en píxel, no deducida del CSS.** Sobre el azul de marca
+  (`#0088FF`) caía el velo de vidrio `--ios-veil` (blanco con 0,62 de alfa
+  arriba): la etiqueta clara quedaba en **1,59:1** y el botón se leía blanco.
+  En el estado deshabilitado, `.btn:disabled { opacity: .4 }` dejaba
+  «Confirmar venta» en **1,48:1**.
+- **Tokens nuevos** (`src/styles/tokens.css`): `--color-accent-solid` y
+  `--color-accent-solid-hover` para el relleno, `--ios-veil-on-accent` (blanco
+  ≤ 0,10) en lugar del velo neutro, y `--accent-edge` para el canto de los
+  botones de las páginas públicas. El `--ios-veil` de las superficies neutras
+  no cambió.
+- **Dónde se aplicó**: botón primario del POS, glifo del botón central de la
+  barra, punto del asistente, casilla de verificación, paso completado del
+  alta, moneda de activación, botón primario legal y pastilla de cookies. El
+  primario deshabilitado ahora es una pastilla neutra con texto secundario.
+- **Resultado** (sonda de píxeles, claro/oscuro): etiqueta 5,02:1 y 4,74:1;
+  relleno contra superficie 5,47–5,59:1 y 3,28–3,95:1; hover 5,94:1 en claro y
+  canto elevado en oscuro; deshabilitado 9,23:1 y 7,03:1. Público: 5,87:1 /
+  5,52:1 de etiqueta y 5,34:1 / 3,93:1 de componente.
+- **Ajustes del arnés**: `qa:apariencia` fallaba 4 de 5 desde antes de este
+  cambio porque entraba con `?bypass=1` y seguía de largo antes de que el
+  *chunk* de la app lo consumiera; ahora escribe el flag en el init script y
+  espera `.tabs button`. Pasa 5/5. Detalle en
+  [`docs/24-bitacora-qa.md`](docs/24-bitacora-qa.md), sección 12.
+
 ### Activación de pago y conciliación
 
 - **Alta en dos fases**: crear la cuenta ya no crea el comercio. El registro

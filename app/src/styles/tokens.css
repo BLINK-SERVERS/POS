@@ -61,6 +61,32 @@
     color-mix(in srgb, var(--blink-blue-dark) 84%, #ffffff)
   );
 
+  /* Relleno de los controles de acento que llevan etiqueta clara encima
+     (boton primario del POS, boton legal, pastilla de cookies, moneda de
+     activacion, glifo del boton central, punto del asistente).
+     El acento de marca #0088ff con texto #FFFEFB queda en 3,49:1 y con el
+     velo de vidrio encima bajaba a 1,59:1: los botones se leian blancos.
+     Este es el mismo azul oscurecido hasta AA medido sobre el pixel ya
+     pintado: 5,02:1 la etiqueta en claro y 4,74:1 en oscuro. */
+  --color-accent-solid: light-dark(#0062c4, #0066cc);
+  /* En claro el hover oscurece el relleno (mide 5,94:1 de etiqueta y 6,68:1
+     contra la superficie). En oscuro NO se toca el relleno: oscurecerlo
+     bajaba el boton a 2,75:1 contra el negro y aclararlo dejaba la etiqueta
+     en 3,76:1. Asi el hover se dice con el canto y la elevacion. */
+  --color-accent-solid-hover: light-dark(
+    color-mix(in srgb, #0062c4 88%, #000000),
+    #0066cc
+  );
+  /* Canto de los botones de acento de las paginas publicas (boton legal y
+     pastilla de cookies). Ahi el panel oscuro es un gris mas claro que el
+     fondo del POS y el solo relleno queda a 2,61:1; con el canto la frontera
+     mide 3,93:1 (el umbral de componente es 3:1). En claro no hace falta: el
+     relleno ya separa 5,34:1, asi que el canto es transparente. */
+  --accent-edge: light-dark(
+    rgb(from var(--halo) r g b / 0),
+    rgb(from var(--halo) r g b / 0.3)
+  );
+
   /* --- Superficies ---
      En claro todo es #FFFEFB; en oscuro, el material "Dark/Regular"
      del kit: #1a1a1a en las superficies elevadas y #000000 en el fondo. */
@@ -320,6 +346,16 @@
       rgba(255, 255, 255, 0.08) 46%,
       rgba(255, 255, 255, 0.035) 100%
     )
+  );
+  /* Velo SOLO para rellenos de acento. El `--ios-veil` de arriba (0,62 de
+     blanco arriba) esta pensado para superficies neutras, casi incoloras;
+     sobre un azul de marca lo deja lavada. Aqui el brillo mide 0,10: la
+     pastilla sigue siendo azul y la etiqueta clara conserva AA. */
+  --ios-veil-on-accent: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 46%,
+    rgba(255, 255, 255, 0) 100%
   );
 
   --transition-speed: 0.2s ease-in-out;

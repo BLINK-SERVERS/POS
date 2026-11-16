@@ -280,23 +280,40 @@
 }
 /* Rol Primary: acento de marca con el material por encima. El texto va
    en `--color-text-on-accent` (siempre claro): con el token inverso, en
-   oscuro el boton quedaba con el texto negro sobre el azul. */
+   oscuro el boton quedaba con el texto negro sobre el azul.
+   El relleno usa `--color-accent-solid`, no `--color-accent`: con el azul
+   de marca y el velo de vidrio la etiqueta bajaba a 1,59:1 y la pastilla
+   se veia blanca. */
 .btn--primary {
-  background: var(--ios-veil), var(--color-accent);
+  background: var(--ios-veil-on-accent), var(--color-accent-solid);
   color: var(--color-text-on-accent);
   box-shadow: var(--ios-specular-soft), var(--ios-rim),
     inset 0 -1px 0 rgb(from var(--negro) r g b / 0.14),
     0 2px 10px rgb(from var(--acento) r g b / 0.28);
 }
 .btn--primary:hover:not(:disabled) {
-  background: var(--ios-veil), var(--color-accent-hover);
+  background: var(--ios-veil-on-accent), var(--color-accent-solid-hover);
+  box-shadow: var(--ios-specular),
+    inset 0 0 0 1px rgb(from var(--halo) r g b / 0.32),
+    inset 0 -1px 0 rgb(from var(--negro) r g b / 0.14),
+    0 4px 16px rgb(from var(--acento) r g b / 0.34);
   transform: translateY(-1px);
 }
   .btn--primary:active:not(:disabled) {
-    background: linear-gradient(180deg, rgb(from var(--halo) r g b / 0.14), rgb(from var(--negro) r g b / 0.08)),
-      var(--color-accent-hover);
-    opacity: 0.82;
+    background: linear-gradient(180deg, rgb(from var(--negro) r g b / 0.08), rgb(from var(--negro) r g b / 0.16)),
+      var(--color-accent-solid-hover);
+    /* Sin opacity: al 0,82 el relleno volvia a mezclarse con el fondo
+       claro y la pastilla perdida el color justo al pulsarla. */
+    opacity: 1;
   }
+/* Primary inactivo: `opacity: .4` sobre el relleno de acento dejaba
+   "Confirmar venta" en 1,48:1 (ilegible). iOS usa la pastilla neutra. */
+.btn--primary:disabled {
+  opacity: 1;
+  background: var(--ios-veil), var(--color-neutral-soft);
+  color: var(--color-text-secondary);
+  box-shadow: var(--ios-specular-soft), var(--ios-rim);
+}
 /* Boton gris de iOS: relleno suave con material. */
 .btn--ghost {
   background: var(--ios-veil), var(--color-neutral-soft);
@@ -381,7 +398,7 @@
     box-shadow: none;
   }
   .btn--primary {
-    background: var(--color-accent);
+    background: var(--color-accent-solid);
   }
   .btn--soft {
     background: var(--color-accent-soft);
@@ -1177,7 +1194,7 @@ table.data tbody tr:hover {
   color: var(--color-text-primary);
 }
 .nav__link.active .nav__icon {
-  background: var(--color-accent);
+  background: var(--color-accent-solid);
   color: var(--color-bg-elevated);
 }
 .nav__sub {
@@ -1246,7 +1263,7 @@ table.data tbody tr:hover {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-accent-solid);
   color: var(--color-text-on-accent);
   display: grid;
   place-items: center;
@@ -1394,7 +1411,7 @@ table.data tbody tr:hover {
   color: transparent;
 }
 .check--done .check__mark {
-  background: var(--color-accent);
+  background: var(--color-accent-solid);
   border-color: var(--color-accent);
   color: var(--color-text-on-accent);
 }
@@ -2141,7 +2158,7 @@ table.data td {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--ios-veil), var(--color-accent);
+  background: var(--ios-veil-on-accent), var(--color-accent-solid);
   color: var(--color-text-on-accent);
   box-shadow: var(--ios-specular-soft),
     0 4px 14px rgb(from var(--acento) r g b / 0.32);
@@ -3076,7 +3093,7 @@ table.data td {
   color: var(--color-accent);
 }
 .wizard__steps li.is-done .wizard__dot {
-  background: var(--color-accent);
+  background: var(--color-accent-solid);
   border-color: var(--color-accent);
   color: var(--color-text-on-accent);
 }
