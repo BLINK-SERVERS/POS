@@ -150,7 +150,7 @@ export function Inventario() {
         subtitle="Existencias, mínimos y valor de tu mercancía."
         actions={
           <div className="row gap-8">
-            <button className="btn btn--soft" onClick={() => setCamOpen(true)}>
+            <button className="btn btn--soft" onClick={() => setCamOpen(true)} data-tour="inventario-escanear">
               <Icon name="scan" /> Escanear
             </button>
             <button className="btn btn--primary" onClick={() => setPurchaseOpen(true)}><Icon name="cart" /> 

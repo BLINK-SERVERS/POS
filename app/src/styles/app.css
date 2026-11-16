@@ -1826,6 +1826,12 @@ table.data tbody tr:hover {
   padding: 1.25rem 1.5rem 1.5rem;
   animation: modal-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* El panel recibe el foco al abrirse para que el teclado sea suyo desde el
+   primer pulso (ver `useFocoDeDialogo`). No es un control, así que no lleva
+   anillo: el anillo aparece en los campos cuando el usuario Tab-sonea. */
+.modal:focus {
+  outline: none;
+}
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -3596,23 +3602,77 @@ table.data td {
 }
 
 @media print {
-  /* Ocultar todo en la página excepto el recibo */
-  body * {
-    visibility: hidden !important;
-  }
   .no-print {
     display: none !important;
   }
-  #printable-receipt,
-  #printable-receipt * {
+
+  /* ─── Reportes (Informes, Ajustes → Exportar, estado de cuenta) ───────
+     El contenedor lo monta Shell como portal directo de <body>, así que la
+     aplicación entera se quita con `display:none`. Antes se ocultaba con
+     `visibility:hidden` sobre `body *`: los ~108 nodos seguían ocupando
+     espacio, el reporte arrancaba a 432 px y el PDF salía con páginas en
+     blanco. Y el `display:block` sobre `#printable-report *` convertía cada
+     `<td>` en un bloque: las 8 columnas de una tabla se apilaban en 8 líneas
+     (BLINK-099, medido en Chromium el 2026-11-15). */
+  body.print-report #root {
+    display: none !important;
+  }
+  body.print-report > #printable-report {
+    display: block !important;
+    box-sizing: border-box;
+    width: 100%;
+    /* `@page` va sin margen por el térmico; el reporte se pone el suyo. */
+    padding: 14mm 12mm 16mm;
+    color: #000;
+    font-size: 10.5pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Semántica de tabla restaurada de forma explícita: si alguien vuelve a
+     poner un `display` genérico sobre `*`, el reporte no se desarma. */
+  body.print-report .pr-table {
+    display: table !important;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  body.print-report .pr-table thead {
+    display: table-header-group;
+  }
+  body.print-report .pr-table tbody {
+    display: table-row-group;
+  }
+  body.print-report .pr-table tr {
+    display: table-row !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body.print-report .pr-table td,
+  body.print-report .pr-table th {
+    display: table-cell !important;
+    vertical-align: top;
+  }
+  body.print-report .pr-num {
+    white-space: nowrap;
+  }
+  body.print-report .pr-head,
+  body.print-report .pr-section {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* ─── Tickets: el contenedor vive dentro del árbol de la app (se ve en
+     pantalla), así que ahí sí se aísla por visibilidad. ─────────────── */
+  body.print-receipt * {
+    visibility: hidden !important;
+  }
+  body.print-receipt #printable-receipt,
+  body.print-receipt #printable-receipt * {
     visibility: visible !important;
   }
-  #printable-report,
-  #printable-report * {
-    visibility: visible !important;
-    display: block;
+  body.print-receipt #printable-report {
+    display: none !important;
   }
-  #printable-receipt {
+  body.print-receipt #printable-receipt {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -3624,6 +3684,13 @@ table.data td {
     border: none !important;
     box-shadow: none !important;
   }
+
+  /* Ctrl+P sin exportar: imprimir lo que se ve, sin la chrome de la
+     interfaz. Antes dejaba la hoja en blanco. */
+  body:not(.print-report):not(.print-receipt) #printable-report {
+    display: none !important;
+  }
+
   @page {
     margin: 0;
   }
@@ -3653,5 +3720,235 @@ table.data td {
 @media (max-width: 860px) {
   .shell__main {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ============================================================
+   Ayuda guiada «¿Cómo funciona?»  (components/Asistencia.tsx)
+   ------------------------------------------------------------
+   Capa de presentación pura, montada en la barra superior del Shell:
+   · .ayuda__boton   vive en .shell__topbar (no empuja nada: el hueco lo
+                     absorbe .grow, que es elástico).
+   · .ayuda__capa    se portal a document.body, z-index 90: por encima de
+                     modales (70/71) y del menú de avatar (66), por debajo
+                     del aviso de almacenamiento (2000).
+   · El recorte del foco son cuatro velos; el hueco del medio queda LIBRE,
+                     así el cajero puede pulsar el botón que le estamos
+                     enseñando. Si el paso no tiene objetivo (o el objetivo
+                     no existe todavía), se usa .ayuda__velo--solo, velo
+                     parejo y tarjeta centrada: la guía nunca se cae.
+   Todos los tokens son los del proyecto: claro/oscuro sale solo.
+   ============================================================ */
+
+/* --- El boton de la barra --- */
+.ayuda__boton {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 32px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-neutral-soft);
+  color: var(--color-accent-text);
+  font-family: var(--font-text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-speed),
+    color var(--transition-speed),
+    transform var(--transition-speed);
+}
+.ayuda__boton:hover {
+  background: var(--color-accent-soft);
+}
+.ayuda__boton:active {
+  transform: scale(0.97);
+  opacity: 0.7;
+}
+.ayuda__boton:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.ayuda__boton .icon {
+  width: 12px;
+  height: 12px;
+}
+/* Area tactil de 44 pt (HIG · Buttons), igual que .btn: el marco crece, el
+   tamano pintado no. Sin esto el boton de ayuda seria el control mas
+   pequeno de la barra en un telefono. */
+@media (pointer: coarse) {
+  .ayuda__boton::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+  }
+}
+/* En pantallas angostas el boton se encoge con la cabecera: nunca tapa el
+   chip de la tasa ni el avatar, porque no flota sobre ellos. */
+@media (max-width: 520px) {
+  .ayuda__boton {
+    padding: 0 0.4rem;
+    font-size: 0.64rem;
+    gap: 0.15rem;
+  }
+}
+
+/* --- Capa del asistente --- */
+.ayuda__capa {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.ayuda__velo {
+  position: fixed;
+  pointer-events: auto;
+  background: rgb(from var(--negro) r g b / 0.55);
+  transition:
+    top 0.22s ease-out,
+    left 0.22s ease-out,
+    width 0.22s ease-out,
+    height 0.22s ease-out;
+}
+/* Sin objetivo que iluminar: velo parejo, sin recorte. */
+.ayuda__velo--solo {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.ayuda__foco {
+  position: fixed;
+  border-radius: calc(var(--radius-md) + 4px);
+  box-shadow:
+    0 0 0 2px var(--color-accent),
+    0 0 0 8px rgb(from var(--acento) r g b / 0.18);
+  pointer-events: none;
+  transition:
+    top 0.22s ease-out,
+    left 0.22s ease-out,
+    width 0.22s ease-out,
+    height 0.22s ease-out;
+}
+
+/* --- La tarjeta del paso --- */
+.ayuda__tarjeta {
+  position: fixed;
+  pointer-events: auto;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  padding: 0.9rem 1rem 0.8rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ios-separator);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-pop);
+  text-align: left;
+  animation: pop-in 0.16s ease-out;
+}
+.ayuda__tarjeta:focus-visible {
+  outline: none;
+}
+.ayuda__tarjeta--centro {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+}
+.ayuda__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.ayuda__pantalla {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent-text);
+}
+.ayuda__cerrar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-neutral-soft);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.ayuda__cerrar:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.ayuda__titulo {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-display);
+  font-size: var(--ios-fs-title3);
+  line-height: var(--ios-lh-title3);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.ayuda__texto {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+.ayuda__puntos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+}
+.ayuda__punto {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+.ayuda__punto--hecho {
+  background: var(--color-accent-soft-strong);
+}
+.ayuda__punto--actual {
+  background: var(--color-accent);
+  transform: scale(1.25);
+}
+.ayuda__pie {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+.ayuda__contador {
+  font-size: var(--fs-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* La ayuda es interfaz: en el ticket y en el reporte impreso sobra. */
+@media print {
+  .ayuda__capa,
+  .ayuda__boton {
+    display: none !important;
   }
 }

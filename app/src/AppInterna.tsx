@@ -51,6 +51,7 @@ const Catalogo = lazy(() => import("./pages/Catalogo").then((m) => ({ default: m
 const Inventario = lazy(() => import("./pages/Inventario").then((m) => ({ default: m.Inventario })));
 const Contactos = lazy(() => import("./pages/Contactos").then((m) => ({ default: m.Contactos })));
 const Finanzas = lazy(() => import("./pages/Finanzas").then((m) => ({ default: m.Finanzas })));
+const Creditos = lazy(() => import("./pages/Creditos").then((m) => ({ default: m.Creditos })));
 const Informes = lazy(() => import("./pages/Informes").then((m) => ({ default: m.Informes })));
 const Ajustes = lazy(() => import("./pages/Ajustes").then((m) => ({ default: m.Ajustes })));
 const Activacion = lazy(() => import("./pages/Activacion").then((m) => ({ default: m.Activacion })));
@@ -146,6 +147,7 @@ function AppRoutes() {
       <Route path="inventario" element={<Protected><Inventario /></Protected>} />
       <Route path="contactos" element={<Protected><Contactos /></Protected>} />
       <Route path="finanzas" element={<Protected><Finanzas /></Protected>} />
+      <Route path="creditos" element={<Protected><Creditos /></Protected>} />
       <Route path="informes" element={<Protected><Informes /></Protected>} />
       <Route path="ajustes" element={<Protected><Ajustes /></Protected>} />
       {/* Conciliación manual de pagos (solo admin de plataforma). */}

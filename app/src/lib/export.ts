@@ -91,9 +91,16 @@ export function printReport({ title, subtitle, business, bodyHtml }: PrintableRe
   `;
   // Dar un instante al layout antes de imprimir.
   requestAnimationFrame(() => {
+    // `print-report` avisa al `@media print` de que lo que se imprime es el
+    // reporte (que vive en <body>), no la aplicación: así la app se quita con
+    // `display:none` en vez de ocultarse con `visibility`, que dejaba más de
+    // cien nodos ocupando espacio y páginas en blanco delante del reporte
+    // (BLINK-099, medido 2026-11-15).
+    document.body.classList.add("print-report");
     window.print();
     // Limpia después de imprimir para no dejar datos en el DOM.
     setTimeout(() => {
+      document.body.classList.remove("print-report");
       root.innerHTML = "";
     }, 500);
   });

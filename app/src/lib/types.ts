@@ -99,6 +99,10 @@ export interface Product {
   trackStock: boolean;
   stock: number;
   minStock: number;
+  /** Fijado por el cajero para la venta rápida. Es opcional a propósito:
+   *  los productos dados de alta antes de esta función simplemente no
+   *  están fijados, sin necesidad de migración. */
+  favorite?: boolean;
 }
 
 /** Unidades de medida normalizadas (lista cerrada, sin texto libre). */

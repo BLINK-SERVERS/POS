@@ -765,6 +765,15 @@ export interface PurchaseInput {
   lines: { productId: string; qty: number; costUnit: number }[];
 }
 
+/** Un cobro de abono: en qué cuenta aterriza y cuánto acredita. */
+export interface CobroAbono {
+  accountId: string;
+  /** Equivalente en USD, ya calculado por la pantalla con su tasa y su moneda. */
+  amountUsd: number;
+  /** N° de referencia o comprobante del abono. */
+  reference?: string;
+}
+
 type StoreActions = {
   // Autenticación (Supabase). Devuelven un mensaje de error o null si fue bien.
   login: (email: string, password: string) => Promise<string | null>;
@@ -820,7 +829,7 @@ type StoreActions = {
   setChannelPrice: (productId: string, channelId: string, price: number) => void;
   bulkPrice: (pct: number, channelId: string) => void;
   // Contactos
-  addContact: (c: Omit<Contact, "id">) => void;
+  addContact: (c: Omit<Contact, "id">) => string;
   updateContact: (id: string, patch: Partial<Contact>) => void;
   removeContact: (id: string) => void;
   // Ventas
@@ -850,6 +859,12 @@ type StoreActions = {
   // Pendientes
   addPending: (p: Omit<Pending, "id" | "at" | "paidUsd" | "status">) => void;
   abonoPending: (id: string, accountId: string, amountUsd: number, note: string) => void;
+  /**
+   * Abono con los mismos cobros combinados de la pantalla de venta: cada
+   * entrada ya viene convertida a USD por la interfaz (moneda, tasa y
+   * equivalencia), y se aplican en orden hasta cerrar la cuenta.
+   */
+  abonoPendingPagos: (id: string, cobros: CobroAbono[], note: string) => void;
   voidPending: (id: string) => void;
   // Impuestos / descuentos / recargos
   addTax: (t: Omit<Tax, "id">) => void;
@@ -1528,8 +1543,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ---- Contactos ------------------------------------------------
-  const addContact = useCallback((c: Omit<Contact, "id">) => {
-    setAppState((s) => ({ ...s, contacts: [...s.contacts, { ...c, id: uid("cont") }] }));
+  const addContact = useCallback((c: Omit<Contact, "id">): string => {
+    const id = uid("cont");
+    setAppState((s) => ({ ...s, contacts: [...s.contacts, { ...c, id }] }));
+    return id;
   }, []);
 
   const updateContact = useCallback((id: string, patch: Partial<Contact>) => {
@@ -1599,7 +1616,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const at = new Date().toISOString();
       const methodLabel =
         input.payments.length === 0
-          ? "—"
+          ? input.quote
+            ? "—"
+            : "Crédito"
           : remaining > 0
             ? `${input.payments.map((p) => p.method).join(" + ")} + crédito`
             : input.payments.map((p) => p.method).join(" + ");
@@ -1696,6 +1715,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 subject: `Venta ${code}`,
                 amountUsd: remaining,
                 paidUsd: 0,
+                // El plazo se fija al cobrar: si mañana cambian los días de
+                // crédito del cliente, la cuenta ya emitida no se reescribe.
+                dueAt:
+                  customer && customer.creditDays > 0
+                    ? new Date(Date.parse(at) + customer.creditDays * 86400000).toISOString()
+                    : undefined,
                 note: "Generado por venta a crédito",
                 status: "abierto" as const,
               },
@@ -1800,9 +1825,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         : null;
       const accountsFinal = abonos ? abonos.accounts : accounts;
       const movementsFinales = abonos ? abonos.movements : s.movements;
-      // Anula la cuenta por cobrar asociada.
+      // Anula la cuenta por cobrar asociada. Incluye la ya SALDADA: sus abonos
+      // se revirtieron arriba, así que dejarla en pie dejaba el fantasma de un
+      // crédito de una venta que ya no existe (BLINK-099).
       const pendings = s.pendings.map((p) =>
-        p.subject === `Venta ${sale.code}` && p.status !== "saldado"
+        p.subject === `Venta ${sale.code}` && p.status !== "anulado"
           ? { ...p, status: "anulado" as const, paidUsd: 0 }
           : p
       );
@@ -2264,55 +2291,76 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const abonoPending = useCallback<StoreActions["abonoPending"]>(
-    (id, accountId, amountUsd, note) => {
+  /**
+   * Abono a una cuenta por cobrar (o por pagar) con cobros combinados, la
+   * misma forma de cobrar que tiene la venta.
+   *
+   * Cada cobro se acota al saldo que queda en el momento en que se aplica, así
+   * que una lista que suma de más no deja dinero fantasma en las cuentas. La
+   * comisión de la cuenta que recibe (o que paga) se aplica como siempre y cada
+   * cobro deja su propio asiento en el libro, con su referencia.
+   */
+  const abonoPendingPagos = useCallback<StoreActions["abonoPendingPagos"]>(
+    (id, cobros, note) => {
       setAppState((s) => {
         const p = s.pendings.find((x) => x.id === id);
-        const acc = s.accounts.find((a) => a.id === accountId);
-        if (!p || !acc || amountUsd <= 0) return s;
-        if (p.status === "saldado" || p.status === "anulado") return s;
-        // No se puede abonar más de lo que queda por cobrar/pagar: acota el
-        // monto al saldo restante para no acreditar dinero de más en la cuenta.
-        const remaining = round2(Math.max(0, p.amountUsd - p.paidUsd));
-        const applied = round2(Math.min(amountUsd, remaining));
-        if (applied <= 0) return s;
-        const paid = round2(p.paidUsd + applied);
-        const status: Pending["status"] = paid >= p.amountUsd ? "saldado" : "parcial";
-        const at = new Date().toISOString();
+        if (!p || p.status === "saldado" || p.status === "anulado") return s;
         const isCollect = p.direction === "cobrar";
-        // Al recibir se descuenta la comisión; al pagar se suma la comisión.
-        const net = isCollect
-          ? round2(applied - commission(applied, acc.commissionIn))
-          : round2(applied + commission(applied, acc.commissionOut));
-        const native = toNative(net, acc.currency, s.rate);
+        const at = new Date().toISOString();
+        let restante = round2(Math.max(0, p.amountUsd - p.paidUsd));
+        let pagado = p.paidUsd;
+        let accounts = s.accounts;
+        const nuevos: Movement[] = [];
+
+        for (const c of cobros) {
+          const acc = accounts.find((a) => a.id === c.accountId);
+          const aplicado = round2(Math.min(c.amountUsd, restante));
+          if (!acc || restante <= 0 || aplicado <= 0) continue;
+          // Al recibir se descuenta la comisión; al pagar se suma la comisión.
+          const net = isCollect
+            ? round2(aplicado - commission(aplicado, acc.commissionIn))
+            : round2(aplicado + commission(aplicado, acc.commissionOut));
+          const native = toNative(net, acc.currency, s.rate);
+          accounts = accounts.map((a) =>
+            a.id === acc.id ? { ...a, balance: round2(a.balance + (isCollect ? native : -native)) } : a
+          );
+          pagado = round2(pagado + aplicado);
+          restante = round2(restante - aplicado);
+          nuevos.push({
+            id: uid("mov"),
+            at,
+            accountId: acc.id,
+            direction: isCollect ? "entrada" : "salida",
+            amountUsd: net,
+            currency: acc.currency,
+            amountInput: native,
+            pendingId: p.id,
+            origin: "Abono",
+            note: [note, c.reference].filter(Boolean).join(" · ") || p.subject,
+            userId: USER,
+          });
+        }
+
+        if (!nuevos.length) return s;
+        const status: Pending["status"] = restante <= 0 ? "saldado" : "parcial";
         return {
           ...s,
-          pendings: s.pendings.map((x) => (x.id === id ? { ...x, paidUsd: paid, status } : x)),
-          accounts: s.accounts.map((a) =>
-            a.id === accountId
-              ? { ...a, balance: round2(a.balance + (isCollect ? native : -native)) }
-              : a
-          ),
-          movements: [
-            {
-              id: uid("mov"),
-              at,
-              accountId,
-              direction: isCollect ? "entrada" : "salida",
-              amountUsd: net,
-              currency: acc.currency,
-              amountInput: native,
-              pendingId: p.id,
-              origin: "Abono",
-              note: note || p.subject,
-              userId: USER,
-            },
-            ...s.movements,
-          ],
+          pendings: s.pendings.map((x) => (x.id === id ? { ...x, paidUsd: pagado, status } : x)),
+          accounts,
+          movements: [...nuevos, ...s.movements],
         };
       });
     },
     []
+  );
+
+  // Un abono en una sola cuenta: lo que hacía Finanzas antes de los cobros
+  // combinados. Vive del mismo cálculo, para que no haya dos reglas de dinero.
+  const abonoPending = useCallback<StoreActions["abonoPending"]>(
+    (id, accountId, amountUsd, note) => {
+      abonoPendingPagos(id, [{ accountId, amountUsd }], note);
+    },
+    [abonoPendingPagos]
   );
 
   const voidPending = useCallback((id: string) => {
@@ -2688,6 +2736,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateExpenseCategory,
       addPending,
       abonoPending,
+      abonoPendingPagos,
       voidPending,
       addTax,
       updateTax,
@@ -2733,7 +2782,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addExpense, updateExpense, payExpense, voidExpense,
       addRecurringExpense, removeRecurringExpense, runRecurring,
       addExpenseCategory, updateExpenseCategory,
-      addPending, abonoPending, voidPending,
+      addPending, abonoPending, abonoPendingPagos, voidPending,
       addTax, updateTax, setDefaultTax,
       addDiscount, updateDiscount, removeDiscount,
       addSurcharge, updateSurcharge, removeSurcharge,

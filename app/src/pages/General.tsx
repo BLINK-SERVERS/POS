@@ -354,7 +354,7 @@ export function General() {
         <section className="bento__card">
           <div className="bento__head">
             <div>
-              <div className="bento__title">Por atender</div>
+              <div className="bento__title" data-tour="general-por-atender">Por atender</div>
               <div className="bento__hint">Productos en o por debajo de su mínimo.</div>
             </div>
           </div>
@@ -404,7 +404,7 @@ export function General() {
         <section className="bento__card bento__wide">
           <div className="bento__head">
             <div>
-              <div className="bento__title">Módulos</div>
+              <div className="bento__title" data-tour="general-modulos">Módulos</div>
               <div className="bento__hint">Todas las secciones del sistema.</div>
             </div>
           </div>

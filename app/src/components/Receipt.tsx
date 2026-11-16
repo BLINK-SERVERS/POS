@@ -52,7 +52,11 @@ export function Receipt({
       : "");
 
   const handlePrint = () => {
+    // `print-receipt` le dice al `@media print` que lo que se aísla es el
+    // ticket (ver app.css); sin la clase, Ctrl+P imprime la pantalla.
+    document.body.classList.add("print-receipt");
     window.print();
+    setTimeout(() => document.body.classList.remove("print-receipt"), 500);
   };
 
   return (

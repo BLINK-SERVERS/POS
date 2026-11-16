@@ -504,6 +504,7 @@ export function AdminConciliacion() {
                       <button
                         type="button"
                         className="btn btn--sm"
+                        data-tour="conciliacion-aprobar"
                         onClick={() => void aprobar(pendiente, nombre)}
                         disabled={trabajando != null}
                       >
@@ -513,6 +514,7 @@ export function AdminConciliacion() {
                       <button
                         type="button"
                         className="btn btn--sm btn--danger"
+                        data-tour="conciliacion-rechazar"
                         onClick={() => abrirRechazo(pendiente, nombre)}
                         disabled={trabajando != null}
                       >

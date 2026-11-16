@@ -122,7 +122,7 @@ export function Contactos() {
                 <th>Documento</th>
                 <th>Teléfono</th>
                 <th>Es</th>
-                <th>Crédito</th>
+                <th data-tour="contactos-credito">Crédito</th>
                 <th />
               </tr>
             </thead>

@@ -83,6 +83,11 @@ cuál es el vigente.
 | [`18-auditoria-codigo.md`](./18-auditoria-codigo.md) | Auditoría de código |
 | [`23-plan-nuevas-especificaciones.md`](./23-plan-nuevas-especificaciones.md) | Plan de las nuevas especificaciones (moneda base, RBAC, catálogo) |
 | [`24-bitacora-qa.md`](./24-bitacora-qa.md) | **Bitácora de QA**: entorno de pruebas, siembra, auditorías y bugs resueltos |
+| [`28-auditoria-inicial-mvp.md`](./28-auditoria-inicial-mvp.md) | **Cierre de MVP**: auditoría del flujo de negocio medido, qué se confirmó y qué se refutó |
+| [`29-registro-correcciones-pdf.md`](./29-registro-correcciones-pdf.md) | Registro de correcciones del lote 29, con el motor de impresión (PDF) medido en navegador |
+| [`30-creditos-cxc.md`](./30-creditos-cxc.md) | Módulo Créditos / Cuentas por Cobrar: venta a crédito, abonos multidivisa, Deudores y estados de cuenta |
+| [`31-teclado-venta-rapida.md`](./31-teclado-venta-rapida.md) | Módulo teclado: **tabla oficial de atajos**, política de colisión con el navegador y Venta Rápida |
+| [`32-asistente-contextual.md`](./32-asistente-contextual.md) | Módulo asistente «¿Cómo funciona?» y **mapa de pasos por pantalla** |
 
 ---
 

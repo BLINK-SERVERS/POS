@@ -22,6 +22,9 @@ import {
 import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
 import { presentationLabel } from "../lib/types";
 import { buscarProductos, detalleProducto } from "../lib/orden";
+import { Rapidos } from "../components/Rapidos";
+import { SelectorCliente } from "../components/SelectorCliente";
+import { DIAS_ROTACION, favoritos, mejorVendidos, rotacion } from "../lib/ventaRapida";
 
 /** Cuenta abierta (borrador) del POS. */
 interface Draft {
@@ -46,6 +49,34 @@ const DRAFTS_KEY = "blink-pos-drafts-v1";
 const ACTIVE_TAB_KEY = "blink-pos-active-tab-v1";
 /** Cuántos resultados se listan (y el tope que navegan las flechas). */
 const RESULTADOS_MAX = 20;
+
+/** Teclado físico a la vista: en el móvil no hay F4 ni F8 que pulsar. */
+const HAY_TECLADO =
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(pointer: fine)").matches === true;
+
+/** Insignia discreta de tecla, solo en escritorio y solo en los dos botones
+ *  grandes de la caja. El texto accesible sigue siendo el `title` del botón. */
+function Kbd({ k }: { k: string }) {
+  if (!HAY_TECLADO) return null;
+  return (
+    <kbd
+      aria-hidden="true"
+      className="mono"
+      style={{
+        marginLeft: "0.5rem",
+        padding: "0 4px",
+        border: "1px solid currentColor",
+        borderRadius: 4,
+        opacity: 0.6,
+        fontSize: "0.68rem",
+        lineHeight: "1.4",
+      }}
+    >
+      {k}
+    </kbd>
+  );
+}
 
 function loadInitialDrafts(): { drafts: Draft[]; activeId: string } {
   try {
@@ -96,7 +127,9 @@ export function Vender() {
   const accounts = useStoreSelector((s) => s.accounts);
   const business = useStoreSelector((s) => s.business);
   const taxes = useStoreSelector((s) => s.taxes);
-  const { checkout, openCash, syncRate } = useStoreActions();
+  const sales = useStoreSelector((s) => s.sales);
+  const pendings = useStoreSelector((s) => s.pendings);
+  const { checkout, openCash, syncRate, addContact, updateProduct } = useStoreActions();
 
   const [initial] = useState(loadInitialDrafts);
   const [drafts, setDrafts] = useState<Draft[]>(initial.drafts);
@@ -114,6 +147,12 @@ export function Vender() {
   const [successSale, setSuccessSale] = useState<Sale | null>(null);
   // Fila resaltada de los resultados (se mueve con ↑ ↓ y la selecciona Enter).
   const [sel, setSel] = useState(0);
+  // Ventana de cliente que exige la venta a crédito.
+  const [cliOpen, setCliOpen] = useState(false);
+  // Línea del ticket en la que está el teclado cuando se opera sin ratón (F6).
+  // Se guarda el id, no la posición: al quitar una línea las siguientes suben
+  // de índice y el resaltado se perdería.
+  const [lineaActiva, setLineaActiva] = useState<string | null>(null);
 
   // Persistir cuentas abiertas en localStorage
   useEffect(() => {
@@ -148,6 +187,50 @@ export function Vender() {
 
   // El resaltado vuelve a la primera fila cada vez que cambia la lista.
   useEffect(() => setSel(0), [deferredQuery]);
+
+  // --- Venta rápida ---
+  // Lo que fija la gente a mano (favoritos) y lo que fija la historia del caja
+  // (rotación de los últimos 30 días). Un cálculo puro de `lib/ventaRapida.ts`.
+  const unidades = useMemo(() => rotacion(sales, DIAS_ROTACION), [sales]);
+  const favs = useMemo(() => favoritos(catalog), [catalog]);
+  const top = useMemo(() => mejorVendidos(sales, catalog, { dias: DIAS_ROTACION }), [sales, catalog]);
+  const fijarFavorito = useCallback(
+    (id: string, valor: boolean) => updateProduct(id, { favorite: valor }),
+    [updateProduct]
+  );
+  const hayRapidos = favs.length > 0 || top.length > 0;
+
+  // --- Crédito ---
+  // Cuánto debe cada cliente hoy. Solo informativo: el modelo operativo no
+  // impone topes, así que la ventana nunca bloquea una venta por saldo.
+  const saldos = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of pendings) {
+      if (!p.contactId) continue;
+      if (p.direction !== "cobrar" || p.status === "anulado" || p.status === "saldado") continue;
+      m[p.contactId] = round2((m[p.contactId] ?? 0) + (p.amountUsd - p.paidUsd));
+    }
+    return m;
+  }, [pendings]);
+
+  // Alta rápida desde la propia venta: nombre y apellido obligatorios, el
+  // resto opcional. Devuelve el id para seleccionarlo al instante.
+  const registrarCliente = useCallback(
+    (d: { nombre: string; apellido: string; cedula: string; telefono: string }) =>
+      addContact({
+        name: `${d.nombre} ${d.apellido}`.replace(/\s+/g, " ").trim(),
+        document: d.cedula,
+        docType: d.cedula ? "V" : "",
+        phone: d.telefono,
+        email: "",
+        isClient: true,
+        isProvider: false,
+        creditDays: 30,
+        address: "",
+        notes: "",
+      }),
+    [addContact]
+  );
 
   const addLine = useCallback(
     (id: string) => {
@@ -368,6 +451,7 @@ export function Vender() {
   const needsCustomer = credit && !draft.customerId;
 
   const payAccount = accounts.find((a) => a.id === payAccId && a.active);
+  const cliente = contacts.find((c) => c.id === draft.customerId);
   const inUsd = payAccount?.currency === "USD";
   // "Monto exacto" en USD debe cubrir el IGTF: el cobro aporta V al pagado y
   // 0,03·V al total, así que V = missing − 0,97·V → V = missing / (1 − 0,03).
@@ -529,17 +613,21 @@ export function Vender() {
   }, [lines, draft, discountValue, discount, surchargeValue, appliedSurcharges, tax, checkout]);
 
   // --- Teclado de caja (PC) ---
-  // F2 busca · F4 cuenta nueva · F8 cobra · ↑ ↓ recorren los resultados, Enter
-  // añade el resaltado y 1-9 eligen la fila numerada · Esc cierra (o limpia la
-  // búsqueda). El Enter del teclado numérico llega con la misma `e.key`, así que
-  // recorre estos mismos caminos. Los atajos no se escriben en la pantalla: van
-  // en el `title` de los botones y de la lista.
+  // F2 busca · F3 venta rápida · F4 cuenta nueva · F6 recorre la cuenta · F8
+  // cobra · ↑ ↓ recorren los resultados (o la cuenta si hay una línea activa),
+  // + y − cambian la cantidad, Supr quita la línea, Enter añade el resaltado y
+  // 1-9 eligen la fila numerada · Esc cierra (o limpia la búsqueda). El Enter
+  // del teclado numérico llega con la misma `e.key`, así que recorre estos
+  // mismos caminos. Los atajos no se escriben en la pantalla: van en el `title`
+  // de los botones y de la lista, salvo la insignia de tecla en los dos botones
+  // grandes, que solo aparece cuando hay teclado físico.
   const selRef = useRef(sel);
   selRef.current = sel;
 
   useEffect(() => {
     const visible = Math.min(matches.length, RESULTADOS_MAX);
-    const modalAbierto = camOpen || payOpen || openCashModal || discOpen || surOpen || noteOpen || Boolean(successSale);
+    const modalAbierto =
+      camOpen || payOpen || openCashModal || discOpen || surOpen || noteOpen || cliOpen || Boolean(successSale);
     const enCampo = (t: EventTarget | null) =>
       t instanceof HTMLElement &&
       (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
@@ -551,6 +639,13 @@ export function Vender() {
 
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      // Con una ventana abierta, el teclado es de la ventana. Esta guarda es la
+      // que impide la colisión dentro de la propia app: F2/F4/F6/F8 se
+      // disparaban también con el cobro, el descuento o el selector de cliente
+      // montados, y F4 vaciaba la cuenta mientras se estaba cobrando. Esc sigue
+      // pasando: es la tecla que cierra esas ventanas.
+      if (modalAbierto && e.key !== "Escape") return;
 
       if (e.key === "F2") {
         e.preventDefault();
@@ -564,7 +659,7 @@ export function Vender() {
       }
       if (e.key === "F8") {
         e.preventDefault();
-        if (!payOpen && !openCashModal && !successSale) abrirCobro();
+        abrirCobro();
         return;
       }
       if (e.key === "Escape") {
@@ -581,11 +676,59 @@ export function Vender() {
         return;
       }
 
+      // --- Cuenta sin ratón ---
+      // F6 recorre las líneas de la cuenta. Con una activa, ↑ ↓ cambian de
+      // línea, + y − ajustan la cantidad y Supr la quita: así la cuenta se
+      // arma, se corrige y se cobra sin levantar las manos del teclado.
+      const moverLinea = (delta: number) => {
+        if (!lines.length) {
+          setLineaActiva(null);
+          return;
+        }
+        const i = lines.findIndex((l) => l.productId === lineaActiva);
+        const n = (i < 0 ? (delta > 0 ? -1 : 0) : i) + delta;
+        setLineaActiva(lines[((n % lines.length) + lines.length) % lines.length].productId);
+      };
+
+      if (e.key === "F6") {
+        e.preventDefault();
+        if (lines.length) moverLinea(1);
+        return;
+      }
+
+      const enCuenta = lineaActiva !== null && lines.some((l) => l.productId === lineaActiva);
+      if (!enCuenta && lineaActiva !== null) setLineaActiva(null);
+
+      if (enCuenta && !enCampo(e.target)) {
+        const l = lines.find((x) => x.productId === lineaActiva);
+        if (!l) return;
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          moverLinea(e.key === "ArrowDown" ? 1 : -1);
+          return;
+        }
+        if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          incLine(l.productId);
+          return;
+        }
+        if (e.key === "-" || e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          setQty(l.productId, l.qty - 1);
+          if (l.qty <= 1) setLineaActiva(null);
+          return;
+        }
+      }
+
       if (visible === 0) return;
 
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         // Las flechas viven en la lista de resultados: con el buscador abierto
-        // son navegación, no desplazamiento de página.
+        // son navegación, no desplazamiento de página. Dentro de cualquier otro
+        // campo (un <select> de cobro, el buscador del selector de cliente)
+        // mandan ellos: aquí no se interviene.
+        const enBuscador = e.target === document.getElementById("pos-search");
+        if (!enBuscador && enCampo(e.target)) return;
         e.preventDefault();
         setSel((s) => {
           const n = e.key === "ArrowDown" ? s + 1 : s - 1;
@@ -598,7 +741,7 @@ export function Vender() {
         // La tecla coincide con el número que ya se ve en la fila. Se escribe
         // con la lista abierta y el foco fuera del campo: dentro del buscador
         // un «1» es el primer dígito de un SKU, no una orden.
-        if (modalAbierto || enCampo(e.target)) return;
+        if (enCampo(e.target)) return;
         const i = Number(e.key) - 1;
         if (i >= visible) return;
         e.preventDefault();
@@ -609,9 +752,9 @@ export function Vender() {
       }
 
       if (e.key === "Enter") {
-        // Enter —incluido el del teclado numérico— añade el resaltado. Con la
-        // ventana de cobro abierta no interviene: ahí Enter es pagar.
-        if (modalAbierto) return;
+        // Enter —incluido el del teclado numérico— añade el resaltado. Con
+        // cualquier ventana abierta ya no se llega aquí: la guarda del principio
+        // deja el teclado en manos de la ventana, donde Enter es pagar.
         const enBusqueda = e.target === document.getElementById("pos-search");
         if (enCampo(e.target) && !enBusqueda) return;
         e.preventDefault();
@@ -622,7 +765,10 @@ export function Vender() {
 
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [matches, query, camOpen, payOpen, openCashModal, discOpen, surOpen, noteOpen, successSale, newTab, abrirCobro, addLine]);
+  }, [
+    matches, query, camOpen, payOpen, openCashModal, discOpen, surOpen, noteOpen, cliOpen,
+    successSale, newTab, abrirCobro, addLine, lines, lineaActiva, incLine, setQty,
+  ]);
 
   const activeDiscounts = useMemo(
     () => discounts.filter((d) => isDiscountValid(d)),
@@ -641,9 +787,10 @@ export function Vender() {
             ) : (
               <Badge tone="warning" icon="alert">Caja cerrada</Badge>
             )}
-            <button className="btn btn--primary" onClick={newTab} title="Cuenta nueva (F4)">
+            <button className="btn btn--primary" onClick={newTab} title="Cuenta nueva (F4)" data-tour="ventas-nueva-cuenta">
               <Icon name="plus" />
               Nueva cuenta
+              <Kbd k="F4" />
             </button>
           </>
         }
@@ -702,6 +849,13 @@ export function Vender() {
               <Icon name="scan" />
             </button>
           </div>
+          <Rapidos
+            favoritos={favs}
+            masVendidos={top}
+            unidades={unidades}
+            onAdd={addLine}
+            onUnfix={(id) => fijarFavorito(id, false)}
+          />
           {scanCode && (
             <div className="scan-hint">
               <span>
@@ -717,16 +871,17 @@ export function Vender() {
             </div>
           )}
           {deferredQuery && matches.length > 0 && (
-            <ol className="search-results" role="listbox" aria-label="Resultados" title="↑ ↓ recorrer · Enter o 1-9 añadir" onMouseLeave={() => setSel(0)}>
+            <ol className="search-results" role="listbox" aria-label="Resultados" data-tour="ventas-resultados" title="↑ ↓ recorrer · Enter o 1-9 añadir" onMouseLeave={() => setSel(0)}>
               {matches.slice(0, RESULTADOS_MAX).map((p: Product, i: number) => {
                 const detalle = detalleProducto(p);
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} style={{ display: "flex", alignItems: "stretch" }}>
                     <button
                       type="button"
                       className={`search-results__item${i === sel ? " search-results__item--sel" : ""}`}
                       role="option"
                       aria-selected={i === sel}
+                      style={{ flex: 1, width: "auto" }}
                       onMouseEnter={() => setSel(i)}
                       onClick={() => addLine(p.id)}
                     >
@@ -737,12 +892,23 @@ export function Vender() {
                       </span>
                       <span className="search-results__price tabular">{formatUsd(p.price)}</span>
                     </button>
+                    <button
+                      type="button"
+                      className={`icon-btn${p.favorite ? " icon-btn--accent" : ""}`}
+                      style={{ minWidth: 36, minHeight: 36, alignSelf: "center", margin: "0 2px" }}
+                      aria-pressed={Boolean(p.favorite)}
+                      aria-label={p.favorite ? `Quitar ${p.name} de la venta rápida` : `Fijar ${p.name} en la venta rápida`}
+                      title={p.favorite ? "Quitar de favoritos" : "Fijar en favoritos (F3)"}
+                      onClick={() => fijarFavorito(p.id, !p.favorite)}
+                    >
+                      <Icon name="star" size="sm" />
+                    </button>
                   </li>
                 );
               })}
             </ol>
           )}
-          {!deferredQuery && (
+          {!deferredQuery && !hayRapidos && (
             <div style={{ paddingTop: "1rem" }}>
               <EmptyState
                 icon="scan"
@@ -785,7 +951,20 @@ export function Vender() {
               </p>
             ) : (
               lines.map((l) => (
-                <div key={l.productId} className="ticket__line">
+                <div
+                  key={l.productId}
+                  className="ticket__line"
+                  data-tour="linea-cuenta"
+                  style={
+                    l.productId === lineaActiva
+                      ? {
+                          outline: "2px solid var(--color-accent)",
+                          outlineOffset: 2,
+                          borderRadius: "var(--radius-sm)",
+                        }
+                      : undefined
+                  }
+                >
                   <div style={{ fontWeight: 600 }}>
                     {l.name}
                     {l.presentation && l.qty === 1 ? <> {l.presentation}</> : ""}
@@ -886,6 +1065,7 @@ export function Vender() {
               style={{ marginTop: "0.5rem" }}
             ><Icon name="cash" /> 
               {cashSession ? "Cobrar" : "Abrir caja y cobrar"}
+              <Kbd k="F8" />
             </button>
           </div>
         </div>
@@ -995,19 +1175,41 @@ export function Vender() {
       {/* --- Cobrar --- */}
       {payOpen && (
         <Modal title="Cobrar" onClose={() => setPayOpen(false)}>
-          <Field label="Cliente" hint="Opcional. Deja vacío para consumidor final.">
-            <select
-              className="select"
-              value={draft.customerId}
-              onChange={(e) => patchDraft({ customerId: e.target.value })}
-            >
-              <option value="">Consumidor final</option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+          <Field
+            label="Cliente"
+            hint={
+              credit
+                ? "Obligatorio: una venta a crédito se apunta al saldo de un cliente."
+                : "Opcional. Deja vacío para consumidor final."
+            }
+          >
+            <div className="row gap-8">
+              <button
+                type="button"
+                className="btn btn--soft"
+                data-tour="cobro-cliente"
+                style={{ flex: 1, justifyContent: "space-between" }}
+                onClick={() => setCliOpen(true)}
+              >
+                <span>
+                  {cliente ? cliente.name : "Consumidor final"}
+                  {cliente && saldos[cliente.id] ? (
+                    <span className="dim"> · debe {formatUsd(saldos[cliente.id])}</span>
+                  ) : null}
+                </span>
+                <Icon name="chevronRight" size="sm" />
+              </button>
+              {draft.customerId && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => patchDraft({ customerId: "" })}
+                >
+                  <Icon name="close" />
+                  Quitar
+                </button>
+              )}
+            </div>
           </Field>
 
           <div className="breakdown" style={{ margin: "0.75rem 0" }}>
@@ -1090,10 +1292,14 @@ export function Vender() {
                 ))}
               <button
                 className={`btn ${credit ? "btn--primary" : "btn--soft"} btn--sm`}
+                data-tour="cobro-credito"
                 onClick={() => {
                   setCredit(true);
                   setPayAccId("");
                   setPayError("");
+                  // La venta a crédito exige deudor: se abre la ventana en el
+                  // mismo instante, sin dejar al cajero buscando el campo.
+                  if (!draft.customerId) setCliOpen(true);
                 }}
               >
                 A crédito
@@ -1328,6 +1534,16 @@ export function Vender() {
               </div>
             ) : undefined
           }
+        />
+      )}
+      {cliOpen && (
+        <SelectorCliente
+          contacts={contacts}
+          saldos={saldos}
+          value={draft.customerId}
+          onPick={(id) => patchDraft({ customerId: id })}
+          onClose={() => setCliOpen(false)}
+          onCreate={registrarCliente}
         />
       )}
     </>

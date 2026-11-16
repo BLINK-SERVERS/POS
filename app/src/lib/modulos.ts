@@ -11,6 +11,7 @@
 //   Inventario· caja / stock        · box
 //   Contactos · usuarios / libreta  · users
 //   Finanzas  · billetera           · wallet
+//   Créditos  · tarjeta / CXC       · creditcard
 //   Informes  · gráficas            · chart
 import type { IconName } from "../components/Icon";
 import type { BusinessFeatures } from "./types";
@@ -31,6 +32,7 @@ export const MODULOS: Modulo[] = [
   { to: "/app/inventario", label: "Inventario", icon: "box", feature: "inventory" },
   { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
   { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
+  { to: "/app/creditos", label: "Créditos", icon: "creditcard", feature: "credit" },
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
 ];
 

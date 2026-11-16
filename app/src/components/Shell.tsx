@@ -7,6 +7,7 @@
 //     (Vender) y el menú de cuenta en el avatar del cabecera.
 //   · Todos los módulos usan la misma iconografía (ver MODULOS).
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Glass } from "konsta/react";
 import { useActivacion, useStore } from "../lib/store";
@@ -16,6 +17,7 @@ import { expectedCash } from "../lib/metrics";
 import { Field, Modal } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { BrandLogo } from "./BrandLogo";
+import { Asistencia } from "./Asistencia";
 import { AvisoInstalacion } from "./AvisoInstalacion";
 import { ScannerProvider } from "../lib/scanner/ScannerProvider";
 import { type Modulo } from "../lib/modulos";
@@ -40,6 +42,7 @@ const NAV: NavItem[] = [
   { to: "/app/inventario", label: "Inventario", icon: "box", feature: "inventory" },
   { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
   { to: "/app/finanzas", label: "Finanzas", icon: "wallet", feature: "expenses" },
+  { to: "/app/creditos", label: "Créditos", icon: "creditcard", feature: "credit" },
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
 ];
 
@@ -358,6 +361,15 @@ export function Shell({ children }: { children: ReactNode }) {
               comercio, la tasa del dia y la cuenta. El escaner y la
               caja se abren desde sus propios modulos. */}
           <span className="topbar__name">{state.business.name}</span>
+          {/* Ayuda guiada «¿Cómo funciona?» (BLINK · MVP 4.3). Montada UNA sola
+              vez, aqui: es el unico punto que comparten todas las vistas. Va
+              ANTES del `grow` elastico, asi que el hueco que absorbe la linea
+              es aire, no botones: la tasa, el avatar y cualquier accion de la
+              barra quedan exactamente donde estaban. La capa del asistente se
+              portal a `document.body` desde el propio componente.
+              Se apaga por dispositivo en Ajustes → Apariencia; si el modulo
+              falla, su ErrorBoundary local lo desmonta y el POS sigue igual. */}
+          <Asistencia />
           <span className="grow" />
           <span className="rate-chip rate-chip--live" title="Tasa de referencia BCV">
             {state.rate > 0 ? (
@@ -405,8 +417,13 @@ export function Shell({ children }: { children: ReactNode }) {
           de módulos no ofrecen la instalación. */}
       <AvisoInstalacion visible={pathname === "/app/inicio" || pathname === "/app/general"} />
 
-      {/* Contenedor persistente para imprimir reportes (PDF). Oculto en pantalla. */}
-      <div id="printable-report" aria-hidden="true" />
+      {/* Contenedor persistente para imprimir reportes (PDF). Vive en
+          `document.body`, no dentro de `#root`: así el `@media print` puede
+          quitar la aplicación completa con `display:none` en vez de ocultar
+          con `visibility` unos 100 nodos que seguían ocupando espacio y
+          empujaban el reporte 432 px hacia abajo, dejando páginas en blanco
+          (BLINK-099, medido 2026-11-15). Oculto en pantalla. */}
+      {createPortal(<div id="printable-report" aria-hidden="true" />, document.body)}
 
       {cashOpen && (
         <Modal title="Abrir caja" onClose={() => setCashOpen(false)}>

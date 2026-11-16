@@ -142,7 +142,7 @@ export function Historial() {
                 <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   <button
                     className="btn btn--soft btn--sm"
-                    title="Ver e imprimir ticket"
+                    title="Ver e imprimir ticket" data-tour="historial-ticket"
                     onClick={() => setReceiptSale(s)}
                     style={{ marginRight: 6 }}
                   >

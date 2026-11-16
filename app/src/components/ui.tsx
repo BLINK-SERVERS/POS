@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -128,7 +129,10 @@ export function EmptyState({
    de marca con texto blanco, inactivos en azul sobre pista translucida.
    Al reescribir el componente, todas las vistas con pestañas (Inventario,
    Finanzas, Catalogo, Contactos...) adoptan el patrón de iOS sin tocar sus
-   call sites. */
+   call sites.
+   Cada pestaña lleva su rótulo en `data-tab`: es el asa que usa el asistente
+   «¿Cómo funciona?» para iluminar la pestaña que el paso manda abrir, que es
+   lo único seleccionable de un control que se renderiza por mapa. */
 export function Tabs<T extends string>({
   tabs,
   value,
@@ -146,6 +150,7 @@ export function Tabs<T extends string>({
           role="tab"
           active={value === t}
           aria-selected={value === t}
+          data-tab={t}
           onClick={() => onChange(t)}
         >
           {t}
@@ -198,13 +203,22 @@ export function Field({
   return <label className="field">{body}</label>;
 }
 
-/* --- Foco al cerrar un diálogo ---
-   Al cerrarse, el foco debe volver al control que lo abrió (accesibilidad:
-   un usuario de teclado no puede quedarse sin contexto). El componente se
-   desmonta al cerrarse, así que se restituye en la limpieza del efecto. */
-function useDevolverFoco() {
+/* --- Foco de un diálogo (entrada y devolución) ---
+   Un diálogo de caja tiene que hacer dos cosas con el teclado, no una:
+   · al abrirse, el foco entra en él —si no, el cajero pulsa F8, la ventana de
+     cobro se monta y el foco se queda en el buscador, de modo que lo que
+     escriba filtra productos detrás de la ventana. Con el foco dentro del
+     panel, Tab recorre los controles del diálogo y el teclado ya es suyo;
+   · al cerrarse, el foco vuelve al control que lo abrió (un usuario de teclado
+     no puede quedarse sin contexto). El componente se desmonta al cerrarse, así
+     que se restituye en la limpieza del efecto.
+   El `ref` solo se monta donde existe un panel propio (el `.modal` de
+   escritorio); Konsta pone su propio manejo de foco en <Sheet> y <Dialog>. */
+function useFocoDeDialogo<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
   useEffect(() => {
     const previo = document.activeElement as HTMLElement | null;
+    ref.current?.focus({ preventScroll: true });
     return () => {
       if (!previo) return;
       if (typeof previo.focus !== "function") return;
@@ -212,6 +226,7 @@ function useDevolverFoco() {
       previo.focus();
     };
   }, []);
+  return ref;
 }
 
 /* --- Modal (formularios) ---
@@ -231,7 +246,7 @@ export function Modal({
   children: ReactNode;
 }) {
   const movil = useIsMobile();
-  useDevolverFoco();
+  const panel = useFocoDeDialogo<HTMLDivElement>();
 
   if (movil) {
     return (
@@ -261,6 +276,8 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
+        ref={panel}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__head">
@@ -303,7 +320,7 @@ export function Alert({
   /** Botón de rol Destructive (rojo). */
   destructive?: { text: string; onClick: () => void };
 }) {
-  useDevolverFoco();
+  useFocoDeDialogo<HTMLDivElement>();
   const botones: ReactNode[] = [];
   if (secondary) {
     botones.push(

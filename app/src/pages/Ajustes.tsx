@@ -15,6 +15,7 @@ import {
 } from "../lib/activacion";
 import { decimalesDe, formatearNumero } from "../lib/tasa";
 import { ThemeSlider } from "../components/ThemeSlider";
+import { useAyudaVisible } from "../components/Asistencia";
 import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
@@ -56,6 +57,10 @@ export function Ajustes() {
     setParams(p, { replace: true });
   };
   const [qrOpen, setQrOpen] = useState(false);
+  // La ayuda guiada «¿Cómo funciona?» es una preferencia de ESTE dispositivo:
+  // vive en localStorage (como el tema), no en `AppState`, que se sincroniza
+  // con la nube y compartiría el apagado con los demas equipos del comercio.
+  const [ayudaVisible, setAyudaVisible] = useAyudaVisible();
   const [saved, setSaved] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -535,31 +540,52 @@ export function Ajustes() {
       )}
 
       {tab === "Apariencia" && (
-        <Card
-          title="Apariencia"
-          hint="Claro, oscuro o según el sistema. Lo eligen los ajustes de tu teléfono."
-        >
-          <ThemeSlider />
+        <>
+          <Card
+            title="Apariencia"
+            hint="Claro, oscuro o según el sistema. Lo eligen los ajustes de tu teléfono."
+          >
+            <ThemeSlider />
 
-          <hr
-            style={{
-              margin: "1.25rem 0",
-              border: "none",
-              borderTop: "1px solid var(--color-border)",
-            }}
-          />
+            <hr
+              style={{
+                margin: "1.25rem 0",
+                border: "none",
+                borderTop: "1px solid var(--color-border)",
+              }}
+            />
 
-          <div className="stack gap-8">
-            <div className="row gap-8" style={{ alignItems: "center" }}>
-              <Icon name="sun" size="lg" />
-              <span>La paleta oscura usa los colores del UI Kit de iOS 27 para el tema oscuro.</span>
+            <div className="stack gap-8">
+              <div className="row gap-8" style={{ alignItems: "center" }}>
+                <Icon name="sun" size="lg" />
+                <span>La paleta oscura usa los colores del UI Kit de iOS 27 para el tema oscuro.</span>
+              </div>
+              <div className="row gap-8" style={{ alignItems: "center" }}>
+                <Icon name="moon" size="lg" />
+                <span>El cambio se aplica al instante y se recuerda en este dispositivo.</span>
+              </div>
             </div>
-            <div className="row gap-8" style={{ alignItems: "center" }}>
-              <Icon name="moon" size="lg" />
-              <span>El cambio se aplica al instante y se recuerda en este dispositivo.</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card
+            title="Ayuda «¿Cómo funciona?»"
+            hint="El botón de la barra superior y sus guías paso a paso."
+          >
+            <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
+              <input
+                type="checkbox"
+                checked={ayudaVisible}
+                onChange={(e) => setAyudaVisible(e.target.checked)}
+              />
+              Mostrar el botón «¿Cómo funciona?»
+            </label>
+            <p className="field__hint">
+              Déjalo activado mientras capacitas a un cajero nuevo y apágalo cuando el turno ya
+              se maneje solo. Se recuerda solo en este dispositivo: los demás equipos del
+              comercio siguen con su propia configuración.
+            </p>
+          </Card>
+        </>
       )}
 
       {tab === "Suscripción" && <Suscripcion />}
