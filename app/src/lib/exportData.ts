@@ -32,11 +32,11 @@ export function buildDatasets(state: AppState): Dataset[] {
     label: "Productos (catálogo)",
     headers: [
       "Nombre", "Marca", "SKU", "Código", "Categoría", "Presentación", "Unidad",
-      "Costo USD", "Precio USD", "Stock", "Mínimo", "Activo", "Archivado",
+      "Costo USD", "Precio USD", "Precio fijo Bs", "Stock", "Mínimo", "Activo", "Archivado",
     ],
     rows: state.products.map((p) => [
       p.name, p.brand, p.sku, p.barcode, p.category || "—", p.presentationQty, p.unit,
-      p.cost, p.price, p.stock, p.minStock, p.active, p.archived,
+      p.cost, p.price, p.priceBs ?? "—", p.stock, p.minStock, p.active, p.archived,
     ]),
   });
 
@@ -55,10 +55,13 @@ export function buildDatasets(state: AppState): Dataset[] {
   out.push({
     kind: "ventas",
     label: "Ventas (resumen)",
-    headers: ["Código", "Fecha", "Estado", "Cliente", "Método", "Base USD", "Descuento", "Cortesías USD", "IVA", "Recargo", "IGTF", "Total USD", "Tasa", "Notas"],
+    headers: ["Código", "Fecha", "Estado", "Cliente", "Método", "Base USD", "Descuento", "Cortesías USD", "IVA", "Recargo", "IGTF", "Total USD", "Total Bs", "Tasa", "Notas"],
     rows: state.sales.map((s) => [
       s.code, d(s.at), s.status, s.customerName || "—", s.paymentMethod || "—",
       round2(saleNet(s)), s.discount, cortesiaValor(s.lines), s.tax, s.surcharge, s.igtf, round2(saleTotal(s)),
+      // BLINK-104: con precio fijo el Bs del ticket no es `total × tasa`, así
+      // que se exporta el que se cobró. Vacío en las ventas anteriores.
+      s.totalBs ?? "—",
       s.rate || "—", s.notes,
     ]),
   });
@@ -67,10 +70,10 @@ export function buildDatasets(state: AppState): Dataset[] {
   out.push({
     kind: "ventas-detalle",
     label: "Ventas (detalle por producto)",
-    headers: ["Código venta", "Fecha", "Producto", "Cantidad", "Precio USD", "Costo USD", "Subtotal USD", "Margen USD", "Cortesía"],
+    headers: ["Código venta", "Fecha", "Producto", "Cantidad", "Precio USD", "Precio fijo Bs", "Costo USD", "Subtotal USD", "Margen USD", "Cortesía"],
     rows: state.sales.flatMap((s) =>
       s.lines.map((l) => [
-        s.code, d(s.at), l.name, l.qty, l.price, l.cost,
+        s.code, d(s.at), l.name, l.qty, l.price, l.priceBs ?? "—", l.cost,
         lineBase(l), round2(lineBase(l) - l.cost * l.qty), l.cortesia ? "Sí" : "No",
       ])
     ),

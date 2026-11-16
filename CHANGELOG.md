@@ -15,6 +15,39 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
+### Precio fijo en bolívares por producto (BLINK-104)
+
+- **Qué hace**: un producto puede registrar, además de su precio en USD, un
+  **precio fijo en Bs** que no sigue la tasa. Se elige al registrarlo
+  (Catálogo → «Precio fijo (Bs)»). El USD de la línea se deriva con la tasa del
+  momento (`Bs ÷ tasa`) y se guarda **sin redondear**: el redondeo a centavos
+  ocurre una sola vez, al sumar la línea (`lineBase`).
+- **Por qué no bastaba con `total × tasa`**: a ~884 Bs/USD un centavo de dólar
+  son ~9 Bs. Redondear el USD y reconvertirlo cobraba una harinera de
+  Bs 450,00 como **Bs 4.503,38**. La regla vive en un solo sitio,
+  `src/lib/fiscal.ts` (`lineBs`, `saleBsBase`, `saleBsTotal`).
+- **El centavo derivado no es deuda**: dos líneas de Bs 446,80 suman Bs 893,60
+  pero $ 1,02 en el libro; pagar Bs 893,60 exactos cierra la venta
+  (`saldoPendiente`) en vez de dejar $ 0,01 fantasma en cuentas por cobrar.
+  IVA, IGTF, CXC e informes siguen en USD.
+- **La caja se acredita con lo que entró**: `checkout` reconvertía el USD
+  derivado y anotaba Bs 4.496,99 por un billete de Bs 4.500,00. Ahora usa el
+  Bs realmente tecleado (`amountInput`); en los cobros anclados a la tasa el
+  resultado es idéntico, así que el resto del libro no se mueve.
+- **Sin tasa no se puede**: un producto de precio fijo en Bs no entra a la
+  venta sin tasa configurada; se avisa y se enlaza Ajustes (coherente con
+  BLINK-066, que ya prohibía asumir 1 Bs = 1 USD).
+- **También se vio afectado**: ticket impreso (`Sale.totalBs` guardado, para
+  que la reimpresión diga los Bs cobrados y no una conversión posterior),
+  venta rápida, buscador de Vender, ficha del catálogo, exportación CSV
+  (`Precio fijo Bs`, `Total Bs`) y el cierre de la venta a crédito.
+- **Verificación**: 16 pruebas nuevas (10 de `fiscal`, 3 de `migrate`, 3 de
+  `money`) dentro de una suite de 256 en verde; `typecheck` y `build` limpios,
+  y sonda de navegador `BLINK_POS_Hallazgos/scripts/sonda-precio-fijo.mjs` con
+  8 de 8 escenarios (fijo exacto, centavo que redondea, anclado sin cambios,
+  mezcla, fijo con IVA, cobro parcial en Bs, sin tasa, y registro desde
+  Catálogo).
+
 ### Botones de acción que se veían blancos
 
 - **Causa medida en píxel, no deducida del CSS.** Sobre el azul de marca

@@ -84,7 +84,7 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 // Reglas puras portadas de la copia auditada (BLINK-069): reversión de
 // abonos y reconciliación caché↔nube (BLINK-047).
 import { findStockShortage, reversePendingAbonos } from "./ledger";
-import { saleBase } from "./fiscal";
+import { saleBase, saleBsTotal, saldoPendiente } from "./fiscal";
 import { cacheAdelantada, mergeTabState } from "./sync";
 import { rehidrataComercio } from "./auth-events";
 import { addAuditLog } from "./audit";
@@ -1592,8 +1592,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const net = Math.max(0, base - input.discount);
       const igtf = input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0);
       const total = round2(net + input.tax + input.surcharge + igtf);
-      const paid = round2(input.payments.reduce((a, p) => a + p.amountUsd, 0));
-      const remaining = round2(Math.max(0, total - paid));
+      // BLINK-104: el total en Bs se calcula con las líneas (las de precio fijo
+      // mandan su Bs) y no como `total × tasa`; `saldoPendiente` cuadra el cobro
+      // en la moneda que manda el ticket.
+      const totalBs = saleBsTotal(input.lines, s.rate, round2(total - base));
+      const { remaining } = saldoPendiente(total, input.payments, totalBs, s.rate);
       // Código monotónico persistido (BLINK-044): el correlativo por conteo
       // reutilizaba códigos si se borraba una venta o si dos pestañas vendían
       // a la vez. El contador nunca baja del máximo ya emitido y, si el
@@ -1635,9 +1638,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!acc) return p;
         const comm = commission(p.amountUsd, acc.commissionIn);
         const nativeInput = p.amountInput ?? toNative(p.amountUsd, acc.currency, s.rate);
-        const creditedNative = round2(
-          toNative(p.amountUsd, acc.currency, s.rate) - toNative(comm, acc.currency, s.rate)
-        );
+        // BLINK-104: la caja se acredita con el dinero que entró, no con una
+        // reconversión del USD. En las líneas con precio fijo en Bs el USD es
+        // derivado (`Bs ÷ tasa`) y ya está redondeado: volver a multiplicarlo
+        // por la tasa daría Bs 4.496,99 por un billete de Bs 4.500,00. En los
+        // cobros anclados a la tasa `amountInput` ES `amountUsd × tasa`, así
+        // que el resto del libro no se mueve.
+        const creditedNative = round2(nativeInput - toNative(comm, acc.currency, s.rate));
         accounts = accounts.map((a) =>
           a.id === acc.id ? { ...a, balance: round2(a.balance + creditedNative) } : a
         );
@@ -1680,6 +1687,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // BLINK-090: nombre legible para el ticket («Cajero: Ana»), nunca un UUID.
         userName: USER || undefined,
         rate: s.rate,
+        totalBs,
         amountReceived: input.amountReceived ? round2(input.amountReceived) : undefined,
         changeUsd: input.changeUsd ? round2(input.changeUsd) : undefined,
         changeBs: input.changeBs ? round2(input.changeBs) : undefined,

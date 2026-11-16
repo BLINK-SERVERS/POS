@@ -90,6 +90,13 @@ export interface Product {
   unit: string;
   cost: number; // en USD (costo promedio)
   price: number; // en USD (canal predeterminado)
+  /**
+   * Precio fijo en bolívares, acordado al registrar el producto. Cuando está,
+   * el cobro en Bs usa ESTE número y no `price × tasa`: el producto vale Bs X
+   * pase lo que pase con el cambio. El USD de la línea se deriva con la tasa
+   * del momento (BLINK-104), así que la contabilidad sigue en dólares.
+   */
+  priceBs?: number;
   /** Precio por canal (id de canal → USD). El canal predeterminado usa `price`. */
   channelPrices: Record<string, number>;
   category: string; // nombre de la categoría ("" = sin categoría)
@@ -139,6 +146,13 @@ export interface SaleLine {
   presentation?: string;
   qty: number;
   price: number; // USD
+  /**
+   * Precio fijo en Bs de la línea (instantánea del producto al agregarla).
+   * `price` ya viene derivado de este valor con la tasa de la venta; se guarda
+   * para que el ticket y el reimpresso muestren el Bs con que se cobró, no una
+   * conversión hecha después con otra tasa.
+   */
+  priceBs?: number;
   cost: number; // USD
   taxRate: number; // fracción
   note?: string;
@@ -207,6 +221,13 @@ export interface Sale {
    */
   userName?: string;
   rate?: number; // Tasa BCV aplicada al momento de la venta
+  /**
+   * Total en bolívares con el que se cobró la venta. Con líneas de precio fijo
+   * NO es `total × tasa`: es la suma de los Bs de cada línea más el resto
+   * convertido. Se guarda para que el ticket reimpresso diga los Bs que se
+   * cobraron, no una conversión hecha después con otra tasa.
+   */
+  totalBs?: number;
   amountReceived?: number; // Total entregado por el cliente en USD
   changeUsd?: number; // Vuelto entregado en USD
   changeBs?: number; // Vuelto entregado en Bs

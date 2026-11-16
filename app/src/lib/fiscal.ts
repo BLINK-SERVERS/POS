@@ -1,5 +1,5 @@
 // Cálculos fiscales del ticket (propios de BLINK).
-import type { SaleLine, Surcharge } from "./types";
+import type { SaleLine, SalePayment, Surcharge } from "./types";
 import { round2 } from "./money";
 
 /** Base (subtotal antes de IVA) de una línea. La cortesía no se cobra: 0. */
@@ -10,6 +10,77 @@ export function lineBase(l: SaleLine): number {
 /** Subtotal = suma de líneas, antes de descuento e IVA. */
 export function saleBase(lines: SaleLine[]): number {
   return round2(lines.reduce((a, l) => a + lineBase(l), 0));
+}
+
+/**
+ * Base en bolívares de una línea (BLINK-104). Única regla del Bs en el ticket.
+ *
+ * Con precio fijo manda el Bs: `priceBs` es lo que vale el producto y el USD de
+ * la línea ya se derivó con la tasa del momento. Sin precio fijo el Bs sí es
+ * una conversión del USD. La cortesía pesa 0 en las dos monedas.
+ */
+export function lineBs(l: SaleLine, rate: number): number {
+  if (l.cortesia) return 0;
+  if (l.priceBs && l.priceBs > 0) return round2(l.priceBs * l.qty);
+  return round2(lineBase(l) * rate);
+}
+
+/** Subtotal en Bs: suma de las líneas, antes de descuento e IVA. */
+export function saleBsBase(lines: SaleLine[], rate: number): number {
+  return round2(lines.reduce((a, l) => a + lineBs(l, rate), 0));
+}
+
+/**
+ * Total del ticket en Bs. `restUsd` es lo que se suma o resta después de la
+ * base (descuento, IVA, recargos, IGTF): son cifras en dólares y se convierten.
+ *
+ * Con todo el ticket anclado a tasa esto coincide con `total × tasa`. Con una
+ * línea de precio fijo no: conserva el Bs exacto de esa línea, que es justo lo
+ * que el cliente paga. Derivar el Bs del total en USD redondearía Bs 4.500,00
+ * como Bs 4.503,38 en una harinera de Bs 450 con tasa 884,75.
+ */
+export function saleBsTotal(lines: SaleLine[], rate: number, restUsd: number): number {
+  return round2(saleBsBase(lines, rate) + (restUsd || 0) * rate);
+}
+
+/** Bolívares realmente acreditados por unos cobros (lo que entró a la caja). */
+export function paidBs(payments: SalePayment[], rate: number): number {
+  return round2(
+    payments.reduce((a, p) => {
+      // En Bs se acredita lo tecleado (descontado el vuelto); en USD, su
+      // equivalente a la tasa de la venta.
+      const native =
+        p.currency === "VES" && p.amountInput != null
+          ? p.amountInput
+          : round2(p.amountUsd * rate);
+      return a + native;
+    }, 0)
+  );
+}
+
+/**
+ * Saldo por cobrar de una venta, con la regla del precio fijo en Bs.
+ *
+ * Un ticket de precio fijo se cobra en bolívares: lo que manda es que el Bs
+ * entregado cubra el `totalBs`. El equivalente en USD de ese Bs puede quedar un
+ * centavo por debajo del total en dólares (a 884,75 Bs/USD, medio centavo de
+ * dólar son 4,42 Bs, y el redondeo se acumula por línea). Ese centavo no es
+ * dinero que falte en la caja: es el costo de expresar en dólares un precio que
+ * vale bolívares, y no debe generar una cuenta por cobrar fantasma.
+ */
+export function saldoPendiente(
+  total: number,
+  payments: SalePayment[],
+  totalBs: number,
+  rate: number
+): { paidUsd: number; remaining: number } {
+  const paidUsd = round2(payments.reduce((a, p) => a + p.amountUsd, 0));
+  const remaining = round2(Math.max(0, total - paidUsd));
+  if (remaining === 0) return { paidUsd, remaining: 0 };
+  if (!(totalBs > 0) || !(rate > 0)) return { paidUsd, remaining };
+  return round2(totalBs - paidBs(payments, rate)) <= 0
+    ? { paidUsd, remaining: 0 }
+    : { paidUsd, remaining };
 }
 
 /** Valor de lo regalado: lo que las cortesías habrían costado al cliente. */

@@ -15,7 +15,9 @@ Inferido de las pantallas, del copy de la UI y de la API observada. Es un POS **
 - Campos de tabla: `nombre`, `sku`, `costo`, `margen`, `categoria`, `tipo`
   (`Simple` / …), `precio` (en USD + Bs), `estado` (`Activo`/…).
 - Relacionado con `units`, `taxes`, `stock-balances`.
-- **Precio dual:** se muestra en **USD** y su equivalente **Bs** según la **tasa BCV**.
+- **Precio dual:** se muestra en **USD** y su equivalente **Bs** según la **tasa BCV**, salvo
+  que el producto tenga **precio fijo en Bs** (`priceBs`): entonces el Bs es el precio y no
+  depende de la tasa (BLINK-104).
 
 ### Variant / Lote / Existencia
 - **Variantes** por producto, con `stock` por **ubicación** (`locations`).
@@ -60,7 +62,8 @@ Inferido de las pantallas, del copy de la UI y de la API observada. Es un POS **
 
 ## 11.2 Reglas de negocio clave (observadas)
 
-1. **Venta dual USD/VES:** todo importe se muestra en dólares y en bolívares a la tasa BCV vigente.
+1. **Venta dual USD/VES:** todo importe se muestra en dólares y en bolívares a la tasa BCV
+   vigente, excepto las líneas con precio fijo en Bs (regla 13).
 2. **Antes de vender hay que abrir caja** (`/cash-sessions/current`).
 3. **El POS abre cuenta automáticamente** al tocar un producto o escanear un código.
 4. **Stock mínimo → alerta** en Inicio ("Por atender") y en Inventario.
@@ -74,6 +77,18 @@ Inferido de las pantallas, del copy de la UI y de la API observada. Es un POS **
 10. **Importación** de catálogo/contactos/existencias vía plantillas.
 11. **Recibo** configurable (formato 58/80mm o carta) con vista previa.
 12. **Moneda principal USD**; los bolívares se conservan como saldo con exposición cambiaria.
+13. **Precio fijo en Bs (BLINK-104):** un producto puede registrar `priceBs`. Entonces el Bs
+    manda en esa línea y el USD se deriva con la tasa del momento (`Bs ÷ tasa`), sin redondear,
+    para que el redondeo a centavos ocurra una sola vez al sumar la línea. El Bs de esas líneas
+    **no** sigue la tasa: el ticket imprime los bolívares exactos del precio, no el resultado de
+    multiplicar el USD redondeado. La contabilidad (IVA, IGTF, cuentas por cobrar, informes)
+    sigue en USD. Regla única en `src/lib/fiscal.ts` (`lineBs`, `saleBsTotal`, `saldoPendiente`).
+14. **El centavo derivado no es deuda:** expresar en USD un precio que vale Bs deja a veces
+    $ 0,01 de diferencia. Si los Bs entregados cubren el total en Bs del ticket, la venta queda
+    cobrada y no genera una cuenta por cobrar fantasma (`saldoPendiente`).
+15. **Sin tasa no hay precio fijo:** un producto con `priceBs` no se puede agregar a la venta
+    si el comercio no tiene tasa configurada; se avisa y se enlaza a Ajustes. Tampoco se inventa
+    un "1 Bs = 1 USD" (BLINK-066).
 
 ## 11.3 Flujo de primera venta (onboarding 6/7)
 1. Configurar negocio (nombre/RIF) → 2. … → **6. Registrar la primera venta** (pendiente).

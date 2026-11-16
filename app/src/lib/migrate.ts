@@ -14,6 +14,8 @@ import { UNIT_OPTIONS, type UnitOption } from "./types";
  *    productos que eran `servicio` dejan de controlar stock.
  *  · Presentación: `qty`+`unit` se normaliza a `presentationQty` + `unit`
  *    de la lista cerrada `UNIT_OPTIONS`.
+ *  · BLINK-104: `priceBs` (precio fijo en bolívares) se normaliza; un valor
+ *    basura se quita en lugar de dejarlo como precio cero.
  */
 export function migrateProduct(p: Product): Product {
   const legacy = p as Product & { type?: "simple" | "servicio" };
@@ -27,6 +29,19 @@ export function migrateProduct(p: Product): Product {
     channelPrices: p.channelPrices ?? { ch_principal: p.price },
     presentationQty: p.presentationQty ?? 1,
     unit,
+    priceBs: normalizePriceBs(p.priceBs),
     trackStock: legacy.type === "servicio" ? false : (p.trackStock ?? true),
   };
+}
+
+/**
+ * Precio fijo en Bs: se conserva solo si es un número finito y positivo.
+ *
+ * Un valor corrupto NO puede quedarse en 0: 0 Bs significaría "este producto
+ * es gratis", que es justo lo contrario de "no tiene precio fijo". Sin precio
+ * fijo el producto sigue anclado a la tasa.
+ */
+export function normalizePriceBs(value: unknown): number | undefined {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
 }

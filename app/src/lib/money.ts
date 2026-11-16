@@ -35,6 +35,18 @@ export function formatBsDirect(amountBs: number): string {
   return `Bs ${bs.format(amountBs || 0)}`;
 }
 
+/**
+ * Precio de un producto como lo ve el cajero (BLINK-104). Con precio fijo en
+ * Bs el titular es el Bs y el dólar solo aparece si se registró; así un
+ * producto anotado únicamente en bolívares no se muestra como "$ 0.00".
+ */
+export function precioProducto(price: number, priceBs?: number): string {
+  if (!priceBs || priceBs <= 0) return formatUsd(price);
+  return price > 0
+    ? `${formatUsd(price)} · ${formatBsDirect(priceBs)} fijo`
+    : `${formatBsDirect(priceBs)} fijo`;
+}
+
 /** Formatea una tasa BCV (hasta 4 decimales). */
 export function formatRate(rate: number): string {
   return `Bs ${rateFmt.format(rate || 0)}`;

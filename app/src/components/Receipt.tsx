@@ -38,7 +38,12 @@ export function Receipt({
   const hasRate = (sale.rate ?? 0) > 0 || (rate ?? 0) > 0;
   const effectiveRate = sale.rate || rate || 0;
   const total = round2(saleTotal(sale));
-  const totalBs = round2(total * effectiveRate);
+  // BLINK-104: el Bs impreso es el con que se cobró (guardado en la venta), no
+  // una conversión hecha ahora. Derivarlo de `total × tasa` reimprimiría un
+  // ticket de precio fijo con Bs de más: Bs 4.500,00 saldrían como Bs 4.503,38.
+  // Las ventas anteriores a esta función no guardaron totalBs y sí se convierten.
+  const totalBs = sale.totalBs ?? round2(total * effectiveRate);
+  const tieneFijos = sale.lines.some((l) => Boolean(l.priceBs));
   // Valor de lo regalado: se imprime como información, nunca suma al total.
   const cortesias = cortesiaValor(sale.lines);
   // BLINK-090: «Cajero» solo con nombre legible. `userId` históricamente
@@ -162,6 +167,7 @@ export function Receipt({
                 </div>
                 <div className="receipt__item-unit dim">
                   @ {formatUsd(l.price)} c/u
+                  {l.priceBs ? ` · fijo ${formatBsDirect(l.priceBs)} c/u` : ""}
                   {fields.sku && l.productId && (
                     <span style={{ marginLeft: 6 }}>({l.productId.slice(0, 8)})</span>
                   )}
@@ -212,7 +218,7 @@ export function Receipt({
             <strong>TOTAL USD:</strong>
             <strong className="mono">{formatUsd(total)}</strong>
           </div>
-          {fields.totalBs && hasRate && (
+          {fields.totalBs && (hasRate || tieneFijos) && (
             <div className="receipt__row receipt__row--bs">
               <span>TOTAL BS:</span>
               <strong className="mono">{formatBsDirect(totalBs)}</strong>

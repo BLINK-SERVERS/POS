@@ -8,14 +8,18 @@ import { CameraScannerModal } from "../components/ScannerModals";
 import { Receipt } from "../components/Receipt";
 import { Searchbar } from "konsta/react";
 import { useScanHandler, useScanner } from "../lib/scanner/ScannerProvider";
-import { formatBs, formatBsDirect, formatUsd, round2 } from "../lib/money";
+import { formatBsDirect, formatUsd, precioProducto, round2 } from "../lib/money";
 import {
   cortesiaValor,
   discountAmount,
   IGTF_RATE,
   igtfFor,
   lineBase,
+  lineBs,
+  paidBs,
+  saldoPendiente,
   saleBase,
+  saleBsTotal,
   saleTax,
   surchargeAmount,
 } from "../lib/fiscal";
@@ -137,6 +141,9 @@ export function Vender() {
   const [query, setQuery] = useState("");
   const [camOpen, setCamOpen] = useState(false);
   const [scanCode, setScanCode] = useState("");
+  // Aviso de la regla BLINK-104: un precio fijo en Bs no se puede pasar a
+  // dólares sin tasa, así que la línea no se agrega y se dice por qué.
+  const [sinTasa, setSinTasa] = useState("");
   const [payOpen, setPayOpen] = useState(false);
   const [discOpen, setDiscOpen] = useState(false);
   const [surOpen, setSurOpen] = useState(false);
@@ -239,6 +246,20 @@ export function Vender() {
       // No deja vender más de lo disponible en productos con control de stock.
       const max = p.trackStock ? p.stock : Infinity;
       if (max < 1) return;
+      // BLINK-104: precio fijo en Bs. El Bs manda y el USD de la línea se
+      // deriva con la tasa de este momento; por eso se guarda SIN redondear,
+      // para que el redondeo a centavos ocurra una sola vez, al sumar la línea
+      // (`lineBase`). Redondear aquí habría hecho que Bs 4.500,00 se cobraran
+      // como Bs 4.503,38.
+      const fijo = p.priceBs && p.priceBs > 0 ? p.priceBs : undefined;
+      if (fijo && !(rate > 0)) {
+        setSinTasa(
+          `«${p.name}» tiene precio fijo en bolívares: sin tasa no se puede saber ` +
+            "su equivalente en dólares. Configúrala en Ajustes → Moneda e impuestos."
+        );
+        return;
+      }
+      setSinTasa("");
       setDrafts((ds) =>
         ds.map((d) => {
           if (d.id !== draft.id) return d;
@@ -255,13 +276,22 @@ export function Vender() {
             ...d,
             lines: [
               ...d.lines,
-              { productId: p.id, name: p.name, presentation: presentationLabel(p), qty: 1, price: p.price, cost: p.cost, taxRate: p.taxRate },
+              {
+                productId: p.id,
+                name: p.name,
+                presentation: presentationLabel(p),
+                qty: 1,
+                price: fijo ? fijo / rate : p.price,
+                cost: p.cost,
+                taxRate: p.taxRate,
+                ...(fijo ? { priceBs: fijo } : {}),
+              },
             ],
           };
         })
       );
     },
-    [catalog, draft.id]
+    [catalog, draft.id, rate]
   );
 
   // Escáner (USB · cámara · celular): agrega el producto a la cuenta activa.
@@ -444,7 +474,26 @@ export function Vender() {
   const paid = useMemo(() => round2(payments.reduce((a, p) => a + p.amountUsd, 0)), [payments]);
   const paidIgtf = useMemo(() => round2(payments.reduce((a, p) => a + (p.igtf ?? 0), 0)), [payments]);
   const total = round2(totalPreIgtf + paidIgtf);
-  const missing = round2(Math.max(0, total - paid));
+  // BLINK-104: con precio fijo en Bs el total en bolívares no es `total × tasa`.
+  // `restUsd` (descuento, IVA, recargos) sí es una cifra en dólares y se
+  // convierte; las líneas fijas aportan su Bs exacto. El IGTF se suma aparte
+  // porque nace de los cobros, no de la cuenta.
+  const hasFijos = lines.some((l) => Boolean(l.priceBs));
+  const totalPreIgtfBs = useMemo(
+    () => saleBsTotal(lines, rate, round2(totalPreIgtf - base)),
+    [lines, rate, totalPreIgtf, base]
+  );
+  const totalBs = round2(totalPreIgtfBs + paidIgtf * rate);
+  // Lo que falta en Bs: el Bs del ticket menos lo ya acreditado (el Bs tecleado
+  // y, en su equivalente, lo cobrado en dólares).
+  const missingBs = round2(Math.max(0, totalBs - paidBs(payments, rate)));
+  // El saldo se cuadra en la moneda que manda el ticket. `saldoPendiente` ya
+  // deja de contar el centavo de dólar que produce expresar en USD un cobro
+  // cerrado en Bs: no es dinero que falte en la caja.
+  const missing = useMemo(
+    () => saldoPendiente(total, payments, totalBs, rate).remaining,
+    [total, payments, totalBs, rate]
+  );
   // El ticket está saldado cuando no queda nada por cobrar (el dinero se cuantiza
   // a 2 decimales, así que "missing" es 0 o ≥ 0,01).
   const settled = missing < 0.01;
@@ -460,7 +509,7 @@ export function Vender() {
       ? round2(missing / (1 - IGTF_RATE))
       : // BLINK-066: sin tasa válida no hay "monto exacto" en bolívares.
         rate > 0
-        ? round2(missing * rate)
+        ? missingBs
         : 0
     : 0;
 
@@ -856,6 +905,18 @@ export function Vender() {
             onAdd={addLine}
             onUnfix={(id) => fijarFavorito(id, false)}
           />
+          {sinTasa && !(rate > 0) && (
+            <div className="scan-hint" role="alert">
+              <span>{sinTasa}</span>
+              <Link
+                className="btn btn--soft btn--sm"
+                to="/app/ajustes"
+                onClick={() => setSinTasa("")}
+              >
+                Configurar tasa
+              </Link>
+            </div>
+          )}
           {scanCode && (
             <div className="scan-hint">
               <span>
@@ -890,7 +951,16 @@ export function Vender() {
                         <span className="search-results__name">{p.name}</span>
                         {detalle && <span className="search-results__extra">{detalle}</span>}
                       </span>
-                      <span className="search-results__price tabular">{formatUsd(p.price)}</span>
+                      <span
+                        className="search-results__price tabular"
+                        title={
+                          p.priceBs
+                            ? "Precio fijo en bolívares: este producto no sigue la tasa"
+                            : undefined
+                        }
+                      >
+                        {precioProducto(p.price, p.priceBs)}
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -998,7 +1068,17 @@ export function Vender() {
                     </span>
                   </div>
                   <div className="dim tabular" style={{ textAlign: "right", fontSize: "0.72rem" }}>
-                    {rate > 0 && formatBs(lineBase(l), rate)}
+                    {(l.priceBs || rate > 0) && (
+                      <>
+                        {formatBsDirect(lineBs(l, rate))}
+                        {l.priceBs ? (
+                          <span title="Precio fijo en bolívares: este producto no sigue la tasa">
+                            {" "}
+                            · fijo
+                          </span>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                 </div>
               ))
@@ -1035,7 +1115,7 @@ export function Vender() {
               <span className="tabular">{formatUsd(totalPreIgtf)}</span>
             </div>
             <div className="dim tabular" style={{ textAlign: "right" }}>
-              {rate > 0 ? formatBsDirect(totalPreIgtf * rate) : "—"} Bs
+              {rate > 0 || hasFijos ? formatBsDirect(totalPreIgtfBs) : "— Bs"}
               {business.baseCurrency ? ` · Base: ${business.baseCurrency}` : ""}
             </div>
 
@@ -1248,7 +1328,7 @@ export function Vender() {
             <div className="breakdown__row">
               <span className="dim">En bolívares</span>
               <span className="tabular dim">
-                {rate > 0 ? formatBsDirect(missing * rate) : "Configura la tasa"}
+                {rate > 0 || hasFijos ? formatBsDirect(missingBs) : "Configura la tasa"}
               </span>
             </div>
           </div>

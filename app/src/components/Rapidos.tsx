@@ -9,7 +9,7 @@
 // pulsa F3 la pantalla de venta se comporta exactamente como antes.
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
-import { formatUsd } from "../lib/money";
+import { precioProducto } from "../lib/money";
 import { RAPIDOS_MAX } from "../lib/ventaRapida";
 import { presentationLabel, type Product } from "../lib/types";
 
@@ -172,7 +172,16 @@ export function Rapidos({
               <span className="search-results__key">{i + 1}</span>
               {p.name}
               {detalle ? <span className="dim"> {detalle}</span> : null}
-              <span className="tabular">{formatUsd(p.price)}</span>
+              <span
+                className="tabular"
+                title={
+                  p.priceBs
+                    ? "Precio fijo en bolívares: este producto no sigue la tasa"
+                    : undefined
+                }
+              >
+                {precioProducto(p.price, p.priceBs)}
+              </span>
             </button>
             {grupo === "favoritos" && (
               <button

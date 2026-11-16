@@ -74,4 +74,22 @@ describe("migrateProduct", () => {
     const m = migrateProduct(legacy);
     expect(m.presentationQty).toBe(1);
   });
+
+  it("priceBs válido se conserva (BLINK-104)", () => {
+    expect(migrateProduct({ ...BASE_PRODUCT, priceBs: 450 }).priceBs).toBe(450);
+  });
+
+  it("priceBs ausente se normaliza y no rompe el resto del producto", () => {
+    const legacy = { ...BASE_PRODUCT } as any;
+    delete legacy.priceBs;
+    const m = migrateProduct(legacy);
+    expect(m.priceBs).toBeUndefined();
+    expect(m.price).toBe(BASE_PRODUCT.price);
+  });
+
+  it("priceBs basura (0, negativo, texto, NaN) se descarta: 0 Bs sería gratis", () => {
+    for (const bad of [0, -12, "cuatrocientos", null, "", NaN]) {
+      expect(migrateProduct({ ...BASE_PRODUCT, priceBs: bad as any }).priceBs).toBeUndefined();
+    }
+  });
 });

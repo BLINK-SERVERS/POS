@@ -152,6 +152,12 @@ const CATALOGO: Guia = {
       target: '.tabs [data-tab="Precios"]',
     },
     {
+      titulo: "Precio fijo en Bs",
+      texto:
+        "Si un producto vale bolívares y no debe moverse con la tasa, dale su «Precio fijo (Bs)» al registrarlo. En la venta se cobra ese Bs exacto; el dólar se deriva con la tasa del día solo para la contabilidad (impuestos, cuentas por cobrar e informes).",
+      target: ".prodcard",
+    },
+    {
       titulo: "Actívalo o apágalo",
       texto:
         "Desactivar un producto, descuento o categoría lo saca del POS sin borrar su historial. Desactivar es reversible; eliminar, no.",

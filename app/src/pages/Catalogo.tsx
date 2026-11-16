@@ -6,7 +6,8 @@ import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge, useConfirm } fro
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
-import { formatBs, formatUsd } from "../lib/money";
+import { formatBs, formatUsd, precioProducto } from "../lib/money";
+import { normalizePriceBs } from "../lib/migrate";
 import { catalogoLookup, catalogoUpsert } from "../lib/cloud";
 import { UNIT_OPTIONS, type Category, type Discount, type Product, type Surcharge } from "../lib/types";
 
@@ -184,6 +185,7 @@ const EMPTY_PRODUCT = {
   sku: "",
   cost: "0",
   price: "0",
+  priceBs: "",
   category: "",
   stock: "0",
   minStock: "0",
@@ -257,8 +259,19 @@ function ProductCard({
       </div>
 
       <div className="prodcard__precio">
-        <strong className="tabular">{formatUsd(product.price)}</strong>
-        {rate > 0 && <span className="dim tabular">{formatBs(product.price, rate)}</span>}
+        <strong
+          className="tabular"
+          title={
+            product.priceBs
+              ? "Precio fijo en bolívares: este producto no sigue la tasa"
+              : undefined
+          }
+        >
+          {precioProducto(product.price, product.priceBs)}
+        </strong>
+        {!product.priceBs && rate > 0 && (
+          <span className="dim tabular">{formatBs(product.price, rate)}</span>
+        )}
       </div>
 
       <div className="prodcard__fila">
@@ -446,6 +459,7 @@ export function Catalogo() {
       sku: p.sku,
       cost: String(p.cost),
       price: String(p.price),
+      priceBs: p.priceBs ? String(p.priceBs) : "",
       category: p.category,
       stock: String(p.stock),
       minStock: String(p.minStock),
@@ -526,6 +540,9 @@ export function Catalogo() {
       sku: form.sku.trim(),
       cost: Math.max(0, Number(form.cost) || 0),
       price: Math.max(0, Number(form.price) || 0),
+      // BLINK-104: precio fijo en Bs. Vacío o 0 = sin precio fijo (el producto
+      // sigue anclado a la tasa); nunca se guarda un "Bs 0" que valdría gratis.
+      priceBs: normalizePriceBs(form.priceBs),
       category,
       stock: Math.max(0, Number(form.stock) || 0),
       minStock: Math.max(0, Number(form.minStock) || 0),
@@ -1025,6 +1042,12 @@ export function Catalogo() {
                                                                           </Field>
                                                                           <Field label="Precio (USD)">
                                                                             <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                                                                          </Field>
+                                                                          <Field
+                                                                            label="Precio fijo (Bs)"
+                                                                            hint="Opcional. Si lo llenas, este producto vale esos bolívares pase lo que pase con la tasa: se cobra en Bs y el precio en dólares se deriva con la tasa del momento. Déjalo vacío para que siga anclado a la tasa."
+                                                                          >
+                                                                            <input className="input" type="number" min="0" step="0.01" placeholder="Sin precio fijo" value={form.priceBs} onChange={(e) => setForm({ ...form, priceBs: e.target.value })} />
                                                                           </Field>
                                                                           <Field label="IVA">
                                                                             <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
