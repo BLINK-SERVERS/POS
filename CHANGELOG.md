@@ -37,8 +37,10 @@ del producto, no una omisión (ver BUG-12 en
 - **Estado**: los borradores y la pestaña activa se guardan **por usuario**
   (`draftsKeyFor` / `activeTabKeyFor`), con una **herencia** única de la clave global
   vieja; antes, dos cajas en el mismo navegador se pisaban el turno.
-- **Interfaz**: `Esc` cierra modales y alertas desde `Modal`/`Alert`
-  (`useCerrarConEscape`), el deep link de un código de barras entra a la ficha en
+- **Interfaz**: las alertas de Konsta (confirmar borrado, cierre de caja)
+  respondían a todo menos a `Esc`, la tecla que el propio asistente promete;
+  ahora la regla vive en `Modal`/`Alert` (`useCerrarConEscape`, escuchando en
+  `window`). El deep link de un código de barras entra a la ficha en
   vez de caer a la portada, la vista previa del recibo usa `precioProducto()` (un
   producto de precio fijo ya no se muestra como «$ 0.00»), el KPI «Crédito por
   cobrar» descuenta los abonos (`pendingOutstanding`) y la variación semanal

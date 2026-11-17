@@ -639,7 +639,7 @@ y lo que sólo se leyó en el fuente se marca como lectura.
 | 107 | Dos cajas en el mismo navegador se pisaban los borradores | `draftsKeyFor` / `activeTabKeyFor` particionan por usuario, con herencia única de la clave vieja |
 | 108 | Anular un gasto lo revaluaba a la tasa del día (desvío de Bs 4.423,75) | `payExpense` congela `paidCostUsd` y `paidNative`; la anulación devuelve eso |
 | 109 | El abono en Bs no cuadraba con el billete que entró | `CobroAbono.amountInput` viaja hasta el store y descuenta la comisión sobre él |
-| 110 | `Esc` no cerraba los diálogos del asistente ni el modal con el foco en un campo | `useCerrarConEscape` en `Modal` y `Alert`, escuchando en `window` |
+| 110 | Una `Alert` de Konsta no respondía a la tecla `Esc` que el propio asistente promete | `useCerrarConEscape` en `Modal` y `Alert`, escuchando en `window` |
 | 111 | La vista previa del recibo mostraba «$ 0.00 / Bs 0,00» en un producto de precio fijo | La vista consume `precioProducto()`, la etiqueta canónica |
 | 112 | Un `costUnit` negativo **acreditaba** dinero en la caja | `Math.max(0, round2(...))` en la línea de compra, en el store |
 | 113 | El KPI «Crédito por cobrar» ignoraba los abonos | Se lee de `pendingOutstanding` (saldo neto) |
