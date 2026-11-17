@@ -15,6 +15,14 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
+> **Corrección de estado (2026-11-16):** todo el bloque de abajo **sí está
+> publicado** — `npm run deploy` desde `main@b83a0ed` dejó `gh-pages@4e5a0e9` en
+> `pos.blink.com.ve` (entrada `assets/index-Bb-UNfRS.js`, `check:dist` 37
+> ficheros / 0 coincidencias prohibidas, `humo-prod.mjs` en verde). Se conserva
+> el encabezado porque la versión declarada en `app/package.json` sigue en
+> **1.19.0**: subirla a 1.20.0 (función nueva visible) es decisión del dueño, no
+> un paso del despliegue.
+
 ### Precio fijo en bolívares por producto (BLINK-104)
 
 - **Qué hace**: un producto puede registrar, además de su precio en USD, un
