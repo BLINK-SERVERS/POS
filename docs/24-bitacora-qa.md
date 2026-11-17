@@ -658,7 +658,7 @@ la importación y una edición a mano.
 ninguno se corrigió por una razón de alcance, no por olvido: tocan RLS o el
 modelo de datos (`124` necesita un campo `amountBs` en `Pending`), cambian una
 cifra contable que hoy tienen pruebas dando por buena (`117`, el `rate || 1` que
-afirma `metrics.test.ts:162`), o son deuda de accesibilidad y de tokens que no
+afirma `metrics.test.ts:161`), o son deuda de accesibilidad y de tokens que no
 rompen un flujo (`121`, `122`, `123`, `126`). Cada uno dice además si se **midió**
 en navegador o si sólo se **leyó** en el fuente — `123` es el único de ese grupo
 que salió de medir: con un diálogo abierto el `Tab` seguía alcanzando dos
