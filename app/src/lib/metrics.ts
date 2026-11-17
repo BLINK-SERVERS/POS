@@ -1,6 +1,6 @@
 // Cálculos de negocio (ventas, utilidad, capital).
 import type { AppState, Sale } from "./types";
-import { round2 } from "./money";
+import { formatUsd, round2 } from "./money";
 import { saleBase } from "./fiscal";
 
 /** Día local como "YYYY-MM-DD" (BLINK-075): `toISOString()` desplaza la
@@ -103,6 +103,26 @@ export function prevWeekRange(ref = new Date()): [Date, Date] {
   const from = startOfWeek(new Date(ref.getTime() - 7 * 86_400_000));
   const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6, 23, 59, 59, 999);
   return [from, to];
+}
+
+/**
+ * Texto de comparación contra el período anterior (BLINK-114).
+ *
+ * Con base negativa el porcentaje invierte el signo: pasar de una pérdida de
+ * $ 100 a una ganancia de $ 50 es MEJORAR, y `(50 − −100) / −100` lo mostraba
+ * como −150 %. Cuando la base no es positiva no hay porcentaje que explicar,
+ * así que se dice la diferencia en dólares.
+ */
+export function variacion(actual: number, anterior: number): string {
+  const a = round2(actual);
+  const b = round2(anterior);
+  if (!b) return a ? "nuevo" : "—";
+  if (b < 0) {
+    const d = round2(a - b);
+    return `${d >= 0 ? "+" : "−"}${formatUsd(Math.abs(d))}`;
+  }
+  const v = Math.round(((a - b) / b) * 100);
+  return `${v >= 0 ? "+" : ""}${v}%`;
 }
 
 /** Lunes a las 00:00 de la semana que contiene `ref`. */

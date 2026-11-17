@@ -20,7 +20,7 @@ import { Icon } from "../components/Icon";
 import { MobileScannerModal } from "../components/ScannerModals";
 import { useScanner } from "../lib/scanner/ScannerProvider";
 import { PAIRING_DAYS } from "../lib/scanner/pairing";
-import { formatBsDirect, formatRate } from "../lib/money";
+import { formatBsDirect, formatRate, precioProducto, round2 } from "../lib/money";
 import { buildDatasets, type Dataset } from "../lib/exportData";
 import { downloadText, printReport, printableTable, reportName, toCsv } from "../lib/export";
 
@@ -143,6 +143,18 @@ export function Ajustes() {
   }
 
   const firstProduct = state.products[0];
+  // BLINK-111: el Bs que se preview es el Bs que el ticket va a cobrar, la
+  // misma regla de `lineBs` en fiscal.ts: con precio fijo manda el Bs y no
+  // hace falta tasa; sin él, el Bs es una conversión y sin tasa no se puede
+  // afirmar nada.
+  const fijoBs = firstProduct?.priceBs && firstProduct.priceBs > 0 ? firstProduct.priceBs : 0;
+  const previewBs = !firstProduct
+    ? "—"
+    : fijoBs > 0
+      ? formatBsDirect(round2(fijoBs))
+      : state.rate > 0
+        ? formatBsDirect(round2(firstProduct.price * state.rate))
+        : "Configura la tasa";
 
   // Todos los conjuntos exportables, memorizados.
   const datasets = useMemo(() => buildDatasets(state), [state]);
@@ -264,7 +276,9 @@ export function Ajustes() {
                 <>
                   <div className="between">
                     <span>{firstProduct.name}</span>
-                    <span>${firstProduct.price.toFixed(2)}</span>
+                    {/* BLINK-111: la vista previa tiene que decir el precio como
+                        lo dirá el ticket, incluido el fijo en Bs. */}
+                    <span>{precioProducto(firstProduct.price, firstProduct.priceBs)}</span>
                   </div>
                   {firstProduct.sku && <div className="dim">SKU: {firstProduct.sku}</div>}
                 </>
@@ -274,11 +288,7 @@ export function Ajustes() {
               <hr />
               <div className="between">
                 <span>Total en bolívares</span>
-                <span>
-                  {state.rate > 0
-                    ? formatBsDirect((firstProduct?.price ?? 0) * state.rate)
-                    : "Configura la tasa"}
-                </span>
+                <span>{previewBs}</span>
               </div>
               <hr />
               <div className="muted">{form.receiptFooter || "(sin pie de recibo)"}</div>

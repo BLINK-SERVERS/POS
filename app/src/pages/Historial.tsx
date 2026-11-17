@@ -6,7 +6,7 @@ import { DataTable } from "../components/DataTable";
 import { EmptyState, Field, Modal, Money, PageHead, Badge } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { Receipt } from "../components/Receipt";
-import { isCountable, saleNet, saleTotal } from "../lib/metrics";
+import { isCountable, pendingOutstanding, saleNet, saleTotal } from "../lib/metrics";
 import { cortesiaValor } from "../lib/fiscal";
 import { formatUsd, round2 } from "../lib/money";
 import type { Sale } from "../lib/types";
@@ -22,6 +22,7 @@ function saleStatus(s: Sale): { label: string; tone: "success" | "warning" | "ne
 export function Historial() {
   const rate = useStoreSelector((s) => s.rate);
   const sales = useStoreSelector((s) => s.sales);
+  const pendings = useStoreSelector((s) => s.pendings);
   const business = useStoreSelector((s) => s.business);
   const { voidSale } = useStoreActions();
 
@@ -40,7 +41,16 @@ export function Historial() {
       const net = saleNet(s);
       total += net;
       n += 1;
-      if (s.status === "credito") credit += net;
+      // BLINK-113: el pendiente sobrevive al abono, la venta no cambia de
+      // estado. Contar el neto bruto hacía que «Vendido a crédito» nunca bajara
+      // aunque el cliente ya hubiera pagado todo. Lo que queda es el saldo de la
+      // cuenta por cobrar; si no hay cuenta (venta legacy), el neto.
+      if (s.status === "credito") {
+        const p = pendings.find(
+          (x) => x.subject === `Venta ${s.code}` && x.direction === "cobrar" && x.status !== "anulado"
+        );
+        credit += p ? pendingOutstanding(p) : net;
+      }
     }
     return {
       totalUsd: round2(total),
@@ -48,7 +58,7 @@ export function Historial() {
       avg: n ? round2(total / n) : 0,
       count: n,
     };
-  }, [sales]);
+  }, [sales, pendings]);
 
   return (
     <div className="stack gap-16">
@@ -77,9 +87,11 @@ export function Historial() {
           <Money usd={avg} rate={rate} />
         </div>
         <div className="kpi">
-          <div className="kpi__label">Vendido a crédito</div>
+          <div className="kpi__label">Crédito por cobrar</div>
           <Money usd={credit} rate={rate} />
-          <div className="kpi__hint">{credit ? "Pendiente de cobro" : "Ninguna venta a crédito"}</div>
+          <div className="kpi__hint">
+            {credit ? "Saldo tras los abonos recibidos" : "Sin saldo a crédito"}
+          </div>
         </div>
       </div>
 

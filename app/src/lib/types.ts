@@ -348,6 +348,13 @@ export interface Expense {
   anulado?: boolean;
   accountId?: string;
   paidAt?: string;
+  /**
+   * Lo que realmente salió de la cuenta al pagarlo (BLINK-108): USD con su
+   * comisión, y el monto en la moneda nativa de la cuenta. Anular devuelve
+   * estos números y no una reconversión al cambio de hoy.
+   */
+  paidCostUsd?: number;
+  paidNative?: number;
 }
 
 /** Gasto recurrente: al vencer genera un gasto pendiente (no mueve dinero). */

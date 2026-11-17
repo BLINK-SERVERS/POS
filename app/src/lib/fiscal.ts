@@ -43,6 +43,17 @@ export function saleBsTotal(lines: SaleLine[], rate: number, restUsd: number): n
   return round2(saleBsBase(lines, rate) + (restUsd || 0) * rate);
 }
 
+/**
+ * Total en Bs del ticket, a partir de SU PROPIO total en USD (BLINK-106).
+ *
+ * Sumar el IGTF en Bs aparte, después de redondear el resto, redondea dos veces
+ * y puede dar un céntimo distinto que el checkout: el ticket imprimiría un Bs
+ * que el POS no cobró. Aquí el IGTF entra dentro de `restUsd`, una sola vez.
+ */
+export function saleBsFromTotal(lines: SaleLine[], rate: number, total: number): number {
+  return saleBsTotal(lines, rate, round2(total - saleBase(lines)));
+}
+
 /** Bolívares realmente acreditados por unos cobros (lo que entró a la caja). */
 export function paidBs(payments: SalePayment[], rate: number): number {
   return round2(
@@ -114,14 +125,22 @@ export function igtfFor(amountUsd: number): number {
 
 export const IGTF_RATE = 0.03;
 
-/** Total del ticket = neto + IVA + recargos + IGTF. */
+/**
+ * Total del ticket = neto + IVA + recargos + IGTF (BLINK-106).
+ *
+ * Es LA función de la pantalla de cobro y del `checkout`, en ese orden de
+ * redondeo: primero la cuenta del ticket y después el IGTF, que nace de los
+ * cobros y no de la cuenta. Cada sitio que sume sus partes por su lado puede
+ * sacar un céntimo distinto según dónde caiga el redondeo, y entonces el Bs
+ * impreso en el ticket no cuadra con el Bs que el cajero cobró.
+ */
 export function ticketTotal(
   net: number,
   tax: number,
   surcharge: number,
   igtf: number
 ): number {
-  return round2(net + tax + surcharge + igtf);
+  return round2(round2(round2(net) + round2(tax) + round2(surcharge)) + round2(igtf));
 }
 
 /** Descuento efectivo (monto USD) según el tipo del descuento. */

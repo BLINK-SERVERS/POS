@@ -43,8 +43,11 @@ function rangos(periodo: Periodo): [Date, Date, Date, Date] {
   }
   if (periodo === "Semana") {
     const [f, t] = weekRange();
-    const [pf] = prevWeekRange();
-    return [f, t, pf, t];
+    const [pf, pt] = prevWeekRange();
+    // BLINK-114: antes devolvía `[pf, t]`, es decir desde el lunes pasado hasta
+    // AHORA. Comparaba 9 días contra los 2 corridos de la semana actual y la
+    // variación siempre salía en contra.
+    return [f, t, pf, pt];
   }
   const [f, t] = monthRange();
   const [pf, pt] = prevMonthRange();

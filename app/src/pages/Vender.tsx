@@ -1,7 +1,13 @@
 // Vender — punto de venta (POS).
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { uid, useStoreActions, useStoreSelector } from "../lib/store";
+import { uid, useStoreActions, useStoreSelector, useSessionUser } from "../lib/store";
+import {
+  ACTIVE_TAB_KEY,
+  DRAFTS_KEY,
+  activeTabKeyFor,
+  draftsKeyFor,
+} from "../lib/session-storage";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
@@ -19,9 +25,11 @@ import {
   paidBs,
   saldoPendiente,
   saleBase,
+  saleBsFromTotal,
   saleBsTotal,
   saleTax,
   surchargeAmount,
+  ticketTotal,
 } from "../lib/fiscal";
 import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
 import { presentationLabel } from "../lib/types";
@@ -49,8 +57,9 @@ const emptyDraft = (): Draft => ({
   customerId: "",
 });
 
-const DRAFTS_KEY = "blink-pos-drafts-v1";
-const ACTIVE_TAB_KEY = "blink-pos-active-tab-v1";
+// Las claves viven en `session-storage.ts` y tienen variante por usuario
+// (`draftsKeyFor` / `activeTabKeyFor`); las globales son la forma vieja, que
+// solo se usa para heredar los datos la primera vez (BLINK-107).
 /** Cuántos resultados se listan (y el tope que navegan las flechas). */
 const RESULTADOS_MAX = 20;
 
@@ -82,14 +91,34 @@ function Kbd({ k }: { k: string }) {
   );
 }
 
-function loadInitialDrafts(): { drafts: Draft[]; activeId: string } {
+function loadInitialDrafts(userId: string): { drafts: Draft[]; activeId: string } {
+  // BLINK-107: las cuentas abiertas son del comercio, no del navegador. Igual
+  // que el estado local (BLINK-083), se guardan bajo la clave del usuario; antes
+  // eran una clave global y dos comercios en el mismo PC se pisaban las cuentas
+  // entre sí, y `clearUserStorage` no las borraba al cerrar sesión.
+  const keyDrafts = userId ? draftsKeyFor(userId) : DRAFTS_KEY;
+  const keyActiva = userId ? activeTabKeyFor(userId) : ACTIVE_TAB_KEY;
   try {
-    const raw = localStorage.getItem(DRAFTS_KEY);
+    let raw = localStorage.getItem(keyDrafts);
+    let active = localStorage.getItem(keyActiva) || "";
+    // Primer ingreso del usuario: hereda lo que quedó bajo la clave global y la
+    // elimina, para que el siguiente usuario del equipo no la lea.
+    if (userId && !raw) {
+      const vieja = localStorage.getItem(DRAFTS_KEY);
+      if (vieja) {
+        const viejaActiva = localStorage.getItem(ACTIVE_TAB_KEY) || "";
+        localStorage.setItem(keyDrafts, vieja);
+        if (viejaActiva) localStorage.setItem(keyActiva, viejaActiva);
+        localStorage.removeItem(DRAFTS_KEY);
+        localStorage.removeItem(ACTIVE_TAB_KEY);
+        raw = vieja;
+        active = viejaActiva;
+      }
+    }
     if (raw) {
       const parsed = JSON.parse(raw) as Draft[];
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const active = localStorage.getItem(ACTIVE_TAB_KEY) || parsed[0].id;
-        return { drafts: parsed, activeId: active };
+        return { drafts: parsed, activeId: active || parsed[0].id };
       }
     }
   } catch {
@@ -135,7 +164,10 @@ export function Vender() {
   const pendings = useStoreSelector((s) => s.pendings);
   const { checkout, openCash, syncRate, addContact, updateProduct } = useStoreActions();
 
-  const [initial] = useState(loadInitialDrafts);
+  // El POS es <Protected>, así que aquí la sesión ya existe; el `?? ""` cubre
+  // el bypass de pruebas, que no tiene id real.
+  const userId = useSessionUser()?.id ?? "";
+  const [initial] = useState(() => loadInitialDrafts(userId));
   const [drafts, setDrafts] = useState<Draft[]>(initial.drafts);
   const [activeId, setActiveId] = useState<string>(initial.activeId);
   const [query, setQuery] = useState("");
@@ -161,15 +193,18 @@ export function Vender() {
   // de índice y el resaltado se perdería.
   const [lineaActiva, setLineaActiva] = useState<string | null>(null);
 
-  // Persistir cuentas abiertas en localStorage
+  // Persistir cuentas abiertas en localStorage (bajo la clave del usuario).
   useEffect(() => {
     try {
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-      localStorage.setItem(ACTIVE_TAB_KEY, activeId);
+      localStorage.setItem(
+        userId ? draftsKeyFor(userId) : DRAFTS_KEY,
+        JSON.stringify(drafts)
+      );
+      localStorage.setItem(userId ? activeTabKeyFor(userId) : ACTIVE_TAB_KEY, activeId);
     } catch {
       /* ignore */
     }
-  }, [drafts, activeId]);
+  }, [drafts, activeId, userId]);
 
   // Auto-sync de la tasa oficial al abrir el POS (respeta la caché de 1 h).
   useEffect(() => {
@@ -473,17 +508,23 @@ export function Vender() {
 
   const paid = useMemo(() => round2(payments.reduce((a, p) => a + p.amountUsd, 0)), [payments]);
   const paidIgtf = useMemo(() => round2(payments.reduce((a, p) => a + (p.igtf ?? 0), 0)), [payments]);
-  const total = round2(totalPreIgtf + paidIgtf);
+  // BLINK-106: el total del ticket y su equivalente en Bs salen de las mismas
+  // funciones que usa el `checkout`. Si cada sitio suma el IGTF por su cuenta,
+  // el redondeo se aplica dos veces y el ticket puede imprimir un Bs distinto
+  // del que la pantalla cobró.
+  const total = useMemo(
+    () => ticketTotal(net, tax, surchargeValue, paidIgtf),
+    [net, tax, surchargeValue, paidIgtf]
+  );
   // BLINK-104: con precio fijo en Bs el total en bolívares no es `total × tasa`.
   // `restUsd` (descuento, IVA, recargos) sí es una cifra en dólares y se
-  // convierte; las líneas fijas aportan su Bs exacto. El IGTF se suma aparte
-  // porque nace de los cobros, no de la cuenta.
+  // convierte; las líneas fijas aportan su Bs exacto.
   const hasFijos = lines.some((l) => Boolean(l.priceBs));
   const totalPreIgtfBs = useMemo(
     () => saleBsTotal(lines, rate, round2(totalPreIgtf - base)),
     [lines, rate, totalPreIgtf, base]
   );
-  const totalBs = round2(totalPreIgtfBs + paidIgtf * rate);
+  const totalBs = useMemo(() => saleBsFromTotal(lines, rate, total), [lines, rate, total]);
   // Lo que falta en Bs: el Bs del ticket menos lo ya acreditado (el Bs tecleado
   // y, en su equivalente, lo cobrado en dólares).
   const missingBs = round2(Math.max(0, totalBs - paidBs(payments, rate)));
@@ -924,7 +965,7 @@ export function Vender() {
               </span>
               <Link
                 className="btn btn--soft btn--sm"
-                to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
+                to={`/app/catalogo?barcode=${encodeURIComponent(scanCode)}`}
                 onClick={() => setScanCode("")}
               >
                 Crear producto
@@ -999,7 +1040,7 @@ export function Vender() {
             title="Sin coincidencias"
                 hint="Prueba con otra combinación: 'MAVESA 500g' o el código de barras."
                 action={
-                  <Link className="btn btn--soft btn--sm" to={`/catalogo?barcode=${encodeURIComponent(query.trim())}`}>
+                  <Link className="btn btn--soft btn--sm" to={`/app/catalogo?barcode=${encodeURIComponent(query.trim())}`}>
                     Crear producto
                   </Link>
                 }
@@ -1606,7 +1647,7 @@ export function Vender() {
                 <span>“{scanCode}” no está en tu catálogo.</span>
                 <Link
                   className="btn btn--soft btn--sm"
-                  to={`/catalogo?barcode=${encodeURIComponent(scanCode)}`}
+                  to={`/app/catalogo?barcode=${encodeURIComponent(scanCode)}`}
                   onClick={() => setCamOpen(false)}
                 >
                   Crear producto

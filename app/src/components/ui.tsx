@@ -229,6 +229,26 @@ function useFocoDeDialogo<T extends HTMLElement>() {
   return ref;
 }
 
+/**
+ * Esc cierra el diálogo (BLINK-110).
+ *
+ * El asistente lo enseña literalmente («Esc: cerrar la ventana»), así que el
+ * teclado tiene que poder salir sin buscar el botón de cerrar. Se escucha en
+ * `window` porque el foco puede estar dentro de un campo del formulario: un
+ * listener en el panel no lo alcanzaría.
+ */
+function useCerrarConEscape(onClose: () => void): void {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+}
+
 /* --- Modal (formularios) ---
    iOS 27 (HIG · Sheets / Modality):
    · En movil, **hoja inferior**: sube desde el borde, con esquineras
@@ -247,6 +267,7 @@ export function Modal({
 }) {
   const movil = useIsMobile();
   const panel = useFocoDeDialogo<HTMLDivElement>();
+  useCerrarConEscape(onClose);
 
   if (movil) {
     return (
@@ -320,7 +341,11 @@ export function Alert({
   /** Botón de rol Destructive (rojo). */
   destructive?: { text: string; onClick: () => void };
 }) {
+  // El ref del foco no se puede enganchar: el `<Dialog>` de Konsta no expone su
+  // raíz. Lo que sí hace el gancho es devolver el foco al disparador al cerrar.
+  // Queda pendiente que el Tab todavía puede escapar del diálogo.
   useFocoDeDialogo<HTMLDivElement>();
+  useCerrarConEscape(onClose);
   const botones: ReactNode[] = [];
   if (secondary) {
     botones.push(

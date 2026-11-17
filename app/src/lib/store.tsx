@@ -84,7 +84,7 @@ import { isBypassActive, bypassUser, clearBypass } from "./bypass";
 // Reglas puras portadas de la copia auditada (BLINK-069): reversión de
 // abonos y reconciliación caché↔nube (BLINK-047).
 import { findStockShortage, reversePendingAbonos } from "./ledger";
-import { saleBase, saleBsTotal, saldoPendiente } from "./fiscal";
+import { saleBase, saleBsFromTotal, saldoPendiente, ticketTotal } from "./fiscal";
 import { cacheAdelantada, mergeTabState } from "./sync";
 import { rehidrataComercio } from "./auth-events";
 import { addAuditLog } from "./audit";
@@ -693,9 +693,15 @@ function inventoryMove(
   };
 }
 
+/** El porcentaje de comisión de una cuenta nunca es negativo: con signo
+ *  invertido la cuenta regalaba dinero en vez de cobrarlo (BLINK-116). */
+function pctComision(pct: number | undefined): number {
+  return Math.max(0, pct || 0);
+}
+
 /** Aplica una comisión porcentual y devuelve el neto. */
 function commission(base: number, pct: number): number {
-  return round2((base * (pct || 0)) / 100);
+  return round2((base * pctComision(pct)) / 100);
 }
 
 /** Convierte un monto en USD a la moneda nativa de la cuenta. */
@@ -770,6 +776,13 @@ export interface CobroAbono {
   accountId: string;
   /** Equivalente en USD, ya calculado por la pantalla con su tasa y su moneda. */
   amountUsd: number;
+  /**
+   * Lo que realmente se entregó, en la moneda de la cuenta (BLINK-109). Sin
+   * este dato el asiento se reconvertía desde el USD y la caja quedaba un
+   * céntimo por debajo del billete: Bs 1.000,00 tecleados a tasa 884,75
+   * daban USD 1,13 y, al volver a multiplicar, Bs 999,77.
+   */
+  amountInput?: number;
   /** N° de referencia o comprobante del abono. */
   reference?: string;
 }
@@ -1589,13 +1602,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let createdSale: Sale | null = null;
     setAppState((s) => {
       const base = saleBase(input.lines);
-      const net = Math.max(0, base - input.discount);
-      const igtf = input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0);
-      const total = round2(net + input.tax + input.surcharge + igtf);
-      // BLINK-104: el total en Bs se calcula con las líneas (las de precio fijo
-      // mandan su Bs) y no como `total × tasa`; `saldoPendiente` cuadra el cobro
-      // en la moneda que manda el ticket.
-      const totalBs = saleBsTotal(input.lines, s.rate, round2(total - base));
+      const net = round2(Math.max(0, base - input.discount));
+      const igtf = round2(input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0));
+      // BLINK-106: el total en USD y su equivalente en Bs salen de las mismas
+      // funciones que usa la pantalla de cobro. Antes cada sitio sumaba el IGTF
+      // por su lado y redondeaba dos veces: el ticket impreso podía diferir un
+      // céntimo del Bs que el cajero vio, y el mismo pago podía guardarse como
+      // «crédito» aunque la pantalla lo diera por cobrado.
+      const total = ticketTotal(net, input.tax, input.surcharge, igtf);
+      const totalBs = saleBsFromTotal(input.lines, s.rate, total);
       const { remaining } = saldoPendiente(total, input.payments, totalBs, s.rate);
       // Código monotónico persistido (BLINK-044): el correlativo por conteo
       // reutilizaba códigos si se borraba una venta o si dos pestañas vendían
@@ -2028,8 +2043,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const from = s.accounts.find((a) => a.id === fromId);
         const to = s.accounts.find((a) => a.id === toId);
         if (!from || !to) return s;
-        const amount = round2(amountUsd);
-        const comm = round2(commissionValue);
+        const amount = Math.max(0, round2(amountUsd));
+        // BLINK-115: con una comisión de −$ 5 la salida se achicaba pero el
+        // destino seguía recibiendo el monto completo: la transferencia creaba
+        // dinero. La pantalla deshabilita el botón con `amount` en 0, pero la
+        // regla vive aquí, que también la llama `transferBetween`.
+        const comm = Math.max(0, round2(commissionValue));
         const totalOut = round2(amount + comm);
         const t: Transfer = {
           id: uid("trf"),
@@ -2101,10 +2120,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { ...s, expenses: [expense, ...s.expenses] };
       }
       const acc = s.accounts.find((a) => a.id === accountId);
-      const cost = acc ? round2(expense.amountUsd * (1 + (acc.commissionOut || 0) / 100)) : expense.amountUsd;
+      const cost = acc ? round2(expense.amountUsd * (1 + pctComision(acc.commissionOut) / 100)) : expense.amountUsd;
+      // BLINK-108: se congela la salida real (USD con comisión y su monto
+      // nativo). Anular un gasto no puede revaluarlo al cambio de hoy.
+      const native = acc ? toNative(cost, acc.currency, s.rate) : cost;
       return {
         ...s,
-        expenses: [{ ...expense, paidAt: at }, ...s.expenses],
+        expenses: [{ ...expense, paidAt: at, paidCostUsd: cost, paidNative: native }, ...s.expenses],
         accounts: s.accounts.map((a) =>
           a.id === accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
         ),
@@ -2116,7 +2138,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             direction: "salida",
             amountUsd: cost,
             currency: acc?.currency,
-            amountInput: acc ? toNative(cost, acc.currency, s.rate) : cost,
+            amountInput: native,
             origin: "Gasto",
             note: `${expense.name} · ${expense.category}`,
             userId: USER,
@@ -2140,10 +2162,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const acc = s.accounts.find((a) => a.id === accountId);
       if (!exp || exp.paid || exp.anulado || !acc) return s;
       const at = new Date().toISOString();
-      const cost = round2(exp.amountUsd * (1 + (acc.commissionOut || 0) / 100));
+      const cost = round2(exp.amountUsd * (1 + pctComision(acc.commissionOut) / 100));
+      // BLINK-108: misma regla que el gasto pagado al crearse: la salida real
+      // queda congelada en el gasto.
+      const native = toNative(cost, acc.currency, s.rate);
       return {
         ...s,
-        expenses: s.expenses.map((e) => (e.id === id ? { ...e, paid: true, paidAt: at, accountId } : e)),
+        expenses: s.expenses.map((e) =>
+          e.id === id ? { ...e, paid: true, paidAt: at, accountId, paidCostUsd: cost, paidNative: native } : e
+        ),
         accounts: s.accounts.map((a) =>
           a.id === accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
         ),
@@ -2155,7 +2182,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             direction: "salida",
             amountUsd: cost,
             currency: acc.currency,
-            amountInput: toNative(cost, acc.currency, s.rate),
+            amountInput: native,
             origin: "Gasto",
             note: note || `${exp.name} · ${exp.category}`,
             userId: USER,
@@ -2173,8 +2200,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const acc = exp.paid && exp.accountId ? s.accounts.find((a) => a.id === exp.accountId) : undefined;
       // Un gasto ya pagado devuelve el dinero a su cuenta con el asiento inverso.
       if (acc) {
-        const cost = round2(exp.amountUsd * (1 + (acc.commissionOut || 0) / 100));
-        const native = toNative(cost, acc.currency, s.rate);
+        // BLINK-108: anular devuelve lo que realmente salió de la cuenta, no la
+        // reconversión al cambio de hoy. Un gasto pagado en Bs con la tasa en
+        // 500 devolvía Bs 1.769,50 al anularse con la tasa en 884,75: dinero
+        // fantasma. Los gastos anteriores a esta regla no guardaron la salida,
+        // así que siguen con la tasa de hoy por no haber otro número.
+        const cost =
+          exp.paidCostUsd ?? round2(exp.amountUsd * (1 + pctComision(acc.commissionOut) / 100));
+        const native = exp.paidNative ?? toNative(cost, acc.currency, s.rate);
         return {
           ...s,
           expenses: s.expenses.map((e) => (e.id === id ? { ...e, anulado: true } : e)),
@@ -2325,10 +2358,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const aplicado = round2(Math.min(c.amountUsd, restante));
           if (!acc || restante <= 0 || aplicado <= 0) continue;
           // Al recibir se descuenta la comisión; al pagar se suma la comisión.
-          const net = isCollect
-            ? round2(aplicado - commission(aplicado, acc.commissionIn))
-            : round2(aplicado + commission(aplicado, acc.commissionOut));
-          const native = toNative(net, acc.currency, s.rate);
+          const comm = commission(aplicado, isCollect ? acc.commissionIn : acc.commissionOut);
+          const net = round2(isCollect ? aplicado - comm : aplicado + comm);
+          // BLINK-109: la caja se mueve con el billete que entró (o salió), no
+          // con la reconversión del USD derivado de ese billete. Sin `amountInput`
+          // (abonos viejos o cobros en USD) sigue valiendo la conversión.
+          const comBs = comm === 0 ? 0 : toNative(comm, acc.currency, s.rate);
+          const native =
+            c.amountInput != null
+              ? round2(isCollect ? c.amountInput - comBs : c.amountInput + comBs)
+              : toNative(net, acc.currency, s.rate);
           accounts = accounts.map((a) =>
             a.id === acc.id ? { ...a, balance: round2(a.balance + (isCollect ? native : -native)) } : a
           );
@@ -2473,7 +2512,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           productId: l.productId,
           name: p?.name ?? "",
           qty: round2(l.qty),
-          costUnit: round2(l.costUnit || p?.cost || 0),
+          // BLINK-112: el costo de una compra no puede ser negativo. Con
+          // `costUnit` en −$ 4 la cuenta que "pagaba" recibía dinero y el costo
+          // promedio del producto se hundía por debajo de cero.
+          costUnit: Math.max(0, round2(l.costUnit || p?.cost || 0)),
         };
       });
       const total = round2(lines.reduce((a, l) => a + l.qty * l.costUnit, 0));
@@ -2511,7 +2553,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const pendings: Pending[] = [];
       if ((input.paymentMethod === "cuenta" || input.paymentMethod === "efectivo") && input.accountId) {
         const acc = s.accounts.find((a) => a.id === input.accountId);
-        const cost = acc ? round2(total * (1 + (acc.commissionOut || 0) / 100)) : total;
+        const cost = acc ? round2(total * (1 + pctComision(acc.commissionOut) / 100)) : total;
         accounts = accounts.map((a) =>
           a.id === input.accountId ? { ...a, balance: round2(a.balance - toNative(cost, a.currency, s.rate)) } : a
         );

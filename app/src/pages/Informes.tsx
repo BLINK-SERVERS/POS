@@ -4,7 +4,7 @@ import { useStoreState, USER } from "../lib/store";
 import { auditExport } from "../lib/audit";
 import { Card, Money, PageHead, Tabs, DualInline } from "../components/ui";
 import { Icon } from "../components/Icon";
-import { capital, inRange, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal } from "../lib/metrics";
+import { capital, inRange, metrics, monthRange, monthlySeries, prevMonthRange, isCountable, saleNet, saleTotal, variacion } from "../lib/metrics";
 import { formatUsd, round2 } from "../lib/money";
 import {
   downloadText,
@@ -36,11 +36,9 @@ export function Informes() {
     };
   }, [state.sales, state.expenses, state.products, state.accounts, state.pendings, state.rate]);
 
-  const variation = (a: number, b: number) => {
-    if (!b) return a ? "nuevo" : "—";
-    const v = Math.round(((a - b) / b) * 100);
-    return `${v >= 0 ? "+" : ""}${v}%`;
-  };
+  // BLINK-114: la comparación vive en `metrics.variacion`, que es la que
+  // distingue el caso de base negativa (salir de una pérdida no es peor).
+  const variation = variacion;
 
   const dayCount = new Date().getDate();
   const monthLabel = new Date().toLocaleDateString("es", { month: "long", year: "numeric" });

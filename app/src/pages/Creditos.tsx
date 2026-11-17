@@ -189,12 +189,16 @@ function ModalAbono({
     }
     // Un abono no devuelve vuelto: lo que pasa de la deuda se recorta a la deuda.
     const aplicado = round2(Math.min(usdEscrito, resto));
+    // BLINK-109: cuando el monto tecleado cubre la deuda sin sobrar, el Bs que
+    // entra a la caja es EL TECLEADO. Solo se rederive si el cobro tuvo que
+    // recortarse, porque ahí lo que de verdad cambia de mano es el recorte.
+    const recortado = aplicado < usdEscrito;
     setCobros((cs) => [
       ...cs,
       {
         accountId: cuenta.id,
         currency: cuenta.currency,
-        amountInput: enUsd ? aplicado : round2(aplicado * rate),
+        amountInput: enUsd ? aplicado : recortado ? round2(aplicado * rate) : escrito,
         amountUsd: aplicado,
         reference: ref.trim(),
       },
@@ -210,6 +214,9 @@ function ModalAbono({
       cobros.map((c) => ({
         accountId: c.accountId,
         amountUsd: c.amountUsd,
+        // BLINK-109: el store acredita la caja con este monto, no con su
+        // reconversión desde el USD.
+        amountInput: c.amountInput,
         reference: c.reference || undefined,
       })),
       nota.trim()
