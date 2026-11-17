@@ -23,6 +23,35 @@ del producto, no una omisión (ver BUG-12 en
 > **1.19.0**: subirla a 1.20.0 (función nueva visible) es decisión del dueño, no
 > un paso del despliegue.
 
+### Caza de bugs: doce correcciones de dinero, estado y teclado (BLINK-105…116)
+
+- **Dinero**: la pantalla y el `checkout` vuelve a sumar el Bs **por un solo
+  camino** (`ticketTotal` + `saleBsFromTotal`), el abono en Bs se acredita con el
+  **billete que entró** (`CobroAbono.amountInput`) y no con una reconversión, y
+  anular un gasto devuelve exactamente lo que salió (`paidCostUsd` /
+  `paidNative`) en vez de revaluarlo a la tasa del día.
+- **Signos**: una comisión negativa dejaba de restar (transferencias y
+  comisiones) y un `costUnit` negativo **acreditaba** dinero al registrar una
+  compra. El recorte vive en el store (`pctComision`, `Math.max(0, …)`), que es
+  por donde también pasan el estado persistido y la importación.
+- **Estado**: los borradores y la pestaña activa se guardan **por usuario**
+  (`draftsKeyFor` / `activeTabKeyFor`), con una **herencia** única de la clave global
+  vieja; antes, dos cajas en el mismo navegador se pisaban el turno.
+- **Interfaz**: `Esc` cierra modales y alertas desde `Modal`/`Alert`
+  (`useCerrarConEscape`), el deep link de un código de barras entra a la ficha en
+  vez de caer a la portada, la vista previa del recibo usa `precioProducto()` (un
+  producto de precio fijo ya no se muestra como «$ 0.00»), el KPI «Crédito por
+  cobrar» descuenta los abonos (`pendingOutstanding`) y la variación semanal
+  compara rangos contiguos con `variacion()` (base 0 → «nuevo», base negativa →
+  diferencia en USD).
+- **Verificado**: 13 escenarios de `scripts/sonda-lote32.mjs` en la app real —
+  **1/13** contra el árbol sin estos cambios y **13/13** con ellos —,
+  **265** pruebas unitarias (12 nuevas), tipos 0, build y `check:dist` en verde.
+  Detalle en `docs/24-bitacora-qa.md` § 13 y en el expediente
+  `BLINK_POS_Hallazgos/` (BLINK-105…126, con 117–126 abiertos a propósito).
+- **Sin publicar**: el dominio sigue en `gh-pages@4e5a0e9` y la versión en
+  **1.19.0**.
+
 ### Precio fijo en bolívares por producto (BLINK-104)
 
 - **Qué hace**: un producto puede registrar, además de su precio en USD, un

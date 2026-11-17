@@ -619,3 +619,86 @@ de la app ya cargó —en este equipo, con dos núcleos, tarda bastante más—,
 que la navegación siguiente perdía el parámetro, el bypass nunca se armaba y
 Ajustes desviaba al login. Ahora el arnés escribe `blink-temp-bypass` en el init
 script y espera `.tabs button` en lugar de un tiempo fijo: pasa 5/5.
+
+## 13. Doce bugs de dinero, estado y teclado (caza del 2026-11-17)
+
+El encargo fue abierto —*«busca y corrige y documenta bugs»*—, así que se
+programó como una **caza** en lugar de como un feature: barrido de dinero e
+impuestos, de estado y persistencia, y de interfaz/teclado. El registro completo
+con las líneas de evidencia está en el expediente de hallazgos
+(`BLINK_POS_Hallazgos/02_BUGS_P0_P1.md` y `03_BUGS_P2_P3.md`, BLINK-105 a 126).
+La regla del barrido: **no se afirma nada que no se haya visto en el navegador**,
+y lo que sólo se leyó en el fuente se marca como lectura.
+
+### 13.1 · Los doce que se corrigieron
+
+| ID | Síntoma medido | Regla que se movió |
+|---|---|---|
+| 105 | El deep link de un código de barras caía a la portada | Las rutas viven bajo `/app`; los tres enlaces de «Crear producto» la usaban |
+| 106 | La pantalla y el `checkout` daban Bs distintos | `ticketTotal` + `saleBsFromTotal` son ahora la única suma |
+| 107 | Dos cajas en el mismo navegador se pisaban los borradores | `draftsKeyFor` / `activeTabKeyFor` particionan por usuario, con herencia única de la clave vieja |
+| 108 | Anular un gasto lo revaluaba a la tasa del día (desvío de Bs 4.423,75) | `payExpense` congela `paidCostUsd` y `paidNative`; la anulación devuelve eso |
+| 109 | El abono en Bs no cuadraba con el billete que entró | `CobroAbono.amountInput` viaja hasta el store y descuenta la comisión sobre él |
+| 110 | `Esc` no cerraba los diálogos del asistente ni el modal con el foco en un campo | `useCerrarConEscape` en `Modal` y `Alert`, escuchando en `window` |
+| 111 | La vista previa del recibo mostraba «$ 0.00 / Bs 0,00» en un producto de precio fijo | La vista consume `precioProducto()`, la etiqueta canónica |
+| 112 | Un `costUnit` negativo **acreditaba** dinero en la caja | `Math.max(0, round2(...))` en la línea de compra, en el store |
+| 113 | El KPI «Crédito por cobrar» ignoraba los abonos | Se lee de `pendingOutstanding` (saldo neto) |
+| 114 | La variación semanal comparaba rangos no contiguos y reventaba con base 0 | `variacion(actual, anterior)` y `rangos` devuelve `[f, t, pf, pt]` |
+| 115 | Una comisión negativa en una transferencia sacaba 95 y hacía entrar 100 | `transfer` recorta `amount` y `comm` a 0 |
+| 116 | Una comisión negativa invertía el signo de `commission` | `pctComision(pct) = Math.max(0, pct \|\| 0)` en sus cuatro usos |
+
+De los doce, **ocho vivían en el store** (`store.tsx`, `fiscal.ts`, `metrics.ts`).
+Es el patrón que se repite lote tras lote: el `<input>` con `min="0"` no protege
+nada, porque al estado llegan también el estado persistido de versiones previas,
+la importación y una edición a mano.
+
+### 13.2 · Los diez que quedaron abiertos, a propósito
+
+**117–126** están escritos con su `file:line` y su severidad en el expediente, y
+ninguno se corrigió por una razón de alcance, no por olvido: tocan RLS o el
+modelo de datos (`124` necesita un campo `amountBs` en `Pending`), cambian una
+cifra contable que hoy tienen pruebas dando por buena (`117`, el `rate || 1` que
+afirma `metrics.test.ts:162`), o son deuda de accesibilidad y de tokens que no
+rompen un flujo (`121`, `122`, `123`, `126`). Cada uno dice además si se **midió**
+en navegador o si sólo se **leyó** en el fuente — `123` es el único de ese grupo
+que salió de medir: con un diálogo abierto el `Tab` seguía alcanzando dos
+`role="option"` del fondo.
+
+### 13.3 · La línea base se midió, no se recordó
+
+Con el fix ya commiteado se revirtió `app/src` al commit anterior y se corrió el
+mismo instrumento: **1 de 13 escenarios en verde**. Restaurado el árbol,
+**13 de 13**. Sin esa reversal las cifras «antes» habrían salido de la memoria de
+la primera pasada, que en este proyecto ya falló dos veces (`docs/22-qa-caza-de-bugs.md`).
+
+Dos advertencias honestas que salieron del cotejo: el escenario del `Esc` dentro
+de un campo **ya estaba verde antes del fix** (no es mérito de este lote), y en
+el KPI de crédito la lectura «antes» fue `(ausente)` porque la etiqueta cambió —
+la cifra vieja que se documenta es aritmética de la regla anterior, no una
+medición.
+
+### 13.4 · Dos trampas del arnés que daban falsos rojos
+
+- **El arranque pinta un `BrandLoader`.** Los `waitForTimeout` fijos medían
+  encima de la pantalla de carga. Todo escenario pasa ahora por un `montado(page)`
+  que espera la ausencia de `.brand-loader` y más de 60 caracteres de texto. Con
+  esto se revive `sonda-dinero-mvp.mjs`, que llevaba corridos completos en falso
+  rojo.
+- **El motivo de anulación es un `<input>`, no un `<textarea>`,** y el botón de
+  confirmar está `disabled={!voidReason.trim()}`. Un `fill` condicionado al tag
+  equivocado dejaba el clic colgando 45 s sin explicar por qué.
+
+Se cortan además las dos redes que pisan la siembra —`ve.dolarapi.com` y
+`**/rest/v1/catalogo_global**`— porque el POS re-hidrata la tasa oficial al
+arrancar y convertiría una expectativa correcta en un fallo.
+
+### 13.5 · Gates de la docena
+
+`tsc --noEmit` 0 · **vitest 265/265** en 26 ficheros (12 pruebas nuevas en
+`app/src/lib/__tests__/verificacion-lote32.test.ts`, ninguna existente retocada
+para pasar) · `npm run build` ✓ · `build:pages` + `check:dist` 37 ficheros / 0
+coincidencias prohibidas · `docs:check` 146 archivos / 761 enlaces OK ·
+`qa:apariencia` 5/5 · `sonda-lote32.mjs` 13/13 (antes: 1/13).
+
+**Commit `2709ba2`. Sin publicar:** el dominio sigue en `gh-pages@4e5a0e9` y la
+versión declarada en `app/package.json` sigue en **1.19.0**.
