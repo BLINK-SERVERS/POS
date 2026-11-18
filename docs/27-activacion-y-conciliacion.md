@@ -16,11 +16,13 @@ datos se eliminan.
 | Precio | **$25 USD** cada **30 días** |
 | Pago Móvil | Cédula `34201580` · teléfono `0424 6603660` · banco `BNC (0102)` |
 | Binance Pay | ID `1130279410` (USDT, USDC, BTC, ETH) |
-| Tasa de referencia | Binance P2P, leída de CriptoYa (`USDT/VES`) |
+| Tasa de referencia | Binance P2P, **el precio del primer anuncio** (el promocionado), con guarda del 3 % |
+| Respaldo de la tasa | CriptoYa (`USDT/VES`, espejo de Binance P2P), si la lectura directa falla |
 | Administración | `admin@blink.com.ve` |
 
-CriptoYa es **solo un lector de la tasa**: no recibe, intermedia ni retiene
-pagos. El dinero llega a Pago Móvil o al Binance Pay indicado.
+Binance P2P y CriptoYa son **solo lectores de la tasa**: ninguno recibe,
+intermedia ni retiene pagos. El dinero llega a Pago Móvil o al Binance Pay
+indicado.
 
 ---
 
@@ -124,7 +126,34 @@ cae en una página que no procesa los tokens.
 
 ## 5. Tasa y equivalentes
 
-- Fuente: `https://criptoya.com/api/binancep2p/USDT/VES/1` (`ask`), CORS `*`.
+**La regla la fijó el dueño el 2026-11-18:** el monto en bolívares que paga un
+comercio es el del **primer anuncio de Binance P2P** —el promocionado, el que el
+cliente ve arriba de todo en `p2p.binance.com`—, con una guarda del **3 %**: si ese
+anuncio se desvía más de 3 % del primero que sí puede cobrar $25, manda el
+ejecutable y la pantalla lo avisa. Hace falta porque el primer puesto es un espacio
+pago y su dueño elige el tope de la transacción.
+
+Medido ese día sobre la red viva:
+
+| | Bs por USDT | Tope por transacción |
+|---|---|---|
+| Primer anuncio (promocionado) | `1055,540` | 0,28 USDT (Bs 301) |
+| Primer anuncio que sí cobra $25 | `1070,783` | 34.017,99 USDT |
+| Espejo de CriptoYa (`ask`) | `1070,795` | — |
+
+El promocionado estaba **1,44 %** por debajo de todo el mercado ejecutable: se
+cobra, pero nadie puede operar $25 con él. Con la guarda de 3 % ese caso sigue
+usando el promocionado (es el precio que ve el cliente) y la guarda solo descarta
+precios absurdos.
+
+- Lectura directa: `GET https://p2p.binance.com/bapi/c2c/v1/public/c2c/agent/ad-list?asset=USDT&fiat=VES&tradeType=BUY&page=1&rows=10`,
+  que responde `access-control-allow-origin: *` y funciona desde el navegador
+  (verificado en Chromium contra el hostname de producción, `scripts/verifica-tasa-p2p.mjs`).
+  El `POST .../bapi/c2c/v2/friendly/c2c/adv/search` que usa la web **sí** sigue sin
+  CORS: de ahí la nota anterior de que P2P no era legible desde el navegador.
+- Respaldo: `https://criptoya.com/api/binancep2p/USDT/VES/1` (`ask`), CORS `*`.
+- Cada lectura guarda de qué fuente salió (`TasaP2P.fuente`), y el caché la
+  conserva.
 - Caché en `localStorage` durante **5 minutos**; si la red falla se muestra la
   última lectura marcada como «última conocida» y un botón de reintento.
 - El monto en bolívares es `25 × tasa`; nunca se inventa una cifra sin tasa.
@@ -133,7 +162,9 @@ cae en una página que no procesa los tokens.
 - Binance spot **no** tiene par USDT/VES (`-1121 Invalid symbol`): por eso la
   tasa en bolívares sale de P2P.
 
-Archivos: `src/lib/tasa.ts` y `src/lib/tasa.test.ts` (caché, fallback, error).
+Archivos: `src/lib/tasa.ts` y `src/lib/tasa.test.ts` (regla, guarda, caché,
+fallback, error). Instrumento en navegador:
+`BLINK_POS_Hallazgos/scripts/verifica-tasa-p2p.mjs` (19 comprobaciones).
 
 ---
 

@@ -114,7 +114,7 @@ const PRIVACIDAD: { intro: string; blocks: (Block | Section)[] } = {
     },
     {
       h: "5. Terceros",
-      p: "Solo compartimos información con proveedores estrictamente necesarios para operar el servicio: Supabase (alojamiento de base de datos y sincronización) y la fuente de la tasa de referencia de Binance P2P (CriptoYa), que solo se consulta para mostrar el equivalente en bolívares. No vendemos, alquilamos ni compartimos tus datos internos con terceros con fines publicitarios.",
+      p: "Solo compartimos información con proveedores estrictamente necesarios para operar el servicio: Supabase (alojamiento de base de datos y sincronización) y las dos lecturas de la tasa de referencia (Binance P2P y, si esa lectura falla, su espejo CriptoYa), que solo se consultan para mostrar el equivalente en bolívares y no reciben datos de tu negocio. No vendemos, alquilamos ni compartimos tus datos internos con terceros con fines publicitarios.",
     },
     {
       h: "6. Retención y eliminación",

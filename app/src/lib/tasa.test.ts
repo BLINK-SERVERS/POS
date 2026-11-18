@@ -9,9 +9,11 @@ import {
   formatearBs,
   hace,
   precioDesdeBinance,
+  tasaDesdeAnuncios,
   tasaDesdeCriptoya,
   tasaFresca,
   tasaGuardada,
+  TOLERANCIA_PROMOCIONADO,
   VIGENCIA_TASA_MS,
 } from "./tasa";
 
@@ -55,6 +57,72 @@ describe("tasaDesdeCriptoya", () => {
     expect(tasaDesdeCriptoya({ ask: 0 })).toBeNull();
     expect(tasaDesdeCriptoya({ ask: "abc" })).toBeNull();
     expect(tasaDesdeCriptoya(null)).toBeNull();
+  });
+});
+
+/** La forma real de `ad-list`, recortada a lo que lee la app. */
+const anunciosJson = (items: { price: number; maxTransAmount: number }[]) => ({
+  code: "000000",
+  data: { items },
+});
+
+describe("tasaDesdeAnuncios · el precio es el del primer anuncio", () => {
+  // Medido en Binance P2P el 2026-11-18: promocionado 1055,54 Bs con tope de
+  // 0,28 USDT; todo lo demás del mercado ejecutable en 1070,7.
+  const reales = anunciosJson([
+    { price: 1055.54, maxTransAmount: 0.28 },
+    { price: 1070.783, maxTransAmount: 34017.99 },
+    { price: 1071.4, maxTransAmount: 33597.98 },
+  ]);
+
+  it("toma el promocionado mientras esté dentro de la guarda", () => {
+    const r = tasaDesdeAnuncios(reales);
+    expect(r?.tasa).toBe(1055.54);
+    expect(r?.fuente).toBe("Binance P2P · anuncio promocionado");
+    const desviacion = Math.abs(1055.54 - 1070.783) / 1070.783;
+    expect(desviacion).toBeLessThanOrEqual(TOLERANCIA_PROMOCIONADO);
+  });
+
+  it("descarta el promocionado cuando se va más del 3 % del mercado", () => {
+    const r = tasaDesdeAnuncios(
+      anunciosJson([
+        { price: 900, maxTransAmount: 0.28 },
+        { price: 1070.783, maxTransAmount: 34017.99 },
+      ])
+    );
+    expect(r?.tasa).toBe(1070.783);
+    expect(r?.fuente).toBe("Binance P2P · 1er anuncio ejecutable");
+  });
+
+  it("compara contra el primer anuncio que sí puede cobrar los $25", () => {
+    // El de 10 USDT está más cerca, pero no puede absorber el pago: no cuenta.
+    const r = tasaDesdeAnuncios(
+      anunciosJson([
+        { price: 1000, maxTransAmount: 0.28 },
+        { price: 1010, maxTransAmount: 10 },
+        { price: 1070, maxTransAmount: 5000 },
+      ])
+    );
+    expect(r?.tasa).toBe(1070);
+    expect(r?.fuente).toBe("Binance P2P · 1er anuncio ejecutable");
+  });
+
+  it("si nadie llega al monto, manda el promocionado: no hay con qué comparar", () => {
+    const r = tasaDesdeAnuncios(
+      anunciosJson([
+        { price: 1055.54, maxTransAmount: 0.28 },
+        { price: 1070.78, maxTransAmount: 1 },
+      ]),
+      25
+    );
+    expect(r?.tasa).toBe(1055.54);
+  });
+
+  it("respuestas sin anuncios no producen una tasa", () => {
+    expect(tasaDesdeAnuncios(anunciosJson([]))).toBeNull();
+    expect(tasaDesdeAnuncios(null)).toBeNull();
+    expect(tasaDesdeAnuncios({ ask: 1035 })).toBeNull();
+    expect(tasaDesdeAnuncios({ data: { items: [{ price: 0 }, { price: "abc" }] } })).toBeNull();
   });
 });
 
@@ -156,6 +224,75 @@ describe("caché de 5 minutos", () => {
       expect(r.tasa.tasa).toBe(1040);
       expect(r.cacheada).toBe(false);
     }
+  });
+});
+
+describe("las dos fuentes, en orden", () => {
+  const porUrl = (respuestas: Record<string, () => Response>) =>
+    vi.fn(async (url: string | URL | Request) => {
+      const u = String(url);
+      const clave = Object.keys(respuestas).find((k) => u.includes(k));
+      if (!clave) throw new Error(`URL inesperada: ${u}`);
+      return respuestas[clave]();
+    }) as unknown as typeof fetch;
+
+  it("cobra el primer anuncio de Binance sin gastar la petición a CriptoYa", async () => {
+    const { storage } = almacenFalso();
+    const llamadas: string[] = [];
+    const fetchImpl = vi.fn(async (url: string | URL | Request) => {
+      llamadas.push(String(url));
+      return respuesta(anunciosJson([{ price: 1055.54, maxTransAmount: 0.28 }, { price: 1070.783, maxTransAmount: 34017 }]));
+    }) as unknown as typeof fetch;
+    const r = await fetchTasaP2P({ fetchImpl, almacenaje: storage, ahora: AHORA });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.tasa.tasa).toBe(1055.54);
+      expect(r.tasa.fuente).toBe("Binance P2P · anuncio promocionado");
+    }
+    expect(llamadas).toHaveLength(1);
+    expect(llamadas[0]).toContain("p2p.binance.com");
+    expect(tasaGuardada(storage)?.fuente).toBe("Binance P2P · anuncio promocionado");
+  });
+
+  it("si Binance falla, manda el espejo de CriptoYa y queda anotado", async () => {
+    const { storage } = almacenFalso();
+    const fetchImpl = porUrl({
+      "p2p.binance.com": () => respuesta({ code: "000002" }, false, 403),
+      "criptoya.com": () => respuesta({ ask: 1070.75, bid: 1073.7 }),
+    });
+    const r = await fetchTasaP2P({ fetchImpl, almacenaje: storage, ahora: AHORA });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.tasa.tasa).toBe(1070.75);
+      expect(r.tasa.fuente).toBe("Binance P2P · CriptoYa");
+    }
+  });
+
+  it("un 200 de Binance sin anuncios tampoco inventa nada", async () => {
+    const { storage } = almacenFalso();
+    const fetchImpl = porUrl({
+      "p2p.binance.com": () => respuesta(anunciosJson([])),
+      "criptoya.com": () => respuesta({ ask: 1070.75 }),
+    });
+    const r = await fetchTasaP2P({ fetchImpl, almacenaje: storage, ahora: AHORA });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.tasa.fuente).toBe("Binance P2P · CriptoYa");
+  });
+
+  it("la caché conserva la fuente que ganó y una caché vieja sigue sirviendo", () => {
+    const { storage } = almacenFalso({
+      "blink-pos-tasa-usdt-ves": JSON.stringify({
+        tasa: 1070.783,
+        en: new Date(AHORA - 60_000).toISOString(),
+        fuente: "Binance P2P · 1er anuncio ejecutable",
+      }),
+    });
+    expect(tasaGuardada(storage)?.fuente).toBe("Binance P2P · 1er anuncio ejecutable");
+
+    const { storage: vieja } = almacenFalso({
+      "blink-pos-tasa-usdt-ves": JSON.stringify({ tasa: 1035, en: new Date(AHORA).toISOString() }),
+    });
+    expect(tasaGuardada(vieja)?.fuente).toBe("Binance P2P · CriptoYa");
   });
 });
 

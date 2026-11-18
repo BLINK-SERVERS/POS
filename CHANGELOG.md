@@ -15,13 +15,38 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
-> **Corrección de estado (2026-11-16):** todo el bloque de abajo **sí está
-> publicado** — `npm run deploy` desde `main@b83a0ed` dejó `gh-pages@4e5a0e9` en
-> `pos.blink.com.ve` (entrada `assets/index-Bb-UNfRS.js`, `check:dist` 37
-> ficheros / 0 coincidencias prohibidas, `humo-prod.mjs` en verde). Se conserva
-> el encabezado porque la versión declarada en `app/package.json` sigue en
-> **1.19.0**: subirla a 1.20.0 (función nueva visible) es decisión del dueño, no
-> un paso del despliegue.
+> **Estado (2026-11-18):** lo que sirve `pos.blink.com.ve` es `gh-pages@4e5a0e9`,
+> construido desde `main@b83a0ed` (lotes 29·30·31, entrada
+> `assets/index-Bb-UNfRS.js`, `check:dist` 37 ficheros / 0 coincidencias
+> prohibidas, `humo-prod.mjs` en verde). Lo de abajo —lotes **32** y **33**— está
+> en `main` **sin publicar**. Subir la versión a 1.20.0 (función nueva visible)
+> sigue siendo decisión del dueño, no un paso del despliegue.
+
+### La tasa de pago es la del primer anuncio de Binance P2P (BLINK-127)
+
+- **Regla del dueño (2026-11-18):** el monto en Bs de la activación sale del
+  **primer anuncio** de `p2p.binance.com` —el promocionado, el que ve el
+  cliente—, ya no del promedio que publica CriptoYa.
+- **Guarda del 3 %:** el primer puesto es un espacio pago y su dueño elige el
+  tope de la transacción. Medido: el promocionado marcaba **1055,54 Bs** con
+  tope de **0,28 USDT** (Bs 301), 1,44 % por debajo de todo el mercado que sí
+  puede cobrar $25 (**1070,783**). Si la desviación pasa de 3 % manda el primer
+  anuncio ejecutable y la pantalla lo avisa; dentro de la banda se cobra el
+  promocionado, que es lo que pidió el dueño.
+- **Sin infraestructura nueva:** el navegador no podía leer el
+  `POST .../friendly/c2c/adv/search` (sin CORS), pero la ruta pública
+  `GET .../v1/public/c2c/agent/ad-list` responde `access-control-allow-origin: *`
+  y funciona desde Chromium contra el hostname de producción. CriptoYa queda como
+  **respaldo** si Binance falla; la última conocida y el «sin tasa no hay monto»
+  siguen intactos.
+- **Trazabilidad:** `TasaP2P.fuente` dice de qué anuncio salió el número, se
+  guarda en el caché de 5 minutos y se conserva al leer una caché anterior.
+- **Verificado:** tsc 0 · vitest **274/274** (26 ficheros, +9 en `tasa.test.ts`)
+  · build ✓ · `check:dist` 37 ficheros / 0 prohibidas · `docs:check` 146/761 ✓ ·
+  `scripts/verifica-tasa-p2p.mjs` **19/19** en navegador real con la red viva
+  (CORS, guarda inyectada, respaldo, fallo total y `Bs 26.388,50 = 25 × 1055,54`
+  en la pantalla).
+- **Sin publicar.**
 
 ### Caza de bugs: doce correcciones de dinero, estado y teclado (BLINK-105…116)
 

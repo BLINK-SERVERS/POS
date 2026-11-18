@@ -463,6 +463,12 @@ export function Activacion() {
                   la última conocida: confirma el monto antes de pagar o reintenta.
                 </p>
               )}
+              {tasaViva?.fuente === "Binance P2P · 1er anuncio ejecutable" && (
+                <p className="act__aviso">
+                  <Icon name="alert" size="sm" /> El anuncio promocionado está lejos del precio
+                  real: cobramos al primer anuncio con el que sí se puede operar.
+                </p>
+              )}
               {tasaRes && !tasaRes.ok && !tasaRes.ultima && (
                 <p className="act__aviso act__aviso--bad">
                   <Icon name="alert" size="sm" /> {tasaRes.error}{" "}
