@@ -837,3 +837,63 @@ el POS estaba caído.
 
 La versión declarada sigue en **1.19.0**: el bump a 1.20.0 es decisión del dueño
 y exigiría reconstruir y volver a publicar.
+
+## 15. Lote 35: los formularios dejan de colapsar (2026-11-22, v1.19.0)
+
+Encargo: jerarquizar el relleno de producto y sus hermanos, sin que los campos
+colapsen ni se descompagine el diálogo. Se midió antes de tocar, se corrigió en la
+capa de la regla y se volvió a medir con el mismo instrumento.
+
+### 15.1 Medición, no opinión
+
+La sonda (`sonda-v2.mjs`, fuera del repo) recorre las 9 escenas de diálogo en 1280×900
+y 390×844, pre-calienta cada ruta para que Vite transforme los chunks y sondea el
+gatillo en vez de dormir. Sus números fueron la guía del arreglo:
+
+- Grupo con `display: contents`: `width: 0`, o sea ninguna caja propia. El `select` de
+  IVA a **31 px** y costo/precio a **48 px**.
+- Cuerpo del diálogo a **1327 px** dentro de un `.modal` que también scrolleaba;
+  «Guardar cambios» en `top: 1397`.
+- Casillas de **13×13 px** con la etiqueta fuera del área pulsable.
+
+Después del arreglo: **177 px**, **397 px**, blanco de toque de **44 px**, botón en
+`top: 772` dentro de un pie que no scrollea, y `visibleSinScroll: true` en las 8 escenas
+de escritorio y en las de móvil. El diálogo de producto conserva 1814 px de contenido
+sobre 619 visibles: sigue scrolleando, ahora con cabecera y pie fijos.
+
+### 15.2 Dos rojos que no son de este producto
+
+`qa:funcional` (5 fallos) y `qa:navegacion` (salida 2) se cayeron igual **antes** del
+lote. La prueba no fue lectura ni intuición: se montó un worktree en `main@8563808`,
+se le enlazó el `.env` y se corrió el mismo gate contra ese servidor. Los 5 fallos
+salieron con la misma firma, `diff` vacío. Lo que falla es la salida a internet del
+navegador: el equipo navega por un proxy con credenciales que Chromium no toma del
+entorno, la tasa BCV no llega y el POS se queda en «Sin tasa». `qa-funcional.mjs` no
+intercepta ninguna de las dos redes que §13.4 dice que hay que cortar, y
+`qa-navegacion.mjs` agota los 45 s del login real antes de probar el `?bypass=1`.
+Queda anotado como BLINK-147 en el expediente; arreglarlo es un lote de herramienta, no
+de formulario.
+
+Lo que `qa:navegacion` iba a decir de móvil se midió por bypass: `tabbar` de 6
+elementos, Vender en el centro exacto (195 px sobre 390, desvío 0), 47–48 px de alto por
+control y cero scroll horizontal.
+
+### 15.3 La trampa del conteo de caracteres
+
+Un gate de montado que exige `innerText.length > 120` se satisface con la barra lateral
+sola: sus 148 caracteres bastan. La medición entonces ocurre sobre una SPA a medio
+pintar y reporta «páginas en blanco» que no existen. Es la misma familia que los
+`waitForTimeout` encima del `BrandLoader` de §13.4. El gate correcto busca un marcador
+de contenido (`h1`, `.page-head`, `.modal`, `.k-sheet`) y, si se mide texto, que sea
+texto de la vista. Con ese cambio las 7 rutas monta y se compró: Catálogo 394
+caracteres y su `h1`, Finanzas 664 con 2 filas, Contactos 314 con 1, Inventario 520 con
+2, Vender 1227, Créditos 450, Informes 1226.
+
+### 15.4 Gates de la tanda
+
+`tsc --noEmit` 0 · vitest 287/287 en 27 ficheros · `build` ✓ · `build:pages` ✓ ·
+`check:dist` 37 ficheros / 0 coincidencias prohibidas · `docs:check` 146 / 761 ✓ ·
+`qa:e2e` 0 fallos / 0 avisos · `qa:apariencia` 5/5 · `qa:responsive` 0 fallos / 6 avisos
+de fuente · `qa:preview` 0/0 · `qa:carga` ✓ · `qa:funcional` y `qa:navegacion` rojos por
+red, iguales en `HEAD` · `qa:seed` y `qa:cuenta` no corridos (escriben en producción y
+mandan correo).

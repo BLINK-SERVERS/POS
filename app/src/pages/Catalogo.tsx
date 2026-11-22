@@ -2,7 +2,20 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStoreActions, useStoreSelector } from "../lib/store";
-import { Card, EmptyState, Field, Modal, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
+import {
+  Badge,
+  Card,
+  CheckField,
+  EmptyState,
+  Field,
+  FieldRow,
+  FormSection,
+  Modal,
+  MoneyField,
+  PageHead,
+  Tabs,
+  useConfirm,
+} from "../components/ui";
 import { Icon } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
@@ -18,7 +31,7 @@ function internalCode(): string {
   return `INT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-const margin = (p: number, c: number) => (p > 0 ? Math.round(((p - c) / p) * 100) : 0);
+const calcularMargen = (p: number, c: number) => (p > 0 ? Math.round(((p - c) / p) * 100) : 0);
 
 
 
@@ -179,6 +192,9 @@ const ChannelPriceCell = memo(function ChannelPriceCell({
   );
 });
 
+/** Mapa de mensajes de validación de un formulario. */
+type Campos = Record<string, string>;
+
 const EMPTY_PRODUCT = {
   name: "",
   brand: "",
@@ -276,7 +292,7 @@ function ProductCard({
 
       <div className="prodcard__fila">
         <span className="prodcard__margen">
-          Margen <b className="tabular">{margin(product.price, product.cost)} %</b>
+          Margen <b className="tabular">{calcularMargen(product.price, product.cost)} %</b>
         </span>
         {product.archived ? (
           <Badge>Archivado</Badge>
@@ -445,9 +461,27 @@ export function Catalogo() {
   /** Productos visibles en la tab de precios (no archivados). */
   const priceProducts = useMemo(() => products.filter((p) => !p.archived), [products]);
 
+  /* Errores de validación por formulario. Nacen aquí porque el guardado
+     anterior era un `return` a secas: faltaba el nombre, el botón no hacía
+     nada y el cajero no tenía forma de saber por qué (medido en el lote de
+     formularios). Un mapa por formulario para que "Nombre" del descuento no
+     arrastre el error del producto. */
+  const [errores, setErrores] = useState<{
+    producto: Campos;
+    descuento: Campos;
+    recargo: Campos;
+    categoria: Campos;
+  }>({ producto: {}, descuento: {}, recargo: {}, categoria: {} });
+  const limpiaError = (formulario: keyof typeof errores, campo: string) =>
+    setErrores((e) => {
+      if (!e[formulario][campo]) return e;
+      return { ...e, [formulario]: { ...e[formulario], [campo]: "" } };
+    });
+
   const openCreate = () => {
     setEditId(null);
     setForm({ ...EMPTY_PRODUCT });
+    setErrores((e) => ({ ...e, producto: {} }));
     setOpen(true);
   };
 
@@ -473,6 +507,7 @@ export function Catalogo() {
         Object.entries(p.channelPrices ?? {}).map(([k, v]) => [k, String(v)]),
       ),
     });
+    setErrores((e) => ({ ...e, producto: {} }));
     setOpen(true);
   };
 
@@ -520,7 +555,27 @@ export function Catalogo() {
   }, [params]);
 
   function saveProduct() {
-    if (!form.name.trim()) return;
+    const nuevos: Record<string, string> = {};
+    if (!form.name.trim()) nuevos.name = "Escribe el nombre del producto.";
+    const precio = Number(form.price);
+    if (form.price.trim() !== "" && (!Number.isFinite(precio) || precio < 0)) {
+      nuevos.price = "El precio no puede ser negativo.";
+    }
+    const costo = Number(form.cost);
+    if (form.cost.trim() !== "" && (!Number.isFinite(costo) || costo < 0)) {
+      nuevos.cost = "El costo no puede ser negativo.";
+    }
+    // Un precio en Bs que no equivale a nada con la tasa del día es dinero
+    // mal anotado: mejor decirlo antes de guardar que vender a pérdida.
+    const fijoBs = Number(form.priceBs);
+    if (form.priceBs.trim() !== "" && (!Number.isFinite(fijoBs) || fijoBs < 0)) {
+      nuevos.priceBs = "El precio fijo en Bs no puede ser negativo.";
+    }
+    if (Object.keys(nuevos).length > 0) {
+      setErrores((e) => ({ ...e, producto: nuevos }));
+      return;
+    }
+    setErrores((e) => ({ ...e, producto: {} }));
     const channelPrices: Record<string, number> = {};
     for (const ch of channels) {
       const raw = form.channelPrices[ch.id];
@@ -570,11 +625,16 @@ export function Catalogo() {
   /* ---- Categorías ---- */
   function openCreateCat() {
     setCatForm({ name: "", active: true, order: "0" });
+    setErrores((e) => ({ ...e, categoria: {} }));
     setCatOpen(true);
   }
 
   function saveCategory() {
-    if (!catForm.name.trim()) return;
+    if (!catForm.name.trim()) {
+      setErrores((e) => ({ ...e, categoria: { name: "Escribe el nombre de la categoría." } }));
+      return;
+    }
+    setErrores((e) => ({ ...e, categoria: {} }));
     addCategory({
       name: catForm.name.trim(),
       active: catForm.active,
@@ -586,6 +646,7 @@ export function Catalogo() {
   const openCreateDisc = () => {
     setDiscEditId(null);
     setDiscForm({ name: "", code: "", type: "porcentaje", value: "0", maxUses: "", active: true, from: "", to: "" });
+    setErrores((e) => ({ ...e, descuento: {} }));
     setDiscOpen(true);
   };
 
@@ -601,11 +662,19 @@ export function Catalogo() {
       from: d.from ?? "",
       to: d.to ?? "",
     });
+    setErrores((e) => ({ ...e, descuento: {} }));
     setDiscOpen(true);
   };
 
   function saveDiscount() {
-    if (!discForm.name.trim() || !discForm.code.trim()) return;
+    const nuevos: Campos = {};
+    if (!discForm.name.trim()) nuevos.name = "Escribe el nombre del descuento.";
+    if (!discForm.code.trim()) nuevos.code = "Escribe el código que se aplica en el POS.";
+    if (Object.keys(nuevos).length > 0) {
+      setErrores((e) => ({ ...e, descuento: nuevos }));
+      return;
+    }
+    setErrores((e) => ({ ...e, descuento: {} }));
     // "Usos máximos": vacío, 0 o un valor no numérico = ilimitado (null). Un
     // descuento con tope 0 nunca se podría aplicar, así que no se permite.
     const rawUses = discForm.maxUses.trim();
@@ -630,17 +699,23 @@ export function Catalogo() {
   const openCreateSur = () => {
     setSurEditId(null);
     setSurForm({ name: "", type: "porcentaje", value: "0", active: true });
+    setErrores((e) => ({ ...e, recargo: {} }));
     setSurOpen(true);
   };
 
   const openEditSur = (s: Surcharge) => {
     setSurEditId(s.id);
     setSurForm({ name: s.name, type: s.type, value: String(s.value), active: s.active });
+    setErrores((e) => ({ ...e, recargo: {} }));
     setSurOpen(true);
   };
 
   function saveSurcharge() {
-    if (!surForm.name.trim()) return;
+    if (!surForm.name.trim()) {
+      setErrores((e) => ({ ...e, recargo: { name: "Escribe el nombre del recargo." } }));
+      return;
+    }
+    setErrores((e) => ({ ...e, recargo: {} }));
     const data = {
       name: surForm.name.trim(),
       type: surForm.type,
@@ -716,7 +791,7 @@ export function Catalogo() {
             title="Precios por canal"
             hint="Cambia el precio de un producto por canal. El canal predeterminado (*) también ajusta el precio base del producto."
           >
-            <div className="row gap-12 wrap">
+            <div className="row gap-12">
               <select
                 className="select"
                 value={bulkChannel}
@@ -917,163 +992,194 @@ export function Catalogo() {
       {/* ================= Modales ================= */}
 
       {open && (
-        <Modal title={editId ? "Editar producto" : "Nuevo producto"} onClose={() => setOpen(false)}>
+        <Modal
+          title={editId ? "Editar producto" : "Nuevo producto"}
+          onClose={() => setOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={saveProduct}>
+              <Icon name="check" />
+              {editId ? "Guardar cambios" : "Guardar producto"}
+            </button>
+          }
+        >
           {/* 1 · Qué es: identificación del producto */}
-          <div className="form-section">
-            <span className="form-section__title">Producto</span>
-            
-              
-                <div className="form-group">
-                  <Field label="Nombre" required hint="Se guarda en MAYÚSCULAS en el catálogo.">
-                                                                    <input
-                                                                      className="input"
-                                                                      value={form.name}
-                                                                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                                                      placeholder="Ej.: Harina de maíz"
-                                                                    />
-                                                                  </Field>
-                                                                  <Field label="Código de barras" hint="Escanea o genera un código interno.">
-                                                                    <div className="row gap-8" style={{ alignItems: "center" }}>
-                                                                      <input
-                                                                        className="input"
-                                                                        value={form.barcode}
-                                                                        onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                                                                        placeholder="Ej.: 7591234567890"
-                                                                      />
-                                                                      <button
-                                                                        type="button"
-                                                                        className="btn btn--soft btn--sm"
-                                                                        title="Escanear con la cámara"
-                                                                        onClick={() => setCamOpen(true)}
-                                                                      >
-                                                                        <Icon name="scan" />
-                                                                      </button>
-                                                                      <button
-                                                                        type="button"
-                                                                        className="btn btn--soft btn--sm"
-                                                                        title="Generar código interno"
-                                                                        onClick={() => setForm({ ...form, barcode: internalCode() })}
-                                                                      >
-                                                                        <Icon name="tag" />
-                                                                      </button>
-                                                                    </div>
-                                                                  </Field>
+          <FormSection title="Producto">
+            <div className="form-group">
+              <Field label="Nombre" required hint="Se guarda en MAYÚSCULAS." error={errores.producto.name}>
+                <input
+                  className="input"
+                  value={form.name}
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    limpiaError("producto", "name");
+                  }}
+                  placeholder="Ej.: Harina de maíz"
+                />
+              </Field>
+              <Field label="Código de barras" hint="Escanea o genera un código interno.">
+                <div className="row gap-8">
+                  <input
+                    className="input grow"
+                    value={form.barcode}
+                    onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                    placeholder="Ej.: 7591234567890"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn--soft btn--sm btn--icono"
+                    title="Escanear con la cámara"
+                    aria-label="Escanear con la cámara"
+                    onClick={() => setCamOpen(true)}
+                  >
+                    <Icon name="scan" />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--soft btn--sm btn--icono"
+                    title="Generar código interno"
+                    aria-label="Generar código interno"
+                    onClick={() => setForm({ ...form, barcode: internalCode() })}
+                  >
+                    <Icon name="tag" />
+                  </button>
                 </div>
-              
-            
-            <div className="row gap-12">
-              
-                
-                  <div className="form-group">
-                    <Field label="SKU" hint="Opcional.">
-                                                                            <input className="input" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
-                                                                          </Field>
-                                                                          <Field label="Categoría">
-                                                                            <select
-                                                                              className="select"
-                                                                              value={form.category}
-                                                                              onChange={(e) => setForm({ ...form, category: e.target.value })}
-                                                                            >
-                                                                              <option value="">Sin categoría</option>
-                                                                              {activeCategories.map((c) => (
-                                                                                <option key={c.id} value={c.name}>
-                                                                                  {c.name}
-                                                                                </option>
-                                                                              ))}
-                                                                              {form.category &&
-                                                                                !activeCategories.some((c) => c.name === form.category) && (
-                                                                                  <option value={form.category}>{form.category}</option>
-                                                                                )}
-                                                                            </select>
-                                                                          </Field>
-                  </div>
-                
-              
+              </Field>
+              {/* SKU y Categoría van DENTRO de la sección: eran parte de la
+                  ficha del producto y colgaban fuera como dos campos huérfanos. */}
+              <Field label="SKU" hint="Opcional.">
+                <input
+                  className="input"
+                  value={form.sku}
+                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                />
+              </Field>
+              <Field label="Categoría">
+                <select
+                  className="select"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                >
+                  <option value="">Sin categoría</option>
+                  {activeCategories.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                  {form.category && !activeCategories.some((c) => c.name === form.category) && (
+                    <option value={form.category}>{form.category}</option>
+                  )}
+                </select>
+              </Field>
             </div>
-          </div>
+          </FormSection>
 
           {/* 2 · Cuánto mide: cantidad + unidad (lista cerrada) */}
-          <div className="form-section">
-            <span className="form-section__title">Presentación</span>
-            <div className="row gap-12">
-              
-                
-                  <div className="form-group">
-                    <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
-                                                                            <input
-                                                                              className="input"
-                                                                              type="number"
-                                                                              min={0}
-                                                                              value={form.presentationQty}
-                                                                              onChange={(e) => setForm({ ...form, presentationQty: e.target.value })}
-                                                                            />
-                                                                          </Field>
-                                                                          <Field label="Unidad">
-                                                                            <select
-                                                                              className="select"
-                                                                              value={form.unit}
-                                                                              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                                                                            >
-                                                                              {UNIT_OPTIONS.map((u) => (
-                                                                                <option key={u} value={u}>
-                                                                                  {u}
-                                                                                </option>
-                                                                              ))}
-                                                                            </select>
-                                                                          </Field>
-                  </div>
-                
-              
-            </div>
-            <Field label="Fabricante / marca" hint="Uso interno. No aparece en el recibo.">
+          <FormSection title="Presentación">
+            <FieldRow>
+              <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  value={form.presentationQty}
+                  onChange={(e) => setForm({ ...form, presentationQty: e.target.value })}
+                />
+              </Field>
+              <Field label="Unidad">
+                <select
+                  className="select"
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                >
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </FieldRow>
+            <Field label="Fabricante / marca" hint="Uso interno. No sale en el recibo.">
               <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
             </Field>
-          </div>
+          </FormSection>
 
           {/* 3 · Cuánto cuesta: precios e impuesto */}
-          <div className="form-section">
-            <span className="form-section__title">Precios e impuesto</span>
-            <div className="row gap-12">
-              
-                
-                  <div className="form-group">
-                    <Field label="Costo (USD)">
-                                                                            <input className="input" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
-                                                                          </Field>
-                                                                          <Field label="Precio (USD)">
-                                                                            <input className="input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-                                                                          </Field>
-                                                                          <Field
-                                                                            label="Precio fijo (Bs)"
-                                                                            hint="Opcional. Si lo llenas, este producto vale esos bolívares pase lo que pase con la tasa: se cobra en Bs y el precio en dólares se deriva con la tasa del momento. Déjalo vacío para que siga anclado a la tasa."
-                                                                          >
-                                                                            <input className="input" type="number" min="0" step="0.01" placeholder="Sin precio fijo" value={form.priceBs} onChange={(e) => setForm({ ...form, priceBs: e.target.value })} />
-                                                                          </Field>
-                                                                          <Field label="IVA">
-                                                                            <select className="select" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })}>
-                                                                              <option value="0.16">16%</option>
-                                                                              <option value="0.08">8%</option>
-                                                                              <option value="0">Exento</option>
-                                                                            </select>
-                                                                          </Field>
-                  </div>
-                
-              
-            </div>
+          <FormSection title="Precios e impuesto">
+            <MoneyField
+              label="Costo"
+              value={form.cost}
+              onChange={(v) => {
+                setForm({ ...form, cost: v });
+                limpiaError("producto", "cost");
+              }}
+              rate={rate}
+              error={errores.producto.cost}
+            />
+            <MoneyField
+              label="Precio"
+              value={form.price}
+              onChange={(v) => {
+                setForm({ ...form, price: v });
+                limpiaError("producto", "price");
+              }}
+              rate={rate}
+              error={errores.producto.price}
+            />
+            <Field
+              label="Precio fijo (Bs)"
+              hint="Ancla el producto a estos Bs aunque cambie la tasa."
+              error={errores.producto.priceBs}
+            >
+              <input
+                className="input tabular"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="Sin precio fijo"
+                value={form.priceBs}
+                onChange={(e) => {
+                  setForm({ ...form, priceBs: e.target.value });
+                  limpiaError("producto", "priceBs");
+                }}
+              />
+            </Field>
+            <FieldRow>
+              <Field label="IVA">
+                <select
+                  className="select"
+                  value={form.taxRate}
+                  onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
+                >
+                  <option value="0.16">16%</option>
+                  <option value="0.08">8%</option>
+                  <option value="0">Exento</option>
+                </select>
+              </Field>
+              <Field label="Margen" hint={Number(form.price) > 0 ? undefined : "Necesita costo y precio."}>
+                <span className="field__static tabular">
+                  {Number(form.price) > 0
+                    ? `${calcularMargen(Number(form.price), Number(form.cost) || 0)}%`
+                    : "—"}
+                </span>
+              </Field>
+            </FieldRow>
             {channels.length > 0 && (
               <div className="field">
                 <span className="field__label">Precios por canal (USD)</span>
                 <div className="stack gap-8">
                   {channels.map((ch) => (
-                    <div key={ch.id} className="row gap-8" style={{ alignItems: "center" }}>
-                      <span className="dim" style={{ flex: 1 }}>
+                    <div key={ch.id} className="row gap-8">
+                      <span className="dim grow">
                         {ch.name}
                         {ch.isDefault ? " (predeterminado)" : ""}
                       </span>
                       <input
-                        className="input"
+                        className="input channel-price"
                         type="number"
-                        style={{ width: 130 }}
+                        min="0"
+                        step="0.01"
                         placeholder={form.price}
                         value={form.channelPrices[ch.id] ?? ""}
                         onChange={(e) =>
@@ -1088,44 +1194,31 @@ export function Catalogo() {
                 </div>
               </div>
             )}
-          </div>
+          </FormSection>
 
           {/* 4 · Inventario y estado */}
-          <div className="form-section">
-            <span className="form-section__title">Inventario</span>
-            <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-              <input
-                type="checkbox"
-                checked={form.trackStock}
-                onChange={(e) => setForm({ ...form, trackStock: e.target.checked })}
-              />
-              Controlar inventario
-            </label>
+          <FormSection title="Inventario">
+            <CheckField
+              label="Controlar inventario"
+              checked={form.trackStock}
+              onChange={(v) => setForm({ ...form, trackStock: v })}
+            />
             {form.trackStock && (
-              <div className="row gap-12">
-                
-                  
-                    <div className="form-group">
-                      <Field label="Stock">
-                                                                                    <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
-                                                                                  </Field>
-                                                                                  <Field label="Stock mínimo">
-                                                                                    <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
-                                                                                  </Field>
-                    </div>
-                  
-                
-              </div>
+              <FieldRow>
+                <Field label="Stock">
+                  <input className="input" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                </Field>
+                <Field label="Stock mínimo">
+                  <input className="input" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} />
+                </Field>
+              </FieldRow>
             )}
-            <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
-              Activo (disponible para vender)
-            </label>
-          </div>
-
-          <button className="btn btn--primary btn--block" onClick={saveProduct}><Icon name="check" /> 
-            {editId ? "Guardar cambios" : "Guardar producto"}
-          </button>
+            <CheckField
+              label="Activo (disponible para vender)"
+              checked={form.active}
+              onChange={(v) => setForm({ ...form, active: v })}
+            />
+          </FormSection>
         </Modal>
       )}
 
@@ -1137,146 +1230,191 @@ export function Catalogo() {
       )}
 
       {discOpen && (
-        <Modal title={discEditId ? "Editar descuento" : "Nuevo descuento"} onClose={() => setDiscOpen(false)}>
-          
-            
-              <div className="form-group">
-                <Field label="Nombre" required>
-                                                            <input className="input" value={discForm.name} onChange={(e) => setDiscForm({ ...discForm, name: e.target.value })} />
-                                                          </Field>
-                                                          <Field label="Código" required hint="Se guarda en MAYÚSCULAS; se aplica en el POS.">
-                                                            <input
-                                                              className="input mono"
-                                                              value={discForm.code}
-                                                              onChange={(e) => setDiscForm({ ...discForm, code: e.target.value })}
-                                                            />
-                                                          </Field>
-              </div>
-            
-          
-          <div className="row gap-12">
-            
-              
-                <div className="form-group">
-                  <Field label="Tipo">
-                                                                    <select
-                                                                      className="select"
-                                                                      value={discForm.type}
-                                                                      onChange={(e) => setDiscForm({ ...discForm, type: e.target.value as typeof discForm.type })}
-                                                                    >
-                                                                      <option value="porcentaje">Porcentaje (%)</option>
-                                                                      <option value="monto">Monto (USD)</option>
-                                                                    </select>
-                                                                  </Field>
-                                                                  <Field label={discForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
-                                                                    <input className="input" type="number" value={discForm.value} onChange={(e) => setDiscForm({ ...discForm, value: e.target.value })} />
-                                                                  </Field>
-                </div>
-              
-            
-          </div>
-          <Field label="Usos máximos" hint="Vacío = ilimitado">
-            <input
-              className="input"
-              type="number"
-              value={discForm.maxUses}
-              onChange={(e) => setDiscForm({ ...discForm, maxUses: e.target.value })}
+        <Modal
+          title={discEditId ? "Editar descuento" : "Nuevo descuento"}
+          onClose={() => setDiscOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={saveDiscount}>
+              <Icon name="check" />
+              {discEditId ? "Guardar cambios" : "Guardar descuento"}
+            </button>
+          }
+        >
+          <FormSection title="Descuento">
+            <div className="form-group">
+              <Field label="Nombre" required error={errores.descuento.name}>
+                <input
+                  className="input"
+                  value={discForm.name}
+                  onChange={(e) => {
+                    setDiscForm({ ...discForm, name: e.target.value });
+                    limpiaError("descuento", "name");
+                  }}
+                  placeholder="Ej.: Promo fin de semana"
+                />
+              </Field>
+              <Field label="Código" required hint="Se guarda en MAYÚSCULAS." error={errores.descuento.code}>
+                <input
+                  className="input mono"
+                  value={discForm.code}
+                  onChange={(e) => {
+                    setDiscForm({ ...discForm, code: e.target.value });
+                    limpiaError("descuento", "code");
+                  }}
+                  placeholder="Ej.: FINDE"
+                />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection title="Cómo se aplica">
+            <FieldRow>
+              <Field label="Tipo">
+                <select
+                  className="select"
+                  value={discForm.type}
+                  onChange={(e) => setDiscForm({ ...discForm, type: e.target.value as typeof discForm.type })}
+                >
+                  <option value="porcentaje">Porcentaje (%)</option>
+                  <option value="monto">Monto (USD)</option>
+                </select>
+              </Field>
+              <MoneyField
+                label={discForm.type === "porcentaje" ? "Porcentaje" : "Monto"}
+                usdLabel={discForm.type === "porcentaje" ? "%" : "USD"}
+                value={discForm.value}
+                onChange={(v) => setDiscForm({ ...discForm, value: v })}
+                rate={rate}
+                min={0}
+                step={discForm.type === "porcentaje" ? 1 : 0.01}
+
+              />
+            </FieldRow>
+            <Field label="Usos máximos" hint="Vacío = ilimitado.">
+              <input
+                className="input"
+                type="number"
+                min={0}
+                step={1}
+                value={discForm.maxUses}
+                onChange={(e) => setDiscForm({ ...discForm, maxUses: e.target.value })}
+              />
+            </Field>
+            <FieldRow>
+              <Field label="Vigente desde" hint="Vacío = desde hoy.">
+                <input className="input" type="date" value={discForm.from} onChange={(e) => setDiscForm({ ...discForm, from: e.target.value })} />
+              </Field>
+              <Field label="Vigente hasta" hint="Vacío = sin fecha final.">
+                <input className="input" type="date" value={discForm.to} onChange={(e) => setDiscForm({ ...discForm, to: e.target.value })} />
+              </Field>
+            </FieldRow>
+            <CheckField
+              label="Activo"
+              checked={discForm.active}
+              onChange={(v) => setDiscForm({ ...discForm, active: v })}
             />
-          </Field>
-          <div className="row gap-12">
-            
-              
-                <div className="form-group">
-                  <Field label="Vigente desde" hint="Opcional">
-                                                                    <input className="input" type="date" value={discForm.from} onChange={(e) => setDiscForm({ ...discForm, from: e.target.value })} />
-                                                                  </Field>
-                                                                  <Field label="Vigente hasta" hint="Opcional">
-                                                                    <input className="input" type="date" value={discForm.to} onChange={(e) => setDiscForm({ ...discForm, to: e.target.value })} />
-                                                                  </Field>
-                </div>
-              
-            
-          </div>
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input type="checkbox" checked={discForm.active} onChange={(e) => setDiscForm({ ...discForm, active: e.target.checked })} />
-            Activo
-          </label>
-          <button className="btn btn--primary btn--block" onClick={saveDiscount}><Icon name="check" /> 
-            {discEditId ? "Guardar cambios" : "Guardar descuento"}
-          </button>
+          </FormSection>
         </Modal>
       )}
 
       {surOpen && (
-        <Modal title={surEditId ? "Editar recargo" : "Nuevo recargo"} onClose={() => setSurOpen(false)}>
-          <Field label="Nombre" required hint="Ej.: Delivery, Servicio en mesa">
-            <input className="input" value={surForm.name} onChange={(e) => setSurForm({ ...surForm, name: e.target.value })} />
-          </Field>
-          <div className="row gap-12">
-            
-              
-                <div className="form-group">
-                  <Field label="Tipo">
-                                                                    <select
-                                                                      className="select"
-                                                                      value={surForm.type}
-                                                                      onChange={(e) => setSurForm({ ...surForm, type: e.target.value as typeof surForm.type })}
-                                                                    >
-                                                                      <option value="porcentaje">Porcentaje (%)</option>
-                                                                      <option value="monto">Monto (USD)</option>
-                                                                    </select>
-                                                                  </Field>
-                                                                  <Field label={surForm.type === "porcentaje" ? "Porcentaje (%)" : "Monto (USD)"}>
-                                                                    <input className="input" type="number" value={surForm.value} onChange={(e) => setSurForm({ ...surForm, value: e.target.value })} />
-                                                                  </Field>
-                </div>
-              
-            
-          </div>
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input type="checkbox" checked={surForm.active} onChange={(e) => setSurForm({ ...surForm, active: e.target.checked })} />
-            Activo
-          </label>
-          <button className="btn btn--primary btn--block" onClick={saveSurcharge}><Icon name="check" /> 
-            {surEditId ? "Guardar cambios" : "Guardar recargo"}
-          </button>
+        <Modal
+          title={surEditId ? "Editar recargo" : "Nuevo recargo"}
+          onClose={() => setSurOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={saveSurcharge}>
+              <Icon name="check" />
+              {surEditId ? "Guardar cambios" : "Guardar recargo"}
+            </button>
+          }
+        >
+          <FormSection title="Recargo">
+            <div className="form-group">
+              <Field label="Nombre" required hint="Ej.: Delivery, Servicio en mesa." error={errores.recargo.name}>
+                <input
+                  className="input"
+                  value={surForm.name}
+                  onChange={(e) => {
+                    setSurForm({ ...surForm, name: e.target.value });
+                    limpiaError("recargo", "name");
+                  }}
+                />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection title="Cómo se aplica">
+            <FieldRow>
+              <Field label="Tipo">
+                <select
+                  className="select"
+                  value={surForm.type}
+                  onChange={(e) => setSurForm({ ...surForm, type: e.target.value as typeof surForm.type })}
+                >
+                  <option value="porcentaje">Porcentaje (%)</option>
+                  <option value="monto">Monto (USD)</option>
+                </select>
+              </Field>
+              <MoneyField
+                label={surForm.type === "porcentaje" ? "Porcentaje" : "Monto"}
+                usdLabel={surForm.type === "porcentaje" ? "%" : "USD"}
+                value={surForm.value}
+                onChange={(v) => setSurForm({ ...surForm, value: v })}
+                rate={rate}
+                min={0}
+                step={surForm.type === "porcentaje" ? 1 : 0.01}
+
+              />
+            </FieldRow>
+            <CheckField
+              label="Activo"
+              checked={surForm.active}
+              onChange={(v) => setSurForm({ ...surForm, active: v })}
+            />
+          </FormSection>
         </Modal>
       )}
 
       {catOpen && (
-        <Modal title="Nueva categoría" onClose={() => setCatOpen(false)}>
-          
-            
-              <div className="form-group">
-                <Field label="Nombre" required hint="Ej.: Alimentos, Bebidas, Servicios">
-                                                            <input
-                                                              className="input"
-                                                              value={catForm.name}
-                                                              onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
-                                                            />
-                                                          </Field>
-                                                          <Field label="Orden" hint="Menor número primero.">
-                                                            <input
-                                                              className="input"
-                                                              type="number"
-                                                              value={catForm.order}
-                                                              onChange={(e) => setCatForm({ ...catForm, order: e.target.value })}
-                                                            />
-                                                          </Field>
-              </div>
-            
-          
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input
-              type="checkbox"
+        <Modal
+          title="Nueva categoría"
+          onClose={() => setCatOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={saveCategory}>
+              <Icon name="check" />
+              Guardar categoría
+            </button>
+          }
+        >
+          <FormSection title="Categoría">
+            <div className="form-group">
+              <Field label="Nombre" required hint="Ej.: Alimentos, Bebidas, Servicios." error={errores.categoria.name}>
+                <input
+                  className="input"
+                  value={catForm.name}
+                  onChange={(e) => {
+                    setCatForm({ ...catForm, name: e.target.value });
+                    limpiaError("categoria", "name");
+                  }}
+                />
+              </Field>
+              <Field label="Orden" hint="Menor número primero.">
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={catForm.order}
+                  onChange={(e) => setCatForm({ ...catForm, order: e.target.value })}
+                />
+              </Field>
+            </div>
+            <CheckField
+              label="Activa (disponible en el formulario de producto)"
               checked={catForm.active}
-              onChange={(e) => setCatForm({ ...catForm, active: e.target.checked })}
+              onChange={(v) => setCatForm({ ...catForm, active: v })}
             />
-            Activa (disponible en el formulario de producto)
-          </label>
-          <button className="btn btn--primary btn--block" onClick={saveCategory}><Icon name="check" /> 
-            Guardar categoría
-          </button>
+          </FormSection>
         </Modal>
       )}
     </div>

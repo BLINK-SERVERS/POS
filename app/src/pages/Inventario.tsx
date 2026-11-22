@@ -6,7 +6,18 @@ import { DataTable } from "../components/DataTable";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { useScanHandler } from "../lib/scanner/ScannerProvider";
 import { Icon } from "../components/Icon";
-import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge } from "../components/ui";
+import {
+  EmptyState,
+  Field,
+  FieldRow,
+  FormError,
+  FormSection,
+  Modal,
+  Money,
+  PageHead,
+  Tabs,
+  Badge,
+} from "../components/ui";
 import { formatUsd, round2 } from "../lib/money";
 
 
@@ -338,8 +349,16 @@ export function Inventario() {
       )}
 
       {open && (
-        <Modal title="Ajustar existencia" onClose={() => setOpen(false)}>
-          <div className="stack gap-8">
+        <Modal
+          title="Ajustar existencia"
+          onClose={() => setOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={applyAdjust}>
+              <Icon name="check" /> Guardar ajuste
+            </button>
+          }
+        >
+          <FormSection title="Inventario">
             <Field label="Producto" required>
               <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
                 <option value="">Selecciona…</option>
@@ -350,11 +369,13 @@ export function Inventario() {
                 ))}
               </select>
             </Field>
-            <Field label="Nueva existencia" hint="Número finito mayor o igual a 0 (admite decimales para kg/L).">
+            <Field label="Nueva existencia" hint="Admite decimales para kg y litros.">
               <input className="input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
             </Field>
+          </FormSection>
+          <FormSection title="Respaldo del ajuste">
             {/* BLINK-033: sin motivo no hay ajuste; el asiento queda firmado con él. */}
-            <Field label="Motivo" required hint="Conteo físico, daño, robo, devolución… Se registra en el libro.">
+            <Field label="Motivo" required hint="Se guarda en el libro junto al ajuste.">
               <input
                 className="input"
                 value={adjustMotive}
@@ -370,23 +391,29 @@ export function Inventario() {
                 placeholder="Detalle del conteo, responsable…"
               />
             </Field>
-            {adjustError && <p className="field__hint" role="alert">{adjustError}</p>}
-          </div>
-          <button className="btn btn--primary btn--block" onClick={applyAdjust}>
-            <Icon name="check" /> Guardar ajuste
-          </button>
+          </FormSection>
+          <FormError>{adjustError}</FormError>
         </Modal>
       )}
 
       {purchaseOpen && (
-        <Modal title="Registrar compra" onClose={() => setPurchaseOpen(false)}>
+        <Modal
+          title="Registrar compra"
+          onClose={() => setPurchaseOpen(false)}
+          footer={
+            <button className="btn btn--primary btn--block" onClick={registrarCompra}>
+              <Icon name="check" /> Registrar compra
+            </button>
+          }
+        >
           {providers.length === 0 && (
             <p className="muted" style={{ marginBottom: "0.75rem" }}>
               Aún no tienes proveedores. <Link to="/app/contactos">Crea uno en Contactos</Link> para
               registrar la compra con su nombre y su cuenta por pagar.
             </p>
           )}
-          <Field label="Producto" required>
+          <FormSection title="Qué compraste">
+            <Field label="Producto" required>
             <select
               className="select"
               value={purchase.productId}
@@ -408,32 +435,26 @@ export function Inventario() {
               ))}
             </select>
           </Field>
-          <div className="row gap-12">
-            
-              
-                
-                  <div className="form-group">
-                    <Field label="Cantidad" required>
-                                                                                          <input
-                                                                                            className="input"
-                                                                                            type="number"
-                                                                                            value={purchase.qty}
-                                                                                            onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
-                                                                                          />
-                                                                                        </Field>
-                                                                                        <Field label="Costo unitario (USD)" required>
-                                                                                          <input
-                                                                                            className="input"
-                                                                                            type="number"
-                                                                                            value={purchase.costUnit}
-                                                                                            onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
-                                                                                          />
-                                                                                        </Field>
-                  </div>
-                
-              
-            
-          </div>
+          <FieldRow>
+            <Field label="Cantidad" required>
+              <input
+                className="input"
+                type="number"
+                value={purchase.qty}
+                onChange={(e) => setPurchase({ ...purchase, qty: e.target.value })}
+              />
+            </Field>
+            <Field label="Costo unitario (USD)" required>
+              <input
+                className="input"
+                type="number"
+                value={purchase.costUnit}
+                onChange={(e) => setPurchase({ ...purchase, costUnit: e.target.value })}
+              />
+            </Field>
+          </FieldRow>
+          </FormSection>
+          <FormSection title="Cómo pagas">
           <Field label="Proveedor" required>
             <select
               className="select"
@@ -448,7 +469,7 @@ export function Inventario() {
               ))}
             </select>
           </Field>
-          <div className="row gap-12">
+          <FieldRow>
             <Field label="Forma de pago" required>
               <select
                 className="select"
@@ -481,7 +502,7 @@ export function Inventario() {
                 </select>
               </Field>
             )}
-          </div>
+          </FieldRow>
           <Field label="N° de factura">
             <input
               className="input"
@@ -489,12 +510,9 @@ export function Inventario() {
               onChange={(e) => setPurchase({ ...purchase, invoiceNo: e.target.value })}
             />
           </Field>
+          </FormSection>
 
-          {purchaseError && <p className="field__error">{purchaseError}</p>}
-
-          <button className="btn btn--primary btn--block" onClick={registrarCompra}><Icon name="check" /> 
-            Registrar compra
-          </button>
+          <FormError>{purchaseError}</FormError>
         </Modal>
       )}
 

@@ -1,11 +1,15 @@
 // Primitivas de UI de BLINK POS.
 import {
+  cloneElement,
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
+  isValidElement,
+  type ReactElement,
   type ReactNode,
 } from "react";
 import { formatBs, formatUsd } from "../lib/money";
@@ -164,12 +168,15 @@ export function Tabs<T extends string>({
 export function Field({
   label,
   hint,
+  error,
   children,
   required,
   as = "field",
 }: {
   label: string;
   hint?: string;
+  /** Mensaje de validación del propio campo. Se asocia con `aria-describedby`. */
+  error?: string;
   children: ReactNode;
   required?: boolean;
   /**
@@ -180,6 +187,27 @@ export function Field({
    */
   as?: "field" | "group";
 }) {
+  const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  /* El REQUIRED vive en el control, no solo en el rótulo: un asterisco que el
+     lector no asocia a nada no avisa de nada. Clonamos al único hijo de tipo
+     elemento para ponerle los atributos; si el contenido no es un control (un
+     div con botones), se queda solo con el texto visible. */
+  let descrito = children;
+  if ((hint || error) && isValidElement(children)) {
+    descrito = cloneElement(children as ReactElement<Record<string, unknown>>, {
+      id,
+      "aria-required": required || undefined,
+      required: required || undefined,
+      "aria-invalid": error ? true : undefined,
+      "aria-describedby": [hintId, errorId].filter(Boolean).join(" ") || undefined,
+    });
+  } else if (required && isValidElement(children)) {
+    descrito = cloneElement(children as ReactElement<Record<string, unknown>>, {
+      "aria-required": true,
+    });
+  }
   const labelNode = (
     <span className="field__label">
       {label}
@@ -189,8 +217,17 @@ export function Field({
   const body = (
     <>
       {labelNode}
-      {children}
-      {hint && <span className="field__hint">{hint}</span>}
+      {descrito}
+      {hint && !error && (
+        <span className="field__hint" id={hintId}>
+          {hint}
+        </span>
+      )}
+      {error && (
+        <span className="field__error-msg" id={errorId} role="alert">
+          {error}
+        </span>
+      )}
     </>
   );
   if (as === "group") {
@@ -201,6 +238,140 @@ export function Field({
     );
   }
   return <label className="field">{body}</label>;
+}
+
+/* --- Error de formulario (una sola primitiva) ---
+   Antes cada vista pintaba el suyo reutilizando `.field__hint` o soltando un
+   `<p>` suelto: el mismo aviso con tres alturas de letra distintas y ninguno
+   anunciado al lector de pantalla. Esto es el bloque de mensaje del diálogo,
+   para fallos que no pertenecen a un campo concreto (un requisito global, por
+   ejemplo). Para un campo específico usa `Field error="…"`, que ya lo asocia. */
+export function FormError({ children }: { children: ReactNode }) {
+  if (!children) return null;
+  return (
+    <div className="form-error" role="alert">
+      {children}
+    </div>
+  );
+}
+
+/* --- Sección de un formulario largo ---
+   Título real de jerarquía: el diálogo pone su h2/h3 arriba, la sección es h4.
+   Sin esto, un formulario de 18 campos era una lista plana imposible de leer
+   de un vistazo. */
+export function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="form-section">
+      <h4 className="form-section__title">{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+/* --- Fila de campos ---
+   Va dentro de `.form-group__row` (con caja propia, envuelve y reparte el
+   ancho en partes iguales). NO es `.row`: esa primitiva es de botones sueltos
+   y trae nowrap + align-items:center, que partida en dos líneas un label como
+   «Costo (USD)» desalineaba al input de al lado. */
+export function FieldRow({ children }: { children: ReactNode }) {
+  return <div className="form-group__row">{children}</div>;
+}
+
+/* --- Casilla compartida ---
+   La casilla nativa de Chrome mide 13×13 px: el área táctil mínima aceptable
+   son 44. Aquí el label ES el blanco de toque de 44 px, así que acertar deja
+   de depender de darle a un cuadrito. */
+export function CheckField({
+  label,
+  checked,
+  onChange,
+  hint,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  hint?: string;
+}) {
+  return (
+    <label className="check-field">
+      <input
+        type="checkbox"
+        className="check-field__box"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="check-field__text">
+        {label}
+        {hint && <span className="check-field__hint">{hint}</span>}
+      </span>
+    </label>
+  );
+}
+
+/* --- Campo de dinero dual USD / Bs ---
+   El patrón repetido en Catálogo, Finanzas y Crédito: monto en dólares con su
+   equivalente en bolívares a la tasa del día. Un solo glosario de texto para
+   las tres frases posibles (hay cifra, no hay cifra, no hay tasa): si cada
+   vista redacta la suya, el cajero lee tres avisos distintos de lo mismo. */
+export function equivalenciaBs(valor: string | number, rate: number): string {
+  const n = typeof valor === "number" ? valor : Number(valor);
+  const hayCifra = String(valor).trim() !== "" && Number.isFinite(n);
+  if (!(rate > 0)) return "Sin tasa BCV configurada.";
+  if (!hayCifra || n === 0) return "Bs — al escribir el monto.";
+  return formatBs(n, rate);
+}
+
+export function MoneyField({
+  label,
+  usdLabel = "USD",
+  value,
+  onChange,
+  rate,
+  hint,
+  required,
+  error,
+  min = 0,
+  step = 0.01,
+  placeholder,
+}: {
+  label: string;
+  /** Rótulo de la moneda del monto cuando no es USD (p. ej. "Bs"). */
+  usdLabel?: string;
+  value: string;
+  onChange: (v: string) => void;
+  rate: number;
+  hint?: string;
+  required?: boolean;
+  error?: string;
+  min?: number;
+  step?: number | string;
+  placeholder?: string;
+}) {
+  return (
+    <Field
+      label={`${label} (${usdLabel})`}
+      hint={hint ?? equivalenciaBs(value, rate)}
+      required={required}
+      error={error}
+    >
+      <input
+        className="input tabular"
+        type="number"
+        min={min}
+        step={step}
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </Field>
+  );
 }
 
 /* --- Foco de un diálogo (entrada y devolución) ---
@@ -255,14 +426,21 @@ export function useCerrarConEscape(onClose: () => void): void {
      redondeadas arriba y tirador. Es el componente <Sheet> de Konsta.
    · En escritorio, panel centrado: en iPadOS los formularios
      modales se presentan centrados.
-   El contenido se desplaza solo si no cabe. */
+   Estructura de columna en los dos casos: cabecera y pie FUERA del scroll,
+   solo `children` rueda. Sin esto el botón de guardar quedaba al final del
+   cuerpo (medido: top 1397 con viewport de 900) y había que sacarlo del
+   diálogo para encontrarlo. Pasa `footer` con ese botón y la hoja/modal lo
+   ancla abajo; lo que no pasa footer se comporta como antes. */
 export function Modal({
   title,
   onClose,
+  footer,
   children,
 }: {
   title: string;
   onClose: () => void;
+  /** Acciones ancladas al pie, visibles sin scrollear. */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const movil = useIsMobile();
@@ -286,6 +464,7 @@ export function Modal({
           </button>
         </header>
         <div className="sheet__body">{children}</div>
+        {footer && <footer className="sheet__foot">{footer}</footer>}
       </Sheet>
     );
   }
@@ -313,6 +492,7 @@ export function Modal({
           </button>
         </div>
         <div className="modal__body">{children}</div>
+        {footer && <footer className="modal__foot">{footer}</footer>}
       </div>
     </div>
   );

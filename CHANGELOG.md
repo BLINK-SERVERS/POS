@@ -13,6 +13,94 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [Sin publicar] · 2026-11-22 · Lote 35
+
+### Lote 35 (2026-11-22) · Jerarquía de formularios: fin del colapso (BLINK-145…147)
+
+Encargo del dueño: «mejorar los formularios de relleno de producto, editar, etc.,
+que se jerarquice todo, que sea más fácil de entender, que no se descompagine y que
+no colapsen los campos». Cuatro papeles repartidos en subagentes (auditar, medir en
+navegador, corregir, probar); el de corregir y el de probar se agotaron a mitad
+(150 turnos cada uno) y terminé el trabajo a mano, así que la verificación de gates
+la corrí yo.
+
+**El colapso tenía dos causas, ambas en la hoja de estilos, no en los formularios:**
+
+1. `.row > .form-group { display: contents }` sacaba los controles de su grupo para
+   ponerlos en el flex de la fila. La fila es `nowrap` a propósito (es la primitiva
+   de botones), así que cuatro controles salían en tres líneas y el grupo se quedaba
+   sin caja propia (`width: 0`). Medido: el `select` de IVA en **31 px** y los campos
+   de costo y precio en **48 px**, mostrando «4.» de un `4.00`.
+2. `.modal` scrolleaba y `.modal__body` nunca se limitaba: el cuerpo medía **1327 px**
+   dentro de un diálogo con `overflow-y: auto`. El botón «Guardar cambios» quedaba en
+   `top: 1397`, debajo de la ventana, y la cabecera se iba con el scroll.
+
+**Corrección, en la capa donde vive la regla (AGENTS §35):**
+
+- `app.css`: fuera el `display: contents`; nace `.form-group__row`, que sí envuelve
+  (dos columnas, una por debajo de 420 px) y deja el control a `width: 100%`. El
+  `.modal` pasa a columna flex con `max-height: min(88vh, 88dvh)`: cabecera fija,
+  cuerpo con `flex: 1 1 auto; min-height: 0; scrollbar-gutter: stable` y pie fijo.
+- `ui.tsx`: primitivas nuevas `FormSection`, `FieldRow`, `CheckField`, `MoneyField`,
+  `FormError`, y `Modal` con `footer`. `Field` ahora enlaza su etiqueta con el control
+  (`useId`), pinta el error bajo el campo con `role="alert"` y pone `aria-invalid`,
+  `aria-required` y `aria-describedby`. El equivalente en Bs sale de **un solo glosario**
+  (`equivalenciaBs`): «Sin tasa BCV configurada.» / «Bs — al escribir el monto.» / el
+  número cuando hay tasa.
+- Diálogos reescritos: producto nuevo y editar, descuento, contacto, compra, ajuste de
+  existencia, cuenta, gasto y movimiento de cuenta. Cada uno con secciones nombradas,
+  sus dos columnas y el botón en el pie. Texto de ayuda más corto y en español claro
+  («Se guarda en MAYÚSCULAS.», «Admite decimales para kg y litros.», «Plazo para pagar
+  una venta a crédito.»).
+- **BLINK-146:** `Contactos` abortaba el guardado sin decir nada si el nombre estaba
+  vacío; ahora esa campo trae su error en pantalla.
+
+**Después, medido con la misma sonda (`/tmp/shots-lote35/sonda-v2.mjs`, 1280×900 y 390×844):**
+
+| Control | antes | después |
+|---|---|---|
+| `select` de IVA | 31 px | **177 px** |
+| Costo / Precio | 48 px | **397 px** |
+| Casilla (blanco de toque) | 13 px | **44 px** de alto con caja de 20×20 |
+| «Guardar cambios» | `top 1397`, fuera de pantalla | `top 772`, en el pie |
+| Filas de campos | 4 controles en 3 líneas | envuelven, 2 columnas |
+| Cabecera del diálogo | se iba con el scroll | fija |
+
+Las 8 escenas de escritorio y las de móvil dan `visibleSinScroll: true` y
+`dentroDelCuerpoScroll: false`. El diálogo de producto mide 1814 px de contenido en
+619 visibles: scrollea, que es lo correcto con el pie anclado.
+
+**Gates del lote:** `tsc --noEmit` 0 · vitest **287/287** en 27 ficheros · `build` ✓
+(14,35 s) · `build:pages` ✓ · `check:dist` ✓ 37 ficheros / 0 coincidencias prohibidas ·
+`docs:check` ✓ 146 archivos / 761 enlaces · `qa:e2e` ✓ 0 fallos / 0 avisos ·
+`qa:apariencia` ✓ 5/5 · `qa:responsive` salida 0, 0 fallos / 6 avisos (SF Pro no está
+instalado en este equipo) · `qa:preview` ✓ 0/0 · `qa:carga` ✓.
+
+**Dos gates rojos que no son de este lote, probado contra `HEAD`:** `qa:funcional` falla
+con 5 comprobaciones y `qa:navegacion` sale con código 2 sin montar el shell. Corrí el
+mismo gate contra una copia limpia de `main@8563808` en un worktree y la firma de los 5
+fallos es **idéntica** (`diff` vacío). La causa es de entorno y de instrumento: este
+equipo sale a internet por un proxy que pide credenciales; `curl` las lee del entorno y
+Chromium no, así que la tasa BCV no llega, el POS queda en «Sin tasa» y las
+comprobaciones en Bs no tienen qué leer. `qa-navegacion.mjs` intenta primero un login
+real contra Supabase y solo cae al `?bypass=1` si no hay formulario. Queda abierto como
+**BLINK-147**. Lo que ese gate debía medir de móvil lo medí por bypass a mano: barra
+`tabbar` con 6 elementos, **Vender centrado al píxel** (centro 195 en 390, desvío 0 px),
+objetivos táctiles de 47–48 px y sin scroll horizontal.
+
+`qa:seed` y `qa:cuenta` **no se ejecutaron**: escriben filas en el proyecto de producción
+y envían correo. Piden autorización expresa del dueño.
+
+**Trampa de arnés descubierta aquí** (segunda vez que muerde): el gate de montado que
+cuenta caracteres engaña. Pedir `innerText.length > 120` se cumple con la barra lateral
+sola, que ya suma 148, y la medición sale con la página «en blanco». El gate tiene que
+buscar un marcador de contenido (`h1`, `.page-head`, `.modal`, `.k-sheet`). De ahí salió
+el falso «Catálogo y Finanzas en blanco» que reportó el subagente probador.
+
+**Sin publicar.** La versión declarada sigue en **1.19.0**.
+
+---
+
 ## [Publicado sin bump] · 2026-11-22
 
 > **Estado (2026-11-22, con autorización expresa del dueño):** lo que sirve

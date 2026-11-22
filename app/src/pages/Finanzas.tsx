@@ -2,7 +2,21 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useStoreActions, useStoreState } from "../lib/store";
 import { Icon } from "../components/Icon";
-import { EmptyState, Field, Modal, Money, PageHead, Tabs, Badge, useConfirm } from "../components/ui";
+import {
+  CheckField,
+  EmptyState,
+  Field,
+  FieldRow,
+  FormError,
+  FormSection,
+  Modal,
+  Money,
+  MoneyField,
+  PageHead,
+  Tabs,
+  Badge,
+  useConfirm,
+} from "../components/ui";
 import { formatBsDirect, formatRate, formatUsd, round2 } from "../lib/money";
 import { diaLocal } from "../lib/metrics";
 import type {
@@ -968,84 +982,120 @@ export function Finanzas() {
       {/* ================= Modales ================= */}
 
       {accOpen && (
-        <Modal title="Nueva cuenta" onClose={() => setAccOpen(false)}>
-          
-            
-              <div className="form-group">
-                <Field label="Nombre" required>
-                                                            <input className="input" value={accForm.name} onChange={(e) => setAccForm({ ...accForm, name: e.target.value })} />
-                                                          </Field>
-                                                          <Field label="Tipo">
-                                                            <select
-                                                              className="select"
-                                                              value={accForm.type}
-                                                              onChange={(e) => setAccForm({ ...accForm, type: e.target.value as typeof accForm.type })}
-                                                            >
-                                                              <option value="efectivo">Efectivo</option>
-                                                              <option value="banco">Banco</option>
-                                                              <option value="pago_movil">Pago móvil</option>
-                                                            </select>
-                                                          </Field>
-                                                          <Field label="Moneda">
-                                                            <select
-                                                              className="select"
-                                                              value={accForm.currency}
-                                                              onChange={(e) => setAccForm({ ...accForm, currency: e.target.value as typeof accForm.currency })}
-                                                            >
-                                                              <option value="USD">USD</option>
-                                                              <option value="VES">VES (Bs)</option>
-                                                            </select>
-                                                          </Field>
-              </div>
-            
-          
-          <div className="row gap-8">
-            
-              
-                <div className="form-group">
-                  <Field label="Comisión al recibir (%)" hint="0 si no aplica">
-                                                                    <input
-                                                                      className="input"
-                                                                      type="number"
-                                                                      value={accForm.commissionIn}
-                                                                      onChange={(e) => setAccForm({ ...accForm, commissionIn: e.target.value })}
-                                                                    />
-                                                                  </Field>
-                                                                  <Field label="Comisión al enviar (%)" hint="0 si no aplica">
-                                                                    <input
-                                                                      className="input"
-                                                                      type="number"
-                                                                      value={accForm.commissionOut}
-                                                                      onChange={(e) => setAccForm({ ...accForm, commissionOut: e.target.value })}
-                                                                    />
-                                                                  </Field>
-                </div>
-              
-            
-          </div>
-          <button
-            className="btn btn--primary btn--block"
-            disabled={!accForm.name.trim()}
-            onClick={() => {
-              addAccount({
-                name: accForm.name.trim(),
-                type: accForm.type,
-                currency: accForm.currency,
-                balance: 0,
-                commissionIn: Number(accForm.commissionIn) || 0,
-                commissionOut: Number(accForm.commissionOut) || 0,
-                active: true,
-              });
-              setAccOpen(false);
-            }}
-          ><Icon name="check" /> 
-            Crear cuenta
-          </button>
+        <Modal
+          title="Nueva cuenta"
+          onClose={() => setAccOpen(false)}
+          footer={
+            <button
+              className="btn btn--primary btn--block"
+              disabled={!accForm.name.trim()}
+              onClick={() => {
+                addAccount({
+                  name: accForm.name.trim(),
+                  type: accForm.type,
+                  currency: accForm.currency,
+                  balance: 0,
+                  commissionIn: Number(accForm.commissionIn) || 0,
+                  commissionOut: Number(accForm.commissionOut) || 0,
+                  active: true,
+                });
+                setAccOpen(false);
+              }}
+            >
+              <Icon name="check" /> Crear cuenta
+            </button>
+          }
+        >
+          <FormSection title="La cuenta">
+            <Field label="Nombre" required>
+              <input
+                className="input"
+                value={accForm.name}
+                onChange={(e) => setAccForm({ ...accForm, name: e.target.value })}
+              />
+            </Field>
+            <FieldRow>
+              <Field label="Tipo">
+                <select
+                  className="select"
+                  value={accForm.type}
+                  onChange={(e) => setAccForm({ ...accForm, type: e.target.value as typeof accForm.type })}
+                >
+                  <option value="efectivo">Efectivo</option>
+                  <option value="banco">Banco</option>
+                  <option value="pago_movil">Pago móvil</option>
+                </select>
+              </Field>
+              <Field label="Moneda">
+                <select
+                  className="select"
+                  value={accForm.currency}
+                  onChange={(e) =>
+                    setAccForm({ ...accForm, currency: e.target.value as typeof accForm.currency })
+                  }
+                >
+                  <option value="USD">USD</option>
+                  <option value="VES">VES (Bs)</option>
+                </select>
+              </Field>
+            </FieldRow>
+          </FormSection>
+
+          <FormSection title="Comisiones de la cuenta">
+            <FieldRow>
+              <Field label="Al recibir (%)" hint="0 si no cobra comisión.">
+                <input
+                  className="input"
+                  type="number"
+                  value={accForm.commissionIn}
+                  onChange={(e) => setAccForm({ ...accForm, commissionIn: e.target.value })}
+                />
+              </Field>
+              <Field label="Al enviar (%)" hint="0 si no cobra comisión.">
+                <input
+                  className="input"
+                  type="number"
+                  value={accForm.commissionOut}
+                  onChange={(e) => setAccForm({ ...accForm, commissionOut: e.target.value })}
+                />
+              </Field>
+            </FieldRow>
+          </FormSection>
         </Modal>
       )}
 
       {moveOpen && (
-        <Modal title="Movimiento de cuenta" onClose={() => setMoveOpen(false)}>
+        <Modal
+          title="Movimiento de cuenta"
+          onClose={() => setMoveOpen(false)}
+          footer={
+            <button
+              className="btn btn--primary btn--block"
+              disabled={!moveTarget || moveValue <= 0 || (moveTarget.currency === "VES" && rate <= 0)}
+              onClick={() => {
+                if (!moveTarget) return;
+                if (!Number.isFinite(moveValue) || moveValue <= 0) {
+                  setMoveError("Escribe un monto mayor que cero.");
+                  return;
+                }
+                if (moveSign === -1 && moveValue > moveTarget.balance) {
+                  setMoveError(
+                    `Fondos insuficientes: la cuenta tiene ${moneyIn(moveTarget.currency, moveTarget.balance)}.`
+                  );
+                  return;
+                }
+                moveAccount(
+                  moveTarget.id,
+                  moveSign * moveValue,
+                  `${moveSign === 1 ? "Ingreso" : "Retiro"} manual · ${moneyIn(moveTarget.currency, moveValue)}`
+                );
+                setMoveOpen(false);
+              }}
+            >
+              <Icon name="check" /> Confirmar
+            </button>
+          }
+        >
           {/* BLINK-068: el monto se declara en la MONEDA DE LA CUENTA. El
               modal viejo rotulaba en USD un movimiento que acreditaba Bs. */}
           {moveTarget && (
@@ -1086,115 +1136,103 @@ export function Finanzas() {
               </span>
             </div>
           </div>
-          {moveTarget?.currency === "VES" && rate <= 0 && (
-            <div className="form-error" role="alert">
-              Configura la tasa BCV para poder mover bolívares.
-            </div>
-          )}
-          {moveError && (
-            <div className="form-error" role="alert">
-              {moveError}
-            </div>
-          )}
-          <button
-            className="btn btn--primary btn--block"
-            style={{ marginTop: "1rem" }}
-            disabled={!moveTarget || moveValue <= 0 || (moveTarget.currency === "VES" && rate <= 0)}
-            onClick={() => {
-              if (!moveTarget) return;
-              if (!Number.isFinite(moveValue) || moveValue <= 0) {
-                setMoveError("Escribe un monto mayor que cero.");
-                return;
-              }
-              if (moveSign === -1 && moveValue > moveTarget.balance) {
-                setMoveError(
-                  `Fondos insuficientes: la cuenta tiene ${moneyIn(moveTarget.currency, moveTarget.balance)}.`
-                );
-                return;
-              }
-              moveAccount(
-                moveTarget.id,
-                moveSign * moveValue,
-                `${moveSign === 1 ? "Ingreso" : "Retiro"} manual · ${moneyIn(moveTarget.currency, moveValue)}`
-              );
-              setMoveOpen(false);
-            }}
-          ><Icon name="check" />
-            Confirmar
-          </button>
+          <FormError>
+            {moveTarget?.currency === "VES" && rate <= 0
+              ? "Configura la tasa BCV para poder mover bolívares."
+              : moveError}
+          </FormError>
         </Modal>
       )}
 
       {expOpen && (
-        <Modal title="Nuevo gasto" onClose={() => setExpOpen(false)}>
-          
-            
-              <div className="form-group">
-                <Field label="Nombre" required hint="Ej.: alquiler de octubre">
-                                                            <input className="input" value={expForm.name} onChange={(e) => setExpForm({ ...expForm, name: e.target.value })} />
-                                                          </Field>
-                                                          <Field label="Categoría">
-                                                            <select
-                                                              className="select"
-                                                              value={expForm.category}
-                                                              onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
-                                                            >
-                                                              {activeCategories.map((c) => (
-                                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                                              ))}
-                                                              {!activeCategories.some((c) => c.name === expForm.category) && expForm.category && (
-                                                                <option value={expForm.category}>{expForm.category}</option>
-                                                              )}
-                                                            </select>
-                                                          </Field>
-                                                          <Field label="Nota">
-                                                            <input className="input" value={expForm.note} onChange={(e) => setExpForm({ ...expForm, note: e.target.value })} />
-                                                          </Field>
-                                                          <Field label="Monto (USD)">
-                                                            <input className="input" type="number" value={expForm.amountUsd} onChange={(e) => setExpForm({ ...expForm, amountUsd: e.target.value })} />
-                                                          </Field>
-              </div>
-            
-          
-          <label className="row gap-8" style={{ marginBottom: "0.75rem" }}>
-            <input
-              type="checkbox"
-              checked={expForm.paid}
-              onChange={(e) => setExpForm({ ...expForm, paid: e.target.checked })}
-            />
-            Pagado ahora (crea el gasto y lo paga en un solo paso)
-          </label>
-          {expForm.paid && (
-            <Field label="Cuenta de pago" required>
-              <select
-                className="select"
-                value={expForm.accountId}
-                onChange={(e) => setExpForm({ ...expForm, accountId: e.target.value })}
-              >
-                {state.accounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>
-                ))}
-              </select>
+        <Modal
+          title="Nuevo gasto"
+          onClose={() => setExpOpen(false)}
+          footer={
+            <button
+              className="btn btn--primary btn--block"
+              disabled={!expForm.name.trim() || (expForm.paid && !expForm.accountId)}
+              onClick={() => {
+                addExpense({
+                  name: expForm.name.trim(),
+                  category: expForm.category || "Operativo",
+                  note: expForm.note,
+                  amountUsd: Math.max(0, Number(expForm.amountUsd) || 0),
+                  recurring: expForm.recurring,
+                  paid: expForm.paid,
+                  accountId: expForm.paid ? expForm.accountId : undefined,
+                });
+                setExpOpen(false);
+              }}
+            >
+              <Icon name="check" /> Guardar gasto
+            </button>
+          }
+        >
+          <FormSection title="El gasto">
+            <Field label="Nombre" required hint="Ej.: alquiler de octubre">
+              <input
+                className="input"
+                value={expForm.name}
+                onChange={(e) => setExpForm({ ...expForm, name: e.target.value })}
+              />
             </Field>
-          )}
-          <button
-            className="btn btn--primary btn--block"
-            disabled={!expForm.name.trim() || (expForm.paid && !expForm.accountId)}
-            onClick={() => {
-              addExpense({
-                name: expForm.name.trim(),
-                category: expForm.category || "Operativo",
-                note: expForm.note,
-                amountUsd: Math.max(0, Number(expForm.amountUsd) || 0),
-                recurring: expForm.recurring,
-                paid: expForm.paid,
-                accountId: expForm.paid ? expForm.accountId : undefined,
-              });
-              setExpOpen(false);
-            }}
-          ><Icon name="check" /> 
-            Guardar gasto
-          </button>
+            <FieldRow>
+              <Field label="Categoría">
+                <select
+                  className="select"
+                  value={expForm.category}
+                  onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}
+                >
+                  {activeCategories.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                  {!activeCategories.some((c) => c.name === expForm.category) && expForm.category && (
+                    <option value={expForm.category}>{expForm.category}</option>
+                  )}
+                </select>
+              </Field>
+              <MoneyField
+                label="Monto"
+                value={expForm.amountUsd}
+                onChange={(v) => setExpForm({ ...expForm, amountUsd: v })}
+                rate={rate}
+              />
+            </FieldRow>
+            <Field label="Nota">
+              <input
+                className="input"
+                value={expForm.note}
+                onChange={(e) => setExpForm({ ...expForm, note: e.target.value })}
+              />
+            </Field>
+          </FormSection>
+
+          <FormSection title="Cómo lo pagas">
+            <CheckField
+              label="Pagado ahora"
+              hint="Registra el gasto y su pago en un solo paso."
+              checked={expForm.paid}
+              onChange={(v) => setExpForm({ ...expForm, paid: v })}
+            />
+            {expForm.paid && (
+              <Field label="Cuenta de pago" required>
+                <select
+                  className="select"
+                  value={expForm.accountId}
+                  onChange={(e) => setExpForm({ ...expForm, accountId: e.target.value })}
+                >
+                  {state.accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} · {a.currency}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </FormSection>
         </Modal>
       )}
 
