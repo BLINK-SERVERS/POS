@@ -13,14 +13,18 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
-## [No publicado]
+## [Publicado sin bump] · 2026-11-22
 
-> **Estado (2026-11-21):** lo que sirve `pos.blink.com.ve` es `gh-pages@4e5a0e9`,
-> construido desde `main@b83a0ed` (lotes 29·30·31, entrada
-> `assets/index-Bb-UNfRS.js`, `check:dist` 37 ficheros / 0 coincidencias
-> prohibidas, `humo-prod.mjs` en verde). Lo de abajo —lotes **32**, **33** y
-> **34**— está en `main` **sin publicar**. Subir la versión a 1.20.0 (función
-> nueva visible) sigue siendo decisión del dueño, no un paso del despliegue.
+> **Estado (2026-11-22, con autorización expresa del dueño):** lo que sirve
+> `pos.blink.com.ve` es **`gh-pages@f2c9d0b`**, construido desde
+> **`main@774cbe1`** — dentro están los lotes **32**, **33** y **34** sobre los
+> 29·30·31 que ya estaban publicados. Entrada `assets/index-CEYaPxaS.js`,
+> `check:dist` 37 ficheros / 0 coincidencias prohibidas, `verifica-prod.sh` en
+> verde, `humo-prod.mjs` **en verde** en navegador real (portada, alta, entrar,
+> recuperar, confirmar y `/app/inicio` → `/app/entrar`, también a 390 px) y el
+> `?bypass=1`, también medido en producción: cae en `/app/entrar`. **La versión
+> declarada sigue en 1.19.0**: subir a 1.20.0 (función nueva visible) es decisión
+> del dueño y pediría un segundo `deploy`.
 
 ### Lote 34 (2026-11-21) · cobro sin rodeos, móvil completo y adiós al IGTF (BLINK-128…144)
 
@@ -168,7 +172,8 @@ esta máquina no hay SF Pro, es condición del banco, no del diseño) ·
 subagente de revisión sobre el diff completo. La cadena entera se **volvió a
 correr** después de los últimos arreglos (el filtro del «texto cortado» y el
 número absoluto del test): los diez instrumentos volvieron a salir 0.
-**No publicado.**
+**Publicado** el 2026-11-22 con autorización del dueño: `main@774cbe1` →
+`gh-pages@f2c9d0b`.
 
 
 ### La tasa de pago es la del primer anuncio de Binance P2P (BLINK-127)
@@ -225,8 +230,9 @@ número absoluto del test): los diez instrumentos volvieron a salir 0.
   **265** pruebas unitarias (12 nuevas), tipos 0, build y `check:dist` en verde.
   Detalle en `docs/24-bitacora-qa.md` § 13 y en el expediente
   `BLINK_POS_Hallazgos/` (BLINK-105…126, con 117–126 abiertos a propósito).
-- **Sin publicar**: el dominio sigue en `gh-pages@4e5a0e9` y la versión en
-  **1.19.0**.
+- **En su momento sin publicar**: el dominio estaba en `gh-pages@4e5a0e9` y la
+  versión en **1.19.0**. Hoy eso cambió —los lotes 32, 33 y 34 se publicaron
+  juntos el 2026-11-22; ver el estado de la sección superior.
 
 ### Precio fijo en bolívares por producto (BLINK-104)
 

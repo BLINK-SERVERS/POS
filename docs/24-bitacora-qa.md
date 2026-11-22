@@ -700,8 +700,9 @@ para pasar) · `npm run build` ✓ · `build:pages` + `check:dist` 37 ficheros /
 coincidencias prohibidas · `docs:check` 146 archivos / 761 enlaces OK ·
 `qa:apariencia` 5/5 · `sonda-lote32.mjs` 13/13 (antes: 1/13).
 
-**Commit `2709ba2`. Sin publicar:** el dominio sigue en `gh-pages@4e5a0e9` y la
-versión declarada en `app/package.json` sigue en **1.19.0**.
+**Commit `2709ba2`. En su momento sin publicar:** el dominio estaba en
+`gh-pages@4e5a0e9` y la versión declarada en `app/package.json` en **1.19.0**.
+Los lotes 32, 33 y 34 se publicaron juntos el 2026-11-22 (ver §14.12).
 
 ## 14. Lote 34: cobro en un paso, vuelto en Bs y el gate de dinero que no medía nada (2026-11-21, v1.19.0)
 
@@ -798,3 +799,41 @@ La cadena entera se **volvió a correr después** de los últimos arreglos (el
 filtro de «texto cortado» de §14.9 y el número absoluto del test): los diez
 instrumentos volvieron a salir 0, con los mismos números. Informe por escrito de
 cada gate en `verify-shots/qa-*-informe.md`.
+
+### 14.12 · Publicación (2026-11-22, con autorización expresa del dueño)
+
+`npm run deploy` desde `main@774cbe1` → **`gh-pages@f2c9d0b`**. Un detalle del
+banco: el `deploy` se cortaba en `gh-pages` con **«Identidad del autor
+desconocida»** porque esta máquina no tiene `user.name`/`user.email` globales y
+la regla del proyecto es **no tocar `git config`**. Se resolvió con variables
+del proceso —`GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL` y `GIT_COMMITTER_*` con la
+identidad BLINK—, que `git` lee sin escribir configuración.
+
+Lo que se verificó **después** de publicar, sobre el dominio real:
+
+- La raíz sirve la entrada **`assets/index-CEYaPxaS.js`**, la misma que acaba de
+  producir el build local; el fichero responde **200**.
+- Barrido de los **28 `assets/*.js` publicados por HTTPS**: `blink-temp-bypass`
+  en **0** de ellos (y 0 en el árbol de la rama). `verifica-prod.sh`: 31 assets
+  en 3 pasadas, con las marcas de registro y confirmación **presentes**.
+- `humo-prod.mjs` **en verde** en Chromium: portada, `/app/registro`,
+  `/app/entrar`, `/app/recuperar`, `/app/confirmar` y `/app/inicio` →
+  `/app/entrar` (la guarda sin sesión), también a 390 px, **0 errores de
+  consola**.
+- El `?bypass=1` en producción **no entra**: cae en `/app/entrar`. Es la
+  comprobación de BLINK-057 sobre lo publicado, no sobre el build.
+- Códigos del lote 34 localizados en los chunks servidos: `Cuenta vacía`,
+  `Sumar otra cuenta`, `Vuelto a entregar`, `Más opciones`, `hoja-nav__lista`,
+  `brand-loader__spinner`, `esqueleto`, `ayuda__tarjeta`,
+  `blink.pos.instalada` y `Lleva Blink POS contigo`.
+
+**Y una sonda que mentía por culpa del banco:** `humo-prod.mjs` daba
+`net::ERR_INVALID_AUTH_CREDENTIALS` en toda ruta externa porque este equipo sale
+a internet por un proxy que pide credenciales en `HTTP_PROXY`. `curl` las lee;
+Chromium no las toma del entorno. La sonda ahora arma el `proxy` de Playwright a
+partir de esas variables (usuario y contraseña **nunca** se imprimen) con
+`bypass: localhost;127.0.0.1`. Sin eso, el humo de producción parecía decir que
+el POS estaba caído.
+
+La versión declarada sigue en **1.19.0**: el bump a 1.20.0 es decisión del dueño
+y exigiría reconstruir y volver a publicar.
