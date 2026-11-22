@@ -214,7 +214,7 @@ export function Field({
      que se restituye en la limpieza del efecto.
    El `ref` solo se monta donde existe un panel propio (el `.modal` de
    escritorio); Konsta pone su propio manejo de foco en <Sheet> y <Dialog>. */
-function useFocoDeDialogo<T extends HTMLElement>() {
+export function useFocoDeDialogo<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
   useEffect(() => {
     const previo = document.activeElement as HTMLElement | null;
@@ -237,7 +237,7 @@ function useFocoDeDialogo<T extends HTMLElement>() {
  * `window` porque el foco puede estar dentro de un campo del formulario: un
  * listener en el panel no lo alcanzaría.
  */
-function useCerrarConEscape(onClose: () => void): void {
+export function useCerrarConEscape(onClose: () => void): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;

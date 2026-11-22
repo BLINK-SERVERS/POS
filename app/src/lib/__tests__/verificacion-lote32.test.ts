@@ -28,30 +28,29 @@ function fija(bs: number, qty = 1): SaleLine {
 function cobroBs(bs: number): SalePayment {
   return { method: "Pago móvil", currency: "VES", amountUsd: round2(bs / TASA), amountInput: bs };
 }
-/** Cobro en dólares con su IGTF del 3 %. */
+/** Cobro en dólares. Desde BLINK-134 no arrastra IGTF. */
 function cobroUsd(usd: number): SalePayment {
-  return { method: "Divisas", currency: "USD", amountUsd: usd, amountInput: usd, igtf: round2(usd * 0.03) };
+  return { method: "Divisas", currency: "USD", amountUsd: usd, amountInput: usd };
 }
 
-describe("BLINK-106 · un solo total en Bs para la pantalla y el checkout", () => {
-  // El ticket que producía el descuadre: harinera de Bs 450 con precio fijo,
-  // recargo de $ 0,01 y un cobro en divisas de $ 0,67 (IGTF $ 0,02).
+describe("BLINK-106/109 · un solo total en Bs para la pantalla y el checkout", () => {
+  // El ticket que producía el descuadre: harinera de Bs 450 con precio fijo y
+  // recargo de $ 0,01. Antes se sumaba además un IGTF de $ 0,02, y la pantalla
+  // lo convertía a Bs redondeando una segunda vez. El IGTF se borró de los
+  // cobros nuevos (BLINK-134); la garantía que queda es la fuente única del Bs.
   const lines = [fija(450)];
   const base = saleBase(lines);
   const net = round2(base - 0);
-  const igtf = 0.02;
-  const total = ticketTotal(net, 0, 0.01, igtf);
+  const total = ticketTotal(net, 0, 0.01);
 
-  it("la fórmula vieja de la pantalla daba un céntimo de más", () => {
-    // Así se sumaba el IGTF en la pantalla: primero el Bs del subtotal
-    // (redondeando) y después el Bs del IGTF (redondeando otra vez).
-    const totalPreIgtf = round2(net + 0 + 0.01);
-    const pantallaVieja = round2(
-      saleBsTotal(lines, TASA, round2(totalPreIgtf - base)) + igtf * TASA
-    );
-    const unicaFuente = saleBsFromTotal(lines, TASA, total);
-    expect(pantallaVieja).toBe(476.55);
-    expect(unicaFuente).toBe(476.54);
+  it("la línea fija aporta su Bs exacto y el resto se convierte", () => {
+    const totalBs = saleBsFromTotal(lines, TASA, total);
+    // El recargo de $ 0,01 vale Bs 8,85 a esta tasa; la harinera de Bs 450 no
+    // se mueve, que es justo lo que el cliente paga. El número se fija entero:
+    // si alguien cambia la fórmula, las dos mitades no se mueven juntas.
+    expect(totalBs).toBe(458.85);
+    expect(saleBsTotal(lines, TASA, round2(total - base))).toBe(totalBs);
+    expect(round2(totalBs - 450)).toBe(round2(0.01 * TASA));
   });
 
   it("cobrar el Bs de la única fuente cierra el ticket sin cuenta por cobrar", () => {
@@ -61,11 +60,11 @@ describe("BLINK-106 · un solo total en Bs para la pantalla y el checkout", () =
     expect(saldoPendiente(total, pagos, totalBs, TASA).remaining).toBe(0);
   });
 
-  it("cobrar el Bs de la fórmula vieja descuadraba la caja un céntimo", () => {
+  it("cobrar un céntimo de más que el Bs del ticket descuadra la caja", () => {
     const totalBs = saleBsFromTotal(lines, TASA, total);
-    // El cajero cobraba lo que decía la pantalla y el ticket imprimía otra cifra.
-    expect(round2(paidBs([cobroBs(476.55)], TASA) - totalBs)).toBe(0.01);
-    // Con la fuente única lo cobrado y lo impreso son el mismo número.
+    // El ticket y la caja se cuadran con el mismo número: si se cobra otro, el
+    // diferencial aparece aunque el USD parezca cerrado.
+    expect(round2(paidBs([cobroBs(round2(totalBs + 0.01))], TASA) - totalBs)).toBe(0.01);
     const pagos = [cobroBs(totalBs)];
     expect(round2(paidBs(pagos, TASA) - totalBs)).toBe(0);
     expect(saldoPendiente(total, pagos, totalBs, TASA).remaining).toBe(0);
@@ -74,17 +73,18 @@ describe("BLINK-106 · un solo total en Bs para la pantalla y el checkout", () =
   it("ticket totalmente anclado a tasa: el Bs sigue siendo total × tasa", () => {
     const l = [anclada(12.5, 3), anclada(4.25, 2, 0.16)];
     const b = saleBase(l);
-    const t = ticketTotal(round2(b - 1), 2.36, 0, 0.45);
+    const t = ticketTotal(round2(b - 1), 2.36, 0);
     const totalBs = saleBsFromTotal(l, TASA, t);
     // El Bs se redondea por línea porque cada línea vale lo que se cobra; por
     // eso puede caer a un céntimo de `total × tasa`, nunca más lejos.
-    expect(totalBs).toBe(42299.91);
+    expect(t).toBe(47.36);
+    expect(totalBs).toBe(41901.77);
     expect(round2(Math.abs(totalBs - round2(t * TASA)))).toBe(0.01);
   });
 
   it("sin tasa válida el Bs lo ponen las líneas fijas y nada se inventa", () => {
     const l = [fija(1000)];
-    const t = ticketTotal(round2(saleBase(l)), 0, 0, 0);
+    const t = ticketTotal(round2(saleBase(l)), 0, 0);
     // El Bs del producto fijo existe aunque no haya tasa: es el dato que manda.
     expect(saleBsFromTotal(l, 0, t)).toBe(1000);
   });

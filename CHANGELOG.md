@@ -15,12 +15,161 @@ del producto, no una omisión (ver BUG-12 en
 
 ## [No publicado]
 
-> **Estado (2026-11-18):** lo que sirve `pos.blink.com.ve` es `gh-pages@4e5a0e9`,
+> **Estado (2026-11-21):** lo que sirve `pos.blink.com.ve` es `gh-pages@4e5a0e9`,
 > construido desde `main@b83a0ed` (lotes 29·30·31, entrada
 > `assets/index-Bb-UNfRS.js`, `check:dist` 37 ficheros / 0 coincidencias
-> prohibidas, `humo-prod.mjs` en verde). Lo de abajo —lotes **32** y **33**— está
-> en `main` **sin publicar**. Subir la versión a 1.20.0 (función nueva visible)
-> sigue siendo decisión del dueño, no un paso del despliegue.
+> prohibidas, `humo-prod.mjs` en verde). Lo de abajo —lotes **32**, **33** y
+> **34**— está en `main` **sin publicar**. Subir la versión a 1.20.0 (función
+> nueva visible) sigue siendo decisión del dueño, no un paso del despliegue.
+
+### Lote 34 (2026-11-21) · cobro sin rodeos, móvil completo y adiós al IGTF (BLINK-128…144)
+
+Encargo del dueño, 16 puntos, con la orden «sin romper nada» y «usa subagentes y
+skills, documenta y dime qué cambiaste».
+
+- **Carga (BLINK-128):** la cara de `BrandLoader` deja de animarse —se quedaba
+  quieta el splash entero— y aparecen **spinner y skeletons** (`Skeleton.tsx`) en
+  las pantallas que aún hidratan.
+- **«¿Cómo funciona?» (BLINK-129):** se cae el recorrido con foco iluminado. El
+  cuadro muestra **toda la guía de la pantalla en una sola tarjeta**, sin navbar
+  ni paginación, y **cabe según la resolución**: `min(660px, 100%)`, dos columnas
+  desde 700 px, una por debajo y `max-height: 100%`. El pie «Entendido» queda
+  pegajoso y la tarjeta no reserva hueco para la barra flotante: se pinta
+  *encima* de ella (capa 90 vs 60). Medido con Playwright en las 6 rutas y 5
+  tamaños: **0 px de desborde** en 390×844, 430×932, 768×1024 y 1280×900, con el
+  pie a la vista; en 320×568 el texto scrollea **dentro** de la tarjeta (7–279 px)
+  y el botón sigue a la vista. `docs/32` reescrito a la realidad; las anclas
+  `target` siguen midiéndose con `sonda-anclas-ayuda.mjs` (**52 medidas · 0 sin
+  resolver**).
+- **Instalación (BLINK-130):** «Entendido» no quitaba la tarjeta «Lleva BLINK POS
+  contigo». Al aceptar el prompt la app se instala y el aviso quedaba; ahora
+  quedar *instalada* es descarte permanente (`blink.pos.instalada`), porque en iOS
+  `standalone` sigue siendo `false` tras «Añadir a pantalla de inicio». Test nuevo
+  en `verificacion-lote34.test.ts` (antes nada cubría este aviso).
+- **Vender (BLINK-132/133/136):** la cantidad se **tipea** en el campo del
+  producto (no un toque por unidad), se quita la etiqueta «cortesía» de la venta
+  y desaparece todo texto de tutorial —la pantalla va directa al mostrador—.
+- **IGTF (BLINK-134):** se borra de los cobros nuevos. Los registros viejos que
+  lo guardaron se siguen leyendo con su número histórico (`fiscal.ts`), no se
+  reescribe el pasado.
+- **Métodos de pago (BLINK-135):** cuatro iconos SF Symbols —celular para Pago
+  Móvil, tarjeta para punto, billetes para USD, cartera para las demás cuentas y
+  «A crédito»— decididos con la ficha y el nombre de la cuenta.
+- **Cobro (BLINK-137/138):** un solo paso. Lo tecleado ya cuenta como cobro (se
+  acabó el «agregar cobro» previo a confirmar) y entra la **lógica del vuelto**:
+  `vuelto()` en `fiscal.ts` acredita y devuelve cambio con `round2`, y sin falta
+  conocida no inventa vuelto. Tres arreglos medidos en navegador:
+  1. **P1 — el vuelto en Bs se anota en Bs.** `finish()` sumaba cada vuelto
+     pasándolo por USD (`cambio / tasa`) y lo multiplicaba otra vez por la tasa;
+     dos redondeos seguidos. Con la tasa del día (Bs 918,77/$) la pantalla decía
+     **Bs 100,00** y la venta guardaba **Bs 101,06**. La banda del error llega a
+     **±Bs 4,59** (medio céntimo de USD): un cambio de **Bs 5,00** se registraba
+     como **Bs 9,19**, uno de **Bs 12,50** como **Bs 9,19**, y uno de **Bs 0,50**
+     desaparecía (registraba **Bs 0,00** — arqueo que no cuadra y cliente sin su
+     cambio en el ticket). Ahora cada línea se acumula en su propia moneda y el
+     número impreso es el que el cajero entregó.
+  2. El titular «Vuelto a entregar» se muestra **en la moneda entregada** y la
+     segunda línea nombra la otra («Equivalente en dólares / bolívares»); antes el
+     titular quedaba en la moneda del total aunque se cobrara en Bs.
+  3. Cambiar de cuenta **limpia el monto**: el auto-escrito de la cuenta anterior
+     seguía en el campo (el efecto no pisa un campo no vacío) y se acababa
+     entregando en Bs un número escrito en dólares. Igual en «A crédito».
+- **Confirmación (BLINK-139):** sello a pantalla completa al cerrar la venta,
+  antes del recibo.
+- **Móvil (BLINK-140):** la barra inferior queda en 2 + Vender + 2 + **«Más»**, y
+  «Más» abre una hoja con los destinos que no caben. Medido con Playwright: los
+  4 destinos del sidebar se alcanzan, Vender centrado con desvío 0,00 px en 320 /
+  360 / 390 / 430 px y los 5 controles laterales sobre los 44 px de la HIG.
+- **Difuminados (BLINK-131):** el «difuminado feo» de Día/Semana/Mes y de las
+  pestañas de Finanzas era el degradado de recorte (`mask-image`) que `.tabs`
+  pintaba en su borde derecho; se quita y el desplazamiento horizontal queda
+  limpio. El cristal (`backdrop-filter`) solo vive en las tarjetas y en la barra
+  flotante, como estaba.
+- **Instrumento:** `qa-navegacion.mjs` deja de copiar reglas —importa
+  `saludo.ts` y lee el token `--color-accent-solid`—, sustituye esperas fijas por
+  sondeo y pasa a **0 fallos / 0 avisos**. `qa-funcional.mjs` estaba **roto desde
+  que se portó el bypass** y nadie lo sabía: sembraba la clave global
+  `blink-pos-state-v3`, que la app adopta y **borra** al migrar al estado por
+  usuario, así que `estado()` leía `{}` y las comprobaciones de dinero no
+  medían nada. Ahora siembra y lee `blink-pos-state-v3:temp-bypass-user`, sigue
+  el flujo real de BLINK-137 (y comprueba que el botón «Agregar cobro» *ya no
+  existe*), el arqueo se abre desde el menú de avatar, y la sección nueva
+  **2b · Vuelto** prueba el P1: lo que dice la pantalla tiene que ser exactamente
+  `Bs` que guarda la venta, sin depender de la tasa del día. Dos lecciones de
+  instrumento: React necesita un tick entre abrir un menú y pulsar su ítem (el
+  primer intento medía «el menú no ofrece Cerrar caja»), y ante un fallo el gate
+  ahora **vuelca** el diálogo abierto en vez de callarse.
+- **Área táctil (hallazgo del auditor, P3):** el bloque
+  `@media (pointer: coarse) { .btn--sm::before, .btn--xs::before,
+  .row-action::before { … height: 44px; pointer-events: none } }` **no amplió
+  nunca** el blanco: un pseudo con `pointer-events: none` no recibe toques, y
+  `.row-action` ni siquiera tiene `position: relative`, así que su banda anclaba
+  en la celda de la tabla. Se borra la regla falsa (dejarla es peor que no tenerla:
+  finge una conformidad HIG que no existe) y el único caso que sí necesitaba el
+  mínimo crece en su caja real —`.row-action` a 44×44 en toque grueso—. Los
+  botones 34/28 px del UI Kit conservan su tamaño; lo que exige la HIG se mide con
+  caja real en `qa-navegacion` (5 controles laterales ≥ 44 px).
+- **Resto de señalamientos del auditor, fallados con código y no con intención:**
+  1. *¿`Enter` llama a un `addPayment` que ya no existe?* No: se quitó el **botón**
+     «Agregar cobro», la función sigue viva (`Vender.tsx:655`) y es la misma que
+     pulsaba ese botón y la que usa «Sumar otra cuenta» (`:1621`). El `Enter` del
+     campo (`:1542`) añade y el siguiente `Enter` cierra — un paso, no dos.
+  2. *Con la falta en 0, teclear acredita de más.* Cierto, y **no es de este lote**:
+     `vuelto()` (`fiscal.ts:148-156`) reproduce exactamente la fórmula que había en
+     HEAD (`chargedInput = typed > exactAmount && exactAmount > 0 ? … : typed`),
+     así que el canto del cambio se centralizó, no se relajó. Queda anotado.
+  3. *Cantidad sin tope.* El campo nuevo escribe lo que antes se conseguía a
+     base de toques; el tope real lo pone `findStockShortage` en el `checkout`
+     (BLINK-076), que rechaza la venta nombrando producto, disponible y pedido.
+  4. *«A crédito» no borra los cobros ya registrados.* Es **lo correcto**: cobrar
+     parte y dejar el resto pendiente es una venta mixta, y `checkout` la etiqueta
+     «Caja + crédito» con su cuenta por cobrar (`store.tsx:1641`). Lo que sí limpia
+     es el monto y la cuenta elegidos (`Vender.tsx:1503`).
+  5. *Queda texto de IGTF.* Lo que queda es el **nombre de la categoría del
+     sistema** «Pago de impuestos (IVA/IGTF)» (`store.tsx:157`) y el campo histórico
+     `sale.igtf`, que `metrics.ts:270` localiza por esa cadena exacta; renombrar
+     huérfan los asientos ya pagados. `Finanzas.tsx:929` habla de la categoría, no
+     del cálculo.
+- **El filtro del «texto cortado» había perdido las imágenes:** al meter los
+  esqueletos de carga, `qa:responsive` avisaba de falsos positivos (el andamiaje
+  mide más de lo que muestra). La primera corrección —exigir texto al nodo—
+  era la equivocada: dejaba de medir `<img>` y `<svg>`, que es justo lo que la
+  prueba atrapa. Ahora se saltan solo los nodos **decorativos sin texto** y
+  `IMG|SVG|CANVAS|VIDEO|PICTURE|IFRAME` se miden siempre. El gate vuelve a
+  salir 0 en las 6 resoluciones.
+- **CSS muerto de pasos anteriores, fuera:** los dos bloques que apuntaban a
+  `.shell__tabbar` ya no tienen a quién aplicarle —la barra flotante se estampa
+  con `.shell__tabbar-float` desde el lote 32—, así que se borran en vez de
+  dejarlos fingiendo que controlan algo.
+
+**Decisiones revisadas y descartadas** (el auditor las señaló y se falló dejarlas
+como están, con evidencia): `instalacion.ts` (descartar y reinstalar después —
+aceptar el prompt ya marca `blink.pos.instalada`, el matiz no llega al cajero),
+el foco atrapado en `HojaMas` y su exposición en escritorio, y la palabra
+«cortesía» en `Receipt.tsx:165/187` y `Historial.tsx:147`: ahí es **dato
+contable** del ticket impreso y del historial, no el rótulo en pantalla que el
+dueño mandó quitar. Si el dueño quiere el recibo sin la palabra, se cambia en
+otro lote. Y **BLINK-143 se retira**: se había anotado como defecto corregido un
+`padding-bottom: 108px` de `.ayuda__capa` que «desbordaba la guía en móvil», y
+esa regla **nunca estuvo en `HEAD`** — se escribió y se borró dentro de este
+mismo lote. Un arreglo de algo que no se publicó no es un hallazgo; queda como
+regla nueva en el expediente («antes de cerrar un hallazgo, comprobar que estaba
+publicado»). El recuento pasa a **132 hallazgos · 118 cerrados · 14 abiertos**.
+
+**Gates (todos corridos el 2026-11-21 sobre el servidor de desarrollo en el
+puerto 5199):** `tsc --noEmit` 0 · `vitest run` **287/287** en 27 ficheros ·
+`build` ✓ · `build:pages` + `check:dist` 37 ficheros / 0 coincidencias prohibidas
+· `docs:check` 146 archivos / 761 enlaces OK · `qa:e2e` 10 rutas + doble guardar
+en verde · `qa:funcional` **0 fallos / 0 avisos** (con la sección 2b del vuelto) ·
+`qa:responsive` 6 resoluciones en verde (avisa solo «SF Pro no está en uso»: en
+esta máquina no hay SF Pro, es condición del banco, no del diseño) ·
+`qa:apariencia` 5/5 · `qa:navegacion` **0 fallos / 0 avisos** · `qa:preview`
+**0 fallos / 0 avisos** · `sonda-anclas-ayuda` 52 anclas / 0 sin resolver ·
+subagente de revisión sobre el diff completo. La cadena entera se **volvió a
+correr** después de los últimos arreglos (el filtro del «texto cortado» y el
+número absoluto del test): los diez instrumentos volvieron a salir 0.
+**No publicado.**
+
 
 ### La tasa de pago es la del primer anuncio de Binance P2P (BLINK-127)
 

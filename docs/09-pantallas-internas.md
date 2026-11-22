@@ -68,7 +68,8 @@ Ancho de sidebar según tokens: 13rem / 11rem / 4.5rem (colapsable).
 - Pestañas: **Vender** / **Historial**.
 - Modo POS: **"Escáner listo"**, toggle **Modo POS**, buscador de productos.
 - Grid de productos; ejemplo: `Harina $ 2,00 / Bs 1.755,80` (con "Sin registro de existencias").
-- Estado vacío: **"Empieza una cuenta"** — "Toca un producto o escanea su código: la cuenta se abre sola."
+- Estado vacío: **"Cuenta vacía."** — sin frases de tutorial (BLINK-136, dueño 2026-11-21); las
+  pistas de teclado van en `title` y en los `Kbd` del propio control.
 - Botón **Nueva cuenta**.
 - **Cuentas abiertas (1)**: `Venta 1 · A-FE237112` → **1 producto**.
 

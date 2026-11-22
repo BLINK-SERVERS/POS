@@ -51,34 +51,39 @@ page.on("console", (m) => {
   if (m.type() === "error") errores.push("CONSOLE " + m.text().slice(0, 150));
 });
 
-await page.addInitScript((productos) => {
-  const KEY = "blink-pos-state-v3";
-  const patch = () => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return;
-      const st = JSON.parse(raw);
-      st.onboarding = { ...(st.onboarding || {}), completed: true };
-      st.products = productos;
-      st.accounts = st.accounts?.length
-        ? st.accounts
-        : [{ id: "a1", name: "Caja de pruebas", type: "efectivo", currency: "USD", balance: 100, commissionIn: 0, commissionOut: 0, inCashClose: true, active: true }];
-      st.cashSession = { openedAt: new Date().toISOString(), openingUsd: 100, openingBs: 0, userId: "qa", locationId: "loc_principal" };
-      st.pendings = st.pendings?.length
-        ? st.pendings
-        : [{ id: "pd1", at: new Date().toISOString(), direction: "cobrar", contactId: "c1", contactName: "Cliente de pruebas", subject: "Venta a credito", amountUsd: 100, paidUsd: 0, dueAt: new Date(Date.now() + 86400000).toISOString(), note: "", status: "abierto" }];
-      st.contacts = st.contacts?.length
-        ? st.contacts
-        : [
-            { id: "c1", name: "Cliente de pruebas", document: "V-1", docType: "V", phone: "", email: "", isClient: true, isProvider: false, creditDays: 0, address: "", notes: "" },
-            { id: "pr1", name: "Proveedor de pruebas", document: "J-9", docType: "J", phone: "", email: "", isClient: false, isProvider: true, creditDays: 30, address: "", notes: "" },
-          ];
-      localStorage.setItem(KEY, JSON.stringify(st));
-    } catch {}
-  };
-  patch();
-  window.addEventListener("DOMContentLoaded", patch);
-}, PRODUCTOS);
+// El comercio del bypass vive en la clave del usuario (`blink-pos-state-v3:
+// temp-bypass-user`). Sembrar la clave global sin sufijo no servía: la app la
+// adopta, la copia a la del usuario y la borra, así que toda lectura posterior
+// del script (`estado()`) se quedaba en vacío y el gate reventaba en el stock.
+const CLAVE_ESTADO = "blink-pos-state-v3:temp-bypass-user";
+
+await page.addInitScript(
+  ({ productos, clave }) => {
+    localStorage.setItem("blink-temp-bypass", "1");
+    // Sembrar solo si no existe: las navigaciones siguientes conservan lo que
+    // la app ya registró (ventas, abonos) en lugar de pisarlo.
+    if (localStorage.getItem(clave)) return;
+    const st = {
+      onboarding: { completed: true },
+      products: productos,
+      sales: [],
+      accounts: [
+        { id: "a1", name: "Caja de pruebas", type: "efectivo", currency: "USD", balance: 100, commissionIn: 0, commissionOut: 0, inCashClose: true, active: true },
+        { id: "a2", name: "Caja en Bs", type: "efectivo", currency: "VES", balance: 10000, commissionIn: 0, commissionOut: 0, inCashClose: true, active: true },
+      ],
+      cashSession: { openedAt: new Date().toISOString(), openingUsd: 100, openingBs: 0, userId: "qa", locationId: "loc_principal" },
+      pendings: [
+        { id: "pd1", at: new Date().toISOString(), direction: "cobrar", contactId: "c1", contactName: "Cliente de pruebas", subject: "Venta a credito", amountUsd: 100, paidUsd: 0, dueAt: new Date(Date.now() + 86400000).toISOString(), note: "", status: "abierto" },
+      ],
+      contacts: [
+        { id: "c1", name: "Cliente de pruebas", document: "V-1", docType: "V", phone: "", email: "", isClient: true, isProvider: false, creditDays: 0, address: "", notes: "" },
+        { id: "pr1", name: "Proveedor de pruebas", document: "J-9", docType: "J", phone: "", email: "", isClient: false, isProvider: true, creditDays: 30, address: "", notes: "" },
+      ],
+    };
+    localStorage.setItem(clave, JSON.stringify(st));
+  },
+  { productos: PRODUCTOS, clave: CLAVE_ESTADO }
+);
 
 
 /** Pulsa un boton dentro del dialogo abierto cuyo texto contenga "texto". */
@@ -133,7 +138,7 @@ async function escribir(selector, valor) {
 }
 
 const estado = () =>
-  page.evaluate(() => JSON.parse(localStorage.getItem("blink-pos-state-v3") || "{}"));
+  page.evaluate((k) => JSON.parse(localStorage.getItem(k) || "{}"), CLAVE_ESTADO);
 
 await page.goto(BASE + "/app/entrar?bypass=1", { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1600);
@@ -191,6 +196,17 @@ const num = (s) => {
   }
   return Number(t);
 };
+
+/** Lo mismo para un importe escrito como se lee en pantalla ("Bs 70,75"),
+ *  donde la coma SÍ es el decimal. */
+const numLocal = (s) => {
+  const m = /(-?\d[\d.,]*)/.exec(String(s || ""));
+  if (!m) return NaN;
+  let t = m[1];
+  const ultimo = Math.max(t.lastIndexOf(","), t.lastIndexOf("."));
+  if (ultimo >= 0) t = t.slice(0, ultimo).replace(/[.,]/g, "") + "." + t.slice(ultimo + 1);
+  return Number(t);
+};
 if (!buscado || anadidos < 1 || anadidos2 < 1) {
   Add("FALLO", "POS: anadir lineas", "no se pudieron anadir los productos sembrados al ticket");
 } else if (Math.abs(num(ticket.subtotal) - 12.5) > 0.01) {
@@ -217,13 +233,19 @@ await page.evaluate(() => {
   b && b.click();
 });
 await page.waitForTimeout(800);
-// Cobrar: elegir cuenta -> "Monto exacto" -> "Agregar cobro" -> confirmar.
+// Cobrar es UN paso (BLINK-137, dueño 2026-11-21): cuenta -> monto -> confirmar.
+// «Agregar cobro» desapareció; si vuelve, el flujo otra vez confunde.
 const r1 = await pulsarEnDialogo("Caja de pruebas");
 const r2 = await pulsarEnDialogo("Monto exacto");
-const r3 = await pulsarEnDialogo("Agregar cobro");
-if (r1 < 1) Add("FALLO", "Venta: metodo de pago", "no se pudo elegir la cuenta de cobro");
-else if (r3 < 1) Add("FALLO", "Venta: agregar cobro", "no se pudo agregar el cobro");
-else Add("ok", "Venta: agregar cobro", "cuenta + monto exacto + agregar cobro");
+const sobran = await page.evaluate(() =>
+  [...document.querySelectorAll(".modal button, .k-sheet button")].filter((x) =>
+    (x.textContent || "").includes("Agregar cobro")
+  ).length
+);
+if (r1 < 1) Add("FALLO", "Venta: método de pago", "no se pudo elegir la cuenta de cobro");
+else if (r2 < 1) Add("FALLO", "Venta: monto exacto", "no se pudo dejar el monto exacto");
+else if (sobran > 0) Add("FALLO", "Venta: un solo paso", `el trámite intermedio «Agregar cobro» sigue en la hoja de cobro`);
+else Add("ok", "Venta: un solo paso", "cuenta + monto exacto, sin trámite intermedio");
 const cobroListo = await page.evaluate(() => {
   const b = [...document.querySelectorAll(".modal button, .k-sheet button")].find((x) =>
     (x.textContent || "").includes("Confirmar venta")
@@ -235,6 +257,8 @@ if (!cobroListo.encontrado) {
   Add("FALLO", "Venta: boton de cobro", "no se encontro el boton de confirmar la venta");
 } else if (cobroListo.deshabilitado) {
   Add("FALLO", "Venta: boton de cobro", "el boton de confirmar sigue deshabilitado tras pagar el monto exacto");
+} else {
+  Add("ok", "Venta: boton de cobro", "confirmar habilitado sin registrar el cobro aparte");
 }
 await pulsarEnDialogo("Confirmar venta");
 await page.waitForTimeout(1400);
@@ -248,6 +272,103 @@ else if (stockDespues !== stockAntes - 1) {
   Add("ok", "Venta: stock", `${stockAntes} -> ${stockDespues} (una unidad vendida)`);
 }
 if (errores.length) Add("FALLO", "Venta: consola", errores.slice(0, 2).join(" | "));
+errores.length = 0;
+
+/* ---------------------------------------------------------------- */
+/* 2b · Vuelto: el número que el cajero ve es el que queda registrado */
+/* ---------------------------------------------------------------- */
+/* Solo un cobro en Bs con sobreentrega exercita la regla: el vuelto se anota
+   en la moneda entregada. Convertirlo a USD y volver a multiplicarlo por la
+   tasa redondea dos veces y el ticket imprimía Bs de más (BLINK-138/P1).
+   La tasa BCV no se supone: se lee el monto exacto que la propia hoja escribe
+   y se entrega ese + 100, así la diferencia esperada es 100 sin importar la
+   tasa del día. */
+console.log("\n=== 2b · Vuelto: pantalla y registro ===");
+
+/** Qué hay en pantalla ahora mismo: sin esto, un fallo del cobro no dice si
+ *  el culpable es el diálogo abierto o el paso anterior que no se cerró. */
+const volcado = () =>
+  page.evaluate(() => {
+    const titulo = document.querySelector(".modal__title, .modal h2, .k-sheet__title");
+    return (
+      (titulo ? `diálogo: "${titulo.textContent.trim().slice(0, 40)}" · ` : "sin diálogo · ") +
+      (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 160)
+    );
+  });
+
+await buscar("PRODUCTO TEST");
+await pulsarProducto("PRODUCTO TEST UNO");
+await page.evaluate(() => {
+  const b = [...document.querySelectorAll("button")].find((x) =>
+    (x.textContent || "").includes("Cobrar")
+  );
+  b && b.click();
+});
+await page.waitForTimeout(800);
+const rCuentaBs = await pulsarEnDialogo("Caja en Bs");
+// Al elegir la cuenta la hoja teclea sola el monto exacto: es la deuda en Bs.
+const exacto = numLocal(
+  await page.evaluate(() => document.querySelector('.modal input[type="number"]')?.value ?? "")
+);
+const entregado = Math.round((exacto + 100) * 100) / 100;
+if (rCuentaBs < 1) {
+  Add("FALLO", "Vuelto: hoja de cobro", `no se pudo elegir la cuenta en Bs (${await volcado()})`);
+} else if (!(exacto > 0)) {
+  Add("FALLO", "Vuelto: hoja de cobro", `la hoja no escribió el monto exacto en Bs (${await volcado()})`);
+} else {
+  await escribir('.modal input[type="number"], .k-sheet input[type="number"]', String(entregado));
+  await page.waitForTimeout(500);
+}
+const enPantalla = await page.evaluate(() => {
+  const t = (document.body.innerText || "").replace(/\s+/g, " ");
+  // «Equivalente en dólares»: \w no casa la "ó" sin la bandera u.
+  const m = /Vuelto a entregar:\s*(.+?)\s*Equivalente en ([^:]+):\s*(.+?)\s*(?:Referencia|Sumar otra cuenta|Confirmar)/i.exec(t);
+  return m
+    ? { titular: m[1].trim(), otraMoneda: m[2], equivalente: m[3].trim() }
+    : null;
+});
+const vueltoEsperado = Math.round((entregado - exacto) * 100) / 100;
+if (enPantalla && Math.abs(numLocal(enPantalla.titular) - vueltoEsperado) > 0.01) {
+  Add(
+    "AVISO",
+    "Vuelto: pantalla",
+    `entregando ${entregado} por una deuda de ${exacto} el vuelto debería ser ${vueltoEsperado}; la hoja muestra "${enPantalla.titular}"`
+  );
+} else if (enPantalla && !/^Bs/.test(enPantalla.titular)) {
+  Add(
+    "FALLO",
+    "Vuelto: moneda",
+    `cobrando en bolívares el titular del vuelto debería estar en Bs (muestra "${enPantalla.titular}")`
+  );
+} else if (!enPantalla) {
+  Add(
+    "FALLO",
+    "Vuelto: hoja de cobro",
+    `entregando ${entregado} por una deuda de ${exacto} no aparece «Vuelto a entregar» (${await volcado()})`
+  );
+} else {
+  Add(
+    "ok",
+    "Vuelto: moneda",
+    `Bs ${exacto} de deuda · entregado ${entregado} · titular ${enPantalla.titular} · equivalente ${enPantalla.equivalente} en ${enPantalla.otraMoneda}`
+  );
+}
+await pulsarEnDialogo("Confirmar venta");
+await page.waitForTimeout(1400);
+const ventaBs = (await estado()).sales?.[0];
+const leido = enPantalla ? numLocal(enPantalla.titular) : NaN;
+if (!ventaBs || ventaBs.changeBs == null) {
+  Add("FALLO", "Vuelto: registro", `la venta con vuelto no quedó registrada en Bs (${await volcado()})`);
+} else if (!(leido > 0) || Math.abs(ventaBs.changeBs - leido) > 0.005) {
+  Add(
+    "FALLO",
+    "Vuelto: registro",
+    `la pantalla mostró ${enPantalla?.titular} y la venta guarda Bs ${ventaBs.changeBs}`
+  );
+} else {
+  Add("ok", "Vuelto: registro", `Bs ${ventaBs.changeBs} == pantalla · USD ${ventaBs.changeUsd}`);
+}
+if (errores.length) Add("FALLO", "Vuelto: consola", errores.slice(0, 2).join(" | "));
 errores.length = 0;
 
 /* ---------------------------------------------------------------- */
@@ -343,23 +464,58 @@ errores.length = 0;
 console.log("\n=== 5 · Cierre de caja: arqueo ===");
 await page.goto(BASE + "/app/ventas", { waitUntil: "networkidle" });
 await page.waitForTimeout(1000);
-await page.evaluate(() => {
-  const b = [...document.querySelectorAll("button")].find((x) =>
+/* La caja vive en el menú del avatar (Shell.tsx:206), no en la página: sin
+   abrirlo el botón «Cerrar caja» no existe en el DOM y el arqueo nunca se midió.
+   El menú lo monta React, así que se espera un tick antes de buscarlo. */
+await page.evaluate(() => document.querySelector(".userchip--button")?.click());
+await page.waitForTimeout(400);
+const entradaCaja = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('.avatarmenu__item')].find((x) =>
     (x.textContent || "").includes("Cerrar caja")
   );
-  b && b.click();
+  if (!b) return "el menú no ofrece «Cerrar caja» (caja cerrada)";
+  b.click();
+  return "ok";
 });
 await page.waitForTimeout(900);
 const arqueo = await page.evaluate(() => {
   const t = (document.body.innerText || "").replace(/\s+/g, " ");
-  const esp = /Esperado \(USD\)\s*\$?\s*([\d.,]+)/i.exec(t);
-  const dif = /Diferencia\s*\$?\s*([\d.,-]+)/i.exec(t);
-  return { esperado: esp ? esp[1] : null, diferencia: dif ? dif[1] : null, texto: t.slice(0, 400) };
+  // El párrafo de ayuda del modal termina en «…la diferencia.»: sin exigir el
+  // "$" pegado a la etiqueta, esa frase era la primera coincidencia y el
+  // arqueo se leía como texto suelto.
+  const esp = /Esperado \(USD\)\s+\$\s*(-?[\d.,]+)/i.exec(t);
+  const con = /Contado \(USD\)\s+\$\s*(-?[\d.,]+)/i.exec(t);
+  const dif = /Diferencia\s+\$\s*(-?[\d.,]+)/i.exec(t);
+  return {
+    esperado: esp ? esp[1] : null,
+    contado: con ? con[1] : null,
+    diferencia: dif ? dif[1] : null,
+    pideMotivo: /Motivo de la diferencia/i.test(t),
+    texto: t.slice(0, 400),
+  };
 });
 if (!arqueo.esperado) {
-  Add("AVISO", "Cierre de caja", "no se encontro el arqueo (¿hay caja abierta?)");
+  Add("FALLO", "Cierre de caja", `no se encontro el arqueo (${entradaCaja})`);
+} else if (!arqueo.contado || !arqueo.diferencia) {
+  Add("FALLO", "Cierre de caja", `el arqueo no muestra contado y diferencia (${arqueo.texto.slice(0, 120)})`);
+} else if (
+  Math.abs(num(arqueo.contado) - num(arqueo.esperado) - num(arqueo.diferencia)) > 0.01
+) {
+  Add(
+    "FALLO",
+    "Cierre de caja",
+    `la diferencia no cuadra con contado - esperado: ${arqueo.contado} - ${arqueo.esperado} ≠ ${arqueo.diferencia}`
+  );
+} else if (num(arqueo.diferencia) !== 0 && !arqueo.pideMotivo) {
+  Add("FALLO", "Cierre de caja", `hay diferencia ${arqueo.diferencia} y no exige motivo`);
 } else {
-  Add("ok", "Cierre de caja", `esperado ${arqueo.esperado} · diferencia ${arqueo.diferencia ?? "0"}`);
+  Add(
+    "ok",
+    "Cierre de caja",
+    `esperado ${arqueo.esperado} · contado ${arqueo.contado} · diferencia ${arqueo.diferencia}${
+      num(arqueo.diferencia) !== 0 ? " · pide motivo" : ""
+    }`
+  );
 }
 if (errores.length) Add("FALLO", "Cierre de caja: consola", errores.slice(0, 2).join(" | "));
 errores.length = 0;

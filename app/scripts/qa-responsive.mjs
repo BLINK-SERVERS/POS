@@ -133,6 +133,13 @@ for (const res of RESOLUCIONES) {
         .filter((el) => {
           if (el.children.length) return false;
           const cs = getComputedStyle(el);
+          /* Un nodo decorativo sin texto —los esqueletos de carga, que con el
+             barrido siempre miden más de lo que muestran— no tiene nada que
+             «cortar». Se excluye solo el andamiaje: el contenido reemplazado
+             (img, svg, canvas, video) sí se mide, que es lo que esta prueba
+             atrapaba antes. */
+          const esContenido = /^(IMG|SVG|CANVAS|VIDEO|PICTURE|IFRAME)$/.test(el.tagName);
+          if (!esContenido && !(el.textContent || "").trim()) return false;
           if (cs.overflow === "hidden" && cs.textOverflow !== "ellipsis") {
             return el.scrollWidth > el.clientWidth + 2;
           }

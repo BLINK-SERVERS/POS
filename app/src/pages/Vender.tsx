@@ -9,34 +9,54 @@ import {
   draftsKeyFor,
 } from "../lib/session-storage";
 import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
-import { Icon } from "../components/Icon";
+import { Icon, type IconName } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { Receipt } from "../components/Receipt";
 import { Searchbar } from "konsta/react";
 import { useScanHandler, useScanner } from "../lib/scanner/ScannerProvider";
 import { formatBsDirect, formatUsd, precioProducto, round2 } from "../lib/money";
+import { saleTotal } from "../lib/metrics";
 import {
-  cortesiaValor,
   discountAmount,
-  IGTF_RATE,
-  igtfFor,
   lineBase,
   lineBs,
   paidBs,
   saldoPendiente,
   saleBase,
   saleBsFromTotal,
-  saleBsTotal,
   saleTax,
   surchargeAmount,
   ticketTotal,
+  vuelto,
 } from "../lib/fiscal";
-import type { Discount, Product, Sale, SaleLine, SalePayment, Surcharge } from "../lib/types";
+import type {
+  Account,
+  Discount,
+  Product,
+  Sale,
+  SaleLine,
+  SalePayment,
+  Surcharge,
+} from "../lib/types";
 import { presentationLabel } from "../lib/types";
 import { buscarProductos, detalleProducto } from "../lib/orden";
 import { Rapidos } from "../components/Rapidos";
 import { SelectorCliente } from "../components/SelectorCliente";
 import { DIAS_ROTACION, favoritos, mejorVendidos, rotacion } from "../lib/ventaRapida";
+
+/**
+ * Icono del método de pago (BLINK-135, dueño, 2026-11-21): celular para el Pago Móvil,
+ * tarjeta para el punto de venta, fajo de billetes para lo cobrado en dólares y
+ * cartera para el resto de la caja. Se decide con la ficha de la cuenta y con su
+ * nombre, porque las cuentas las crea cada comercio.
+ */
+export function iconoMetodo(a: Account): IconName {
+  const n = a.name.toLowerCase();
+  if (a.type === "pago_movil" || /pago\s*m[oó]vil|m[oó]vil|phone|cell/.test(n)) return "phone";
+  if (/punto|tarjeta|d[eé]bito|cr[eé]dito\s*card|\bpos\b|card/.test(n)) return "creditcard";
+  if (a.currency === "USD") return "cash";
+  return "wallet";
+}
 
 /** Cuenta abierta (borrador) del POS. */
 interface Draft {
@@ -184,6 +204,9 @@ export function Vender() {
   const [openUsd, setOpenUsd] = useState("0");
   const [openBs, setOpenBs] = useState("0");
   const [successSale, setSuccessSale] = useState<Sale | null>(null);
+  // BLINK-139: al confirmar, un sello a pantalla completa dice «ya está» antes de
+  // que se vea el comprobante. Se apaga solo; el recibo queda debajo.
+  const [flash, setFlash] = useState(false);
   // Fila resaltada de los resultados (se mueve con ↑ ↓ y la selecciona Enter).
   const [sel, setSel] = useState(0);
   // Ventana de cliente que exige la venta a crédito.
@@ -274,13 +297,19 @@ export function Vender() {
     [addContact]
   );
 
+  // Cantidad tecleada para el próximo producto (BLINK-132). Se guarda como texto
+  // para poder vaciar el campo sin pelear con el cursor.
+  const [cantidadTxt, setCantidadTxt] = useState("1");
+  const cantidad = Math.max(1, Math.floor(Number(cantidadTxt) || 1));
+
   const addLine = useCallback(
-    (id: string) => {
+    (id: string, unidades = 1) => {
       const p = catalog.find((x) => x.id === id);
       if (!p) return;
       // No deja vender más de lo disponible en productos con control de stock.
       const max = p.trackStock ? p.stock : Infinity;
       if (max < 1) return;
+      const q = Math.min(Math.max(1, Math.floor(unidades) || 1), max);
       // BLINK-104: precio fijo en Bs. El Bs manda y el USD de la línea se
       // deriva con la tasa de este momento; por eso se guarda SIN redondear,
       // para que el redondeo a centavos ocurra una sola vez, al sumar la línea
@@ -300,7 +329,7 @@ export function Vender() {
           if (d.id !== draft.id) return d;
           const found = d.lines.find((l) => l.productId === id);
           if (found) {
-            const nextQty = Math.min(found.qty + 1, max);
+            const nextQty = Math.min(found.qty + q, max);
             if (nextQty === found.qty) return d;
             return {
               ...d,
@@ -315,7 +344,7 @@ export function Vender() {
                 productId: p.id,
                 name: p.name,
                 presentation: presentationLabel(p),
-                qty: 1,
+                qty: q,
                 price: fijo ? fijo / rate : p.price,
                 cost: p.cost,
                 taxRate: p.taxRate,
@@ -325,8 +354,16 @@ export function Vender() {
           };
         })
       );
+      // Vale para el próximo toque, no para toda la caja.
+      setCantidadTxt("1");
     },
     [catalog, draft.id, rate]
+  );
+
+  /** Suma con la cantidad tecleada; luego el campo vuelve a 1. */
+  const agregar = useCallback(
+    (id: string) => addLine(id, cantidad),
+    [addLine, cantidad]
   );
 
   // Escáner (USB · cámara · celular): agrega el producto a la cuenta activa.
@@ -408,6 +445,20 @@ export function Vender() {
     [catalog, draft.lines, setQty]
   );
 
+  // Tipear la cantidad de una línea ya puesta. Un campo vacío o un 0 no borra la
+  // línea: para eso están el botón − y la tecla Supr.
+  const setQtyExacta = useCallback(
+    (id: string, texto: string) => {
+      const v = Math.floor(Number(texto));
+      if (!Number.isFinite(v) || v < 1) return;
+      const p = catalog.find((x) => x.id === id);
+      const max = p && p.trackStock ? p.stock : Infinity;
+      if (max < 1) return;
+      setQty(id, Math.min(v, max));
+    },
+    [catalog, setQty]
+  );
+
   // Cortesía: el cliente no paga esa línea. Se conserva `price` en la fila
   // porque ese valor es lo que se imprime y lo que se reporta como regalado;
   // quien quita la cortesía devuelve el precio a la venta sin tocar la cantidad.
@@ -457,10 +508,6 @@ export function Vender() {
     () => round2(appliedSurcharges.reduce((a, s) => a + surchargeAmount(s, net), 0)),
     [appliedSurcharges, net]
   );
-  const totalPreIgtf = round2(net + tax + surchargeValue);
-  // Lo regalado, para mostrarlo en pantalla y en el pie del ticket. No suma al
-  // total: `base` ya excluye las líneas en cortesía.
-  const cortesias = useMemo(() => cortesiaValor(lines), [lines]);
 
   const newTab = useCallback(() => {
     const d = emptyDraft();
@@ -469,16 +516,26 @@ export function Vender() {
   }, []);
 
   /** Lo mismo que el botón grande: abrir caja si falta, si no, la ventana de cobro. */
+  // Cada ronda de cobro empieza limpia: sin cobros y con el monto por escribir,
+  // que la pantalla rellena con lo que falte. Se comparte con la apertura de
+  // caja para que un monto viejo nunca arranque la ronda siguiente.
+  const reiniciarCobro = useCallback(() => {
+    setPayments([]);
+    setCredit(false);
+    setPayAmount("");
+    setPayRef("");
+    setPayError("");
+  }, []);
+
   const abrirCobro = useCallback(() => {
     if (!lines.length) return;
     if (!cashSession) {
       setOpenCashModal(true);
       return;
     }
-    setPayments([]);
-    setCredit(false);
+    reiniciarCobro();
     setPayOpen(true);
-  }, [lines.length, cashSession]);
+  }, [lines.length, cashSession, reiniciarCobro]);
 
   const closeTab = useCallback(
     (id: string) => {
@@ -506,115 +563,107 @@ export function Vender() {
   const [payError, setPayError] = useState("");
   const [quoteError, setQuoteError] = useState("");
 
-  const paid = useMemo(() => round2(payments.reduce((a, p) => a + p.amountUsd, 0)), [payments]);
-  const paidIgtf = useMemo(() => round2(payments.reduce((a, p) => a + (p.igtf ?? 0), 0)), [payments]);
   // BLINK-106: el total del ticket y su equivalente en Bs salen de las mismas
-  // funciones que usa el `checkout`. Si cada sitio suma el IGTF por su cuenta,
+  // funciones que usa el `checkout`. Si cada sitio suma sus partes por su lado,
   // el redondeo se aplica dos veces y el ticket puede imprimir un Bs distinto
   // del que la pantalla cobró.
+  // BLINK-134: el IGTF ya no se calcula (dueño, 2026-11-21).
   const total = useMemo(
-    () => ticketTotal(net, tax, surchargeValue, paidIgtf),
-    [net, tax, surchargeValue, paidIgtf]
+    () => ticketTotal(net, tax, surchargeValue),
+    [net, tax, surchargeValue]
   );
-  // BLINK-104: con precio fijo en Bs el total en bolívares no es `total × tasa`.
-  // `restUsd` (descuento, IVA, recargos) sí es una cifra en dólares y se
-  // convierte; las líneas fijas aportan su Bs exacto.
+  // BLINK-104: con precio fijo en Bs el total en bolívares no es `total × tasa`:
+  // las líneas fijas aportan su Bs exacto y solo el resto se convierte.
   const hasFijos = lines.some((l) => Boolean(l.priceBs));
-  const totalPreIgtfBs = useMemo(
-    () => saleBsTotal(lines, rate, round2(totalPreIgtf - base)),
-    [lines, rate, totalPreIgtf, base]
-  );
   const totalBs = useMemo(() => saleBsFromTotal(lines, rate, total), [lines, rate, total]);
-  // Lo que falta en Bs: el Bs del ticket menos lo ya acreditado (el Bs tecleado
-  // y, en su equivalente, lo cobrado en dólares).
-  const missingBs = round2(Math.max(0, totalBs - paidBs(payments, rate)));
-  // El saldo se cuadra en la moneda que manda el ticket. `saldoPendiente` ya
-  // deja de contar el centavo de dólar que produce expresar en USD un cobro
-  // cerrado en Bs: no es dinero que falte en la caja.
-  const missing = useMemo(
-    () => saldoPendiente(total, payments, totalBs, rate).remaining,
-    [total, payments, totalBs, rate]
-  );
-  // El ticket está saldado cuando no queda nada por cobrar (el dinero se cuantiza
-  // a 2 decimales, así que "missing" es 0 o ≥ 0,01).
-  const settled = missing < 0.01;
-  const needsCustomer = credit && !draft.customerId;
 
   const payAccount = accounts.find((a) => a.id === payAccId && a.active);
   const cliente = contacts.find((c) => c.id === draft.customerId);
   const inUsd = payAccount?.currency === "USD";
-  // "Monto exacto" en USD debe cubrir el IGTF: el cobro aporta V al pagado y
-  // 0,03·V al total, así que V = missing − 0,97·V → V = missing / (1 − 0,03).
-  const exactAmount = payAccount
-    ? inUsd
-      ? round2(missing / (1 - IGTF_RATE))
-      : // BLINK-066: sin tasa válida no hay "monto exacto" en bolívares.
-        rate > 0
-        ? missingBs
-        : 0
-    : 0;
+  // BLINK-066: cobrar en bolívares sin tasa no puede asumir 1 Bs = 1 USD.
+  const tasaValida = inUsd || rate > 0;
 
-  // Cálculo en vivo del vuelto según lo tecleado
-  const typedAmount = Number(payAmount) || 0;
-  const isOverpaying = payAccount && typedAmount > exactAmount && exactAmount > 0;
+  // Lo que falta sobre los cobros YA registrados. Lo tecleado se cuenta aparte,
+  // como cobro pendiente, para poder calcular el exacto y el vuelto sin dar la
+  // vuelta sobre sí mismo.
+  const faltaUsd = useMemo(
+    () => saldoPendiente(total, payments, totalBs, rate).remaining,
+    [total, payments, totalBs, rate]
+  );
+  const faltaBs = round2(Math.max(0, totalBs - paidBs(payments, rate)));
+  // «Monto exacto» en la moneda del método elegido: lo que queda por cubrir.
+  const exactAmount = !payAccount ? 0 : inUsd ? faltaUsd : tasaValida ? faltaBs : 0;
 
-  const liveChangeUsd = useMemo(() => {
-    if (!payAccount || !isOverpaying) return 0;
-    if (inUsd) {
-      return round2(typedAmount - exactAmount);
-    }
-    const changeBs = typedAmount - exactAmount;
-    return rate > 0 ? round2(changeBs / rate) : 0;
-  }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, rate]);
+  // El cobro tecleado, todavía sin registrar. Es el mismo objeto que guarda
+  // «Sumar otra cuenta», así que el cuadre y el vuelto se ven igual antes y
+  // después de partir la cuenta.
+  const cobroNuevo = useMemo<SalePayment | null>(() => {
+    if (!payAccount || credit || !tasaValida) return null;
+    const typed = round2(Number(payAmount) || 0);
+    if (typed <= 0) return null;
+    // La regla del vuelto vive en `fiscal.ts`: la pantalla y el `checkout`
+    // coinciden porque los dos la consultan.
+    const { charged, change } = vuelto(typed, exactAmount);
+    const value = round2(charged / (inUsd ? 1 : rate));
+    if (value <= 0) return null;
+    return {
+      method: payAccount.name,
+      accountId: payAccount.id,
+      amountUsd: value,
+      currency: payAccount.currency,
+      amountInput: charged,
+      amountReceived: typed,
+      change,
+      reference: payRef.trim() || undefined,
+    };
+  }, [payAccount, credit, tasaValida, payAmount, payRef, inUsd, rate, exactAmount]);
 
-  const liveChangeBs = useMemo(() => {
-    if (!payAccount || !isOverpaying) return 0;
-    if (!inUsd) {
-      return round2(typedAmount - exactAmount);
-    }
-    return rate > 0 ? round2(liveChangeUsd * rate) : 0;
-  }, [payAccount, isOverpaying, typedAmount, exactAmount, inUsd, liveChangeUsd, rate]);
+  // Cobrar es UN paso (BLINK-137, dueño, 2026-11-21): lo tecleado ya cuenta como cobro, así
+  // que «Confirmar venta» se habilita sin trámites intermedios. «Sumar otra
+  // cuenta» sigue existiendo, pero para partir, no para poder confirmar.
+  const cobros = useMemo(
+    () => (cobroNuevo ? [...payments, cobroNuevo] : payments),
+    [payments, cobroNuevo]
+  );
+  const paid = round2(cobros.reduce((a, p) => a + p.amountUsd, 0));
+  const missing = useMemo(
+    () => saldoPendiente(total, cobros, totalBs, rate).remaining,
+    [total, cobros, totalBs, rate]
+  );
+  const missingBs = round2(Math.max(0, totalBs - paidBs(cobros, rate)));
+  // El ticket está saldado cuando no queda nada por cobrar (el dinero se
+  // cuantiza a 2 decimales, así que "missing" es 0 o ≥ 0,01).
+  const settled = missing < 0.01;
+  const needsCustomer = credit && !draft.customerId;
 
-  const amountUsd =
-    payAccount && (inUsd || rate > 0)
-      ? round2((isOverpaying ? exactAmount : typedAmount) / (inUsd ? 1 : rate))
-      : 0;
+  // Vuelto en vivo, en las dos monedas, salido del propio cobro pendiente.
+  const isOverpaying = Boolean(cobroNuevo?.change);
+  const vueltoNativo = cobroNuevo?.change ?? 0;
+  const liveChangeBs = round2(cobroNuevo?.currency === "VES" ? vueltoNativo : vueltoNativo * rate);
+  const liveChangeUsd = round2(cobroNuevo?.currency === "VES" ? vueltoNativo / rate : vueltoNativo);
+  // Equivalente en la otra moneda del cobro en curso.
+  const amountUsd = cobroNuevo?.amountUsd ?? 0;
+
+  // Al elegir el método —y después de partir la cuenta— el monto se escribe solo:
+  // lo que falta, en la moneda del método. El cajero confirma sin teclear.
+  useEffect(() => {
+    if (!payOpen || !payAccount || credit) return;
+    if (payAmount.trim() !== "" || !tasaValida || !(exactAmount > 0)) return;
+    setPayAmount(String(exactAmount));
+  }, [payOpen, payAccount, credit, tasaValida, exactAmount, payAmount]);
 
   const addPayment = useCallback(() => {
     if (!payAccount) return;
-    // BLINK-066: cobrar en bolívares sin tasa no puede asumir 1 Bs = 1 USD.
-    if (!inUsd && !(rate > 0)) {
+    if (!tasaValida) {
       setPayError("Configura la tasa de cambio antes de cobrar en bolívares.");
       return;
     }
-    const typed = round2(Number(payAmount) || 0);
-    if (typed <= 0) return;
-
-    // Si el cliente paga de más, el monto que acredita a la venta se acota a exactAmount
-    const chargedInput = typed > exactAmount && exactAmount > 0 ? exactAmount : typed;
-    const value = round2(chargedInput / (inUsd ? 1 : rate));
-    if (value <= 0) return;
+    if (!cobroNuevo) return;
     setPayError("");
-
-    const changeVal = typed > exactAmount && exactAmount > 0 ? round2(typed - exactAmount) : 0;
-
-    setPayments((ps) => [
-      ...ps,
-      {
-        method: payAccount.name,
-        accountId: payAccount.id,
-        amountUsd: value,
-        currency: payAccount.currency,
-        amountInput: chargedInput,
-        amountReceived: typed,
-        change: changeVal,
-        reference: payRef.trim() || undefined,
-        igtf: inUsd ? igtfFor(value) : 0,
-      },
-    ]);
+    setPayments((ps) => [...ps, cobroNuevo]);
     setPayAmount("");
     setPayRef("");
-  }, [payAccount, payAmount, payRef, inUsd, rate, exactAmount]);
+  }, [payAccount, tasaValida, cobroNuevo]);
 
   const finish = useCallback(() => {
     if (!lines.length) return;
@@ -623,24 +672,32 @@ export function Vender() {
     // Wink: una venta a crédito exige cliente.
     if (credit && !draft.customerId) return;
     // BLINK-066: un cobro en bolívares exige tasa; sin ella no hay equivalencia en USD.
-    if (payments.some((p) => p.currency === "VES") && !(rate > 0)) {
+    if (cobros.some((p) => p.currency === "VES") && !(rate > 0)) {
       setPayError("Configura la tasa de cambio antes de cobrar en bolívares.");
       return;
     }
 
     const totalReceivedUsd = round2(
-      payments.reduce((a, p) => {
+      cobros.reduce((a, p) => {
         const rec = p.amountReceived ?? p.amountInput ?? p.amountUsd;
         return a + (p.currency === "USD" ? rec : rec / rate);
       }, 0)
     );
     const totalChangeUsd = round2(
-      payments.reduce((a, p) => {
+      cobros.reduce((a, p) => {
         if (!p.change) return a;
         return a + (p.currency === "USD" ? p.change : p.change / rate);
       }, 0)
     );
-    const totalChangeBs = round2(totalChangeUsd * rate);
+    // El Bs se suma en su propia moneda: pasar cada vuelto por USD y volver a
+    // multiplicar por la tasa redondea dos veces y el sello/impreso diffiere
+    // decenas de céntimos del número que el cajero acaba de entregar.
+    const totalChangeBs = round2(
+      cobros.reduce((a, p) => {
+        if (!p.change) return a;
+        return a + (p.currency === "USD" ? p.change * rate : p.change);
+      }, 0)
+    );
 
     const { sale, error } = checkout({
       lines,
@@ -651,7 +708,7 @@ export function Vender() {
       surchargeIds: appliedSurcharges.map((s) => s.id),
       tax,
       notes: draft.notes,
-      payments,
+      payments: cobros,
       amountReceived: totalReceivedUsd > 0 ? totalReceivedUsd : undefined,
       changeUsd: totalChangeUsd > 0 ? totalChangeUsd : undefined,
       changeBs: totalChangeBs > 0 ? totalChangeBs : undefined,
@@ -668,13 +725,15 @@ export function Vender() {
     setDrafts((ds) => ds.map((d) => (d.id === draft.id ? fresh : d)));
     setActiveId(fresh.id);
     setPayments([]);
+    setPayAmount("");
+    setPayRef("");
     setCredit(false);
     setPayError("");
     setPayOpen(false);
     setSuccessSale(sale);
   }, [
     lines, draft, discountValue, discount, surchargeValue, appliedSurcharges, tax,
-    payments, credit, checkout, settled, rate,
+    cobros, credit, checkout, settled, rate,
   ]);
 
   const saveQuote = useCallback(() => {
@@ -713,6 +772,13 @@ export function Vender() {
   // grandes, que solo aparece cuando hay teclado físico.
   const selRef = useRef(sel);
   selRef.current = sel;
+
+  useEffect(() => {
+    if (!successSale) return;
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 1400);
+    return () => clearTimeout(t);
+  }, [successSale]);
 
   useEffect(() => {
     const visible = Math.min(matches.length, RESULTADOS_MAX);
@@ -837,7 +903,7 @@ export function Vender() {
         e.preventDefault();
         setSel(i);
         const p = matches[i];
-        if (p) addLine(p.id);
+        if (p) agregar(p.id);
         return;
       }
 
@@ -849,7 +915,7 @@ export function Vender() {
         if (enCampo(e.target) && !enBusqueda) return;
         e.preventDefault();
         const p = matches[Math.min(selRef.current, visible - 1)];
-        if (p) addLine(p.id);
+        if (p) agregar(p.id);
       }
     };
 
@@ -857,7 +923,7 @@ export function Vender() {
     return () => document.removeEventListener("keydown", onKey);
   }, [
     matches, query, camOpen, payOpen, openCashModal, discOpen, surOpen, noteOpen, cliOpen,
-    successSale, newTab, abrirCobro, addLine, lines, lineaActiva, incLine, setQty,
+    successSale, newTab, abrirCobro, agregar, lines, lineaActiva, incLine, setQty,
   ]);
 
   const activeDiscounts = useMemo(
@@ -869,7 +935,6 @@ export function Vender() {
     <>
       <PageHead
         title="Vender"
-        subtitle="Toca un producto para empezar una cuenta."
         actions={
           <>
             {cashSession ? (
@@ -916,6 +981,8 @@ export function Vender() {
         ))}
       </div>
 
+      {/* BLINK-136 (dueño, 2026-11-21): la pantalla va directa al mostrador,
+          sin subtítulos ni frases de tutorial; las pistas van en title/kbd. */}
       <div className="pos">
         <div className="pos__catalog">
           <div className="row gap-8" style={{ alignItems: "center" }}>
@@ -930,6 +997,19 @@ export function Vender() {
               inputId="pos-search"
               clearButton
             />
+            {/* La cantidad se escribe antes de tocar el producto: una caja de
+                24 no son 24 toques (BLINK-132). */}
+            <input
+              className="pos__cantidad"
+              type="number"
+              min={1}
+              step="1"
+              inputMode="numeric"
+              value={cantidadTxt}
+              onChange={(e) => setCantidadTxt(e.target.value)}
+              aria-label="Cantidad del próximo producto"
+              title="Cantidad del próximo producto"
+            />
             <button
               type="button"
               className="icon-btn icon-btn--accent"
@@ -943,7 +1023,7 @@ export function Vender() {
             favoritos={favs}
             masVendidos={top}
             unidades={unidades}
-            onAdd={addLine}
+            onAdd={agregar}
             onUnfix={(id) => fijarFavorito(id, false)}
           />
           {sinTasa && !(rate > 0) && (
@@ -985,7 +1065,7 @@ export function Vender() {
                       aria-selected={i === sel}
                       style={{ flex: 1, width: "auto" }}
                       onMouseEnter={() => setSel(i)}
-                      onClick={() => addLine(p.id)}
+                      onClick={() => agregar(p.id)}
                     >
                       <span className="search-results__key">{i + 1}</span>
                       <span className="search-results__cell">
@@ -1024,7 +1104,6 @@ export function Vender() {
               <EmptyState
                 icon="scan"
             title="Escanea o busca"
-                hint="Escanea con el lector USB, celular vinculado o usa la búsqueda predictiva."
                 action={
                   <Link className="btn btn--soft btn--sm" to="/app/catalogo">
                     Ir al Catálogo
@@ -1038,7 +1117,7 @@ export function Vender() {
               <EmptyState
                 icon="search"
             title="Sin coincidencias"
-                hint="Prueba con otra combinación: 'MAVESA 500g' o el código de barras."
+                hint="Prueba con otro término o con el código de barras."
                 action={
                   <Link className="btn btn--soft btn--sm" to={`/app/catalogo?barcode=${encodeURIComponent(query.trim())}`}>
                     Crear producto
@@ -1058,7 +1137,7 @@ export function Vender() {
           <div className="ticket__items">
             {lines.length === 0 ? (
               <p className="muted" style={{ fontSize: "0.85rem", padding: "1rem 0" }}>
-                Empieza una cuenta: toca un producto.
+                Cuenta vacía.
               </p>
             ) : (
               lines.map((l) => (
@@ -1081,20 +1160,31 @@ export function Vender() {
                     {l.presentation && l.qty === 1 ? <> {l.presentation}</> : ""}
                   </div>
                   <div className="tabular" style={{ textAlign: "right" }}>
-                    {l.cortesia ? "Cortesía" : formatUsd(lineBase(l))}
+                    {formatUsd(lineBase(l))}
                   </div>
                   <div className="ticket__qty">
                     <span className="stepper row gap-4">
                       <button onClick={() => setQty(l.productId, l.qty - 1)} aria-label="Quitar una unidad">
                         <Icon name="minus" />
                       </button>
-                      <span className="tabular" style={{ minWidth: 24, textAlign: "center" }}>
-                        {l.qty}
-                      </span>
+                      <input
+                        className="ticket__qty-input"
+                        type="number"
+                        min={1}
+                        step="1"
+                        inputMode="numeric"
+                        value={l.qty}
+                        onChange={(e) => setQtyExacta(l.productId, e.target.value)}
+                        aria-label={`Cantidad de ${l.name}`}
+                        title="Cantidad"
+                      />
                       <button onClick={() => incLine(l.productId)} aria-label="Añadir una unidad">
                         <Icon name="plus" />
                       </button>
                     </span>
+                    {/* BLINK-133 (dueño, 2026-11-21): la línea regalada se
+                        marca con el icono de etiqueta, sin rótulo visible; la
+                        palabra «cortesía» queda solo en el title. */}
                     <button
                       className={`btn btn--sm ${l.cortesia ? "btn--soft" : "btn--ghost"}`}
                       title={l.cortesia ? "Quitar la cortesía y cobrar esta línea" : "Regalar esta línea (no se cobra)"}
@@ -1102,7 +1192,6 @@ export function Vender() {
                       onClick={() => toggleCortesia(l.productId)}
                     >
                       <Icon name="tag" size="sm" />
-                      Cortesía
                     </button>
                     <span className="dim" style={{ fontSize: "0.72rem" }}>
                       {formatUsd(l.price)} c/u
@@ -1131,12 +1220,6 @@ export function Vender() {
               <span>Subtotal</span>
               <span className="tabular">{formatUsd(base)}</span>
             </div>
-            {cortesias > 0 && (
-              <div className="total-row dim">
-                <span>Cortesías (no se cobran)</span>
-                <span className="tabular">{formatUsd(cortesias)}</span>
-              </div>
-            )}
             <div className="total-row">
               <span>Descuento</span>
               <span className="tabular">− {formatUsd(discountValue)}</span>
@@ -1153,10 +1236,10 @@ export function Vender() {
             )}
             <div className="total-row total-row--grand">
               <span>Total</span>
-              <span className="tabular">{formatUsd(totalPreIgtf)}</span>
+              <span className="tabular">{formatUsd(total)}</span>
             </div>
             <div className="dim tabular" style={{ textAlign: "right" }}>
-              {rate > 0 || hasFijos ? formatBsDirect(totalPreIgtfBs) : "— Bs"}
+              {rate > 0 || hasFijos ? formatBsDirect(totalBs) : "— Bs"}
               {business.baseCurrency ? ` · Base: ${business.baseCurrency}` : ""}
             </div>
 
@@ -1350,10 +1433,6 @@ export function Vender() {
               <span>IVA</span>
               <span className="tabular">+ {formatUsd(tax)}</span>
             </div>
-            <div className="breakdown__row">
-              <span>IGTF (3%)</span>
-              <span className="tabular">+ {formatUsd(paidIgtf)}</span>
-            </div>
             <div className="breakdown__row breakdown__row--strong">
               <span>Total</span>
               <span className="tabular">{formatUsd(total)}</span>
@@ -1382,7 +1461,6 @@ export function Vender() {
                   <span>
                     {p.method}
                     {p.reference ? ` · ref ${p.reference}` : ""}
-                    {(p.igtf ?? 0) > 0 ? ` · IGTF ${formatUsd(p.igtf ?? 0)}` : ""}
                     {p.change != null && p.change > 0 && (
                       <span className="dim"> (Vuelto: {p.currency === "VES" ? formatBsDirect(p.change) : formatUsd(p.change)})</span>
                     )}
@@ -1402,11 +1480,17 @@ export function Vender() {
                     key={a.id}
                     className={`btn ${payAccId === a.id ? "btn--primary" : "btn--soft"} btn--sm`}
                     onClick={() => {
+                      // Cambiar de cuenta cambia también la moneda del campo:
+                      // el monto auto-escrito para la cuenta anterior no sirve,
+                      // y conservarlo dejaba cobrando en Bs un número escrito
+                      // en dólares. Se limpia y el efecto lo reescribe exacto.
+                      setPayAmount("");
                       setPayAccId(a.id);
                       setCredit(false);
                       setPayError("");
                     }}
                   >
+                    <Icon name={iconoMetodo(a)} size="sm" />
                     {a.name}
                     <span className="dim"> · {a.currency}</span>
                   </button>
@@ -1417,12 +1501,14 @@ export function Vender() {
                 onClick={() => {
                   setCredit(true);
                   setPayAccId("");
+                  setPayAmount("");
                   setPayError("");
                   // La venta a crédito exige deudor: se abre la ventana en el
                   // mismo instante, sin dejar al cajero buscando el campo.
                   if (!draft.customerId) setCliOpen(true);
                 }}
               >
+                <Icon name="wallet" size="sm" />
                 A crédito
               </button>
             </div>
@@ -1439,7 +1525,6 @@ export function Vender() {
               )}
               <Field
                 label={`Monto (${payAccount.currency})`}
-                hint={inUsd ? "Al cobrar en dólares se suma el IGTF (3%)." : undefined}
               >
                 <input
                   className="input"
@@ -1470,6 +1555,7 @@ export function Vender() {
                   className="btn btn--ghost btn--sm"
                   onClick={() => setPayAmount(String(exactAmount))}
                   disabled={!(inUsd || rate > 0)}
+                  title="Dejar escrito justo lo que falta"
                 ><Icon name="cash" />
                   Monto exacto
                 </button>
@@ -1503,12 +1589,18 @@ export function Vender() {
                   <div className="between" style={{ fontWeight: 600 }}>
                     <span>Vuelto a entregar:</span>
                     <span className="mono" style={{ fontSize: "1.05rem", color: "var(--color-accent)" }}>
-                      {formatUsd(liveChangeUsd)}
+                      {payAccount?.currency === "VES"
+                        ? formatBsDirect(vueltoNativo)
+                        : formatUsd(vueltoNativo)}
                     </span>
                   </div>
                   <div className="between dim" style={{ fontSize: "0.75rem", marginTop: 2 }}>
-                    <span>Equivalente en bolívares:</span>
-                    <span className="mono">{formatBsDirect(liveChangeBs)}</span>
+                    <span>Equivalente en {payAccount?.currency === "VES" ? "dólares" : "bolívares"}:</span>
+                    <span className="mono">
+                      {payAccount?.currency === "VES"
+                        ? formatUsd(liveChangeUsd)
+                        : formatBsDirect(liveChangeBs)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -1522,14 +1614,16 @@ export function Vender() {
                 />
               </Field>
 
+              {/* Partir la cuenta sigue siendo opcional: se usa cuando se cobra
+                  en dos cuentas, no para poder confirmar. */}
               <button
                 className="btn btn--soft btn--block"
                 onClick={addPayment}
-                disabled={!inUsd && !(rate > 0)}
+                disabled={!cobroNuevo}
                 style={{ marginBottom: "0.75rem" }}
               >
                 <Icon name="plus" />
-                Agregar cobro
+                Sumar otra cuenta
               </button>
             </>
           )}
@@ -1542,7 +1636,7 @@ export function Vender() {
             </p>
           )}
 
-          {!credit && !settled && payments.length > 0 && (
+          {!credit && !settled && cobros.length > 0 && (
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
               Falta por cobrar {formatUsd(missing)}. Cobra el total o marca «A crédito» para dejar
               el saldo pendiente.
@@ -1605,14 +1699,30 @@ export function Vender() {
             onClick={() => {
               openCash(Number(openUsd) || 0, Number(openBs) || 0);
               setOpenCashModal(false);
-              setPayments([]);
-              setCredit(false);
+              reiniciarCobro();
               setPayOpen(true);
             }}
           ><Icon name="plus" /> <Icon name="check" /> 
             Confirmar apertura y continuar
           </button>
         </Modal>
+      )}
+
+      {/* --- BLINK-139: confirmación visual de la venta --- */}
+      {successSale && flash && (
+        <div className="venta-ok" role="status" aria-live="polite">
+          <Icon name="checkmarkCircle" size="xl" />
+          <p className="venta-ok__total tabular">{formatUsd(saleTotal(successSale))}</p>
+          <p className="venta-ok__meta">{successSale.paymentMethod}</p>
+          {successSale.changeUsd != null && successSale.changeUsd > 0 && (
+            <p className="venta-ok__vuelto tabular">
+              Vuelto {formatUsd(successSale.changeUsd)}
+              {successSale.changeBs != null && successSale.changeBs > 0
+                ? ` · ${formatBsDirect(successSale.changeBs)}`
+                : ""}
+            </p>
+          )}
+        </div>
       )}
 
       {/* --- Modal de comprobante / venta exitosa --- */}
@@ -1640,7 +1750,7 @@ export function Vender() {
           onScan={(code) => handleScan(code)}
           onClose={() => setCamOpen(false)}
           continuous
-          hint="Cada producto leído se suma a la cuenta. Toca “Continuar” para seguir escaneando."
+          hint="Se suma lo que leas; “Continuar” deja seguir escaneando."
           footer={
             scanCode ? (
               <div className="scan-hint" style={{ marginTop: "0.75rem" }}>

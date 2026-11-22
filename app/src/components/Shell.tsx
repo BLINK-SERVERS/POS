@@ -4,17 +4,18 @@
 //   · En escritorio, la navegación vive en la barra lateral.
 //   · En móvil, NO hay hamburguesa: la navegación es una barra inferior
 //     flotante de material (Liquid Glass) con una acción central destacada
-//     (Vender) y el menú de cuenta en el avatar del cabecera.
+//     (Vender), una pestaña «Más» con la hoja de los módulos que no caben
+//     y el menú de cuenta en el avatar del cabecera.
 //   · Todos los módulos usan la misma iconografía (ver MODULOS).
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Glass } from "konsta/react";
+import { Glass, Sheet } from "konsta/react";
 import { useActivacion, useStore } from "../lib/store";
 import { estadoReal, fechaCorta, restante, restanteTexto } from "../lib/activacion";
 import { formatBsDirect, formatTasaCabecera, formatUsd, round2 } from "../lib/money";
 import { expectedCash } from "../lib/metrics";
-import { Field, Modal } from "./ui";
+import { Field, Modal, useCerrarConEscape, useFocoDeDialogo } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { BrandLogo } from "./BrandLogo";
 import { Asistencia } from "./Asistencia";
@@ -49,15 +50,19 @@ const NAV: NavItem[] = [
 /**
  * Barra inferior flotante (solo móvil).
  *
- * La HIG limita la barra de pestañas a 5 elementos, así que la barra usa
- * 2 + 1 + 2: dos accesos a la izquierda, la acción principal en el centro
- * y dos accesos a la derecha. El resto de módulos se alcanzan desde
- * General (el panel de módulos) y desde la barra lateral del escritorio.
+ * La HIG limita la barra de pestañas a 5 destinos visibles a la vez, así que
+ * la barra usa 2 + 1 + 2 (dos accesos a la izquierda, la acción principal en
+ * el centro y dos a la derecha) y una sexta pestaña «Más» que abre una hoja
+ * con el resto de módulos. La hoja se deriva de NAV: nunca hay que mantener
+ * dos listas a mano. En escritorio el sidebar sigue mostrando todo.
  */
 const BAR_IZQUIERDA: Modulo[] = [
   { to: "/app/inicio", label: "Inicio", icon: "grid2x2.solid" },
   { to: "/app/catalogo", label: "Catálogo", icon: "tag" },
 ];
+
+/** Acción central de la barra (el POS). */
+const BAR_CENTRAL: Modulo = { to: "/app/ventas", label: "Vender", icon: "dollarsign" };
 
 /** Prioridad para los dos accesos de la derecha (si un módulo está
  *  apagado en el comercio, entra el siguiente de la lista). */
@@ -67,6 +72,18 @@ const BAR_DERECHA: Modulo[] = [
   { to: "/app/contactos", label: "Contactos", icon: "users", feature: "providers" },
   { to: "/app/informes", label: "Informes", icon: "chart", feature: "reports" },
 ];
+
+/**
+ * Destinos de la barra lateral aplastados: en móvil no hay árbol de
+ * navegación, así que las subsecciones (Vender, Historial) son filas.
+ */
+function destinosDe(nav: NavItem[]): Modulo[] {
+  return nav.flatMap((item) =>
+    item.sub
+      ? item.sub.map((s) => ({ to: s.to, label: s.label, icon: s.icon, feature: item.feature }))
+      : [{ to: item.to, label: item.label, icon: item.icon, feature: item.feature }],
+  );
+}
 
 /**
  * Menú de avatar (cabecera).
@@ -237,10 +254,81 @@ function AvatarMenu({
   );
 }
 
+/**
+ * Hoja de los destinos que no caben en la barra inferior · BLINK-140
+ * (dueño, 2026-11-21: «no necesito ver todo, pero sí poder acceder a ellas»).
+ *
+ * Se portal a `document.body`: la barra vive dentro de un `Glass` de Konsta
+ * (blur + `overflow:hidden`), que recortaria y posicionaria la hoja.
+ */
+function HojaMas({ destinos, onCerrar }: { destinos: Modulo[]; onCerrar: () => void }) {
+  const nav = useNavigate();
+  const panel = useFocoDeDialogo<HTMLElement>();
+  useCerrarConEscape(onCerrar);
+
+  const ir = (to: string) => {
+    onCerrar();
+    nav(to);
+  };
+
+  return createPortal(
+    <Sheet
+      opened
+      onBackdropClick={onCerrar}
+      className="sheet hoja-nav"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Más opciones"
+      tabIndex={-1}
+      ref={panel}
+    >
+      {/* Tirador: la seña de una hoja de iOS. */}
+      <div className="sheet__grabber" aria-hidden />
+      <header className="sheet__head">
+        <h2 className="sheet__title">Más opciones</h2>
+        <button type="button" className="sheet__close" onClick={onCerrar} aria-label="Cerrar">
+          <Icon name="close" />
+        </button>
+      </header>
+      <div className="sheet__body">
+        <nav className="hoja-nav__lista" aria-label="Más secciones">
+          {destinos.map((m) => (
+            <button key={m.to} type="button" className="hoja-nav__item" onClick={() => ir(m.to)}>
+              <span className="hoja-nav__glyph" aria-hidden>
+                <Icon name={m.icon} />
+              </span>
+              <span className="hoja-nav__label">{m.label}</span>
+              <span className="hoja-nav__flecha" aria-hidden>
+                <Icon name="chevronRight" />
+              </span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </Sheet>,
+    document.body
+  );
+}
+
 /** Barra de navegación inferior flotante (solo móvil). */
-function BarraInferior({ izquierda, derecha }: { izquierda: Modulo[]; derecha: Modulo[] }) {
+function BarraInferior({
+  izquierda,
+  central,
+  derecha,
+  mas,
+}: {
+  izquierda: Modulo[];
+  central: Modulo;
+  derecha: Modulo[];
+  mas: Modulo[];
+}) {
   const location = useLocation();
+  const [masAbierta, setMasAbierta] = useState(false);
   const activo = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
+  // La acción central es exacta: /app/ventas/historial pertenece a «Más».
+  const centralActivo = location.pathname === central.to;
+  // «Más» se marca mientras la hoja está abierta o la ruta es una de sus entradas.
+  const masActivo = masAbierta || mas.some((m) => activo(m.to));
 
   const item = (m: Modulo) => (
     <NavLink
@@ -263,18 +351,37 @@ function BarraInferior({ izquierda, derecha }: { izquierda: Modulo[]; derecha: M
 
         {/* Acción principal: Vender. */}
         <NavLink
-          to="/app/ventas"
-          className={"tabbar__main" + (activo("/app/ventas") ? " is-active" : "")}
-          aria-label="Vender"
+          to={central.to}
+          className={"tabbar__main" + (centralActivo ? " is-active" : "")}
+          aria-label={central.label}
         >
           <span className="tabbar__main-glyph" aria-hidden>
-            <Icon name="dollarsign" size="xl" />
+            <Icon name={central.icon} size="xl" />
           </span>
-          <span className="tabbar__main-label">Vender</span>
+          <span className="tabbar__main-label">{central.label}</span>
         </NavLink>
 
-        <div className="tabbar__side">{derecha.map(item)}</div>
+        <div className="tabbar__side">
+          {derecha.map(item)}
+          {mas.length > 0 && (
+            <button
+              type="button"
+              className={"tabbar__item" + (masActivo ? " is-active" : "")}
+              onClick={() => setMasAbierta(true)}
+              aria-haspopup="dialog"
+              aria-expanded={masAbierta}
+              aria-label="Más opciones"
+            >
+              <span className="tabbar__glyph" aria-hidden>
+                <Icon name="more" size="lg" />
+              </span>
+              <span className="tabbar__label">Más</span>
+            </button>
+          )}
+        </div>
       </nav>
+
+      {masAbierta && <HojaMas destinos={mas} onCerrar={() => setMasAbierta(false)} />}
     </Glass>
   );
 }
@@ -295,6 +402,12 @@ export function Shell({ children }: { children: ReactNode }) {
 
   // La barra inferior mantiene 2 + 2 aunque un módulo esté apagado.
   const derecha = BAR_DERECHA.filter((m) => !m.feature || features[m.feature]).slice(0, 2);
+
+  // Lo que no cabe en los cinco destinos de la barra se va a la hoja «Más».
+  const enBarra = new Set(
+    [...BAR_IZQUIERDA, ...derecha, BAR_CENTRAL].map((m) => m.to),
+  );
+  const mas = destinosDe(visibleNav).filter((m) => !enBarra.has(m.to));
 
   const session = state.cashSession;
   const expected = session ? expectedCash(state) : { usd: 0, bs: 0, rateMissing: false };
@@ -410,8 +523,14 @@ export function Shell({ children }: { children: ReactNode }) {
           HIG (Tab bars · iOS): "A tab bar floats above content at the bottom
           of the screen. Its items rest on a Liquid Glass background that allows
           content beneath to peek through." → Glass de Konsta, separado del
-          borde y con el contenido asomando por debajo. */}
-      <BarraInferior izquierda={BAR_IZQUIERDA} derecha={derecha} />
+          borde y con el contenido asomando por debajo. Los destinos que no
+          caben viven en la pestaña «Más», no en un rejilla escondida. */}
+      <BarraInferior
+        izquierda={BAR_IZQUIERDA}
+        central={BAR_CENTRAL}
+        derecha={derecha}
+        mas={mas}
+      />
 
       {/* Solo en la pantalla de inicio y con sesión: la landing y el resto
           de módulos no ofrecen la instalación. */}

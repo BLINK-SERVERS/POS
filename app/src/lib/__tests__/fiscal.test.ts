@@ -3,8 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   cortesiaValor,
   discountAmount,
-  IGTF_RATE,
-  igtfFor,
   lineBase,
   lineBs,
   paidBs,
@@ -103,16 +101,16 @@ describe("surchargeAmount", () => {
   });
 });
 
-describe("igtfFor", () => {
-  it("cobra el 3 % sobre el monto en dólares", () => {
-    expect(IGTF_RATE).toBe(0.03);
-    expect(igtfFor(100)).toBe(3);
-  });
-});
-
 describe("ticketTotal", () => {
-  it("suma neto + IVA + recargos + IGTF", () => {
-    expect(ticketTotal(100, 16, 5, 3)).toBe(124);
+  // BLINK-134 (dueño, 2026-11-21): el IGTF se borró de los cobros nuevos, así
+  // que la función de la pantalla de cobro y del `checkout` es neto + IVA +
+  // recargos, en ese orden de redondeo.
+  it("suma neto + IVA + recargos", () => {
+    expect(ticketTotal(100, 16, 5)).toBe(121);
+  });
+
+  it("redondea cada parte antes de sumar", () => {
+    expect(ticketTotal(10.005, 1.005, 0.004)).toBe(11.02);
   });
 });
 

@@ -1603,13 +1603,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAppState((s) => {
       const base = saleBase(input.lines);
       const net = round2(Math.max(0, base - input.discount));
-      const igtf = round2(input.payments.reduce((a, p) => a + (p.igtf ?? 0), 0));
       // BLINK-106: el total en USD y su equivalente en Bs salen de las mismas
-      // funciones que usa la pantalla de cobro. Antes cada sitio sumaba el IGTF
-      // por su lado y redondeaba dos veces: el ticket impreso podía diferir un
-      // céntimo del Bs que el cajero vio, y el mismo pago podía guardarse como
-      // «crédito» aunque la pantalla lo diera por cobrado.
-      const total = ticketTotal(net, input.tax, input.surcharge, igtf);
+      // funciones que usa la pantalla de cobro. Antes cada sitio sumaba sus
+      // partes por su lado y redondeaba dos veces: el ticket impreso podía
+      // diferir un céntimo del Bs que el cajero vio, y el mismo pago podía
+      // guardarse como «crédito» aunque la pantalla lo diera por cobrado.
+      // BLINK-134: el IGTF se borró de los cobros nuevos (dueño, 2026-11-21).
+      const total = ticketTotal(net, input.tax, input.surcharge);
       const totalBs = saleBsFromTotal(input.lines, s.rate, total);
       const { remaining } = saldoPendiente(total, input.payments, totalBs, s.rate);
       // Código monotónico persistido (BLINK-044): el correlativo por conteo
@@ -1690,7 +1690,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         surcharge: round2(input.surcharge),
         surchargeIds: input.surchargeIds,
         tax: round2(input.tax),
-        igtf: round2(igtf),
+        igtf: 0, // BLINK-134: los cobros nuevos no generan IGTF
         notes: input.notes,
         payments: enrichedPayments,
         customerId: input.customerId,

@@ -5,7 +5,8 @@
 //   · no hay menú hamburguesa ni panel lateral en móvil;
 //   · la barra inferior flotante tiene 5 elementos con la acción
 //     principal (Vender) EXACTAMENTE en el centro y en color de acento;
-//   · los elementos laterales son simétricos y llevan etiqueta;
+//   · los dos grupos laterales pesan igual y cada control mantiene su
+//     mínimo táctil, y todos llevan etiqueta;
 //   · el menú de avatar agrupa cuenta, ajustes y cierre de sesión;
 //   · ningún control escala al mantenerlo pulsado.
 //
@@ -33,25 +34,82 @@ const browser = await chromium.launch();
 const errores = [];
 
 /* ------------------------------------------------------------
-   Sesión: cuenta QA real (si hay) o bypass local.
+   Sesión: cuenta QA real; si no hay formulario, bypass local.
+   ------------------------------------------------------------
+   Se sondea el estado asentado en lugar de dormir un rato fijo: el
+   login contra Supabase y la hidratación del store tardan más de lo
+   que cualquier `waitForTimeout` razonable cubre, y navegar antes de
+   que la sesión aterrice deja la barra móvil sin montar y el gate en
+   rojo por culpa del instrumento. El respaldo es el `?bypass=1` de
+   desarrollo, que además necesita `onboarding.completed` escrito o la
+   app manda al alta guiada en vez de al Inicio.
    ------------------------------------------------------------ */
+async function espera(cond, ms = 30000) {
+  const fin = Date.now() + ms;
+  for (;;) {
+    if (await cond().catch(() => false)) return true;
+    if (Date.now() > fin) return false;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+/** El Shell montado es la señal de que hay sesión y datos hidratados. */
+const listo = (page) =>
+  espera(async () => (await page.locator(".shell__sidebar a[href^='/app']").count()) > 0);
+
+/** Lee la barra: qué ruta hay, qué celdas están marcadas y cómo ven cada una.
+ *  Devuelve la lista de marcadas (no la primera) porque «una sola celda
+ *  activa» es parte de lo que se comprueba. */
+const medirBarra = (page) =>
+  page.evaluate(() => {
+    const celdas = [...document.querySelectorAll(".tabbar__item, .tabbar__main")].map((a) => {
+      const marcado = a.classList.contains("is-active");
+      return `${a.getAttribute("href") || "•"} ${a.textContent.trim()}${
+        a.getAttribute("aria-current") ? " [aria-current]" : ""
+      }${marcado ? " [is-active]" : ""}`;
+    });
+    return {
+      ruta: location.pathname,
+      activos: [...document.querySelectorAll(".tabbar__item.is-active, .tabbar__main.is-active")]
+        .map((a) => a.textContent.trim())
+        .filter(Boolean),
+      items: celdas,
+    };
+  });
+
 async function sesion(ctx) {
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errores.push("PAGEERROR " + String(e.message).slice(0, 140)));
   page.on("console", (m) => {
     if (m.type() === "error") errores.push("CONSOLE " + m.text().slice(0, 140));
   });
-  await page.goto(BASE + "/app/entrar", { waitUntil: "networkidle" });
-  await page.waitForTimeout(900);
-  const hayForm = await page.locator('input[type="email"]').count();
-  if (hayForm) {
+  await page.goto(BASE + "/app/entrar", { waitUntil: "domcontentloaded" });
+  await espera(async () => (await page.locator('input[type="email"], .shell__sidebar a').count()) > 0);
+  if (await page.locator('input[type="email"]').count()) {
     await page.fill('input[type="email"]', "qa.blink@tienda.local");
     await page.fill('input[type="password"]', "ClavePrueba123");
     await page.click('button[type="submit"]');
-    await page.waitForTimeout(3500);
+    await espera(async () => !page.url().includes("/entrar"), 45000);
   } else {
     await page.goto(BASE + "/app/entrar?bypass=1", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1500);
+    await espera(async () =>
+      page.evaluate(() => window.localStorage.getItem("blink-temp-bypass") === "1"),
+    );
+    await page.evaluate(() => {
+      const KEY = "blink-pos-state-v3:temp-bypass-user";
+      const st = JSON.parse(localStorage.getItem(KEY) || "{}");
+      st.onboarding = { ...(st.onboarding || {}), completed: true };
+      localStorage.setItem(KEY, JSON.stringify(st));
+    });
+  }
+  // Se entra al Inicio antes de medir: con el bypass el login no redirige solo,
+  // y sin Shell montado cualquier comprobación de la barra sería vacía.
+  await page.goto(BASE + "/app/inicio", { waitUntil: "domcontentloaded" });
+  if (!(await listo(page))) {
+    console.error("\n!! LA SESIÓN NUNCA MONTÓ EL SHELL — el gate se detiene aquí.");
+    console.error("   Ruta actual:", page.url());
+    await browser.close();
+    process.exit(2);
   }
   return page;
 }
@@ -101,10 +159,12 @@ const barra = await movil.evaluate(() => {
     return {
       texto: e.textContent.trim(),
       clase: e.className,
+      tag: e.tagName,
       centro: r.left + r.width / 2,
       izquierda: r.left,
       derecha: r.right,
       ancho: r.width,
+      alto: r.height,
       color: cs2.color,
       etiqueta: !!e.querySelector(".tabbar__label, .tabbar__main-label"),
       glifo: e.querySelector("svg") ? e.querySelector("svg").innerHTML.length : 0,
@@ -112,10 +172,16 @@ const barra = await movil.evaluate(() => {
   });
   const principal = document.querySelector(".tabbar__main");
   const glifoPrincipal = principal ? principal.querySelector("svg") : null;
+  /* BLINK-140: el reparto se mide por grupo, no por celda. */
+  const grupos = [...document.querySelectorAll(".tabbar .tabbar__side")].map((g) => {
+    const r = g.getBoundingClientRect();
+    return { x: r.left, w: r.width, derecha: r.right, controles: g.children.length };
+  });
   return {
     visible: cs.display,
     material: cs.backdropFilter,
     items,
+    grupos,
     vw: window.innerWidth,
     glifoPrincipal: glifoPrincipal ? glifoPrincipal.innerHTML.length : 0,
     colorPrincipal: principal ? getComputedStyle(principal.querySelector(".tabbar__main-glyph")).backgroundColor : "",
@@ -126,9 +192,15 @@ if (!barra || barra.visible === "none") {
   Add("FALLO", "la barra inferior flotante no se muestra");
 } else {
   Add("ok", `barra inferior flotante visible con material (${barra.material})`);
-  Add(barra.items.length === 5 ? "ok" : "FALLO", `la barra tiene 5 elementos (${barra.items.length})`);
 
-  const principal = barra.items.find((i) => i.clase.includes("tabbar__main"));
+  /* La HIG permite 5 destinos en la barra; el sexto control es «Más», que no
+     es un destino sino la puerta de los que no caben. Se cuenta aparte. */
+  const mas = barra.items.find((i) => i.tag === "BUTTON");
+  const destinos = barra.items.filter((i) => i.tag !== "BUTTON");
+  Add(destinos.length === 5 ? "ok" : "FALLO", `la barra muestra 5 destinos (${destinos.length})`);
+  Add(mas ? "ok" : "FALLO", `la barra trae la pestaña «Más» (${mas ? mas.texto : "ausente"})`);
+
+  const principal = destinos.find((i) => i.clase.includes("tabbar__main"));
   if (!principal) {
     Add("FALLO", "no hay acción central en la barra");
   } else {
@@ -139,11 +211,21 @@ if (!barra || barra.visible === "none") {
       `la acción central es "Vender" (${principal.texto})`
     );
     Add(barra.glifoPrincipal > 0 ? "ok" : "FALLO", "la acción central lleva el glifo del símbolo de dólar");
-    const acento = /0,\s*136,\s*255|0,\s*145,\s*255|0,\s*136,\s*255/.test(barra.colorPrincipal);
-    Add(acento ? "ok" : "AVISO", `la acción central usa el color de acento (${barra.colorPrincipal})`);
+    const acentoSolido = await movil.evaluate(() => {
+      const muestra = document.createElement("span");
+      muestra.style.backgroundColor = "var(--color-accent-solid)";
+      document.body.appendChild(muestra);
+      const color = getComputedStyle(muestra).backgroundColor;
+      muestra.remove();
+      return color;
+    });
+    Add(
+      barra.colorPrincipal === acentoSolido ? "ok" : "AVISO",
+      `la acción central usa el token de acento sólido (${barra.colorPrincipal} vs ${acentoSolido})`
+    );
   }
 
-  const laterales = barra.items.filter((i) => !i.clase.includes("tabbar__main"));
+  const laterales = destinos.filter((i) => !i.clase.includes("tabbar__main"));
   Add(
     laterales.length === 4 ? "ok" : "FALLO",
     `hay 4 elementos laterales (${laterales.length})`
@@ -157,30 +239,112 @@ if (!barra || barra.visible === "none") {
     "los elementos laterales llevan icono"
   );
 
-  /* Simetría: el último de la izquierda y el primero de la derecha
-     están a la misma distancia del centro. */
-  const izq = laterales.filter((i) => i.centro < barra.vw / 2).sort((a, b) => b.centro - a.centro);
-  const der = laterales.filter((i) => i.centro > barra.vw / 2).sort((a, b) => a.centro - b.centro);
-  if (izq.length === 2 && der.length === 2) {
-    const d1 = barra.vw / 2 - izq[0].centro;
-    const d2 = der[0].centro - barra.vw / 2;
-    Add(Math.abs(d1 - d2) <= 1.5 ? "ok" : "FALLO", `elementos laterales simétricos (${d1.toFixed(1)} vs ${d2.toFixed(1)} px)`);
+  /* Balance de la barra (BLINK-140). Con dos destinos a la izquierda y tres
+     controles a la derecha (el tercero es «Más») los centros de las celdas
+     internas NO pueden coincidir: exigirlos obligaría a inclinar el reparto
+     y desplazaría la acción principal. Lo que sí tiene que cumplirse es que
+     los dos grupos midan lo mismo, queden equidistantes del centro y que
+     ningún control baje del mínimo táctil de 44 px. */
+  if (barra.grupos.length !== 2) {
+    Add("FALLO", `la barra no tiene dos grupos laterales (${barra.grupos.length})`);
   } else {
-    Add("FALLO", `distribución lateral desigual (${izq.length} a la izquierda, ${der.length} a la derecha)`);
+    const [gizq, gder] = barra.grupos;
+    Add(
+      Math.abs(gizq.w - gder.w) <= 1.5 ? "ok" : "FALLO",
+      `los grupos laterales miden igual (${gizq.w.toFixed(1)} vs ${gder.w.toFixed(1)} px)`
+    );
+    const exterior = Math.abs(barra.vw / 2 - gizq.x - (gder.derecha - barra.vw / 2));
+    Add(
+      exterior <= 1.5 ? "ok" : "FALLO",
+      `los grupos quedan equidistantes del centro (desfase ${exterior.toFixed(1)} px)`
+    );
+    const controles = barra.items.filter((i) => !i.clase.includes("tabbar__main"));
+    const angostos = controles.filter((i) => i.ancho < 44 || i.alto < 44);
+    Add(
+      angostos.length === 0 ? "ok" : "FALLO",
+      `los ${controles.length} controles laterales mantienen 44 px táctiles` +
+        (angostos.length ? ` (${angostos.map((a) => `${a.texto || a.tag} ${a.ancho.toFixed(1)}x${a.alto.toFixed(1)}`).join(", ")})` : "")
+    );
+    Add(
+      gizq.controles === 2 && gder.controles === 3 ? "ok" : "FALLO",
+      `el reparto es 2 + Vender + 2 + «Más» (${gizq.controles} y ${gder.controles})`
+    );
   }
 }
 
-/* --- 1.3 · Navegar con la barra --- */
+/* --- 1.3 · Navegar con la barra ---
+   Se sondea hasta que la barra quede marcada: con un espera fija de 900 ms el
+   evaluate podía leer la pintura anterior y dejar el gate en rojo con la app
+   bien (lección ya apuntada en la bitácora). */
+const barraLista = (n) => n.ruta === "/app/catalogo" && n.activos.length === 1 && n.activos[0] === "Catálogo";
 await movil.click('.tabbar__item[href="/app/catalogo"]');
-await movil.waitForTimeout(900);
-const navegacion = await movil.evaluate(() => ({
-  ruta: location.pathname,
-  activo: document.querySelector(".tabbar__item.is-active")?.textContent.trim() ?? "",
-}));
+let navegacion = await medirBarra(movil);
+for (let i = 0; i < 30 && !barraLista(navegacion); i++) {
+  await movil.waitForTimeout(100);
+  navegacion = await medirBarra(movil);
+}
 Add(
-  navegacion.ruta === "/app/catalogo" && navegacion.activo === "Catálogo" ? "ok" : "FALLO",
-  `la barra navega y marca el activo (${navegacion.ruta}, "${navegacion.activo}")`
+  barraLista(navegacion) ? "ok" : "FALLO",
+  `la barra navega y marca el activo (${navegacion.ruta}, "${navegacion.activos.join(" + ")}")` +
+    (barraLista(navegacion) ? "" : ` · barra: ${navegacion.items.join(" | ")}`)
 );
+
+/* --- 1.3b · «Más»: lo que no cabe en la barra sigue siendo alcanzable ---
+   El dueño pidió «no ver todo, pero sí poder acceder a ellas». La prueba no
+   cuenta botones: compara los destinos del sidebar (la lista maestra) contra
+   lo que la barra ofrece por sí sola y lo que aporta la hoja. */
+const accesos = await movil.evaluate(() => ({
+  barra: [...document.querySelectorAll(".tabbar__item[href], .tabbar__main[href]")].map((a) =>
+    a.getAttribute("href"),
+  ),
+  sidebar: [...document.querySelectorAll(".shell__sidebar a[href^='/app']")].map((a) => ({
+    href: a.getAttribute("href"),
+    texto: (a.textContent || "").trim(),
+  })),
+}));
+await movil.click('.tabbar__item[aria-label="Más opciones"]');
+await movil.waitForTimeout(600);
+const hoja = await movil.evaluate(() => ({
+  filas: [...document.querySelectorAll(".hoja-nav__item")].map((b) => (b.textContent || "").trim()),
+  dialog: Boolean(document.querySelector('.hoja-nav[role="dialog"][aria-modal="true"]')),
+}));
+const desbordados = accesos.sidebar.filter((x) => !accesos.barra.includes(x.href));
+const cubiertos = desbordados.filter((x) => hoja.filas.some((f) => f.startsWith(x.texto)));
+Add(
+  accesos.sidebar.length > 0 ? "ok" : "FALLO",
+  `se leyó la lista maestra de destinos (${accesos.sidebar.length}) — con 0 la cobertura no demuestra nada`
+);
+Add(
+  hoja.dialog ? "ok" : "FALLO",
+  `la pestaña «Más» abre una hoja modal (${hoja.filas.length} filas: ${hoja.filas.join(" | ")})`
+);
+Add(
+  cubiertos.length === desbordados.length
+    ? "ok"
+    : "FALLO",
+  `todos los destinos del sidebar se alcanzan en móvil (${cubiertos.length}/${desbordados.length}; sin cobertura: ${desbordados
+    .filter((x) => !cubiertos.includes(x))
+    .map((x) => x.texto)
+    .join(", ") || "ninguno"})`
+);
+if (hoja.filas.length) {
+  await movil.evaluate(() => document.querySelector(".hoja-nav__item")?.click());
+  await movil.waitForTimeout(900);
+  const trasHoja = await movil.evaluate(() => ({
+    ruta: location.pathname,
+    cerrada: !document.querySelector(".hoja-nav"),
+  }));
+  Add(
+    trasHoja.cerrada && trasHoja.ruta.startsWith("/app") ? "ok" : "FALLO",
+    `elegir un destino de la hoja navega y la cierra (${trasHoja.ruta})`
+  );
+}
+Add(
+  desbordados.length > 0 ? "ok" : "AVISO",
+  `la barra deja ${desbordados.length} destino(s) en la hoja (${desbordados.map((x) => x.texto).join(", ")})`
+);
+await movil.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
+await movil.waitForTimeout(900);
 
 /* --- 1.4 · Menú de avatar --- */
 await movil.click(".userchip--button");
@@ -553,41 +717,64 @@ const saludo = await sesion(ctxSaludo);
 await saludo.goto(BASE + "/app/inicio", { waitUntil: "networkidle" });
 await saludo.waitForTimeout(1200);
 
-const infoSaludo = await saludo.evaluate(() => {
+/* El saludo esperado NO se recalcula aquí copiando las ramas: la copia
+   envejeció dos veces (primero el género, después la bienvenida, que
+   manda más que la franja horaria) y dejó el gate en rojo con la app
+   bien. Se importa la regla real del propio módulo y se comprueba que
+   lo que hay en pantalla es una de sus salidas de hoy. */
+const infoSaludo = await saludo.evaluate(async () => {
   const h1 = document.querySelector(".page-head h1");
-  return { titulo: (h1?.textContent || "").trim() };
+  const chip = document.querySelector(".userchip strong");
+  const texto = (h1?.textContent || "").trim();
+  /* El nombre que usa el saludo NO es el del chip. `Shell.tsx:130` cae al
+     correo cuando el usuario no tiene nombre propio, mientras que
+     `General.tsx:206` pasa `user?.firstName ?? ""`: un chip con "@" vale
+     "sin nombre de pila", no un correo que meter en la plantilla. */
+  const chipTexto = (chip?.textContent || "").trim();
+  const nombres =
+    chipTexto === "" || chipTexto === "Sesión activa" || chipTexto.includes("@")
+      ? [""]
+      : [...new Set([chipTexto.split(" ")[0], chipTexto]).filter(Boolean)];
+  let mod = null;
+  let error = "";
+  try {
+    mod = await import("/src/lib/saludo.ts");
+  } catch (e) {
+    error = String((e && e.message) || e).slice(0, 120);
+  }
+  if (!mod || typeof mod.saludoDe !== "function") return { texto, error: error || "el módulo no exporta saludoDe", opciones: [] };
+  const ahora = new Date();
+  const opciones = [];
+  for (const n of nombres) {
+    for (const g of [null, "masculino", "femenino", "sin_dato"]) {
+      const s = mod.saludoDe(n, ahora, g);
+      opciones.push({ texto: s.texto, motivo: s.motivo });
+    }
+  }
+  return { texto, nombres, error: "", opciones };
 });
 
-/* El saludo esperado, calculado aqui con las mismas reglas. */
-const ahora = new Date();
-const mes = ahora.getMonth() + 1;
-const dia = ahora.getDate();
-const hora = ahora.getHours();
-let esperado;
-if (mes === 1 && dia <= 10) {
-  esperado = /Feliz Año Nuevo/;
-} else if (mes === 12 && (dia === 24 || dia === 25)) {
-  esperado = /Feliz navidad/;
-} else if (mes === 12 && dia === 31) {
-  esperado = /Feliz año nuevo/;
-} else if (mes === 12 && dia % 2 === 1) {
-  esperado = /Feliz navidad|Felices fiestas/;
-} else if (hora < 6) {
-  esperado = /te levantaste temprano/;
-} else if (hora < 12) {
-  esperado = /buenos días|que bueno verte por aquí|hola de nuevo/;
-} else if (hora < 19) {
-  esperado = /buenas tardes|que bueno verte por aquí|hola de nuevo/;
+const acierto = infoSaludo.opciones.find((o) => o.texto === infoSaludo.texto);
+if (infoSaludo.error) {
+  Add(
+    "FALLO",
+    `el instrumento no pudo cargar la regla del saludo (${infoSaludo.error}); la comprobación queda sin hacer`
+  );
 } else {
-  esperado = /buenas noches|que bueno verte por aquí|hola de nuevo/;
+  Add(
+    infoSaludo.opciones.length >= 4 ? "ok" : "FALLO",
+    `la regla real ofrece ${infoSaludo.opciones.length} saludos para hoy (con 0 la comprobación sería vacía)`
+  );
+  Add(
+    acierto ? "ok" : "FALLO",
+    `el saludo es el que produce la regla para la fecha de hoy ("${infoSaludo.texto}")` +
+      (acierto
+        ? ` · motivo: ${acierto.motivo}`
+        : ` · la regla daba: ${infoSaludo.opciones.map((o) => `"${o.texto}"`).join(" | ")}`)
+  );
 }
-
 Add(
-  esperado.test(infoSaludo.titulo) ? "ok" : "FALLO",
-  `el saludo corresponde a la hora y a la fecha ("${infoSaludo.titulo}")`
-);
-Add(
-  infoSaludo.titulo.length > 0 && !/,\s*,/.test(infoSaludo.titulo) ? "ok" : "FALLO",
+  infoSaludo.texto.length > 0 && !/,\s*,/.test(infoSaludo.texto) ? "ok" : "FALLO",
   `el saludo no deja huecos raro`
 );
 await ctxSaludo.close();

@@ -372,22 +372,11 @@
   border-radius: 12px;
 }
 
-/* Area tactil de 44 pt (HIG · Buttons) aunque el boton sea mas pequeno.
-   En raton no hace falta: el puntero ya es preciso. */
-@media (pointer: coarse) {
-  .btn--sm::before,
-  .btn--xs::before,
-  .row-action::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 44px;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-}
+/* El área táctil se resuelve con la caja real del control, no con un
+   `::before` transparente: un pseudo con `pointer-events: none` no
+   recibe ningún toque (no agranda nada) y con `auto` se comería los
+   taps del vecino. Los botones pequeños del UI Kit (34/28 px) mantienen
+   su tamaño; los de solo icono sí crecen, ver `.row-action`. */
 
 /* Accesibilidad: sin transparencia no hay material (HIG · Materials). */
 @media (prefers-reduced-transparency: reduce) {
@@ -580,13 +569,11 @@
      muchas pestanas eso deja la primera fuera de la vista. */
   justify-content: flex-start;
   /* Con muchas pestanas (Finanzas tiene 9) el control se desplaza en
-     horizontal en vez de recortarse. El degradado del borde derecho
-     avisa de que hay mas. */
+     horizontal. SIN degradado de borde: el difuminado se leía como un
+     defecto gráfico y no como un aviso (BLINK-131, dueño, 2026-11-21). */
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
 }
 .tabs::-webkit-scrollbar {
   display: none;
@@ -1595,6 +1582,54 @@ table.data tbody tr:hover {
   align-items: center;
   gap: 0.4rem;
 }
+/* BLINK-132 (dueño, 2026-11-21): la cantidad se tipea, no se toca una vez por
+   unidad. El campo mide lo mismo que el stepper para que la fila no brinque. */
+.ticket__qty-input,
+.pos__cantidad {
+  height: 32px;
+  padding: 0 0.45rem;
+  text-align: center;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-neutral-soft);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: border-color var(--transition-speed), background-color var(--transition-speed);
+}
+.ticket__qty-input {
+  width: 3.4rem;
+}
+.pos__cantidad {
+  width: 4.25rem;
+  flex: none;
+}
+.ticket__qty-input:hover,
+.pos__cantidad:hover {
+  border-color: var(--color-border);
+}
+.ticket__qty-input:focus,
+.pos__cantidad:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-bg-elevated);
+}
+/* Las flechas del <input type=number> sobran: estorban en la fila y en la
+   barra de búsqueda. Se siguen pudiendo subir y bajar con las flechas reales. */
+.ticket__qty-input::-webkit-outer-spin-button,
+.ticket__qty-input::-webkit-inner-spin-button,
+.pos__cantidad::-webkit-outer-spin-button,
+.pos__cantidad::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.ticket__qty-input,
+.pos__cantidad {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 .stepper button {
   width: 46px;
   height: 32px;
@@ -1683,15 +1718,12 @@ table.data tbody tr:hover {
   background: rgb(from var(--rojo) r g b / 0.1);
 }
 @media (pointer: coarse) {
-  .row-action::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
+  /* 44 pt (HIG · Buttons) en la caja real del boton: en el dedo no hay
+     puntero preciso y el icono de 36 px queda corto. Solo toca el toque
+     fino; en escritorio la fila se aprieta como estaba. */
+  .row-action {
+    width: 44px;
     height: 44px;
-    transform: translateY(-50%);
-    pointer-events: none;
   }
 }
 
@@ -2173,10 +2205,14 @@ table.data td {
 .tabbar__main:active {
   opacity: 0.78;
 }
-
-/* El degradado de desvanecido de Konsta se acorta: la barra flota. */
-.shell__tabbar > div:nth-child(1) {
-  display: none;
+/* La accion central ya esta en acento, asi que no puede anunciar la ruta
+   activa cambiando de color como hacen los laterales: lo hace con un anillo
+   (BLINK-140). Sin regla propia el class `is-active` del NavLink no pinta
+   nada y Vender parecia inactivo incluso estando en /app/ventas. */
+.tabbar__main.is-active .tabbar__main-glyph {
+  box-shadow: var(--ios-specular-soft),
+    0 4px 14px rgb(from var(--acento) r g b / 0.32),
+    0 0 0 3px rgb(from var(--acento) r g b / 0.24);
 }
 
 /* ============================================================
@@ -2603,12 +2639,6 @@ table.data td {
    → El <Glass> de Konsta aporta el material (tinte + blur + brillo
      especular). Aqui solo se separa del borde y se le da la altura.
    ============================================================ */
-.shell__tabbar {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  border-top: none !important;
-  box-shadow: none !important;
-}
 
 @media (max-width: 860px) {
   .shell__tabbar-float {
@@ -3749,11 +3779,11 @@ table.data td {
    · .ayuda__capa    se portal a document.body, z-index 90: por encima de
                      modales (70/71) y del menú de avatar (66), por debajo
                      del aviso de almacenamiento (2000).
-   · El recorte del foco son cuatro velos; el hueco del medio queda LIBRE,
-                     así el cajero puede pulsar el botón que le estamos
-                     enseñando. Si el paso no tiene objetivo (o el objetivo
-                     no existe todavía), se usa .ayuda__velo--solo, velo
-                     parejo y tarjeta centrada: la guía nunca se cae.
+   · Un solo velo, parejo y de cierre (BLINK-129, dueño 2026-11-21): se
+                     fue el recorte que iluminaba un elemento. El cuadro
+                     muestra TODA la guía de la pantalla y debe leerse de un
+                     vistazo, sin navbar ni paginación; el foco ya no se
+                     pide, se lee.
    Todos los tokens son los del proyecto: claro/oscuro sale solo.
    ============================================================ */
 
@@ -3825,45 +3855,30 @@ table.data td {
   position: fixed;
   inset: 0;
   z-index: 90;
+  display: grid;
+  place-items: center;
+  /* La capa va por encima de todo (90 > barra flotante 60), así que el centro
+     se calcula contra la ventana entera: abajo solo se respeta el area
+     insegura. No se reserva hueco para la barra — la guía se pinta encima. */
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   pointer-events: none;
 }
 .ayuda__velo {
   position: fixed;
+  inset: 0;
   pointer-events: auto;
+  border: 0;
+  padding: 0;
   background: rgb(from var(--negro) r g b / 0.55);
-  transition:
-    top 0.22s ease-out,
-    left 0.22s ease-out,
-    width 0.22s ease-out,
-    height 0.22s ease-out;
-}
-/* Sin objetivo que iluminar: velo parejo, sin recorte. */
-.ayuda__velo--solo {
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-.ayuda__foco {
-  position: fixed;
-  border-radius: calc(var(--radius-md) + 4px);
-  box-shadow:
-    0 0 0 2px var(--color-accent),
-    0 0 0 8px rgb(from var(--acento) r g b / 0.18);
-  pointer-events: none;
-  transition:
-    top 0.22s ease-out,
-    left 0.22s ease-out,
-    width 0.22s ease-out,
-    height 0.22s ease-out;
+  cursor: pointer;
 }
 
-/* --- La tarjeta del paso --- */
+/* --- La tarjeta: toda la guia de la pantalla, de un solo vistazo --- */
 .ayuda__tarjeta {
-  position: fixed;
+  position: relative;
   pointer-events: auto;
-  max-width: calc(100vw - 24px);
-  max-height: calc(100vh - 24px);
+  width: min(660px, 100%);
+  max-height: 100%;
   overflow-y: auto;
   padding: 0.9rem 1rem 0.8rem;
   border-radius: var(--radius-lg);
@@ -3878,9 +3893,7 @@ table.data td {
   outline: none;
 }
 .ayuda__tarjeta--centro {
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%);
+  width: min(420px, 100%);
 }
 .ayuda__cabecera {
   display: flex;
@@ -3913,59 +3926,316 @@ table.data td {
   background: var(--color-accent-soft);
   color: var(--color-accent);
 }
+@media (pointer: coarse) {
+  /* En táctil los cierres chicos son un fallo de accesibilidad, no un detalle:
+     la HIG pide 44 pt y aquí el glifo sigue siendo de 26 px, así que se agranda
+     la caja real (no un `::before` decorativo, que no amplía el área pulsable).
+     Lo mismo en el pie: «Entendido» se queda de 44 px de alto. */
+  .ayuda__cerrar {
+    width: 44px;
+    height: 44px;
+  }
+  .sheet__close {
+    width: 44px;
+    height: 44px;
+  }
+  .ayuda__pie .btn--sm {
+    min-height: 44px;
+  }
+}
+/* Paso = numero + titulo + texto. Sin navegacion: se lee todo junto. */
+/* BLINK-129 (dueño, 2026-11-21): la guía se lee de un solo vistazo. No hay
+   navbar ni paginación: los pasos son una lista numerada que entra completa
+   en el viewport (dos columnas en ancho, una en teléfono). */
+.ayuda__lista {
+  counter-reset: paso;
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem 1.1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 700px) {
+  /* En pantallas anchas, dos columnas: seis pasos caben sin scrollear. */
+  .ayuda__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ayuda__paso {
+  min-width: 0;
+}
 .ayuda__titulo {
-  margin: 0 0 0.3rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.15rem;
   font-family: var(--font-display);
-  font-size: var(--ios-fs-title3);
-  line-height: var(--ios-lh-title3);
+  font-size: 0.82rem;
+  line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
+.ayuda__titulo::before {
+  counter-increment: paso;
+  content: counter(paso);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-family: var(--font-text);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
 .ayuda__texto {
   margin: 0;
-  font-size: var(--fs-sm);
-  line-height: 1.55;
+  padding-left: 1.45rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: var(--color-text-secondary);
 }
-.ayuda__puntos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.75rem;
-}
-.ayuda__punto {
-  width: 7px;
-  height: 7px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: var(--color-border-strong);
-  cursor: pointer;
-  transition: background-color var(--transition-speed);
-}
-.ayuda__punto--hecho {
-  background: var(--color-accent-soft-strong);
-}
-.ayuda__punto--actual {
-  background: var(--color-accent);
-  transform: scale(1.25);
-}
 .ayuda__pie {
+  /* Fijo al pie de la tarjeta (BLINK-129, medido): cuando la guía no entra —
+     Créditos en un teléfono de 390 desborda 131 px— el botón «Entendido» queda
+     fuera de la vista y el cuadro parece roto. El pie se queda siempre abajo y
+     la lista pasa por debajo; el sangrado negativo es para que la línea del
+     borde llegue de verdad de lado a lado de la tarjeta. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.85rem;
+  margin: 0.85rem -1rem -0.8rem;
+  padding: 0.6rem 1rem 0.8rem;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--ios-separator);
 }
-.ayuda__contador {
-  font-size: var(--fs-xs);
-  color: var(--color-text-tertiary);
-  white-space: nowrap;
+@media (max-width: 860px) {
+  /* En teléfono la lista va apretada: la misma guía de seis pasos necesita
+     ~40 px menos y así entra sin scrollear en un 390x844 (medido). */
+  .ayuda__lista {
+    gap: 0.45rem;
+  }
+  .ayuda__titulo {
+    margin-bottom: 0.1rem;
+  }
+  .ayuda__texto {
+    line-height: 1.35;
+  }
 }
 
 /* La ayuda es interfaz: en el ticket y en el reporte impreso sobra. */
 @media print {
   .ayuda__capa,
   .ayuda__boton {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   Pestaña «Más» de la barra inferior y su hoja (móvil) · BLINK-140
+   ------------------------------------------------------------
+   La barra móvil muestra 5 destinos (2 + Vender + 2) y una sexta
+   pestaña «Más» en el extremo derecho. Los dos grupos laterales
+   siguen repartiendo el espacio a partes iguales (`flex: 1`): es lo
+   que deja la acción principal clavada en el centro, y cambiar el
+   reparto (1 / 1.5) para dar cabida al tercer control deslocaba
+   Vender ~28 px en un teléfono de 390.
+
+   Como el lado derecho lleva tres controles y el izquierdo dos, sus
+   celdas salen más estrechas. Para que quepan sin empujar el botón
+   central, el mínimo táctil en móvil es el suelo de la HIG (44 px) y
+   no los 48 px del escritorio; con 143 px por grupo, tres celdas de
+   44 caben holgadas.
+
+   La hoja NO es una hoja de iOS a sangre: flota sobre la barra para no
+   taparla y respeta el área insegura inferior.
+   ============================================================ */
+@media (max-width: 860px) {
+  .tabbar__item {
+    min-width: 44px;
+  }
+}
+
+/* En teléfonos de menos de 360 px la barra prioriza los seis destinos:
+   44 px es el mínimo de la HIG, no por debajo de ahí. */
+@media (max-width: 360px) {
+  .tabbar {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  .tabbar__main {
+    min-width: 64px;
+  }
+  .tabbar__item {
+    min-width: 44px;
+  }
+  /* Con seis destinos en 320 px el rótulo es lo que sobra: se achica y,
+     si aun así no cabe, se corta con puntos suspensivos (iOS hace lo
+     propio en las barras apretadas). */
+  .tabbar__label {
+    font-size: 0.56rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.hoja-nav {
+  /* Konsta apoya la hoja en el borde inferior (`top-full` + el `translate`
+     de Tailwind); aqui se ancla por encima de la tab bar. */
+  top: auto;
+  left: 10px;
+  right: 10px;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  translate: none;
+  transform: none;
+  max-height: calc(100dvh - 96px - env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  animation: hoja-nav-entrar 0.22s ease-out;
+}
+@keyframes hoja-nav-entrar {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hoja-nav {
+    animation: none;
+  }
+}
+.hoja-nav__lista {
+  display: flex;
+  flex-direction: column;
+}
+.hoja-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 0.35rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-text);
+  font-size: var(--ios-fs-callout);
+  line-height: var(--ios-lh-callout);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), opacity var(--transition-speed);
+}
+.hoja-nav__item + .hoja-nav__item {
+  border-top: 1px solid var(--ios-separator);
+}
+.hoja-nav__item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+.hoja-nav__item:active {
+  background: rgb(from var(--tinta) r g b / 0.08);
+  opacity: 0.7;
+}
+.hoja-nav__glyph {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  flex: none;
+  color: var(--color-accent);
+}
+.hoja-nav__label {
+  flex: 1;
+  min-width: 0;
+}
+.hoja-nav__flecha {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+}
+
+/* La hoja es interfaz: en el ticket impreso sobra, igual que el asistente. */
+@media print {
+  .hoja-nav {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   Cobro confirmado — sello de venta completada (BLINK-139)
+   ------------------------------------------------------------
+   Dueño, 2026-11-21: «agrega algo más visual para cuando se complete
+   una venta». Tapa la pantalla 1,4 s con el check de la marca, el
+   importe y el vuelto; al apagarse queda debajo el comprobante, que ya
+   estaba montado. No es un diálogo: no roba el foco ni hay que cerrarlo.
+   ============================================================ */
+.venta-ok {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 2rem;
+  text-align: center;
+  pointer-events: none;
+  background: light-dark(rgba(255, 254, 251, 0.94), rgba(0, 0, 0, 0.9));
+  animation: venta-ok-entra 200ms ease-out;
+}
+.venta-ok .icon--xl {
+  width: clamp(64px, 18vw, 96px);
+  height: clamp(64px, 18vw, 96px);
+  color: var(--color-success-text);
+}
+.venta-ok__total {
+  margin: 0.25rem 0 0;
+  font-size: var(--fs-2xl, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+.venta-ok__meta,
+.venta-ok__vuelto {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.venta-ok__vuelto {
+  font-weight: 600;
+  color: var(--color-accent-text);
+}
+@keyframes venta-ok-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .venta-ok {
+    animation: none;
+  }
+}
+@media print {
+  .venta-ok {
     display: none !important;
   }
 }

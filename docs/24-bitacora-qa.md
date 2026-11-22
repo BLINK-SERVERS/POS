@@ -702,3 +702,99 @@ coincidencias prohibidas · `docs:check` 146 archivos / 761 enlaces OK ·
 
 **Commit `2709ba2`. Sin publicar:** el dominio sigue en `gh-pages@4e5a0e9` y la
 versión declarada en `app/package.json` sigue en **1.19.0**.
+
+## 14. Lote 34: cobro en un paso, vuelto en Bs y el gate de dinero que no medía nada (2026-11-21, v1.19.0)
+
+Encargo del dueño, **16 puntos** («sin romper nada», «usa subagentes y skills, documenta y dime qué cambiaste», «todo esto con SF Symbols»). La parte visible es la mitad: la otra mitad la hicieron los **dos subagentes de auditoría** y los instrumentos, y encontraron dinero mal. El registro con `file:line` está en el expediente (`02_BUGS_P0_P1.md` §décimo bloque, `03_BUGS_P2_P3.md` §P2 lote 34) y las reglas durables en `AGENTS.md` §37.
+
+### 14.1 · Lo que se corrigió por hallazgo, no por encargo
+
+| ID | Síntoma | Regla que se movió |
+|---|---|---|
+| 138 (P1) | La pantalla decía **Bs 100,00** de vuelto y la venta guardaba **Bs 101,06** | El Bs se acumula **en Bs**; fuera el ida-y-vuelta por USD que redondeaba dos veces (banda real: ±Bs 4,59; Bs 0,50 se registraba como Bs 0,00) |
+| 141 (P2) | Cambiar de caja USD a caja en Bs dejaba en «Monto (VES)» el número escrito en dólares | Cambiar de cuenta (o pasar a «A crédito») **limpia** el monto: lo auto-escrito en la otra moneda no es viejo, es incorrecto |
+| 142 (P2) | `qa-funcional.mjs` reventaba en la línea 212 y, antes de eso, **medía `{}`** | Sembrar y leer la clave **por usuario** (`blink-pos-state-v3:temp-bypass-user`): la global la app la adopta y la borra |
+| 130 (P2) | «Entendido» no quitaba «Lleva BLINK POS contigo» en iOS | Quedar **instalada** es descarte permanente (`blink.pos.instalada`); `standalone` sigue en `false` tras «Añadir a pantalla de inicio» |
+| **143 retirado** | Se había anotado «la guía desbordaba por una reserva de 108 px», pero `git show HEAD:app/src/styles/app.css` **no tiene esa regla**: se escribió y se borró dentro del lote | El ID no cuenta como hallazgo. La regla que sí queda: la capa de ayuda (90) se pinta **encima** de la barra (60), así que no se le reserva hueco abajo; el `6rem` que existe es de `.shell__main`, el contenido de la página |
+| 144 (P3) | La hoja prometía «44 pt» en un `::before` con `pointer-events: none` | Se borra la regla falsa; el blanco táctil que hace falta crece en su **caja real** |
+
+### 14.2 · El vuelto se prueba sin depender de la tasa
+
+La sección nueva **2b** de `qa-funcional.mjs` no hardcodea ninguna tasa: lee el «monto exacto» que la propia hoja escribe en Bs, entrega `exacto + 100` y comprueba tres cosas que antes nadie comprobaba juntas — que aparezca el bloque, que el titular esté en la moneda entregada y que **el número de pantalla sea el número registrado** (`sales[0].changeBs`). Los dos primeros intentos de esta prueba dieron rojos **por defectos del instrumento**, no del producto: el primero esperaba la tasa del fixture (la app muestra la de `tasa.ts`) y el segundo no capturaba «dólares» porque `(\w+)` sin la bandera `u` no traga vocales acentuadas — ahora es `([^:]+)`.
+
+El tercero dio rojo **por producto** y así salió BLINK-141. Ese es el orden que conviene: un gate nuevo debe fallar por causas distintas antes de que su verde signifique algo.
+
+### 14.3 · Dos trampas del arnés, escritas para que no se repitan
+
+- **React necesita un tick.** `document.querySelector(".userchip--button").click()` y buscar el ítem «Cerrar caja» en el *mismo* `page.evaluate` devuelve «el menú no ofrece Cerrar caja». Con 400 ms entre los dos pasos, el menú está y el arqueo se abre. Es la lección de `qa-navegacion` (lote 29) aplicada al revés: aquí la espera faltaba, no sobraba.
+- **El arqueo ya no se conforma con «apareció».** El gate lee `Esperado`, `Contado` y `Diferencia`, exige el `$` pegado a la etiqueta (la frase introductoria del modal termina en «…la diferencia.» y sin el `$` el regex casaba con ella) y comprueba la resta. Medido: esperado 147,50 · contado 100,00 · diferencia −47,50 y pide motivo.
+
+Además, cada fallo del bloque de cobro ahora **vuelca** el diálogo abierto (título + 160 caracteres del cuerpo). Sin eso, tres rojos de este lote se habrían vuelto a leer como «el POS está roto».
+
+### 14.4 · Lo que se descartó con evidencia
+
+Cuatro cosas que señalaron los subagentes y no se tocaron —o se retiraron—: el matiz de descartar-y-reinstalar (BLINK-130 asume que aceptar el prompt es instalarse), el foco que se escapa de `HojaMas` (es BLINK-123, no un agujero nuevo), la palabra «cortesía» en `Receipt.tsx:165/187` y `Historial.tsx:147` — en el ticket impreso y en el historial es **dato contable**; el punto 6 del encargo era la **etiqueta** del chip en Vender, donde quedó solo en el `title` — y **BLINK-143, que se retiró**: se había apuntado como defecto corregido una reserva de `padding-bottom: 108px` en `.ayuda__capa`, y esa regla **nunca estuvo en `HEAD`** (`git show HEAD:app/src/styles/app.css` no la tiene). Era un experimento de este propio lote, escrito y borrado antes de commitear. Contarlo como hallazgo cerrado habría inflado el expediente con un arreglo de algo que nadie publicó. Cada descarte está escrito con su razón en `03_BUGS_P2_P3.md` para que nadie lo proponga de nuevo como hallazgo fresco.
+
+### 14.5 · La guía cabe: la medida real
+
+La afirmación «toda la info cabe según la resolución» se midió en Chromium con una sonda temporal (5 tamaños × 6 rutas, 30 lecturas de `getBoundingClientRect` sobre `.ayuda__tarjeta`, abriendo el cuadro con su propio botón):
+
+| Ventana | Resultado |
+|---|---|
+| 390×844 · 430×932 · 768×1024 · 1280×900 | **0 px de desborde** en las 6 rutas; el pie «Entendido» a la vista en las 24 |
+| 320×568 | Scrollea **dentro** de la tarjeta: 7 px en Inicio, 135 en Inventario, 152 en Ajustes, 263 en Ventas y Finanzas, 279 en Catálogo. El pie sigue a la vista (es pegajoso) y nada se corta por fuera: `fuera arriba 0 / abajo 0`, desborde horizontal 0 |
+
+La red final es `max-height: 100%` con `overflow-y: auto` en la propia tarjeta, así que en 320 px el cuadro no empuja nada fuera de la pantalla; solo se lee en dos partes. Volcado completo en `evidencias/ajuste-guia-lote34-2026-11-21.txt` del expediente.
+
+### 14.6 · Qué era el «difuminado feo»
+
+El punto 16 del encargo («quita ese difuminado que tienen las tabbar, la de Día/Semana/Mes y en Finanzas en Cuentas/Movimientos») **no** era un `backdrop-filter`: Día/Semana/Mes y las pestañas de Finanzas son el mismo componente `Tabs`, y lo que se veía era el degradado de recorte `-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%)` que `.tabs` pintaba en su borde derecho para avisar de que había más. Fuera el `mask-image`. El `backdrop-filter` del cristal se queda donde toca (tarjetas y barra flotante). Dos bloques de CSS que apuntaban a `.shell__tabbar` se borraron de paso: la barra flotante se estampa con `.shell__tabbar-float`, así que esas dos reglas no tenían a quién aplicarle.
+
+### 14.7 · Señalamientos del auditor sobre el cobro, fallados con código
+
+Cinco dudas de revisión sobre el flujo de un paso. Ninguna obligó a cambiar el producto, y se deja la prueba de cada fallo:
+
+1. **`Enter` ¿llama a un `addPayment` eliminado?** No. Se quitó el **botón** «Agregar cobro»; la función sigue en `Vender.tsx:655` y la usan el `Enter` del campo (`:1542`) y «Sumar otra cuenta» (`:1621`).
+2. **Con la falta en 0, teclear acredita de más.** Es el comportamiento que ya estaba: `vuelto()` (`fiscal.ts:148-156`) es la misma fórmula que había en HEAD (`typed > exactAmount && exactAmount > 0 ? exactAmount : typed`), solo que ahora vive en un sitio. Centralizada, no relajada.
+3. **Cantidad tipeada sin tope.** El toque repetido ya llegaba a cualquier número; el límite real es `findStockShortage` dentro de `checkout` (BLINK-076), que rechaza nombrando producto, disponible y pedido.
+4. **«A crédito» no borra `payments`.** Es lo correcto: cobrar parte y dejar el resto pendiente es una **venta mixta**, y `store.tsx:1641` la etiqueta «Caja + crédito» con su cuenta por cobrar. Lo que sí se limpia al cambiar es la cuenta y el monto (`Vender.tsx:1503`).
+5. **Queda texto de IGTF.** Lo que queda es el **nombre de la categoría del sistema** (`store.tsx:157` «Pago de impuestos (IVA/IGTF)») y el campo histórico `sale.igtf`; `metrics.ts:270` encuentra los asientos ya pagados por esa cadena exacta, así que renombrar huérfana el histórico. El cálculo ya no existe: `store.tsx:1693` guarda `igtf: 0`.
+
+### 14.8 · Cobertura recuperada en un test
+
+Al quitar el IGTF, la prueba de BLINK-106 que comparaba «la fórmula de la pantalla daba Bs 476,55 y la del registro 476,54» perdió su escenario (el céntimo fantasma venía del IGTF) y se reescribió. La versión nueva comprobaba solo que dos caminos coinciden, que es cierto **por construcción** y por tanto no avisaba si la fórmula se movía entera. Se fijó el número absoluto: `expect(totalBs).toBe(458.85)` (harinera de Bs 450 + recargo de $ 0,01 a tasa 884,75), además de las dos relaciones.
+
+### 14.9 · El filtro del «texto cortado» había perdido las imágenes
+
+Al meter los esqueletos de carga, la prueba de «texto cortado» de `qa:responsive` empezó a avisar de falsos positivos: los esqueletos miden más de lo que muestran, así que aparecían como recorte. La primera corrección fue pedirle texto al nodo, y esa era la equivocada: **dejó de medir los `<img>` y los `<svg>`**, que son justo lo que la prueba atrapaba (una imagen con `overflow:hidden` que no cabe es un recorte de verdad). Ahora el predicado es el que corresponde: se salta los nodos **decorativos sin texto**, pero `IMG`, `SVG`, `CANVAS`, `VIDEO`, `PICTURE` e `IFRAME` se miden siempre, tengan o no texto.
+
+El cambio no agregó ningún rojo: `qa:responsive` volvió a salir 0 en las 6 resoluciones. Lo que sigue avisando es solo lo de §14.10.
+
+### 14.10 · Avisos de esta máquina, no del producto
+
+`qa:responsive` sigue avisando **«SF Pro no está en uso: el texto cae en la fuente genérica del sistema»** en las 6 resoluciones. Aquí no hay SF Pro instalado (`fc-list` vacío) y la hoja lo declara con `local()`, así que el aviso es **condición del banco de pruebas**, no un cambio de diseño: en un dispositivo Apple la cara del texto es otra. Se consigna para que nadie lo tome como rojo ni «arregle» la pila de fuentes.
+
+### 14.11 · Gates del lote 34 (todos corridos el 2026-11-21)
+
+`npm run qa` **no sirve tal cual en este banco**: los ocho instrumentos leen
+`VERIFY_BASE` y su valor por defecto es el `5173` de Vite, y aquí el servidor de
+desarrollo del lote 34 está en el **5199**. La cadena paró en `qa:e2e` con
+`net::ERR_CONNECTION_REFUSED` — no es un fallo del POS, es la constante del
+entorno. Se corrió el resto con `VERIFY_BASE=http://localhost:5199`:
+
+- `tsc --noEmit` **0** · `vitest run` **287/287** en 27 ficheros.
+- `build` ✓ · `build:pages` ✓ (404.html y `.nojekyll`) · `check:dist` **37
+  ficheros / 0 coincidencias prohibidas**.
+- `qa:e2e` 10 rutas + «doble ejecución (guardar dos veces)» en verde ·
+  `qa:funcional` **0 fallos / 0 avisos** · `qa:responsive` 6 resoluciones con
+  salida 0 (solo el aviso de fuentes de §14.10) · `qa:apariencia` **5/5** ·
+  `qa:navegacion` **0 fallos / 0 avisos** · `qa:preview` **0 fallos / 0 avisos**.
+- `docs:check` 146 archivos / 761 enlaces · `sonda-anclas-ayuda` **52 anclas / 0
+  sin resolver**.
+- Un subagente de solo lectura revisó el **diff completo** del lote buscando
+  dinero mal, estados obsoletos del cobro, borrados a medias y reglas CSS muertas.
+
+La cadena entera se **volvió a correr después** de los últimos arreglos (el
+filtro de «texto cortado» de §14.9 y el número absoluto del test): los diez
+instrumentos volvieron a salir 0, con los mismos números. Informe por escrito de
+cada gate en `verify-shots/qa-*-informe.md`.

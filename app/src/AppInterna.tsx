@@ -21,6 +21,7 @@ import { puedeOperar } from "./lib/activacion";
 import { Shell } from "./components/Shell";
 import { ConfirmProvider } from "./components/ui";
 import { BrandLoader as PageLoader } from "./components/BrandLoader";
+import { EsqueletoVista } from "./components/Skeleton";
 import { registrarIconos } from "./lib/iconos";
 import { ICONOS_BLINK } from "./lib/iconos-blink";
 import { SF_SYMBOLS } from "./lib/sf-symbols";
@@ -73,7 +74,7 @@ function Protected({ children }: { children: ReactNode }) {
   if (!onboarded) return <Navigate to="/app/onboarding" replace />;
   return (
     <Shell>
-      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      <Suspense fallback={<EsqueletoVista />}>{children}</Suspense>
     </Shell>
   );
 }

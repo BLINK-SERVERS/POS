@@ -14,6 +14,9 @@ export type EventoInstalacion = Event & {
 export type ModoInstalacion = "nativo" | "ios" | "android";
 
 const CLAVE = "blink.pos.instalacion";
+/** Clave de «ya fue instalada en este navegador»: mientras exista, no se
+ *  vuelve a ofrecer nada, ni siquiera tras recargar la pestaña. */
+const CLAVE_INSTALADA = "blink.pos.instalada";
 /** Si dice «Ahora no», no se vuelve a ofrecer hasta pasado este tiempo. */
 const ESPERA = 30 * 24 * 60 * 60 * 1000;
 
@@ -31,11 +34,13 @@ export function prepararInstalacion(): void {
   window.addEventListener("beforeinstallprompt", (evento) => {
     evento.preventDefault();
     diferido = evento as EventoInstalacion;
+    // El navegador vuelve a ofrecerla: es que ya no está instalada.
+    olvidarInstalada();
     avisar();
   });
   window.addEventListener("appinstalled", () => {
     diferido = null;
-    olvidarDescarte();
+    marcarInstalada();
     avisar();
   });
 }
@@ -68,7 +73,7 @@ function esAndroid(): boolean {
 }
 
 export function modoInstalacion(): ModoInstalacion | null {
-  if (typeof window === "undefined" || enAppInstalada()) return null;
+  if (typeof window === "undefined" || enAppInstalada() || yaInstalada()) return null;
   if (diferido) return "nativo";
   if (esIOS()) return "ios";
   if (esAndroid()) return "android";
@@ -95,12 +100,44 @@ function olvidarDescarte() {
   }
 }
 
+/** La app ya se instaló en este navegador: no se vuelve a ofrecer.
+ *  BLINK-130 (dueño, 2026-11-21): «Entendido» no quitaba la tarjeta. Al
+ *  aceptar el diálogo el código llamaba solo a `olvidarDescarte()`, y como
+ *  `modoInstalacion()` se apagaba leyendo `standalone` —que en iOS sigue
+ *  siendo false hasta abrir la app desde su icono—, la tarjeta volvía en la
+ *  misma sesión. El marcador reemplaza esa detección del navegador. */
+function yaInstalada(): boolean {
+  try {
+    return localStorage.getItem(CLAVE_INSTALADA) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function marcarInstalada() {
+  try {
+    localStorage.setItem(CLAVE_INSTALADA, String(Date.now()));
+  } catch {
+    /* sin almacenamiento: basta con que el navegador detecte standalone */
+  }
+}
+
+function olvidarInstalada() {
+  try {
+    localStorage.removeItem(CLAVE_INSTALADA);
+  } catch {
+    /* sin almacenamiento: no se recuerda la instalación */
+  }
+}
+
+/** «Ahora no» / «Entendido»: cierra la tarjeta YA y la deja cerrada un rato. */
 export function descartarAviso(): void {
   try {
     localStorage.setItem(CLAVE, String(Date.now()));
   } catch {
     /* sin almacenamiento: no se recuerda el descarte */
   }
+  avisar();
 }
 
 /** Abre el diálogo del sistema. Devuelve `true` si la app quedó instalada. */
@@ -113,6 +150,7 @@ export async function instalar(): Promise<boolean> {
     const eleccion = await evento.userChoice;
     if (eleccion.outcome === "accepted") {
       olvidarDescarte();
+      marcarInstalada();
       return true;
     }
     descartarAviso();

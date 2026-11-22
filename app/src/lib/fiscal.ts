@@ -32,7 +32,7 @@ export function saleBsBase(lines: SaleLine[], rate: number): number {
 
 /**
  * Total del ticket en Bs. `restUsd` es lo que se suma o resta después de la
- * base (descuento, IVA, recargos, IGTF): son cifras en dólares y se convierten.
+ * base (descuento, IVA, recargos): son cifras en dólares y se convierten.
  *
  * Con todo el ticket anclado a tasa esto coincide con `total × tasa`. Con una
  * línea de precio fijo no: conserva el Bs exacto de esa línea, que es justo lo
@@ -46,9 +46,10 @@ export function saleBsTotal(lines: SaleLine[], rate: number, restUsd: number): n
 /**
  * Total en Bs del ticket, a partir de SU PROPIO total en USD (BLINK-106).
  *
- * Sumar el IGTF en Bs aparte, después de redondear el resto, redondea dos veces
- * y puede dar un céntimo distinto que el checkout: el ticket imprimiría un Bs
- * que el POS no cobró. Aquí el IGTF entra dentro de `restUsd`, una sola vez.
+ * Sumar un recargo en Bs aparte, después de redondear el resto, redondea dos
+ * veces y puede dar un céntimo distinto que el checkout: el ticket imprimiría
+ * un Bs que el POS no cobró. Aquí todo lo que no es base entra dentro de
+ * `restUsd`, una sola vez.
  */
 export function saleBsFromTotal(lines: SaleLine[], rate: number, total: number): number {
   return saleBsTotal(lines, rate, round2(total - saleBase(lines)));
@@ -118,29 +119,40 @@ export function surchargeAmount(s: Surcharge, net: number): number {
   return round2(s.type === "porcentaje" ? (net * s.value) / 100 : s.value);
 }
 
-/** IGTF (3 %) aplicable a los cobros en dólares. */
-export function igtfFor(amountUsd: number): number {
-  return round2(amountUsd * 0.03);
-}
-
-export const IGTF_RATE = 0.03;
-
 /**
- * Total del ticket = neto + IVA + recargos + IGTF (BLINK-106).
+ * Total del ticket = neto + IVA + recargos (BLINK-106, BLINK-134).
  *
  * Es LA función de la pantalla de cobro y del `checkout`, en ese orden de
- * redondeo: primero la cuenta del ticket y después el IGTF, que nace de los
- * cobros y no de la cuenta. Cada sitio que sume sus partes por su lado puede
- * sacar un céntimo distinto según dónde caiga el redondeo, y entonces el Bs
- * impreso en el ticket no cuadra con el Bs que el cajero cobró.
+ * redondeo. Cada sitio que sume sus partes por su lado puede sacar un céntimo
+ * distinto según dónde caiga el redondeo, y entonces el Bs impreso en el ticket
+ * no cuadra con el Bs que el cajero cobró.
+ *
+ * El IGTF ya no se calcula ni se suma (dueño, 2026-11-21). Las ventas antiguas
+ * conservan su `igtf` congelado y se siguen leyendo desde `Sale`, no desde aquí.
  */
-export function ticketTotal(
-  net: number,
-  tax: number,
-  surcharge: number,
-  igtf: number
-): number {
-  return round2(round2(round2(net) + round2(tax) + round2(surcharge)) + round2(igtf));
+export function ticketTotal(net: number, tax: number, surcharge: number): number {
+  return round2(round2(net) + round2(tax) + round2(surcharge));
+}
+
+/**
+ * Vuelto de un cobro (BLINK-138, dueño 2026-11-21: «agrega la lógica de vuelto»).
+ *
+ * El cliente entrega `recibido` y la venta se acredita con lo que falta: nunca
+ * con el billete entero. Todo va en la MONEDA del cobro, así que el equivalente
+ * en la otra se calcula después con la tasa de la venta.
+ *
+ * · `recibido <= 0` → no hay cobro.
+ * · `falta <= 0` → no hay referencia de exacto: se acredita lo entregado.
+ * · entregado por encima del falta → se acredita el falta y el resto vuelve.
+ */
+export function vuelto(
+  recibido: number,
+  falta: number
+): { charged: number; change: number } {
+  const entregado = round2(recibido);
+  if (!(entregado > 0)) return { charged: 0, change: 0 };
+  if (!(falta > 0) || entregado <= falta) return { charged: entregado, change: 0 };
+  return { charged: round2(falta), change: round2(entregado - falta) };
 }
 
 /** Descuento efectivo (monto USD) según el tipo del descuento. */

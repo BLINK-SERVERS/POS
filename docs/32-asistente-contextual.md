@@ -1,6 +1,6 @@
 # 32 · Asistente contextual «¿Cómo funciona?» — documentación funcional y mapa de pasos
 
-**Módulo 5 del cierre de MVP.** Requisito del plan (§4.3): un botón **«¿Cómo funciona?» en cada vista**, colocado de forma que **nunca tape un botón operativo**, con recorrido guiado que ilumina elementos, navegación Siguiente / Anterior / Entendido / Omitir, y un interruptor en Ajustes para encenderlo o apagarlo.
+**Módulo 5 del cierre de MVP.** Requisito del plan (§4.3): un botón **«¿Cómo funciona?» en cada vista**, colocado de forma que **nunca tape un botón operativo**, con ayuda guiada por pantalla y un interruptor en Ajustes para encenderlo o apagarlo. El cuadro se simplificó el 2026-11-21 (BLINK-129): era un recorrido con foco iluminado; hoy es **la guía entera de esa pantalla en una sola tarjeta**, sin navbar (ver §3).
 
 ---
 
@@ -9,7 +9,7 @@
 | Archivo | Qué es |
 |---|---|
 | `app/src/lib/wizard.ts` | **El contenido.** Guías por ruta (`GUIAS`), con `guiaParaRuta`, `contarPasos` y `listarGuias`. Sin React: son datos. |
-| `app/src/components/Asistencia.tsx` | **El mecanismo.** Botón + capa a pantalla completa + foco medido + navegación por teclado. |
+| `app/src/components/Asistencia.tsx` | **El mecanismo.** Botón + capa a pantalla completa con la guía entera en una sola tarjeta. |
 | `app/src/components/Shell.tsx` | Dónde vive el botón (una sola vez, en la barra superior). |
 | `app/src/pages/Ajustes.tsx` | El interruptor, en la pestaña **Apariencia**. |
 
@@ -23,20 +23,24 @@ La separación es la del principio rector: el contenido es un dato editable sin 
 
 Se monta **una sola vez**, en `Shell`, antes del separador elástico de la barra superior. El hueco que absorbe la línea es aire, no botones: la tasa, el avatar y cualquier acción de la barra quedan exactamente donde estaban. No hay botones flotantes por pantalla, ni pegatinas en las esquinas, ni capas sobre `.page-head`.
 
-**Medido (T9):** en las seis rutas comprobadas hay **exactamente 1 botón** y el recorrido se abre desde él.
+**Medido (T9):** en las seis rutas comprobadas hay **exactamente 1 botón** y la guía se abre desde él.
 
 ---
 
-## 3. Cómo ilumina, y qué pasa cuando no puede
+## 3. Cómo se lee, y qué se cerró (BLINK-129)
 
-Al cambiar de paso, `medirObjetivo(target)` mide la caja real del elemento:
+**Antes** la guía era un recorrido: un paso por vez, `medirObjetivo(target)` medía la caja del elemento y el velo se recortaba alrededor para iluminarlo, con Siguiente / Anterior / Omitir. **Desde el 2026-11-21 eso no existe.** El dueño lo pidió literalmente: «el cuadro contextual no debe tener navbar ya que toda la info se debe leer de un solo vistazo».
 
-- si el elemento **no existe**, mide **0×0** o está **fuera del viewport** → devuelve `null` y la capa pinta **solo el velo** (`.ayuda__velo--solo`), sin foco, con la tarjeta centrada. El recorrido **nunca se rompe**: tres causas legítimas de no iluminar (dato que no existe todavía, pestaña cerrada, pantalla vacía) se ven como una tarjeta centrada y no como un fallo;
-- si existe → velo recortado alrededor del elemento, con **8 px** de holgura (`PAD_FOCO`), la tarjeta a **14 px** del borde (`SEPARACION`), ancho fijo de **360 px** (`ANCHO_TARJETA`), y desplazamiento suave para que el objetivo quede a la vista.
+Lo que hay ahora:
 
-Las teclas `Esc`, `←` y `→` se escuchan en **fase de captura**, así que la página que hay detrás no se entera de que se pulsaron.
+- un solo `.ayuda__velo` parejo, que **cierra** (pulsar fuera = cerrar);
+- una tarjeta `.ayuda__tarjeta` con **todos** los pasos de la pantalla en un `<ol>` numerado por CSS (`counter-reset: paso`), con su botón de cierre `×` y un único **Entendido**;
+- sin paginación ni flechas: `Esc` cierra y nada más. Las teclas se escuchan en **fase de captura**, así que la página de atrás no se entera de que se pulsaron;
+- **que quepa según la resolución**: `width: min(660px, 100%)`, dos columnas a partir de 700 px (seis pasos caben sin scrollear), una columna por debajo, y `max-height: 100%` con `overflow-y: auto` solo como red final. El pie con «Entendido» está pegajoso (`position: sticky`), así que el botón se ve aunque la lista crezca. **La tarjeta no reserva hueco para la barra de pestañas**: `.ayuda__capa` está en `z-index: 90` y la barra flotante en `60`, así que la guía se pinta **encima** de ella; el hueco de 96 px (`6rem`) que existe abajo es de `.shell__main` —el contenido de la página, que sí se esconde bajo la barra— y no tiene nada que ver con el cuadro de ayuda. Reservarlo también en la capa solo quitaba altura útil. Lo que sí se respeta es `env(safe-area-inset-bottom)`. Medido con Playwright en las 6 rutas y 5 tamaños (2026-11-21): **0 px de desborde** en 390×844, 430×932, 768×1024 y 1280×900, con el pie a la vista; en 320×568 el texto scrollea **dentro** de la tarjeta (7–279 px según la pantalla) y el botón sigue a la vista. Se reproduce con `sonda-ajuste-guia.mjs` (mismo expediente que las demás sondas).
 
-**Contrato de anclas.** Un paso apunta a un selector CSS. Los estables son `data-tour="…"` (un elemento concreto de una pantalla) y `data-tab="…"` (una pestaña, que estampa el componente `Tabs`). Todo lo demás —`.page-head`, `.kpis`, `.tabs`— es estructura de la casa y puede moverse. **Antes de dar un paso por bueno, se mide:** `node sonda-anclas-ayuda.mjs`.
+**Qué es `target` hoy.** El mecanismo dejó de iluminar, pero el campo sigue en `wizard.ts` y sigue siendo el **ancla documentada de cada paso**: la sonda `sonda-anclas-ayuda.mjs` lo parsea y mide en navegador que el elemento exista. Es decir, un `target` que no resuelve ya no rompe la ayuda (no pinta nada), pero **sí es un hallazgo**: significa que el paso habla de algo que la pantalla no tiene. Por eso se sigue midiendo.
+
+**Contrato de anclas.** Un paso apunta a un selector CSS. Los estables son `data-tour="…"` (un elemento concreto de una pantalla) y `data-tab="…"` (una pestaña, que estampa el componente `Tabs`). Todo lo demás —`.page-head`, `.kpis`, `.tabs`— es estructura de la casa y puede moverse. **Antes de dar un paso por bueno, se mide** (la sonda vive en el expediente de hallazgos, no en este repo, como todas las `sonda-*.mjs` que citan `docs/28`, `docs/29` y `docs/31`): `cd /home/prodz/BLINK_POS_Hallazgos/scripts && BASE=http://localhost:5199 node sonda-anclas-ayuda.mjs`.
 
 ---
 
@@ -54,7 +58,7 @@ Ajustes → **Apariencia** → «Guía «¿Cómo funciona?» en cada pantalla».
 
 12 guías · **56 pasos** · generado desde `app/src/lib/wizard.ts` (no transcrito a mano, para que no se desalinee del fuente).
 
-| Pantalla | Ruta | Paso | Título | Ilumina |
+| Pantalla | Ruta | Paso | Título | Ancla (ya no se ilumina; la mide la sonda) |
 |---|---|---|---|---|
 | **Vender** | `/app/ventas` | 1 | Así se arma una venta | `#pos-search` |
 | | | 2 | Añádelo al ticket | `[data-tour="ventas-resultados"]` |
@@ -124,6 +128,8 @@ Las dos últimas filas de Conciliación solo existen **cuando hay un pago pendie
 | Anclas comprobadas | 55 | 51 (4 retiradas por no medibles en local) |
 | Anclas que **no** resolvían | **19** | **0** |
 
+**Re-medida el 2026-11-21** tras el cambio de tarjeta (BLINK-129), con `BASE=http://localhost:5199 node sonda-anclas-ayuda.mjs`: **52 anclas comprobadas · 0 sin resolver**. Conciliación vuelve a salir `✗ REDIRIGIÓ A /app/inicio` (pide sesión de plataforma), así que sus 4 anclas siguen sin medirse en local. Que el mecanismo ya no ilumine no retire la sonda: lo que comprueba ahora es que el paso hable de algo que la pantalla tiene.
+
 Los 19 se repartían en tres causas, todas corregidas: anclas `data-tour` que `wizard.ts` referenciaba pero nadie había puesto en el markup; pasos de pestaña que apuntaban al contenido de la pestaña activa por defecto; y dos selectores (`.table-wrap`, `.card`) que en esa pantalla no existen. Detalle y verificación: [29](./29-registro-correcciones-pdf.md#3-asistente-cómo-funciona-blink-100).
 
 Decisión de diseño registrada: el asistente **no cambia de pestaña** para poder iluminar. Hacerlo ejecutaría código de la pantalla detrás de una capa opaca. Lo que hace el paso es iluminar **el botón de la pestaña que hay que abrir** —para eso `Tabs` estampa `data-tab`—.
@@ -134,4 +140,6 @@ Decisión de diseño registrada: el asistente **no cambia de pestaña** para pod
 
 1. En la pantalla, poner el asa: `data-tour="pantalla-cosa"` en el elemento, o reutilizar `.tabs [data-tab="Pestaña"]`.
 2. En `wizard.ts`, añadir el paso con `target: '[data-tour="pantalla-cosa"]'`.
-3. Medir: `node /home/prodz/BLINK_POS_Hallazgos/scripts/sonda-anclas-ayuda.mjs` → tiene que decir `✓`. Si dice `✗ AUSENTE`, el paso no ilumina nada y la ayuda mintió una vez.
+3. Medir: `node /home/prodz/BLINK_POS_Hallazgos/scripts/sonda-anclas-ayuda.mjs` → tiene que decir `✓`. Si dice `✗ AUSENTE`, el paso habla de algo que la pantalla no tiene: la tarjeta no se cae (no ilumina nada), pero la guía miente.
+
+El paso se escribe en dos o tres frases y **entra en la lista sin más**: no hay que registrarlo en ningún recorrido ni decidir en qué orden se ve, porque la tarjeta muestra todos a la vez. Lo que sí se cuida es el tamaño: si una guía crece tanto que en un teléfono de 390 px no cabe sin scrollear, se parten los pasos o se acortan los textos (BLINK-129: «que toda la info quepa según la resolución de pantalla»).
