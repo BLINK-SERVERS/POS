@@ -295,7 +295,6 @@ export function Onboarding() {
                                                                                                       className="input"
                                                                                                       value={name}
                                                                                                       onChange={(e) => setName(e.target.value)}
-                                                                                                      placeholder="Ej.: Abastos La Esquina"
                                                                                                       autoFocus
                                                                                                     />
                                                                                                   </Field>
@@ -318,8 +317,8 @@ export function Onboarding() {
                   
                     
                       <div className="form-group">
-                        <Field label="RIF">
-                                                                                                              <input className="input" value={rif} onChange={(e) => setRif(e.target.value)} placeholder="J-000000000" />
+                        <Field label="RIF" hint="J- y 9 dígitos, o V- y 8">
+                                                                                                              <input className="input" value={rif} onChange={(e) => setRif(e.target.value)} />
                                                                                                             </Field>
                                                                                                             <Field label="Teléfono">
                                                                                                               <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -421,7 +420,6 @@ export function Onboarding() {
                   className="input"
                   value={accName}
                   onChange={(e) => setAccName(e.target.value)}
-                  placeholder="Ej.: Caja principal, Banco, Pago móvil"
                 />
               </Field>
               <div className="row gap-12">
@@ -488,14 +486,15 @@ export function Onboarding() {
                 ))}
                 {state.categories.length === 0 && <p className="muted">Aún no hay categorías.</p>}
               </div>
-              <form className="row gap-8" onSubmit={addCategoryStep}>
-                <input
-                  className="input"
-                  value={catName}
-                  onChange={(e) => setCatName(e.target.value)}
-                  placeholder="Ej.: Bebidas"
-                />
-                <button className="btn btn--soft" type="submit"><Icon name="box" /> 
+              <form className="row gap-8" style={{ alignItems: "flex-end", flexWrap: "wrap" }} onSubmit={addCategoryStep}>
+                <Field label="Nueva categoría">
+                  <input
+                    className="input"
+                    value={catName}
+                    onChange={(e) => setCatName(e.target.value)}
+                  />
+                </Field>
+                <button className="btn btn--soft" type="submit" style={{ marginBottom: "20px" }}><Icon name="box" /> 
                   <Icon name="plus" /> Añadir
                 </button>
               </form>
@@ -607,8 +606,8 @@ export function Onboarding() {
                     
                       
                         <div className="form-group">
-                          <Field label="RIF / documento">
-                                                                                                                        <input className="input" value={provDoc} onChange={(e) => setProvDoc(e.target.value)} placeholder="J-000000000" />
+                          <Field label="RIF / documento" hint="J- y 9 dígitos, o V- y 8">
+                                                                                                                        <input className="input" value={provDoc} onChange={(e) => setProvDoc(e.target.value)} />
                                                                                                                       </Field>
                                                                                                                       <Field label="Teléfono">
                                                                                                                         <input className="input" value={provPhone} onChange={(e) => setProvPhone(e.target.value)} />

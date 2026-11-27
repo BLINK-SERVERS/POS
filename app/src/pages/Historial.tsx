@@ -220,7 +220,6 @@ export function Historial() {
               className="input"
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
-              placeholder="Ej.: producto equivocado"
             />
           </Field>
 

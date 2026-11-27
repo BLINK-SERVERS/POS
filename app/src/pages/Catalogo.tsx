@@ -791,36 +791,41 @@ export function Catalogo() {
             title="Precios por canal"
             hint="Cambia el precio de un producto por canal. El canal predeterminado (*) también ajusta el precio base del producto."
           >
-            <div className="row gap-12">
-              <select
-                className="select"
-                value={bulkChannel}
-                onChange={(e) => setBulkChannel(e.target.value)}
+            <div className="form-group">
+              <Field label="Canal">
+                <select
+                  className="select"
+                  value={bulkChannel}
+                  onChange={(e) => setBulkChannel(e.target.value)}
+                >
+                  <option value="">Elige un canal…</option>
+                  {channels.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {c.isDefault ? " (predeterminado)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label="Ajuste (%)"
+                hint="Positivo sube el precio, negativo lo baja. Se aplica a todos los productos del canal."
               >
-                <option value="">Elige un canal…</option>
-                {channels.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {c.isDefault ? " (predeterminado)" : ""}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="input"
-                type="number"
-                value={bulkPct}
-                onChange={(e) => setBulkPct(e.target.value)}
-                style={{ width: 130 }}
-                placeholder="± %"
-              />
-              <button
-                className="btn btn--soft btn--sm"
-                disabled={!bulkChannel || !(Number(bulkPct) || 0)}
-                onClick={() => bulkPrice(Number(bulkPct) || 0, bulkChannel)}
-              ><Icon name="percent" /> 
-                Aplicar % al canal
-              </button>
+                <input
+                  className="input"
+                  type="number"
+                  value={bulkPct}
+                  onChange={(e) => setBulkPct(e.target.value)}
+                />
+              </Field>
             </div>
+            <button
+              className="btn btn--soft btn--sm"
+              disabled={!bulkChannel || !(Number(bulkPct) || 0)}
+              onClick={() => bulkPrice(Number(bulkPct) || 0, bulkChannel)}
+            ><Icon name="percent" /> 
+              Aplicar % al canal
+            </button>
           </Card>
 
           {priceProducts.length === 0 ? (
@@ -1013,7 +1018,6 @@ export function Catalogo() {
                     setForm({ ...form, name: e.target.value });
                     limpiaError("producto", "name");
                   }}
-                  placeholder="Ej.: Harina de maíz"
                 />
               </Field>
               <Field label="Código de barras" hint="Escanea o genera un código interno.">
@@ -1022,7 +1026,6 @@ export function Catalogo() {
                     className="input grow"
                     value={form.barcode}
                     onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                    placeholder="Ej.: 7591234567890"
                   />
                   <button
                     type="button"
@@ -1076,7 +1079,7 @@ export function Catalogo() {
           {/* 2 · Cuánto mide: cantidad + unidad (lista cerrada) */}
           <FormSection title="Presentación">
             <FieldRow>
-              <Field label="Cantidad" hint="Ej.: 500, 750, 1.">
+              <Field label="Cantidad" hint="Va en mililitros, gramos o unidades.">
                 <input
                   className="input"
                   type="number"
@@ -1128,7 +1131,7 @@ export function Catalogo() {
             />
             <Field
               label="Precio fijo (Bs)"
-              hint="Ancla el producto a estos Bs aunque cambie la tasa."
+              hint="Ancla el producto a estos Bs aunque cambie la tasa. Vacío = el precio se deriva de la tasa."
               error={errores.producto.priceBs}
             >
               <input
@@ -1137,7 +1140,6 @@ export function Catalogo() {
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                placeholder="Sin precio fijo"
                 value={form.priceBs}
                 onChange={(e) => {
                   setForm({ ...form, priceBs: e.target.value });
@@ -1158,7 +1160,7 @@ export function Catalogo() {
                 </select>
               </Field>
               <Field label="Margen" hint={Number(form.price) > 0 ? undefined : "Necesita costo y precio."}>
-                <span className="field__static tabular">
+                <span className="field__static">
                   {Number(form.price) > 0
                     ? `${calcularMargen(Number(form.price), Number(form.cost) || 0)}%`
                     : "—"}
@@ -1168,19 +1170,17 @@ export function Catalogo() {
             {channels.length > 0 && (
               <div className="field">
                 <span className="field__label">Precios por canal (USD)</span>
-                <div className="stack gap-8">
+                <FieldRow>
                   {channels.map((ch) => (
-                    <div key={ch.id} className="row gap-8">
-                      <span className="dim grow">
-                        {ch.name}
-                        {ch.isDefault ? " (predeterminado)" : ""}
-                      </span>
+                    <Field
+                      key={ch.id}
+                      label={`${ch.name}${ch.isDefault ? " (predeterminado)" : ""}`}
+                    >
                       <input
-                        className="input channel-price"
+                        className="input"
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder={form.price}
                         value={form.channelPrices[ch.id] ?? ""}
                         onChange={(e) =>
                           setForm({
@@ -1189,9 +1189,9 @@ export function Catalogo() {
                           })
                         }
                       />
-                    </div>
+                    </Field>
                   ))}
-                </div>
+                </FieldRow>
               </div>
             )}
           </FormSection>
@@ -1199,7 +1199,7 @@ export function Catalogo() {
           {/* 4 · Inventario y estado */}
           <FormSection title="Inventario">
             <CheckField
-              label="Controlar inventario"
+              label="Control de inventario"
               checked={form.trackStock}
               onChange={(v) => setForm({ ...form, trackStock: v })}
             />
@@ -1250,7 +1250,6 @@ export function Catalogo() {
                     setDiscForm({ ...discForm, name: e.target.value });
                     limpiaError("descuento", "name");
                   }}
-                  placeholder="Ej.: Promo fin de semana"
                 />
               </Field>
               <Field label="Código" required hint="Se guarda en MAYÚSCULAS." error={errores.descuento.code}>
@@ -1261,7 +1260,6 @@ export function Catalogo() {
                     setDiscForm({ ...discForm, code: e.target.value });
                     limpiaError("descuento", "code");
                   }}
-                  placeholder="Ej.: FINDE"
                 />
               </Field>
             </div>
@@ -1330,7 +1328,7 @@ export function Catalogo() {
         >
           <FormSection title="Recargo">
             <div className="form-group">
-              <Field label="Nombre" required hint="Ej.: Delivery, Servicio en mesa." error={errores.recargo.name}>
+              <Field label="Nombre" required hint="Nombre corto del recargo, tal como lo verás al cobrar." error={errores.recargo.name}>
                 <input
                   className="input"
                   value={surForm.name}
@@ -1388,7 +1386,7 @@ export function Catalogo() {
         >
           <FormSection title="Categoría">
             <div className="form-group">
-              <Field label="Nombre" required hint="Ej.: Alimentos, Bebidas, Servicios." error={errores.categoria.name}>
+              <Field label="Nombre" required hint="Nombre corto del grupo de productos." error={errores.categoria.name}>
                 <input
                   className="input"
                   value={catForm.name}

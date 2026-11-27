@@ -8,7 +8,7 @@ import {
   activeTabKeyFor,
   draftsKeyFor,
 } from "../lib/session-storage";
-import { Field, Modal, PageHead, Badge, EmptyState } from "../components/ui";
+import { Field, FormSection, Modal, PageHead, Badge, EmptyState } from "../components/ui";
 import { Icon, type IconName } from "../components/Icon";
 import { CameraScannerModal } from "../components/ScannerModals";
 import { Receipt } from "../components/Receipt";
@@ -1370,7 +1370,6 @@ export function Vender() {
               rows={3}
               value={draft.notes}
               onChange={(e) => patchDraft({ notes: e.target.value })}
-              placeholder="Ej.: entregar por la puerta trasera"
             />
           </Field>
         </Modal>
@@ -1379,6 +1378,7 @@ export function Vender() {
       {/* --- Cobrar --- */}
       {payOpen && (
         <Modal title="Cobrar" onClose={() => setPayOpen(false)}>
+          <FormSection title="Pago">
           <Field
             label="Cliente"
             hint={
@@ -1416,6 +1416,51 @@ export function Vender() {
             </div>
           </Field>
 
+          <Field label="Método de pago" as="group">
+            <div className="row gap-8" style={{ flexWrap: "wrap" }}>
+              {accounts
+                .filter((a) => a.active)
+                .map((a) => (
+                  <button
+                    key={a.id}
+                    className={`btn ${payAccId === a.id ? "btn--primary" : "btn--soft"} btn--sm`}
+                    onClick={() => {
+                      // Cambiar de cuenta cambia también la moneda del campo:
+                      // el monto auto-escrito para la cuenta anterior no sirve,
+                      // y conservarlo dejaba cobrando en Bs un número escrito
+                      // en dólares. Se limpia y el efecto lo reescribe exacto.
+                      setPayAmount("");
+                      setPayAccId(a.id);
+                      setCredit(false);
+                      setPayError("");
+                    }}
+                  >
+                    <Icon name={iconoMetodo(a)} size="sm" />
+                    {a.name}
+                    <span className="dim"> · {a.currency}</span>
+                  </button>
+                ))}
+              <button
+                className={`btn ${credit ? "btn--primary" : "btn--soft"} btn--sm`}
+                data-tour="cobro-credito"
+                onClick={() => {
+                  setCredit(true);
+                  setPayAccId("");
+                  setPayAmount("");
+                  setPayError("");
+                  // La venta a crédito exige deudor: se abre la ventana en el
+                  // mismo instante, sin dejar al cajero buscando el campo.
+                  if (!draft.customerId) setCliOpen(true);
+                }}
+              >
+                <Icon name="wallet" size="sm" />
+                A crédito
+              </button>
+            </div>
+          </Field>
+          </FormSection>
+
+          <FormSection title="Monto">
           <div className="breakdown" style={{ margin: "0.75rem 0" }}>
             <div className="breakdown__row">
               <span>Subtotal</span>
@@ -1471,49 +1516,6 @@ export function Vender() {
             </div>
           )}
 
-          <Field label="Método de pago" as="group">
-            <div className="row gap-8" style={{ flexWrap: "wrap" }}>
-              {accounts
-                .filter((a) => a.active)
-                .map((a) => (
-                  <button
-                    key={a.id}
-                    className={`btn ${payAccId === a.id ? "btn--primary" : "btn--soft"} btn--sm`}
-                    onClick={() => {
-                      // Cambiar de cuenta cambia también la moneda del campo:
-                      // el monto auto-escrito para la cuenta anterior no sirve,
-                      // y conservarlo dejaba cobrando en Bs un número escrito
-                      // en dólares. Se limpia y el efecto lo reescribe exacto.
-                      setPayAmount("");
-                      setPayAccId(a.id);
-                      setCredit(false);
-                      setPayError("");
-                    }}
-                  >
-                    <Icon name={iconoMetodo(a)} size="sm" />
-                    {a.name}
-                    <span className="dim"> · {a.currency}</span>
-                  </button>
-                ))}
-              <button
-                className={`btn ${credit ? "btn--primary" : "btn--soft"} btn--sm`}
-                data-tour="cobro-credito"
-                onClick={() => {
-                  setCredit(true);
-                  setPayAccId("");
-                  setPayAmount("");
-                  setPayError("");
-                  // La venta a crédito exige deudor: se abre la ventana en el
-                  // mismo instante, sin dejar al cajero buscando el campo.
-                  if (!draft.customerId) setCliOpen(true);
-                }}
-              >
-                <Icon name="wallet" size="sm" />
-                A crédito
-              </button>
-            </div>
-          </Field>
-
           {payAccount && !credit && (
             <>
               {/* BLINK-066: sin tasa no se puede cobrar en bolívares. */}
@@ -1542,7 +1544,6 @@ export function Vender() {
                     if (round2(Number(payAmount) || 0) > 0) addPayment();
                     else finish();
                   }}
-                  placeholder={inUsd ? "0.00" : "0"}
                 />
               </Field>
 
@@ -1610,7 +1611,6 @@ export function Vender() {
                   className="input"
                   value={payRef}
                   onChange={(e) => setPayRef(e.target.value)}
-                  placeholder="N° de referencia o comprobante"
                 />
               </Field>
 
@@ -1627,6 +1627,7 @@ export function Vender() {
               </button>
             </>
           )}
+          </FormSection>
 
           {credit && (
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>

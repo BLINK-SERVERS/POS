@@ -628,7 +628,6 @@ export function Activacion() {
                 inputMode="decimal"
                 value={montoTexto}
                 onChange={(e) => setMontoTexto(e.target.value)}
-                placeholder={esPagoMovil ? "25.875,00" : "25,00"}
               />
             </Field>
 
@@ -641,17 +640,15 @@ export function Activacion() {
                 className="input"
                 value={ref}
                 onChange={(e) => setRef(e.target.value)}
-                placeholder={esPagoMovil ? "Ej.: 123456789" : "Ej.: TX-9988776655"}
                 autoComplete="off"
               />
             </Field>
 
-            <Field label="Nota (opcional)">
+            <Field label="Nota (opcional)" hint="Banco emisor, titular u otro dato útil">
               <input
                 className="input"
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
-                placeholder="Banco emisor, titular u otro dato útil"
               />
             </Field>
 

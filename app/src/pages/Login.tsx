@@ -172,7 +172,6 @@ export function Login() {
                                                                                                       autoComplete="email"
                                                                                                       value={email}
                                                                                                       onChange={(e) => setEmail(e.target.value)}
-                                                                                                      placeholder="tucorreo@dominio.com"
                                                                                                     />
                                                                                                   </Field>
                                                                                                   <Field label="Contraseña" required>
@@ -182,7 +181,6 @@ export function Login() {
                                                                                                       autoComplete="current-password"
                                                                                                       value={password}
                                                                                                       onChange={(e) => setPassword(e.target.value)}
-                                                                                                      placeholder="Tu contraseña"
                                                                                                     />
                                                                                                   </Field>
                     </div>

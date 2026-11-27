@@ -13,7 +13,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useStoreActions, useStoreState, type CobroAbono } from "../lib/store";
 import { Icon } from "../components/Icon";
-import { Badge, EmptyState, Field, Modal, Money, PageHead } from "../components/ui";
+import { Badge, EmptyState, Field, FormSection, Modal, Money, PageHead } from "../components/ui";
 import { formatBsDirect, formatUsd, round2 } from "../lib/money";
 import { printablePairs, printableTable, printReport } from "../lib/export";
 import {
@@ -291,6 +291,7 @@ function ModalAbono({
             </p>
           )}
 
+          <FormSection title="Monto y método">
           <Field label="Cuenta que recibe" as="group">
             <div className="row gap-8" style={{ flexWrap: "wrap" }}>
               {activas.map((a) => (
@@ -325,7 +326,6 @@ function ModalAbono({
                 if (round2(Number(monto) || 0) > 0) agregar();
                 else aplicar();
               }}
-              placeholder={enUsd ? "0.00" : "0"}
             />
           </Field>
 
@@ -343,15 +343,21 @@ function ModalAbono({
               Monto exacto
             </button>
           </div>
+          </FormSection>
 
+          <FormSection title="Referencia y nota">
           <Field label="Referencia (opcional)">
             <input
               className="input"
               value={ref}
               onChange={(e) => setRef(e.target.value)}
-              placeholder="N° de referencia o comprobante"
             />
           </Field>
+
+          <Field label="Nota del abono (opcional)" hint="Se imprime en el comprobante.">
+            <input className="input" value={nota} onChange={(e) => setNota(e.target.value)} />
+          </Field>
+          </FormSection>
 
           <button
             type="button"
@@ -362,10 +368,6 @@ function ModalAbono({
             <Icon name="plus" />
             Agregar este cobro
           </button>
-
-          <Field label="Nota del abono (opcional)" hint="Se imprime en el comprobante.">
-            <input className="input" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="p. ej. abono en efectivo" />
-          </Field>
 
           {error && (
             <p className="form-error" role="alert">

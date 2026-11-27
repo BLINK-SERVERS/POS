@@ -380,15 +380,13 @@ export function Inventario() {
                 className="input"
                 value={adjustMotive}
                 onChange={(e) => setAdjustMotive(e.target.value)}
-                placeholder="Conteo físico"
               />
             </Field>
-            <Field label="Nota (opcional)">
+            <Field label="Nota (opcional)" hint="Detalle del conteo, responsable…">
               <input
                 className="input"
                 value={adjustNote}
                 onChange={(e) => setAdjustNote(e.target.value)}
-                placeholder="Detalle del conteo, responsable…"
               />
             </Field>
           </FormSection>

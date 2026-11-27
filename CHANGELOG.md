@@ -13,6 +13,62 @@ del producto, no una omisión (ver BUG-12 en
 
 ---
 
+## [Sin publicar] · 2026-11-27 · Lote 36
+
+### Lote 36 (2026-11-27) · Formularios estilo Apple: placeholders fuera, jerarquía y separación con fundamento HIG
+
+Encargo del dueño: «hazlo tipo apple, con el respectivo espacio entre sí, que los
+elementos no colapsen y que se vea toda la información de manera clara, además
+jerarquiza y no pongas placeholders o texto de ejemplo adentro de los formularios».
+Cuatro papeles repartidos en subagentes (auditor HIG, auditor de formularios,
+constructor, auditor final); los desvíos del revisor se aplicaron y todo se midió
+en navegador con una sonda nueva, en escritorio (1280×900) y móvil (390×844).
+
+**Especificación implementada (fundamento HIG, una sola fuente en `app.css`):**
+
+- Controles de **44 px** de alto y fuente de **16 px**; etiqueta de **13 px/600**
+  a **8 px** del campo; hint y error de **13 px** a **4 px** del control.
+- Campo suelto con **20 px** de separación; dentro de la tarjeta agrupada
+  (`.form-group`, estilo *inset grouped* de Apple) la separación la dan el padding
+  y los separadores, sin márgenes; filas (`.form-group__row`) con `gap: 12px`;
+  secciones a **32 px**.
+- Botones pequeños dentro de formularios crecen al blanco táctil de 44 px.
+- **Cero placeholders** fuera de los campos de búsqueda; los ejemplos pasan a
+  `hint` o se reformulan como guía directa.
+
+**Cambios por archivo:**
+
+- `app.css`: etiquetas/hints a `var(--fs-sm)`, label a 8 px, hint/error a 4 px,
+  `.form-section` a 32 px sin margen inferior, `.field__static` a 44 px alineado
+  con los inputs, `.btn--sm` de formulario a 44 px.
+- `Vender.tsx`: modal de cobro con secciones «Pago» y «Monto», método de pago como
+  grupo con rótulo propio; fuera el placeholder de la nota.
+- `Creditos.tsx`: abono con secciones «Monto y método» y «Referencia y nota»;
+  «Agregar este cobro» después de la última sección.
+- `Finanzas.tsx`: nuevo pendiente con «Deuda»/«Vencimiento y nota», nuevo
+  recurrente con «El gasto»/«Monto y vencimiento», hints reformulados, botón de
+  categoría a 20 px del campo.
+- `Catalogo.tsx`: card «Precios por canal» con rótulos (Canal, Ajuste %) y el
+  botón fuera de la tarjeta; precios por canal en `FieldRow` con etiqueta propia;
+  hint del precio fijo que nombra el caso vacío.
+- `Onboarding.tsx`: RIF con «J- y 9 dígitos, o V- y 8» (comercio y proveedor),
+  categoría con rótulo y botón a 20 px.
+- `Login.tsx`, `Registro.tsx`, `Recuperar.tsx`, `Activacion.tsx`: placeholders
+  fuera; «Mínimo 6 caracteres» pasa a hint; teléfono con hint del código de país;
+  «Nota (opcional)» con hint.
+- `Shell.tsx`, `Historial.tsx`, `Inventario.tsx`, `Ajustes.tsx`,
+  `AdminConciliacion.tsx`: placeholders fuera, hints reformulados, «Formato de
+  impresión» con rótulo completo.
+
+**Medido en navegador** (sonda `l36-formas.mjs`, ver §16 de
+`docs/24-bitacora-qa.md`): todos los campos a 44 px/16 px con etiqueta a 8 px y
+hint a 4 px, secciones a 32 px, cero placeholders fuera de búsqueda y cero
+desbordes en las dos vistas; el wizard del onboarding se recorrió completo hasta
+«Terminar» (el paso «Recorrido» es informativo, sin campos). Evidencia completa en
+el expediente, §38 de `05_REPORTE_PRUEBAS.md`.
+
+---
+
 ## [Sin publicar] · 2026-11-22 · Lote 35
 
 ### Lote 35 (2026-11-22) · Jerarquía de formularios: fin del colapso (BLINK-145…147)

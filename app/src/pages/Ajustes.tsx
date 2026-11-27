@@ -409,10 +409,9 @@ export function Ajustes() {
                                                                                   className="input"
                                                                                   value={form.receiptTitle}
                                                                                   onChange={(e) => setForm({ ...form, receiptTitle: e.target.value })}
-                                                                                  placeholder="Comprobante de venta"
                                                                                 />
                                                                               </Field>
-                                                                              <Field label="Formato">
+                                                                              <Field label="Formato de impresión">
                                                                                 <select
                                                                                   className="select"
                                                                                   value={form.printFormat}

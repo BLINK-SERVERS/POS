@@ -560,13 +560,12 @@ export function AdminConciliacion() {
             <Field
               label="Motivo del rechazo"
               required
-              hint="Lo verá el comercio en su pantalla de activación. Sé concreto: referencia no encontrada, monto distinto, comprobante ilegible…"
+              hint="Lo verá el comercio en su pantalla de activación. Explica en una frase qué está mal del pago."
             >
               <input
                 className="input"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
-                placeholder="Ej.: no encontramos la referencia en el banco"
                 autoFocus
               />
             </Field>

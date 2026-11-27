@@ -897,3 +897,82 @@ caracteres y su `h1`, Finanzas 664 con 2 filas, Contactos 314 con 1, Inventario 
 de fuente · `qa:preview` 0/0 · `qa:carga` ✓ · `qa:funcional` y `qa:navegacion` rojos por
 red, iguales en `HEAD` · `qa:seed` y `qa:cuenta` no corridos (escriben en producción y
 mandan correo).
+
+## 16. Lote 36 · Formularios estilo Apple: placeholders fuera y separación con fundamento HIG (2026-11-27)
+
+### 16.1 La especificación
+
+Encargo del dueño: formularios «tipo apple», con separación entre elementos, sin
+colapsos, información clara, jerarquía y **sin placeholders ni texto de ejemplo
+dentro de los formularios**. El auditor de HIG fijó la especificación y quedó como
+una sola fuente en `app.css`:
+
+| Elemento | Regla |
+|---|---|
+| Control (`input`, `select`) | 44 px de alto, fuente 16 px |
+| Etiqueta | 13 px, peso 600, a 8 px del campo |
+| Hint / error | 13 px, a 4 px del control |
+| Campo suelto | 20 px de separación tras el campo |
+| Tarjeta agrupada (`.form-group`) | separación por padding 0.85rem + separadores, sin márgenes internos |
+| Fila (`.form-group__row`) | `gap: 12px`, cada campo con su etiqueta |
+| Secciones | 32 px entre secciones |
+| Blancos táctiles | ≥ 44 px, incluidos los `.btn--sm` dentro de formularios |
+| Placeholders | solo en campos de búsqueda; en formularios, cero |
+
+### 16.2 Qué cambió
+
+16 archivos: `app.css` (la especificación), `ui.tsx` (fuera el `placeholder` de
+`MoneyField`), `Shell.tsx`, `Catalogo.tsx`, `Vender.tsx`, `Creditos.tsx`,
+`Finanzas.tsx`, `Onboarding.tsx`, `Historial.tsx`, `AdminConciliacion.tsx`,
+`Ajustes.tsx`, `Inventario.tsx`, más los de auth y activación (`Login`,
+`Registro`, `Recuperar`, `Activacion`) que seguían con placeholders fuera del
+alcance inicial del constructor y cayeron bajo la misma regla del dueño.
+
+Detalles con cuerpo: modal de abono y modal de cobro con `FormSection`; «Agregar
+este cobro» movido después de la última sección; card «Precios por canal» con
+rótulos y el botón fuera de la tarjeta; precios por canal en `FieldRow`; la regla
+«Mínimo 6 caracteres» de Recuperar pasó del placeholder al hint; RIF con «J- y 9
+dígitos, o V- y 8»; teléfono con «Incluye el código del país».
+
+### 16.3 La sonda: tres corridas y la trampa del instrumento
+
+`sonda l36-formas.mjs` (playwright-core + `/usr/bin/chromium`, evidencia en
+`/tmp/l36-evidencias.txt`) mide cada `.field`: alto y fuente del control,
+etiqueta (tamaño, peso, separación), hint/error, margen según contenedor
+(agrupado, en fila o suelto), separación de secciones y overflow. Corridas:
+
+- **v1: 82 FALLOS, todos del instrumento**, no de la app: sembraba el bypass en
+  las pantallas de auth y estas redirigían; los campos de tarjeta agrupada se
+  medían con la métrica de campo suelto; el producto sembrado solo aparece por
+  búsqueda; 43 px era la animación del modal a medio abrir; `.table-wrap` es
+  scrolleable por diseño y se contaba como desborde; «Precios por canal» es una
+  pestaña, no un botón; el wizard no avanzaba porque nadie rellenaba sus campos
+  requeridos.
+- **v2: 15 FALLOS, también del instrumento**: los campos en `.form-group__row`
+  no se clasificaban como fila; el modal de cobro solo muestra el campo Monto
+  tras elegir cuenta; «Agregar este cobro» existe pero deshabilitado hasta teclear
+  montos, y el sondeo de un solo tiro lo perdía; Recuperar muestra el formulario
+  de reinicio solo tras el correo (la regla de 6 caracteres se verifica
+  estáticamente); el paso «Recorrido» del onboarding no tiene campos y el lazo
+  lo leía como «sin avance».
+- **v3: VERDE** en escritorio y móvil.
+
+Números medidos (v3): Login 2 campos, Registro 6, Recuperar 1; diálogo de
+producto 15 campos (4 agrupados, 6 en fila, 5 sueltos) con secciones
+[Producto | Presentación | Precios e impuesto | Inventario] a 32 px; card
+Precios por canal 2 campos; modal de cobro 2 campos tras elegir cuenta con
+secciones [Pago | Monto]; abono 3 campos con secciones [Monto y método |
+Referencia y nota] y el botón tras la última; nuevo pendiente 6 campos
+[Deuda | Vencimiento y nota]; nuevo recurrente 4 [El gasto | Monto y
+vencimiento]; onboarding completo en 7 pasos (2Recorrido sin campos, «Terminar»
+alcanzado); móvil 390: login 2, producto 15, abono 3, búsqueda de créditos a
+358 px dentro del viewport. En todas: 44 px/16 px, etiqueta 13/600 a 8 px,
+hints a 4 px, secciones a 32 px, cero placeholders fuera de búsqueda y cero
+overflow horizontal (1280 px y 390 px).
+
+### 16.4 Gates de la tanda
+
+`tsc --noEmit` 0 · vitest **287/287** (27 ficheros, ninguna prueba retocada) ·
+`build` ✓ · `docs:check` ✓. Sin hallazgos nuevos: el recuento del expediente
+sigue en 135 · 120 cerrados · 15 abiertos, y **BLINK-147** (la herramienta sin
+red de `qa:funcional`/`qa:navegacion`) sigue abierto con sus dos decisiones.

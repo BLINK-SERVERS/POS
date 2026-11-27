@@ -134,14 +134,13 @@ export function Recuperar() {
                 
                   
                     <div className="form-group">
-                      <Field label="Nueva contraseña" required>
+                      <Field label="Nueva contraseña" required hint="Mínimo 6 caracteres">
                                                                                                     <input
                                                                                                       className="input"
                                                                                                       type="password"
                                                                                                       autoComplete="new-password"
                                                                                                       value={password}
                                                                                                       onChange={(e) => setPassword(e.target.value)}
-                                                                                                      placeholder="Mínimo 6 caracteres"
                                                                                                     />
                                                                                                   </Field>
                                                                                                   <Field label="Confirmar contraseña" required>
@@ -151,7 +150,6 @@ export function Recuperar() {
                                                                                                       autoComplete="new-password"
                                                                                                       value={confirm}
                                                                                                       onChange={(e) => setConfirm(e.target.value)}
-                                                                                                      placeholder="Repítela"
                                                                                                     />
                                                                                                   </Field>
                     </div>
@@ -179,7 +177,6 @@ export function Recuperar() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tucorreo@dominio.com"
                 />
               </Field>
 

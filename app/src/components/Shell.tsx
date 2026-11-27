@@ -645,7 +645,6 @@ export function Shell({ children }: { children: ReactNode }) {
                 className="input"
                 value={cNote}
                 onChange={(e) => setCNote(e.target.value)}
-                placeholder="Ej.: vuelto de más en la mañana"
               />
             </Field>
           )}

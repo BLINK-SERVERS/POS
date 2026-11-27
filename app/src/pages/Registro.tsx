@@ -159,13 +159,12 @@ export function Registro() {
                 
                   
                     <div className="form-group">
-                      <Field label="Teléfono" required>
+                      <Field label="Teléfono" required hint="Incluye el código del país">
                                                                                                     <input
                                                                                                       className="input"
                                                                                                       value={phone}
                                                                                                       onChange={(e) => setPhone(e.target.value)}
                                                                                                       autoComplete="tel"
-                                                                                                      placeholder="+58 412 000 0000"
                                                                                                     />
                                                                                                   </Field>
                                                                                     
@@ -176,7 +175,6 @@ export function Registro() {
                                                                                                       value={email}
                                                                                                       onChange={(e) => setEmail(e.target.value)}
                                                                                                       autoComplete="email"
-                                                                                                      placeholder="tucorreo@dominio.com"
                                                                                                     />
                                                                                                   </Field>
                     </div>

@@ -338,7 +338,6 @@ export function MoneyField({
   error,
   min = 0,
   step = 0.01,
-  placeholder,
 }: {
   label: string;
   /** Rótulo de la moneda del monto cuando no es USD (p. ej. "Bs"). */
@@ -351,7 +350,6 @@ export function MoneyField({
   error?: string;
   min?: number;
   step?: number | string;
-  placeholder?: string;
 }) {
   return (
     <Field
@@ -368,7 +366,6 @@ export function MoneyField({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
       />
     </Field>
   );

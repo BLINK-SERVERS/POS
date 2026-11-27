@@ -382,6 +382,13 @@
   font-size: var(--fs-xs);
   border-radius: 999px;
 }
+/* Los botones pequeños DENTRO de un formulario crecen al blanco táctil
+   mínimo de 44 px (HIG). El .btn--sm global queda en 34 px: se usa en
+   barras de acciones y listas, donde el toque no es el único camino. */
+.form-group__row .btn--sm,
+.field .btn--sm {
+  min-height: 44px;
+}
 /* Apilado a lo ancho: rectangulo redondeado (HIG · Buttons). */
 .btn--block {
   width: 100%;
@@ -460,39 +467,40 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: 0;
+  margin-bottom: 20px;
 }
 .field__label {
   font-family: var(--font-text);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
+  margin-bottom: 8px;
 }
 .field__hint {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   color: var(--color-text-tertiary);
+  margin-top: 4px;
 }
 /* Sección de un formulario largo (agrupa campos con un título claro). */
 .form-section {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-bottom: 1.25rem;
 }
 .form-section + .form-section {
-  padding-top: 1.25rem;
+  padding-top: 2rem;
   border-top: 1px solid var(--color-border);
 }
 .form-section__title {
   /* Es un encabezado real (h4), no un span pintado como tal: el lector de
      pantalla así navega el formulario por secciones. */
   font-family: var(--font-text);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   margin: 0 0 0.5rem;
 }
 /* --- Casilla compartida (CheckField) ---
@@ -527,9 +535,24 @@
    semántico y en cuerpo de aviso: `.field__hint` es ayuda gris y mezclarlos
    hacía que un error se leyera como una sugerencia. */
 .field__error-msg {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--blink-danger);
+  margin-top: 4px;
+}
+/* Valor de solo lectura dentro de un Field (p. ej. el precio derivado de
+   la tasa): mismo alto y relleno que los inputs para que la columna no se
+   descuadre, cifras tabulares y sin marco. */
+.field__static {
+  display: block;
+  height: 44px;
+  line-height: 44px;
+  padding: 0 0.9rem;
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  background: var(--color-neutral-soft);
+  border-radius: 10px;
 }
 .input[aria-invalid="true"],
 .select[aria-invalid="true"],
@@ -541,16 +564,23 @@
 .select,
 .textarea {
   width: 100%;
-  padding: 0.6rem 0.9rem;
+  /* HIG: 16 px de letra (13 px dispara el zoom de iOS al enfocar) y 44 px
+     de alto; el texto queda centrado verticalmente con `height` + padding
+     lateral, sin padding vertical que desplace la línea. */
+  font-size: var(--fs-base);
+  padding: 0 0.9rem;
   /* Campo "filled" de iOS: relleno suave derivado del color de texto,
      nunca un marco fuerte de aplicación web. */
   background: var(--color-neutral-soft);
   border: 1px solid transparent;
   border-radius: 10px;
-  font-size: var(--fs-sm);
   color: var(--color-text-primary);
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed),
     background-color var(--transition-speed);
+}
+.input,
+.select {
+  height: 44px;
 }
 .input::placeholder,
 .textarea::placeholder {
@@ -571,6 +601,7 @@
 }
 .textarea {
   min-height: 84px;
+  padding: 0.75rem 0.9rem;
   resize: vertical;
 }
 .form-error {
@@ -1919,7 +1950,7 @@ table.data tbody tr:hover {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 0.35rem 1.25rem 1.5rem;
+  padding: 1rem 1.25rem 1.5rem;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -1949,7 +1980,7 @@ table.data tbody tr:hover {
   background: var(--color-bg-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
-  padding: 1.25rem 1.5rem 1.5rem;
+  padding: 1rem 1.25rem 1.5rem;
   animation: modal-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 /* El panel recibe el foco al abrirse para que el teclado sea suyo desde el
@@ -2173,11 +2204,11 @@ table.data td {
   padding: 0.9rem 1rem;
 }
 
-/* Campo de texto: 52 px de alto */
+/* Campo de texto: 44 px de alto (HIG · Controls, mínimo táctil) */
 .input,
 .select,
 .textarea {
-  min-height: 52px;
+  min-height: 44px;
 }
 .textarea {
   min-height: 84px;

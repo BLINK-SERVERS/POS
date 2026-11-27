@@ -903,13 +903,12 @@ export function Finanzas() {
               <input
                 className="input"
                 value={catName}
-                placeholder="Ej.: Marketing"
                 onChange={(e) => setCatName(e.target.value)}
               />
             </Field>
             <button
               className="btn btn--primary btn--sm"
-              style={{ marginBottom: "0.5rem" }}
+              style={{ marginBottom: "20px" }}
               disabled={!catName.trim()}
               onClick={() => {
                 addExpenseCategory(catName.trim());
@@ -1170,7 +1169,7 @@ export function Finanzas() {
           }
         >
           <FormSection title="El gasto">
-            <Field label="Nombre" required hint="Ej.: alquiler de octubre">
+            <Field label="Nombre" required hint="Con qué se identifica este gasto">
               <input
                 className="input"
                 value={expForm.name}
@@ -1360,8 +1359,9 @@ export function Finanzas() {
         <Modal title="Nuevo pendiente" onClose={() => setPendOpen(false)}>
           
             
-              <div className="form-group">
-                <Field label="Dirección">
+          <FormSection title="Deuda">
+            <div className="form-group">
+              <Field label="Dirección">
                                                             <select
                                                               className="select"
                                                               value={pendForm.direction}
@@ -1383,7 +1383,7 @@ export function Finanzas() {
                                                               ))}
                                                             </select>
                                                           </Field>
-                                                          <Field label="Concepto" required hint="Ej.: Préstamo, mercancía, servicio">
+                                                          <Field label="Concepto" required hint="En una frase, qué representa la deuda.">
                                                             <input
                                                               className="input"
                                                               value={pendForm.subject}
@@ -1398,6 +1398,11 @@ export function Finanzas() {
                                                               onChange={(e) => setPendForm({ ...pendForm, amountUsd: e.target.value })}
                                                             />
                                                           </Field>
+              </div>
+            </FormSection>
+
+            <FormSection title="Vencimiento y nota">
+              <div className="form-group">
                                                           <Field label="Vence">
                                                             <input
                                                               className="input"
@@ -1414,6 +1419,7 @@ export function Finanzas() {
                                                             />
                                                           </Field>
               </div>
+            </FormSection>
             
           
           <button
@@ -1502,8 +1508,9 @@ export function Finanzas() {
         <Modal title="Nuevo gasto recurrente" onClose={() => setRecurOpen(false)}>
           
             
-              <div className="form-group">
-                <Field label="Nombre" required hint="Ej.: Alquiler local">
+          <FormSection title="El gasto">
+            <div className="form-group">
+              <Field label="Nombre" required hint="Con qué identificas este gasto mensual">
                                                             <input className="input" value={recurForm.name} onChange={(e) => setRecurForm({ ...recurForm, name: e.target.value })} />
                                                           </Field>
                                                           <Field label="Categoría">
@@ -1517,11 +1524,16 @@ export function Finanzas() {
                                                               ))}
                                                             </select>
                                                           </Field>
-                                                          <Field label="Monto (USD)">
-                                                            <input
-                                                              className="input"
-                                                              type="number"
-                                                              value={recurForm.amountUsd}
+              </div>
+            </FormSection>
+
+            <FormSection title="Monto y vencimiento">
+              <div className="form-group">
+                <Field label="Monto (USD)">
+                  <input
+                    className="input"
+                    type="number"
+                    value={recurForm.amountUsd}
                                                               onChange={(e) => setRecurForm({ ...recurForm, amountUsd: e.target.value })}
                                                             />
                                                           </Field>
@@ -1534,6 +1546,7 @@ export function Finanzas() {
                                                             />
                                                           </Field>
               </div>
+            </FormSection>
             
           
           <button
